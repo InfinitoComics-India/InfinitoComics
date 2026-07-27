@@ -1,0 +1,59 @@
+body {
+  background-color: #fff;
+}
+
+/* Container to center image responsively */
+.img {
+  display: block;
+  margin: 2rem auto;
+  max-width: 100%;
+  width: 300px; /* Or adjust to your preferred size */
+  height: auto;
+}
+
+/* Navbar scrolling style */
+.navbar {
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 2rem;
+  padding: 1rem 0;
+  position: relative;
+}
+
+.scrolling-text {
+  display: inline-block;
+  white-space: nowrap;
+  animation: scroll-left 15s linear infinite;
+}
+
+.scrolling-text span {
+  font-family: 'Bungee Tint', sans-serif;
+  font-style: italic;
+  display: inline-block;
+  margin-right: 5rem;
+  font-size: larger;
+}
+
+@keyframes scroll-left {
+  0% {
+    transform: translateX(10%);
+  }
+  100% {
+    transform: translateX(-10%);
+  }
+}
+
+@font-face {
+  font-family: 'Broken Console';
+  src: url('/broken_console/Broken Console Bold.otf') format('opentype'),
+       url('/broken_console/Broken Console Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+.bungee-tint-regular {
+  font-family: "Bungee Tint", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}

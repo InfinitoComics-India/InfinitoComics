@@ -1,0 +1,45 @@
+/* Full page background */
+.logo-loader-wrapper {
+  background: #0d0d0d;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+/* Centering the logo */
+.logo-loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Logo animation styles */
+.logo {
+  width: 300px;
+  opacity: 0.2;
+  animation: fadeBounce 2s ease-in-out infinite, glowPulse 2s ease-in-out infinite alternate;
+}
+
+/* Fade and bounce animation */
+@keyframes fadeBounce {
+  0%, 100% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-10px);
+  }
+}
+
+/* Glowing pulse animation */
+@keyframes glowPulse {
+  0% {
+    filter: drop-shadow(0 0 5px #d40000aa);
+  }
+  100% {
+    filter: drop-shadow(0 0 20px #d40000ff);
+  }
+}
