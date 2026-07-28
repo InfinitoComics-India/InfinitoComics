@@ -2,8 +2,8 @@ import nodemailer from "nodemailer"
 import config from "../config/server-config.js"
 const transporter = nodemailer.createTransport({
   host: config.SMTP_SERVER,  
-  port: config.SMTP_PORT, 
-  secure: true, 
+  port: Number(config.SMTP_PORT) || 465, 
+  secure: Number(config.SMTP_PORT) === 465, // true for 465, false for 587
   auth: {
     user: config.EMAIL_ID,
     pass: config.EMAIL_PASS
@@ -11,6 +11,10 @@ const transporter = nodemailer.createTransport({
 });
 
 export const sendEmail = async (to, subject, text) => {
+  if (!config.EMAIL_PASS) {
+    console.warn('Email not configured - skipping email to:', to);
+    return;
+  }
   try {
     await transporter.sendMail({
       from: config.EMAIL_ID,

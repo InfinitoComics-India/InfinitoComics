@@ -9,15 +9,22 @@ export default {
     ADMIN_URL: process.env.ADMIN_URL,
     RESEARCH_URL: process.env.RESEARCH_URL,
     FOUNDATION_URL: process.env.FOUNDATION_URL,
+    // AWS S3 (kept for backwards compat, not used if Hostinger is configured)
     ACCESS_KEY: process.env.ACCESS_KEY,
     SECRET_ACCESS_KEY: process.env.SECRET_ACCESS_KEY,
     S3_BUCKET_NAME: process.env.S3_BUCKET_NAME,
     AWS_REGION: process.env.AWS_REGION,
+    // Hostinger file storage
+    HOSTINGER_UPLOAD_URL: process.env.HOSTINGER_UPLOAD_URL,
+    HOSTINGER_BASE_URL: process.env.HOSTINGER_BASE_URL,
+    HOSTINGER_API_KEY: process.env.HOSTINGER_API_KEY,
+    // Email Configuration
     EMAIL_ID: process.env.EMAIL_ID,
     EMAIL_PASS: process.env.EMAIL_PASS,
     SMTP_PORT: process.env.SMTP_PORT,
     SMTP_SERVER: process.env.SMTP_SERVER,
     FORGET_PASSWORD_EXPIRY: process.env.FORGET_PASSWORD_EXPIRY,
+    // Razorpay (optional)
     RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
     RAZORPAY_SECRET_KEY: process.env.RAZORPAY_SECRET_KEY
 }
