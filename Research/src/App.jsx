@@ -10,6 +10,7 @@ import Home from './pages/Home/Home';
 import ResearchPlans from './pages/Home/Research';
 import ReadResearch from './pages/ReadResearch/ReadResearch';
 import Paper from './pages/BrowsePapers/Paper';
+import Checkout from './pages/Checkout/Checkout';
 function App() {
    const dispatch = useDispatch();
 
@@ -53,6 +54,7 @@ useEffect(() => {
       <Route path="ResearchPlans" element={<ResearchPlans/>} />
       <Route path="readresearch/:id" element={<ReadResearch />} />
       <Route path="/browseResearch" element={<Paper/>} />
+      <Route path="/checkout" element={<Checkout/>} />
       
       </Route>
     </Routes>

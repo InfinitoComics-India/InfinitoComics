@@ -24,18 +24,27 @@ import researchPaperRoutes from './routes/research-paper-routes.js';
 import aboutTimelineRoutes from './routes/aboutTimelineRoutes.js';
 import paymentRoutes from './routes/payment-routes.js'
 import comicChapRoutes from './routes/comicChap-routes.js'
+import researchApplicationRoutes from './routes/researchApplication-routes.js'
 
 
 const allowedOrigins = [
   config.FRONTEND_URL,
   config.ADMIN_URL,
   config.RESEARCH_URL,
-  config.FOUNDATION_URL
-];
+  config.FOUNDATION_URL,
+  // Local development origins
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:3002',
+  'http://localhost:3003',
+  'http://localhost:3004',
+].filter(Boolean);
 
 app.use(cors({
   origin: allowedOrigins,
-  credentials: true
+  credentials: true
 }));
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
@@ -44,7 +53,7 @@ app.use(express.json());
 // API Routes
 app.use('/api', userroutes);
 app.use('/blog', blogroutes);
-app.use('/research-papers', researchPaperRoutes); // New research paper routes
+app.use('/research-papers', researchPaperRoutes);
 app.use('/faq', faqRoutes);
 app.use('/admin', adminroutes);
 app.use('/timeline', timelineRoutes);
@@ -53,10 +62,11 @@ app.use('/career', CareerRoutes);
 app.use('/support', supportRoutes);
 app.use('/comic', comicRoutes);
 app.use('/comicChap', comicChapRoutes);
+app.use('/research-application', researchApplicationRoutes);
 app.use('/character', characterRoutes);
 app.use('/payment', paymentRoutes);
 app.get('/', (req, res) => {
-  res.send('🚀 Backend is up and running!');
+  res.send('Backend is up and running!');
 });
 
 const storage = multer.memoryStorage();

@@ -6,144 +6,146 @@ import PaperCardShimmer from './Shimmer/PaperCardShimmer';
 import PaperSearchBarShimmer from './Shimmer/PaperSearchBarShimmer';
 import BrowseSectionShimmer from './Shimmer/BrowseSectionShimmer';
 import { readResearchService } from '../../services/readResearchService';
+
+const DEMO_PAPERS = [
+  {
+    _id: 'dp1', isDemo: true,
+    title: 'Title Of The Research Paper',
+    journalName: 'Journal Name',
+    authors: ['Authors'],
+    abstract: "Content Stuff. One Day Spiderman Ate A Spider, He Chocked On It, He Died. You Think That's The End. NAAAAH!! One Day Spiderman Ate A Spider, He Chocked On It, He Died. You Think That's The End.",
+    datePublished: new Date().toISOString(),
+  },
+  {
+    _id: 'dp2', isDemo: true,
+    title: 'Title Of The Research Paper',
+    journalName: 'Journal Name',
+    authors: ['Authors'],
+    abstract: "Content Stuff. One Day Spiderman Ate A Spider, He Chocked On It, He Died. You Think That's The End. NAAAAH!! One Day Spiderman Ate A Spider, He Chocked On It, He Died. You Think That's The End.",
+    datePublished: new Date().toISOString(),
+  },
+  {
+    _id: 'dp3', isDemo: true,
+    title: 'Title Of The Research Paper',
+    journalName: 'Journal Name',
+    authors: ['Authors'],
+    abstract: "Content Stuff. One Day Spiderman Ate A Spider, He Chocked On It, He Died. You Think That's The End. NAAAAH!! One Day Spiderman Ate A Spider, He Chocked On It, He Died. You Think That's The End.",
+    datePublished: new Date().toISOString(),
+  },
+];
+
+const CATEGORIES = [
+  { key: 'all', label: 'Business' },
+  { key: 'technology', label: 'Technology' },
+  { key: 'design & creativity', label: 'Design & Creativity' },
+  { key: 'psychology & culture', label: 'Psychology & Culture' },
+  { key: 'law & policy', label: 'Law & Policy' },
+];
+
 const BrowsePapers = ({ allPapers, isLoading }) => {
   const navigate = useNavigate();
   const [visibleCount, setVisibleCount] = useState(3);
   const [searchText, setSearchText] = useState('');
-  const [journalText, setJournalText] = useState('');
   const [authorText, setAuthorText] = useState('');
+  const [yearText, setYearText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [filteredPapers, setFilteredPapers] = useState([]);
 
-  useEffect(() => {
-    if (!Array.isArray(allPapers)) return;
-    const filtered = allPapers.filter((paper) => {
-      const matchTitle = searchText
-        ? paper.title?.toLowerCase().includes(searchText.toLowerCase())
-        : true;
-      const matchJournal = journalText
-        ? paper.journalName?.toLowerCase().includes(journalText.toLowerCase())
-        : true;
-      const matchAuthors = authorText
-        ? paper.authors?.some((author) =>
-            author.toLowerCase().includes(authorText.toLowerCase())
-          )
-        : true;
-      const matchCategory =
-        selectedCategory === 'all'
-          ? true
-          : paper.category?.toLowerCase() === selectedCategory.toLowerCase();
-      return matchTitle && matchJournal && matchAuthors && matchCategory;
-    });
+  // Use real data if available, else show demo
+  const sourcePapers = Array.isArray(allPapers) && allPapers.length > 0 ? allPapers : DEMO_PAPERS;
 
+  useEffect(() => {
+    const filtered = sourcePapers.filter((paper) => {
+      const matchTitle = searchText ? paper.title?.toLowerCase().includes(searchText.toLowerCase()) : true;
+      const matchAuthors = authorText ? paper.authors?.some((a) => a.toLowerCase().includes(authorText.toLowerCase())) : true;
+      const matchYear = yearText ? String(paper.datePublished || '').includes(yearText) : true;
+      const matchCategory = selectedCategory === 'all' ? true : paper.category?.toLowerCase() === selectedCategory;
+      return matchTitle && matchAuthors && matchYear && matchCategory;
+    });
     setFilteredPapers(filtered);
     setVisibleCount(3);
-  }, [allPapers, searchText, journalText, authorText, selectedCategory]);
+  }, [sourcePapers, searchText, authorText, yearText, selectedCategory]);
 
-  const handleShowMore = () => setVisibleCount(filteredPapers.length);
-  const handleShowLess = () => setVisibleCount(3);
-
-  // ✅ Fetch paper details before navigating
-  const handlePaperClick = async (id) => {
+  const handlePaperClick = async (id, isDemo) => {
+    if (isDemo) return;
     try {
-      const paperDetails = await readResearchService(id); // fetch full paper
-      console.log("Full paper data:", paperDetails);
-
-      // Pass paper details via route state
-      navigate(`/readresearch/${id}`, { state: { paper: paperDetails.data } });
-    } catch (error) {
-      console.error("Failed to fetch paper details:", error);
+      const res = await readResearchService(id);
+      navigate(`/readresearch/${id}`, { state: { paper: res.data } });
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  const categories = ['all', 'business', 'psychology', 'design', 'development'];
-
   return (
-    <div className="w-full min-h-screen bg-gray-100 flex justify-center overflow-hidden">
-      <div className="flex flex-col min-h-screen w-2/3">
+    <div style={{ background: '#f3f4f6' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 3rem 4rem' }}>
 
         {/* Search Bar */}
-        {isLoading ? (
-          <PaperSearchBarShimmer />
-        ) : (
+        {isLoading ? <PaperSearchBarShimmer /> : (
           <PaperSearchBar
-            searchText={searchText}
-            setSearchText={setSearchText}
-            journalText={journalText}
-            setJournalText={setJournalText}
-            authorText={authorText}
-            setAuthorText={setAuthorText}
+            searchText={searchText} setSearchText={setSearchText}
+            authorText={authorText} setAuthorText={setAuthorText}
+            yearText={yearText} setYearText={setYearText}
           />
         )}
 
-        {/* Category Tabs */}
-        {isLoading ? (
-          <BrowseSectionShimmer />
-        ) : (
-          <div className="w-full border-b border-[#B5B5B5] mt-4">
-            <h1 className="text-3xl font-bold text-[#202020] mb-3">BROWSE OUR PAPERS</h1>
-            <div className="flex space-x-6 mt-10 gap-10 text-sm">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`border-b-3 pb-2 transition ${
-                    selectedCategory === cat
-                      ? 'border-[#DD1215] text-[#DD1215] font-semibold'
-                      : 'border-transparent hover:border-black text-gray-700'
-                  }`}
-                >
-                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+        {/* Browse Our Papers */}
+        {isLoading ? <BrowseSectionShimmer /> : (
+          <div style={{ marginTop: '2.5rem' }}>
+            <h2 style={{
+              fontSize: '1.3rem', fontWeight: 900, letterSpacing: '0.15em',
+              textTransform: 'uppercase', color: '#111', marginBottom: '1.2rem',
+            }}>
+              BROWSE OUR PAPERS
+            </h2>
+            <div style={{ display: 'flex', gap: '2.5rem', flexWrap: 'wrap', borderBottom: '1px solid #ddd', marginBottom: '1.5rem' }}>
+              {CATEGORIES.map((cat) => (
+                <button key={cat.key} onClick={() => setSelectedCategory(cat.key)} style={{
+                  background: 'none', border: 'none',
+                  borderBottom: selectedCategory === cat.key ? '2px solid #DD1215' : '2px solid transparent',
+                  color: selectedCategory === cat.key ? '#DD1215' : '#444',
+                  fontWeight: selectedCategory === cat.key ? 700 : 400,
+                  fontSize: '0.85rem', padding: '0.5rem 0',
+                  cursor: 'pointer', transition: 'all 0.2s', marginBottom: '-1px',
+                }}>
+                  {cat.label}
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        {/* Paper Cards Section */}
-        <div
-          className={`w-full h-[calc(100vh-150px)] ${
-            isLoading ? 'overflow-hidden' : 'overflow-y-auto'
-          } pr-2 pt-8 pb-20`}
-        >
-          <div className="flex flex-col">
-            {isLoading ? (
-              [...Array(6)].map((_, i) => <PaperCardShimmer key={i} />)
-            ) : filteredPapers.length === 0 ? (
-              <p className="text-center text-gray-500 mt-4">No results found.</p>
-            ) : (
-              <>
-                {filteredPapers.slice(0, visibleCount).map((paper) => (
-                  <div
-                    key={paper._id}
-                   
-                    className="cursor-pointer"
-                  >
-                    <PaperCard paper={paper} />
-                  </div>
-                ))}
-                {filteredPapers.length > 3 && (
-                  <div className="mt-6 mb-6 text-center">
-                    {visibleCount < filteredPapers.length ? (
-                      <button
-                        className="px-6 py-2 border mb-6 border-black text-sm hover:bg-black hover:text-white transition"
-                        onClick={handleShowMore}
-                      >
-                        Show More
-                      </button>
-                    ) : (
-                      <button
-                        className="px-6 py-2 mb-6 border border-black text-sm hover:bg-black hover:text-white transition"
-                        onClick={handleShowLess}
-                      >
-                        Show Less
-                      </button>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+        {/* Paper Cards */}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {isLoading ? (
+            [...Array(3)].map((_, i) => <PaperCardShimmer key={i} />)
+          ) : filteredPapers.length === 0 ? (
+            <p style={{ textAlign: 'center', color: '#888', marginTop: '2rem' }}>No results found.</p>
+          ) : (
+            <>
+              {filteredPapers.slice(0, visibleCount).map((paper) => (
+                <div key={paper._id} onClick={() => handlePaperClick(paper._id, paper.isDemo)}
+                  style={{ cursor: paper.isDemo ? 'default' : 'pointer' }}>
+                  <PaperCard paper={paper} />
+                </div>
+              ))}
+              {filteredPapers.length > 3 && (
+                <div style={{ textAlign: 'center', margin: '1.5rem 0' }}>
+                  {visibleCount < filteredPapers.length ? (
+                    <button onClick={() => setVisibleCount(filteredPapers.length)}
+                      style={{ border: '1px solid #111', background: 'transparent', padding: '0.5rem 1.5rem', fontSize: '0.8rem', cursor: 'pointer' }}>
+                      Show More
+                    </button>
+                  ) : (
+                    <button onClick={() => setVisibleCount(3)}
+                      style={{ border: '1px solid #111', background: 'transparent', padding: '0.5rem 1.5rem', fontSize: '0.8rem', cursor: 'pointer' }}>
+                      Show Less
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -59,19 +59,15 @@ export const resetPasswordFunc = async (id, token, newPassword) => {
 };
 
 export const signUpUser = async (formData) => {
-  try {
-    const response = await axios.post(BASE_URL + '/api/signup', {
-      email: formData.email.toLowerCase(),
-      password: formData.password,
-      name: formData.name,
-      dob: formData.dob,
-      username: formData.username.trim().replace(/\s/g, ""),
-      newsLetter: formData.newsLetter
-    });
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || { message: "Signup failed" };
-  }
+  const response = await axios.post(BASE_URL + '/api/signup', {
+    email: formData.email.toLowerCase(),
+    password: formData.password,
+    name: formData.name,
+    dob: formData.dob,
+    username: formData.username.trim().replace(/\s/g, ""),
+    newsLetter: formData.newsLetter
+  });
+  return response.data;
 };
 
 export const verifyEmail = async (code) => {

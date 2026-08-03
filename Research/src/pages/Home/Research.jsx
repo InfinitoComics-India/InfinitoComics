@@ -1,19 +1,17 @@
-// ResearchPlans.jsx
 import React from "react";
-import FAQSection from "./FAQSection"; // Adjust the path if needed
+import FAQSection from "./FAQSection";
 import "./Research.css";
-import ResearchCards from "./ResearchCards";
 
 
 const ResearchPlans = () => {
 
   const cardImages = [
-    "/img1.jpg",
-    "/img2.jpg",
-    "/img3.jpg",
-    "/img4.jpg",
-    "/img5.jpg",
-    "/img6.jpg",
+    "../../../assets/Images/ResearchPaper/ResearchImg.png",
+    "../../../assets/Images/ResearchPaper/InfinitoImg.png",
+    "../../../assets/Images/ExclusiveContent.jpg",
+    "../../../assets/Images/research/research+.png",
+    "../../../assets/Images/bgImage.png",
+    "../../../assets/Images/LoginBackground.jpg",
   ];
 
   return (
@@ -60,11 +58,7 @@ const ResearchPlans = () => {
   </div>
 </div>
 
-      <div>
-        <ResearchCards/>
-      </div>
-
-      {/* Main Content */}
+{/* Main Content */}
       <div className="min-h-screen bg-white py-15 px-4 md:px-10 text-center">
         <h2 className="text-4xl font-semibold text-black">
           Over <span className="text-red-600 font-bold">50+</span> Papers Across Major Fields

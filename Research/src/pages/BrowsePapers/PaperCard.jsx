@@ -15,7 +15,7 @@ const PaperCard = ({ paper }) => {
       <p className="text-[#DD2626] mb-1 text-lg">{paper.journalName}</p>
       <p className="text-sm mb-2">
         {paper.authors && Array.isArray(paper.authors)
-          ? paper.authors.join(', ')
+          ? paper.authors.map(a => typeof a === 'string' ? a : (a?.name || '')).filter(Boolean).join(', ')
           : paper.authors}
       </p>
       <p className="text-sm text-[#000000] line-clamp-2 border-[#BAB7B7] border-l-4 pl-2 mt-4 whitespace-pre-wrap">

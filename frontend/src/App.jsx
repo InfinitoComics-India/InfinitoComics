@@ -27,6 +27,7 @@ import ErrorPage from './pages/ErrorForm/ErrorPage.jsx';
 import SignupStep3 from './pages/Signup/SignupStep3';
 import Cart from './pages/Cart/Cart';
 import Comic from './components/Comics/Comic.jsx'
+import ComicsPage from './pages/Comics/ComicsPage.jsx'
 import Characters from './pages/Characters/index.jsx'
 import Biography from './pages/biography/Index.jsx'
 import {Toaster} from 'react-hot-toast'  
@@ -130,14 +131,13 @@ function App() {
 
             <Route path="/createAvatar" element={<SignupStep3/>}/>
             <Route path="/cart" element={<Cart/>}/>
-            <Route path="/comics" element={<Comic/>}/>
+            <Route path="/comics" element={<ComicsPage/>}/>
             <Route path="/comicChap/:comicId/chapters" element={<ComicChap></ComicChap>}></Route>
             <Route path="/comicChap/:comicId/chapters/pdfView" element={<ComicChap></ComicChap>}></Route>
             <Route path="/privacy-policy" element={<PrivacyPolicy/>}/>
             <Route path='/games' element={<Games></Games>}></Route>
 
             <Route path="/characters" element={<Community/>} />
-            <Route path="/comics" element={<Community/>} />
             <Route path="/animation" element={<Community/>} />
             <Route path="/shop" element={<Community/>} />\
             <Route path="/children-privacy-policy" element={<ChildrensPrivacyPolicy/>}></Route>

@@ -1,105 +1,137 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { FiSearch, FiMenu, FiX } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
-import UserIcon from '../../../assets/Images/UserIcon.png';
+import { Heart, ShoppingBag } from 'lucide-react';
 import { useSelector } from 'react-redux';
-import { FOUNDATION_BASE_URL, FRONTEND_BASE_URL } from '../../../../frontend/src/utils/constants';
+import UserIcon from '../../../assets/Images/UserIcon.png';
+import { FRONTEND_BASE_URL, BACKEND_URL } from '../../utils/constants';
+
+const FOUNDATION_BASE_URL = 'http://localhost:3004';
 
 const Navbar = () => {
   const navigate = useNavigate();
   const user = useSelector((state) => state.user);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  useEffect(() => {}, [user]);
-
   return (
     <div className="text-white font-sans">
-      {/* Top Banner */}
-      <div className="bg-[#202020] text-white text-sm py-2 px-4 lg:px-32 border-b border-gray-500 flex justify-between items-center">
-        <div>
-          Use code <span className="font-bold">INFIN10</span> to get 10% off on our shop!
-        </div>
-        <div className="hidden lg:flex gap-20 pl-4">
-          <Link to={FRONTEND_BASE_URL + "/comics"} className="hover:underline">Comics</Link>
-          <a href={FOUNDATION_BASE_URL} target="_blank" rel="noopener noreferrer" className="hover:underline">
-            Foundation
-          </a>
-          <a href={FRONTEND_BASE_URL + "/support-us"} target="_blank" rel="noopener noreferrer" className="hover:underline">
-            Support Us
-          </a>
-          <a href={FRONTEND_BASE_URL + "/news"} target="_blank" rel="noopener noreferrer" className="hover:underline">
-            News and Blogs
-          </a>
-          {/* ✅ Browse tab added */}
-          <Link to="/browseResearch" className="hover:underline">Browse</Link>
+
+      {/* ── Top promo bar ── */}
+      <div className="border-b bg-[#202020] border-gray-600 text-sm py-4 flex flex-col md:flex-row items-center">
+        <div className="w-full max-w-[1200px] mx-auto px-12 flex justify-between items-center">
+          <div className="mb-2 md:mb-0 text-center">
+            Use code <strong>INFINT10</strong> to get 10% off on our shop!
+          </div>
+          <div className="hidden md:flex gap-10 text-[1rem] text-gray-300">
+            <a href={`${FRONTEND_BASE_URL}/news`} className="hover:text-white">Blogs &amp; News</a>
+            <a href={FOUNDATION_BASE_URL} target="_blank" rel="noopener noreferrer" className="hover:text-white">Foundation</a>
+            <Link to="/browseResearch" className="hover:text-white">Research</Link>
+            <Link to={`${FRONTEND_BASE_URL}/support-us`} className="hover:text-white flex items-center gap-1">
+              <Heart size={14} /> Support Us
+            </Link>
+          </div>
         </div>
       </div>
 
-      {/* Main Navbar */}
-      <div className="bg-[#202020] py-4 px-4 lg:px-32 flex items-center justify-between">
-        {/* ----------- Mobile Navbar ----------- */}
-        <div className="flex items-center justify-between w-full lg:hidden">
-          <button onClick={() => setMenuOpen(!menuOpen)} className="p-2 border border-white">
-            {menuOpen ? <FiX className="text-xl" /> : <FiMenu className="text-xl" />}
+      {/* ── Main bar: Login | Logo | Search ── */}
+      <div className="bg-[#202020] py-1">
+        <div className="w-full max-w-[1200px] mx-auto px-12 flex items-center justify-between gap-4">
+
+        {/* Mobile hamburger */}
+        <div className="md:hidden">
+          <button onClick={() => setMenuOpen(!menuOpen)}>
+            {menuOpen ? <FiX size={28} /> : <FiMenu size={28} />}
           </button>
-
-          <img
-            src="/assets/Images/research/researchLOGO.png"
-            alt="Infinito Logo"
-            className="h-8"
-          />
-
-          <div className="p-2 border border-white">
-            <FiSearch className="text-xl" />
-          </div>
         </div>
 
-        {/* ----------- Desktop Navbar ----------- */}
-        <div className="hidden lg:flex items-center justify-between w-full">
+        {/* Login / User */}
+        <div className="hidden cursor-pointer md:block">
           {user ? (
-            <div className="flex items-center gap-2 border border-white px-4 py-2 uppercase text-sm">
-              <img src={UserIcon} alt="User Icon" className="w-5 h-5" />
-              <span className="tracking-wide">Hi, {user?.name?.split(" ")[0] || "Guest"}!</span>
+            <div className="flex items-center gap-2 border border-white px-4 py-2 uppercase text-sm"
+              onClick={() => navigate(`${FRONTEND_BASE_URL}/dashboard`)}>
+              <img src={UserIcon} alt="User" className="w-5 h-5" />
+              <span className="tracking-wide">Hi, {user?.name?.split(' ')[0] || 'Guest'}!</span>
             </div>
           ) : (
             <button
-              className="border px-4 py-1 text-sm uppercase"
-              onClick={() => navigate('/login')}
+              className="border border-white px-6 py-3 uppercase text-md hover:bg-white hover:text-black transition tracking-wider"
+              onClick={() => window.open(`${FRONTEND_BASE_URL}/login`, '_self')}
             >
-              Log In | Sign Up &gt;
+              LOG IN | SIGN UP &gt;
             </button>
           )}
+        </div>
 
-          <div>
-            <img
-              src="/assets/Images/research/researchLOGO.png"
-              alt="Infinito-logo"
-              className="h-12 w-auto object-contain"
-            />
-          </div>
+        {/* INFINITO Logo — center */}
+        <a href={FRONTEND_BASE_URL}>
+          <img src="/Logo.png" alt="Infinito" className="h-12 w-auto object-contain" />
+        </a>
 
-          <div className="flex items-center gap-4">
-            <input
-              type="text"
-              placeholder="INFINITO ULTIMATE"
-              className="bg-white border border-white font-bold text-black placeholder-[#202020] px-6 py-2 w-64 focus:outline-none"
-            />
-            <div className="p-2 border-2 border-white cursor-pointer hover:bg-white hover:text-black transition">
-              <FiSearch className="text-white text-xl hover:text-black" />
-            </div>
-          </div>
+        {/* Search */}
+        <div className="flex items-center gap-4">
+          <input
+            type="search"
+            placeholder="INFINITO ULTIMATE >"
+            className="hidden md:block bg-white text-black px-6 py-3 text-xs sm:text-sm uppercase font-bold placeholder-black hover:bg-gray-200 transition tracking-widest w-full max-w-xs"
+          />
+          <button className="border border-white p-2.5 hover:bg-white hover:text-black transition">
+            <FiSearch size={24} />
+          </button>
+        </div>
         </div>
       </div>
 
-      {/* Mobile Dropdown Menu */}
+      {/* ── Bottom nav (desktop) ── */}
+      <div className="hidden md:block bg-[#171717] text-sm text-gray-300 py-3">
+        <div className="w-full max-w-[1200px] mx-auto px-12">
+        <ul className="flex flex-wrap justify-center gap-4 items-center">
+          <li>
+            <a href={`${FRONTEND_BASE_URL}/characters`} className="uppercase tracking-wider font-semibold hover:text-white cursor-pointer">Characters</a>
+          </li>
+          <li>
+            <a href={`${FRONTEND_BASE_URL}/comics`} className="uppercase tracking-wider font-semibold hover:text-white cursor-pointer border-l border-gray-600 px-3">Comics</a>
+          </li>
+          <li>
+            <a href={`${FRONTEND_BASE_URL}/animation`} className="uppercase tracking-wider font-semibold hover:text-white cursor-pointer border-l border-gray-600 px-3">Animation</a>
+          </li>
+          <li>
+            <a href={`${FRONTEND_BASE_URL}/games`} className="uppercase tracking-wider font-semibold hover:text-white cursor-pointer border-l border-gray-600 px-3">Games</a>
+          </li>
+          <li>
+            <a href={`${FRONTEND_BASE_URL}/community`} className="uppercase tracking-wider font-semibold hover:text-white cursor-pointer border-l border-gray-600 px-3">Community</a>
+          </li>
+          <li>
+            <a href={`${FRONTEND_BASE_URL}/aboutUS`} className="uppercase tracking-wider font-semibold hover:text-white cursor-pointer border-l border-gray-600 px-3">About Us</a>
+          </li>
+          <li>
+            <a href="https://www.infinitostyle.com/" target="_blank" rel="noopener noreferrer"
+              className="uppercase tracking-wider font-semibold hover:text-white cursor-pointer border-l border-gray-600 px-3 flex items-center gap-2">
+              <ShoppingBag size={16} /> SHOP
+            </a>
+          </li>
+        </ul>
+        </div>
+      </div>
+
+      {/* ── Mobile dropdown ── */}
       {menuOpen && (
-        <div className="bg-[#202020] px-4 pb-4 lg:hidden space-y-2">
-          <Link to="/shop" className="block text-sm hover:underline" onClick={() => setMenuOpen(false)}>Shop</Link>
-          <Link to="/foundation" className="block text-sm hover:underline" onClick={() => setMenuOpen(false)}>Foundation</Link>
-          <Link to="/researchPlans" className="block text-sm hover:underline" onClick={() => setMenuOpen(false)}>Research</Link>
-          <Link to="/funding" className="block text-sm hover:underline" onClick={() => setMenuOpen(false)}>Funding</Link>
-          {/* ✅ Browse tab added */}
-          <Link to="/browseResearch" className="block text-sm hover:underline" onClick={() => setMenuOpen(false)}>Browse</Link>
+        <div className="md:hidden bg-[#171717] text-sm text-gray-300 px-4 py-6 space-y-4">
+          <a href={`${FRONTEND_BASE_URL}/characters`} className="block font-bold hover:text-white">Characters</a>
+          <a href={`${FRONTEND_BASE_URL}/comics`} className="block font-bold hover:text-white">Comics</a>
+          <a href={`${FRONTEND_BASE_URL}/animation`} className="block font-bold hover:text-white">Animation</a>
+          <a href={`${FRONTEND_BASE_URL}/games`} className="block font-bold hover:text-white">Games</a>
+          <a href={`${FRONTEND_BASE_URL}/community`} className="block font-bold hover:text-white">Community</a>
+          <a href={`${FRONTEND_BASE_URL}/aboutUS`} className="block font-bold hover:text-white">About Us</a>
+          <a href="https://www.infinitostyle.com/" target="_blank" rel="noopener noreferrer"
+            className="block font-bold hover:text-white flex items-center gap-2"><ShoppingBag size={14} /> SHOP</a>
+          <Link to="/browseResearch" className="block font-bold hover:text-white">Research</Link>
+          <a href={`${FRONTEND_BASE_URL}/news`} className="block font-bold hover:text-white">Blogs &amp; News</a>
+          {!user && (
+            <button className="w-full border border-white px-6 py-3 uppercase text-md hover:bg-white hover:text-black transition tracking-wider"
+              onClick={() => window.open(`${FRONTEND_BASE_URL}/login`, '_self')}>
+              Log In | Sign Up &gt;
+            </button>
+          )}
         </div>
       )}
     </div>
