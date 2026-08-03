@@ -118,7 +118,10 @@ const SignupStep2 = ({ formData, handleChange, onNext, onBack }) => {
       
     } catch (err) {
       const backendMessage =
-        err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Something went wrong.';
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        'Something went wrong.';
       toast.error(backendMessage);
     } finally {
       setIsSubmitting(false);

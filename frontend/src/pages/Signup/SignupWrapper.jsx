@@ -62,7 +62,7 @@ const SignupWrapper = () => {
             onBack={prevStep}
           />
         );
-      case 3:
+      case 5:
         return <SignupStep5 onBack={prevStep} />;
       default:
         return null;

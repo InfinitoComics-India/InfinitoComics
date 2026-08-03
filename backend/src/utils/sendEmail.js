@@ -1,18 +1,23 @@
 import nodemailer from "nodemailer"
 import config from "../config/server-config.js"
+const port = Number(config.SMTP_PORT) || 465;
 const transporter = nodemailer.createTransport({
-  host: config.SMTP_SERVER,  
-  port: Number(config.SMTP_PORT) || 465, 
-  secure: Number(config.SMTP_PORT) === 465, // true for 465, false for 587
+  host: config.SMTP_SERVER,
+  port,
+  secure: port === 465,   // true for 465 (SSL), false for 587 (STARTTLS)
   auth: {
     user: config.EMAIL_ID,
     pass: config.EMAIL_PASS
+  },
+  tls: {
+    rejectUnauthorized: false  // avoids self-signed cert errors in dev
   }
 });
 
 export const sendEmail = async (to, subject, text) => {
   if (!config.EMAIL_PASS) {
-    console.warn('Email not configured - skipping email to:', to);
+    console.warn('⚠️  EMAIL_PASS not set - skipping email to:', to);
+    console.warn('   Set EMAIL_ID and EMAIL_PASS in backend/.env to enable emails.');
     return;
   }
   try {
@@ -22,9 +27,9 @@ export const sendEmail = async (to, subject, text) => {
       subject,
       text
     });
-    console.log('Email sent successfully');
+    console.log('✅ Email sent to:', to);
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('❌ Error sending email:', error.message);
   }
 };
 
