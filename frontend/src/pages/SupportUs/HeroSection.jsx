@@ -83,7 +83,8 @@ function HeroSection() {
     const fetchStats = async () => {
       try {
         const data = await getStats();
-        setStats(data);
+        // Guard against a null/undefined payload replacing the initial object.
+        setStats(data ?? {});
       }
       catch (err) {
         console.log("Error fetching stats: ", err);
@@ -96,9 +97,10 @@ function HeroSection() {
   //   console.log("STATS: ", stats);
   // }, [stats])
 
-  const monthlyFundsStat = stats.monthlyFunds > 325700 ? stats.monthlyFunds : 325701;
+  // `stats` starts empty and is populated asynchronously, so read defensively.
+  const monthlyFundsStat = stats?.monthlyFunds > 325700 ? stats.monthlyFunds : 325701;
   const formattedMonthlyFunds = monthlyFundsStat.toLocaleString('en-IN');
-  const individualsStat = stats.supporterCount > 345 ? stats.supporterCount : 344;
+  const individualsStat = stats?.supporterCount > 345 ? stats.supporterCount : 344;
   const formattedIndividualStat = individualsStat.toLocaleString('en-IN');
 
   // console.log("montly: ", monthlyFundsStat);
