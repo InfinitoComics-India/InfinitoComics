@@ -14,7 +14,7 @@ const NewsDetails = () => {
     const fetchBlog = async () => {
       try {
         const blog = await getBlogsById(id);
-        setSelectedNews(blog.data);
+        setSelectedNews(blog && blog.data ? blog.data : null);
       } catch (error) {
         console.error("Failed to fetch blog:", error.message);
       }
@@ -64,7 +64,7 @@ const NewsDetails = () => {
         <div className="flex flex-col lg:flex-row pt-6">
           {/* Left content */}
           <div className="flex-1 w-full lg:w-4/7 lg:pr-10">
-            {selectedNews.news?.map((item, idx) => (
+            {Array.isArray(selectedNews.news) && selectedNews.news.map((item, idx) => (
               <div key={idx} className="mb-8">
                 {item.imageUrl && (
                   <img
