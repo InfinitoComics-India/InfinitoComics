@@ -1,9 +1,8 @@
 import React, { useEffect }  from 'react'
 import HeroSection from './HeroSection.jsx'
-import FundsDistribution from './FundsDistribution'
+import FundDistributionChart from './FundDistributionChart.jsx'
 import Credits from './Credits'
 import DonationUtilization from './DonationUtilization'
-import Contributors from './Contributors.jsx'
 function Index() {
     //scroll to top feature
     useEffect(() => {
@@ -12,8 +11,7 @@ function Index() {
   return (
     <>
         <HeroSection />
-        <FundsDistribution/>
-        <Contributors/>
+        <FundDistributionChart/>
         {/* <Credits/> */}
         <DonationUtilization/>
     </>
