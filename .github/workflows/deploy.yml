@@ -1,0 +1,38 @@
+name: Build and Deploy to Hostinger
+
+on:
+  push:
+    branches:
+      - main # Change this to your main branch name (e.g. master/main)
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Get the code
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      # Step 3: Install dependencies and Build
+      - name: Install and Build
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
+      # Step 4: Deploy the built "dist" folder to Hostinger via FTP
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./frontend/dist/
+          server-dir: /public_html/
