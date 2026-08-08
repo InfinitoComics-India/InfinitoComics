@@ -69,11 +69,12 @@ const Navbar = () => {
 
         {/* Search */}
         <div className="flex items-center gap-4">
-          <input
-            type="search"
-            placeholder="INFINITO ULTIMATE >"
-            className="hidden md:block bg-white text-black px-6 py-3 text-xs sm:text-sm uppercase font-bold placeholder-black hover:bg-gray-200 transition tracking-widest w-full max-w-xs"
-          />
+          <button
+            onClick={() => window.open(`${FRONTEND_BASE_URL}/ultimate`, "_self")}
+            className="hidden md:block bg-white text-black px-6 py-3 text-xs sm:text-sm uppercase font-bold hover:bg-gray-200 transition tracking-widest w-full max-w-xs"
+          >
+            INFINITO ULTIMATE &gt;
+          </button>
           <button className="border border-white p-2.5 hover:bg-white hover:text-black transition">
             <FiSearch size={24} />
           </button>
