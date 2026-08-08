@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 import axios from 'axios'
 
+
 // Global response interceptor to catch fallback HTML (like index.html) 
 // when the API server/backend is down or not connected.
 axios.interceptors.response.use(
