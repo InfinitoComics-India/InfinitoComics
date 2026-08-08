@@ -9,6 +9,8 @@ import {
 import logo from '../../../assets/Logo (1).png'; 
 import smallLogo from '../../../assets/Images/foot.png';
 
+const FRONTEND_URL = import.meta.env.VITE_FRONTEND_BASE_URL || 'https://infinitohq.com';
+
 const socialLinks = [
   { icon: FaTwitter, url: 'https://x.com/InfinitoHQ' },
   { icon: FaYoutube, url: 'https://www.youtube.com/@InfinitoHQ' },
@@ -44,8 +46,22 @@ const Footer = () => {
         <div className="flex flex-wrap gap-6 text-sm">
           <div className="flex flex-col space-y-4">
             <span className="font-bold">BLOGS & NEWS</span>
-            <span>CAREER</span>
-            <span>INTERNSHIP</span>
+            <a
+              href={`${FRONTEND_URL}/careers`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-red-400 transition-colors cursor-pointer"
+            >
+              CAREER
+            </a>
+            <a
+              href={`${FRONTEND_URL}/careers`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-red-400 transition-colors cursor-pointer"
+            >
+              INTERNSHIP
+            </a>
           </div>
           <div className="flex flex-col space-y-4">
             <span className="font-bold">FOUNDATION</span>

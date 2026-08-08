@@ -1,5 +1,11 @@
+import bannerImg from '../../../assets/Images/career/banner.png';
+import careerImg1 from '../../../assets/Images/career/imaginationImg2.png';
+import careerImg2 from '../../../assets/Images/career/imginationImg1.png';
+import infinitoBanner from '../../../assets/Images/career/infinitoBanner.png';
+
 export default {
-    BANNER_URL: 'https://infinito-comics.s3.ap-south-1.amazonaws.com/1754231012005-banner.png',
-    CAREER_IMAGE_1: 'https://infinito-comics.s3.ap-south-1.amazonaws.com/1754231257435-imaginationImg2.png',
-    CAREER_IMAGE_2: 'https://infinito-comics.s3.ap-south-1.amazonaws.com/1754231317051-imginationImg1.png'
-}
+    BANNER_URL: bannerImg,
+    CAREER_IMAGE_1: careerImg1,
+    CAREER_IMAGE_2: careerImg2,
+    INFINITO_BANNER: infinitoBanner,
+};
