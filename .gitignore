@@ -13,6 +13,8 @@ dist/
 build/
 **/dist/
 **/build/
+dist.zip
+**/dist.zip
 
 # Logs
 *.log

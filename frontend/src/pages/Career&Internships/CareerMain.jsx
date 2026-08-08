@@ -1,22 +1,24 @@
-import React, {useEffect} from 'react'
+import React, { useEffect } from 'react'
 import WorkWIthUs from './WorkWIthUs'
 import CareerOpportunities from './CareerOpportunities'
 import Hiring from './Hiring'
 import InfinitoHiring from './InfinitoHiring'
 import ImaginationsLeads from './ImaginationsLeads'
+import ValuesTabs from './ValuesTabs'
+
 const CareerMain = () => {
-  //scroll to top feature
-      useEffect(() => {
-      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-    }, []); // empty dependency array to run only once on mount
-    
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+  }, []);
+
   return (
     <>
       <WorkWIthUs />
       <CareerOpportunities />
-      <Hiring/>
+      <Hiring />
       <InfinitoHiring />
       <ImaginationsLeads />
+      <ValuesTabs />
     </>
   )
 }
