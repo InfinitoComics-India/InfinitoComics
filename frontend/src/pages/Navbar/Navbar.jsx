@@ -80,7 +80,7 @@ const Header = () => {
               </div>
             ) : (
               <button
-                className="border border-white px-6 py-3 uppercase text-md hover:bg-white hover:text-black transition tracking-wider"
+                className="border border-white px-5 py-2 uppercase text-sm hover:bg-white hover:text-black transition tracking-wider"
                 onClick={() => navigate("/login")}
               >
                 LOG IN | SIGN UP &gt;
@@ -95,15 +95,16 @@ const Header = () => {
             </div>
           </Link>
 
-          {/* Search */}
-          <div className="flex items-center gap-4">
-            <input
-              type="search"
-              placeholder="INFINITO ULTIMATE >"
-              className="hidden md:block bg-white text-black px-6 py-3 text-xs sm:text-sm uppercase font-bold placeholder-black hover:bg-gray-200 transition tracking-widest w-full max-w-xs"
-            />
-            <button className="border border-white p-2.5 hover:bg-white hover:text-black transition">
-              <FiSearch size={24} />
+          {/* Right: Infinito Ultimate + Search */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/ultimate")}
+              className="hidden md:block bg-white text-black px-5 py-2 text-sm uppercase font-bold hover:bg-gray-200 transition tracking-widest"
+            >
+              INFINITO ULTIMATE &gt;
+            </button>
+            <button className="border border-white p-2 hover:bg-white hover:text-black transition">
+              <FiSearch size={20} />
             </button>
           </div>
         </div>
