@@ -3,6 +3,8 @@ import HeroSection from './HeroSection.jsx'
 import FundDistributionChart from './FundDistributionChart.jsx'
 import Credits from './Credits'
 import DonationUtilization from './DonationUtilization'
+import Contributors from './Contributors'
+
 function Index() {
     //scroll to top feature
     useEffect(() => {
@@ -12,6 +14,7 @@ function Index() {
     <>
         <HeroSection />
         <FundDistributionChart/>
+        <Contributors />
         {/* <Credits/> */}
         <DonationUtilization/>
     </>
