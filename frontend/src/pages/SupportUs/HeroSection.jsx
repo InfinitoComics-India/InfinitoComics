@@ -110,10 +110,13 @@ function HeroSection() {
     <div className="flex justify-center items-center">
       <div className="w-full h-full text-gray-800">
         <div
-          className="bg-cover bg-center text-white py-10 px-4 md:px-10"
+          className="bg-cover bg-center text-white py-10"
           style={{ backgroundImage: `url(${bgImage})` }}
         >
-          <div className="flex flex-col lg:flex-row justify-between items-center gap-10 w-full max-w-7xl mx-auto">
+          {/* Same 1200px container as the rest of the page (gutters inside the
+              max-width, so hero content lines up with the sections below).
+              The background band itself stays full-bleed. */}
+          <div className="flex flex-col lg:flex-row justify-between items-center gap-10 w-full max-w-[1200px] mx-auto px-6 lg:px-12">
 
             {/* Left Section */}
             <div className="w-full lg:w-1/2 font-bebas text-start">
@@ -139,7 +142,7 @@ function HeroSection() {
                 Every support counts towards making this universe a better place and keeping this story alive!
               </p>
               <p className="cursor-pointer text-sm sm:text-md">
-                Become a <span className='underline'>Corporate Member.</span>
+                {/* Become a <span className='underline'>Corporate Member.</span> */}
               </p>
             </div>
 

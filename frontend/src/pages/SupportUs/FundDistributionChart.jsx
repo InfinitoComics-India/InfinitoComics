@@ -19,11 +19,16 @@ import { donutSegmentPath, arcMidPoint, formatIndian } from '../../utils/donutAr
 // outside R_OUTER have room to render without being clipped at the edge.
 const R_OUTER = 140;
 const R_INNER = 100;
-const LABEL_R = R_OUTER + 20;      // sub-arc % labels
-const CAT_LABEL_R = R_OUTER + 26;  // category % labels
-const LABEL_ROOM = 34;             // slack for the width of the label text
+// An expanded category grows outward, so its band reads as thicker than the
+// collapsed ones. The inner edge stays put so the ring keeps a clean hole.
+const EXPAND_THICKNESS = 26;
+const R_OUTER_EXPANDED = R_OUTER + EXPAND_THICKNESS;
 
-const SIZE = (CAT_LABEL_R + LABEL_ROOM) * 2; // = 400
+const LABEL_R = R_OUTER_EXPANDED + 18; // sub-arc % labels, clear of the thicker band
+const CAT_LABEL_R = R_OUTER + 26;      // category % labels (only shown collapsed)
+const LABEL_ROOM = 34;                 // slack for the width of the label text
+
+const SIZE = (Math.max(LABEL_R, CAT_LABEL_R) + LABEL_ROOM) * 2; // = 436
 const CX = SIZE / 2;
 const CY = SIZE / 2;
 const GAP_DEG = 2.5;       // gap between sub-arcs when expanded
@@ -55,7 +60,10 @@ function SubArc({
     const usable = Math.max(sweep - gaps, 0);
     const start = segStart + (usable * weightBefore) / totalWeight + index * GAP_DEG * t;
     const end = start + (usable * weight) / totalWeight;
-    return donutSegmentPath(CX, CY, R_INNER, R_OUTER, start, end);
+    // Grow outward as the category opens, so the expanded band reads thicker
+    // than its collapsed neighbours. The inner edge is untouched.
+    const rOuter = R_OUTER + EXPAND_THICKNESS * t;
+    return donutSegmentPath(CX, CY, R_INNER, rOuter, start, end);
   });
 
   const fill = useTransform(morph, [0, 1], [parentColor, subColor]);
@@ -317,8 +325,10 @@ function FundDistributionChart() {
 
   return (
     <div className="flex justify-center items-center">
-      <div className="w-11/12 lg:w-2/3 bg-white text-gray-800">
-        <div className="w-full pt-16 font-sans">
+      {/* Matches the site-wide container: 1200px max with 3rem side gutters */}
+      <div className="w-full max-w-[1200px] mx-auto px-6 lg:px-12 bg-white text-gray-800">
+        {/* pb keeps the legend clear of the next section's heading */}
+        <div className="w-full pt-16 pb-24 lg:pb-32 font-sans">
           <h2 className="text-start text-2xl md:text-[1.9rem] font-bold mb-6">
             HOW WE DISTRIBUTE OUR FUNDS
           </h2>
