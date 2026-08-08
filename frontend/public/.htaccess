@@ -1,6 +1,12 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
+
+  # Do not apply main site rewrites to subdomains
+  RewriteCond %{HTTP_HOST} ^admin\.infinitohq\.com$ [NC,OR]
+  RewriteCond %{HTTP_HOST} ^research\.infinitohq\.com$ [NC]
+  RewriteRule ^ - [L]
+
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
