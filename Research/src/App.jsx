@@ -47,7 +47,7 @@ useEffect(() => {
   
   return (
 
-   <BrowserRouter basename="/" >
+   <BrowserRouter basename="/research" >
     <Routes>
       <Route path="/" element={<Body/>} >
       <Route path="/" element={<Home/>} />

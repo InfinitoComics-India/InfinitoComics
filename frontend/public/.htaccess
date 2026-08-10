@@ -1,6 +1,10 @@
 Options -MultiViews
 RewriteEngine On
 
+# Redirect careers subdomain to /careers route
+RewriteCond %{HTTP_HOST} ^careers\.infinitohq\.com$ [NC]
+RewriteRule ^(.*)$ https://infinitohq.com/careers/$1 [R=301,L]
+
 # React Router for admin subfolder
 RewriteCond %{REQUEST_URI} ^/admin
 RewriteCond %{REQUEST_FILENAME} !-f
