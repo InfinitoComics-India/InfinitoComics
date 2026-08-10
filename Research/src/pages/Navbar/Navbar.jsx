@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Heart, ShoppingBag } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import UserIcon from '../../../assets/Images/UserIcon.png';
+import Logo from '../../../assets/Logo.png';
 import { FRONTEND_BASE_URL, BACKEND_URL } from '../../utils/constants';
 
 const FOUNDATION_BASE_URL = 'http://localhost:3004';
@@ -64,7 +65,7 @@ const Navbar = () => {
 
         {/* INFINITO Logo — center */}
         <a href={FRONTEND_BASE_URL}>
-          <img src="/Logo.png" alt="Infinito" className="h-12 w-auto object-contain" />
+          <img src={Logo} alt="Infinito" className="h-12 w-auto object-contain" />
         </a>
 
         {/* Search */}
