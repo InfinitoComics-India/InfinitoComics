@@ -35,8 +35,6 @@ const Navbar = () => {
             </a>
             <a
               href={`${RESEARCH_BASE_URL}/browseResearch`}
-              target="_blank"
-              rel="noopener noreferrer"
               className="hover:text-white"
             >
               Research
@@ -197,8 +195,6 @@ const Navbar = () => {
           </a>
           <a
             href={`${RESEARCH_BASE_URL}/browseResearch`}
-            target="_blank"
-            rel="noopener noreferrer"
             className="block font-bold hover:text-white"
           >
             Research
