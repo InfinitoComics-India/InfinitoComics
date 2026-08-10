@@ -52,9 +52,9 @@ const Footer = () => {
                 {" "}
                 <span className="">BLOGS & NEWS</span>
               </Link>
-              <Link to="/careers">
+              <a href="https://careers.infinitohq.com" target="_blank" rel="noopener noreferrer">
                 <span>CAREER</span>
-              </Link>
+              </a>
               <Link to="/comics">
                 <span>COMICS</span>
               </Link>
@@ -133,7 +133,7 @@ const Footer = () => {
           <div className="mt-8 grid grid-cols-2 gap-y-4 px-5 pr-2 gap-x-12 text-sm font-medium text-left">
             <Link to="/news">BLOGS & NEWS</Link>
             <Link to={FOUNDATION_BASE_URL}><span className="font">FOUNDATION</span></Link> 
-            <Link to="/careers">CAREER</Link>
+            <a href="https://careers.infinitohq.com" target="_blank" rel="noopener noreferrer">CAREER</a>
              <Link to={RESEARCH_BASE_URL} > <span>RESEARCH</span></Link>
             <span>INTERNSHIP</span>
             <Link to="/support-us">SUPPORT US</Link>

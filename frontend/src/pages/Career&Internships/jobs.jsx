@@ -1,15 +1,226 @@
-import React from "react";
+import React, { useState } from "react";
 import logo from "../../../assets/Logo.png";
 import { useLocation, useNavigate } from "react-router-dom";
-import { MapPin, Clock, Briefcase, Globe, ArrowLeft } from "lucide-react";
+import { MapPin, Clock, Briefcase, Globe, ArrowLeft, X, Upload, CheckCircle } from "lucide-react";
 import careerUrls from "../../utils/imagesUrls/carrerUrls.js";
 
+// ── Application Modal ──────────────────────────────────────────────
+const ApplyModal = ({ job, onClose }) => {
+  const [form, setForm] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    linkedin: "",
+    portfolio: "",
+    coverLetter: "",
+    resume: null,
+  });
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [fileName, setFileName] = useState("");
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleFile = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setForm({ ...form, resume: file });
+      setFileName(file.name);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    // Simulate submission — replace with real API call when backend is ready
+    await new Promise((r) => setTimeout(r, 1500));
+    setSubmitting(false);
+    setSubmitted(true);
+  };
+
+  // Prevent background scroll when modal is open
+  React.useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+      <div className="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Apply for {job.title}</h2>
+            <p className="text-sm text-gray-500 mt-0.5">{job.department} · {job.jobType}</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <X size={20} className="text-gray-500" />
+          </button>
+        </div>
+
+        {submitted ? (
+          /* Success state */
+          <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+            <CheckCircle size={56} className="text-green-500 mb-4" />
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Application Submitted!</h3>
+            <p className="text-gray-600 mb-2">
+              Thank you for applying for <strong>{job.title}</strong> at Infinito Comics.
+            </p>
+            <p className="text-gray-500 text-sm mb-8">
+              We'll review your application and get back to you within 5–7 business days.
+            </p>
+            <button
+              onClick={onClose}
+              className="py-3 px-8 bg-[#dd1215] text-white text-sm tracking-widest hover:bg-red-700 transition-colors"
+            >
+              CLOSE
+            </button>
+          </div>
+        ) : (
+          /* Form */
+          <form onSubmit={handleSubmit} className="px-6 py-6 space-y-5">
+
+            {/* Full Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Full Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="fullName"
+                value={form.fullName}
+                onChange={handleChange}
+                required
+                placeholder="Your full name"
+                className="w-full border border-gray-300 px-4 py-2.5 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              />
+            </div>
+
+            {/* Email + Phone */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  required
+                  placeholder="you@email.com"
+                  className="w-full border border-gray-300 px-4 py-2.5 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={form.phone}
+                  onChange={handleChange}
+                  placeholder="+91 98765 43210"
+                  className="w-full border border-gray-300 px-4 py-2.5 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+              </div>
+            </div>
+
+            {/* LinkedIn + Portfolio */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn URL</label>
+                <input
+                  type="url"
+                  name="linkedin"
+                  value={form.linkedin}
+                  onChange={handleChange}
+                  placeholder="linkedin.com/in/yourprofile"
+                  className="w-full border border-gray-300 px-4 py-2.5 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Portfolio / Website</label>
+                <input
+                  type="url"
+                  name="portfolio"
+                  value={form.portfolio}
+                  onChange={handleChange}
+                  placeholder="yourportfolio.com"
+                  className="w-full border border-gray-300 px-4 py-2.5 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+              </div>
+            </div>
+
+            {/* Resume Upload */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Resume / CV <span className="text-red-500">*</span>
+              </label>
+              <label className="flex items-center gap-3 border-2 border-dashed border-gray-300 rounded-md px-4 py-4 cursor-pointer hover:border-red-400 transition-colors">
+                <Upload size={20} className="text-gray-400 shrink-0" />
+                <div>
+                  <p className="text-sm text-gray-600">
+                    {fileName ? fileName : "Click to upload PDF, DOC, or DOCX"}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">Max 5 MB</p>
+                </div>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  onChange={handleFile}
+                  required
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            {/* Cover Letter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Cover Letter <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <textarea
+                name="coverLetter"
+                value={form.coverLetter}
+                onChange={handleChange}
+                rows={4}
+                placeholder="Tell us why you're a great fit for this role..."
+                className="w-full border border-gray-300 px-4 py-2.5 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+              />
+            </div>
+
+            {/* Submit */}
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={submitting}
+                className={`w-full py-3 text-white text-sm tracking-[3px] uppercase transition-colors ${
+                  submitting ? "bg-red-300 cursor-not-allowed" : "bg-[#dd1215] hover:bg-red-700"
+                }`}
+              >
+                {submitting ? "SUBMITTING..." : "SUBMIT APPLICATION"}
+              </button>
+              <p className="text-xs text-gray-400 text-center mt-3">
+                By submitting, you agree to our Privacy Policy and consent to Infinito Comics storing your data for recruitment purposes.
+              </p>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ── Main Page ──────────────────────────────────────────────────────
 const Jobs = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { job } = location.state || {};
+  const [showApply, setShowApply] = useState(false);
 
-  // Guard: if user lands here without a job in state, send them back to careers
   if (!job) {
     return (
       <div className="min-h-screen bg-[#f3f3f3] flex flex-col items-center justify-center gap-6 px-4">
@@ -26,7 +237,6 @@ const Jobs = () => {
     );
   }
 
-  // Format the posted date cleanly
   const formatDate = (rawDate) => {
     if (!rawDate) return "Posted date not available";
     const dateObj = new Date(rawDate);
@@ -41,6 +251,8 @@ const Jobs = () => {
 
   return (
     <>
+      {showApply && <ApplyModal job={job} onClose={() => setShowApply(false)} />}
+
       {/* Hero Banner */}
       <div
         className="flex justify-start items-center w-full h-72 sm:h-80 bg-cover bg-center bg-no-repeat"
@@ -73,14 +285,15 @@ const Jobs = () => {
               {/* Title + Apply */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                    {job.title}
-                  </h1>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{job.title}</h1>
                   <span className="inline-block mt-2 px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full">
                     {job.department}
                   </span>
                 </div>
-                <button className="self-start sm:self-auto py-2 px-5 sm:py-3 sm:px-7 bg-[#dd1215] text-white text-xs sm:text-sm tracking-[3px] hover:bg-red-700 transition-colors whitespace-nowrap">
+                <button
+                  onClick={() => setShowApply(true)}
+                  className="self-start sm:self-auto py-2 px-5 sm:py-3 sm:px-7 bg-[#dd1215] text-white text-xs sm:text-sm tracking-[3px] hover:bg-red-700 transition-colors whitespace-nowrap"
+                >
                   APPLY &gt;
                 </button>
               </div>
@@ -110,9 +323,7 @@ const Jobs = () => {
               {/* Job Details */}
               <div>
                 <h2 className="text-blue-800 font-bold text-lg mt-4 mb-1">Job Details</h2>
-                <p className="text-base text-gray-700 leading-relaxed">
-                  {job.description}
-                </p>
+                <p className="text-base text-gray-700 leading-relaxed">{job.description}</p>
               </div>
 
               {/* Tasks */}
@@ -141,7 +352,10 @@ const Jobs = () => {
 
               {/* Bottom Apply */}
               <div className="mt-6 pt-4 border-t border-gray-100">
-                <button className="py-3 px-8 bg-[#dd1215] text-white text-sm tracking-[3px] hover:bg-red-700 transition-colors">
+                <button
+                  onClick={() => setShowApply(true)}
+                  className="py-3 px-8 bg-[#dd1215] text-white text-sm tracking-[3px] hover:bg-red-700 transition-colors"
+                >
                   APPLY &gt;
                 </button>
               </div>
@@ -162,8 +376,6 @@ const Jobs = () => {
             <p className="text-sm text-gray-700 font-semibold leading-relaxed">
               Discover our passion, expertise, and mission to revolutionise the world of AVGC–XR!
             </p>
-
-            {/* Quick job snapshot */}
             <div className="mt-6 pt-4 border-t border-gray-100 space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Role</span>
@@ -182,6 +394,12 @@ const Jobs = () => {
                 <span className="font-medium text-gray-800">{job.positions}</span>
               </div>
             </div>
+            <button
+              onClick={() => setShowApply(true)}
+              className="mt-6 w-full py-3 bg-[#dd1215] text-white text-sm tracking-[3px] hover:bg-red-700 transition-colors"
+            >
+              APPLY NOW &gt;
+            </button>
           </div>
 
         </div>
