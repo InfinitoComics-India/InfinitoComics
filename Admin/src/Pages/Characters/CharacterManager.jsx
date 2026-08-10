@@ -239,6 +239,7 @@ const CharacterManager = () => {
       try {
         const res = await createCharacter(formData);
         await fetchCharacters();
+        toast.success('Character created successfully!');
       } catch (error) {
         console.error('Error creating character:', error);
         const newCharacter = { ...cleanCharacter, _id: newId };

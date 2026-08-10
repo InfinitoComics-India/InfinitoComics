@@ -27,6 +27,7 @@ import AboutUs from './pages/aboutUs/index.jsx'
 import ErrorPage from './pages/ErrorForm/ErrorPage.jsx';
 import SignupStep3 from './pages/Signup/SignupStep3';
 import Cart from './pages/Cart/Cart';
+
 import ComicsPage from './pages/Comics/ComicsPage.jsx'
 import Characters from './pages/Characters/index.jsx'
 import Biography from './pages/biography/Index.jsx'

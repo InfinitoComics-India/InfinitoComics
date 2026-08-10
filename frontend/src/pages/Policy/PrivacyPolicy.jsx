@@ -3,7 +3,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import PrivacyPolicyPDF from "../../../public/privacypolicy.pdf";
+
+// Files in `public/` are served from the site root, so reference them by URL
+// instead of importing them as modules.
+const PrivacyPolicyPDF = "/privacypolicy.pdf";
 
 
 const Section = ({ title, icon, children }) => (

@@ -112,7 +112,8 @@ const deleteBlog = async (req, res) => {
 
 const getLatestBlogs = async (req, res) => {
   try {
-    const latestBlogs = await blogservice.getLatest(req.body); // fetch latest 5
+    const limit = parseInt(req.query.limit || req.body?.limit) || 5;
+    const latestBlogs = await blogservice.getLatest(limit); // fetch latest
     return res.status(200).json({
       success: true,
       message: "Fetched latest blogs",
@@ -143,18 +144,6 @@ const getICBlogs = async (req, res) => {
     res.status(500).json({ message: "Error fetching IC blogs" });
   }
 }
-
-const getBlogsById = async (req, res) => {
-  try {
-    const blog = await blogservice.findById(req.params.id);
-    if (!blog) return res.status(404).json({ message: "Blog not found" });
-    res.status(200).json(blog);
-  } catch (error) {
-    res.status(500).json({ message: "Failed to fetch blog" });
-  }
-};
-
-
 export default {
   createBlog,
   getAllBlogs,
@@ -163,6 +152,5 @@ export default {
   deleteBlog,
   getLatestBlogs,
   getFoundationBlogs,
-  getICBlogs,
-  getBlogsById
+  getICBlogs
 };

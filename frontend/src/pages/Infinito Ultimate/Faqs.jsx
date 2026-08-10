@@ -1,5 +1,4 @@
-import React from 'react'
-import FAQSection from '../../../../Research/src/pages/Home/FAQSection'
+import FAQSection from './FAQSection'
 
 const Faqs = () => {
   return (

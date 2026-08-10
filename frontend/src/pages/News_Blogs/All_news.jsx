@@ -13,7 +13,7 @@ const All_news = () => {
     const fetchBlogs = async () => {
       try {
         const data = await getICBlogs();
-        setBlogs(data);
+        setBlogs(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Failed to fetch IC blogs:', error.message);
       }
