@@ -10,5 +10,5 @@ export const login = async (props) => {
  });
   console.log(res?.data);
 
-  return res?.data;
+  return res;
 };

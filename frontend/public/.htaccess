@@ -1,0 +1,18 @@
+Options -MultiViews
+RewriteEngine On
+
+# React Router for admin subfolder
+RewriteCond %{REQUEST_URI} ^/admin
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ /admin/index.html [QSA,L]
+
+# React Router for research subfolder
+RewriteCond %{REQUEST_URI} ^/research
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ /research/index.html [QSA,L]
+
+# React Router for main site only
+RewriteCond %{REQUEST_URI} !^/admin
+RewriteCond %{REQUEST_URI} !^/research
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.html [QSA,L]
