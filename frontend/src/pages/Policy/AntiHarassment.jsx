@@ -1,7 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import AntiHarassmentPDF from "../../../public/AntiHarrasmentPolicy.pdf"
+
+// Files in `public/` are served from the site root, so reference them by URL
+// instead of importing them as modules.
+const AntiHarassmentPDF = "/AntiHarrasmentPolicy.pdf";
 
 
 const Section = ({ title, icon, children }) => (

@@ -50,7 +50,8 @@ function DonationUtilization() {
 
   return (
     <div className="flex justify-center items-center ">
-      <div className="w-11/12 lg:w-2/3 bg-white text-gray-800">
+      {/* Matches the site-wide container: 1200px max with 3rem side gutters */}
+      <div className="w-full max-w-[1200px] mx-auto px-6 lg:px-12 bg-white text-gray-800">
 
         {/* Heading */}
         <div className="text-start lg:text-center mb-12">

@@ -1,18 +1,14 @@
-Options -MultiViews
-RewriteEngine On
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
 
-# React Router for admin subfolder
-RewriteCond %{REQUEST_URI} ^/admin
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^ /admin/index.html [QSA,L]
+  # Do not apply main site rewrites to subdomains
+  RewriteCond %{HTTP_HOST} ^admin\.infinitohq\.com$ [NC,OR]
+  RewriteCond %{HTTP_HOST} ^research\.infinitohq\.com$ [NC]
+  RewriteRule ^ - [L]
 
-# React Router for research subfolder
-RewriteCond %{REQUEST_URI} ^/research
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^ /research/index.html [QSA,L]
-
-# React Router for main site only
-RewriteCond %{REQUEST_URI} !^/admin
-RewriteCond %{REQUEST_URI} !^/research
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^ index.html [QSA,L]
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>

@@ -22,6 +22,4 @@ router.get('/foundation-blogs', blogController.getFoundationBlogs);
 
 router.get('/ic-blogs', blogController.getICBlogs);
 
-router.get('/getById/:id', blogController.getBlogsById);
-
 export default router;
