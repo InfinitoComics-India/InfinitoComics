@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Heart, ShoppingBag } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import UserIcon from '../../../assets/Images/UserIcon.png';
-import Logo from '../../../assets/Logo.png';
+import Logo from '../../assets/Logo.png';
 import { FRONTEND_BASE_URL, BACKEND_URL } from '../../utils/constants';
 
 const FOUNDATION_BASE_URL = 'http://localhost:3004';
