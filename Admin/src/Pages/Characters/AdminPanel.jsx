@@ -3,6 +3,39 @@ import { useForm } from "react-hook-form";
 import ChipField from "./ChipField";
 import { toast } from 'react-toastify';
 
+// Helper function to validate image dimensions and file size (weight)
+const validateImage = (width, height, maxSizeBytes) => {
+  return async (fileList) => {
+    if (!fileList || fileList.length === 0) return true;
+    const file = fileList[0];
+    if (!file) return true;
+
+    // Verify weight (file size)
+    if (file.size > maxSizeBytes) {
+      const sizeMB = maxSizeBytes / (1024 * 1024);
+      return `File size must be less than ${sizeMB}MB (current: ${(file.size / (1024 * 1024)).toFixed(2)}MB)`;
+    }
+
+    // Verify dimensions
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(img.src);
+        if (img.width !== width || img.height !== height) {
+          resolve(`Image dimensions must be exactly ${width}x${height}px (current: ${img.width}x${img.height}px)`);
+        } else {
+          resolve(true);
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(img.src);
+        resolve("Invalid image file format");
+      };
+    });
+  };
+};
+
 const AdminPanel = ({
   editingCharacter,
   setEditingCharacter,
@@ -44,7 +77,6 @@ const AdminPanel = ({
       mainLandscapeImage: null,
       power1Image: null,
       power2Image: null,
-      power3Image: null,
     },
   });
 
@@ -63,7 +95,6 @@ const AdminPanel = ({
   const [existingMainLandscapeImage, setExistingMainLandscapeImage] = useState(null);
   const [existingPower1Image, setExistingPower1Image] = useState(null);
   const [existingPower2Image, setExistingPower2Image] = useState(null);
-  const [existingPower3Image, setExistingPower3Image] = useState(null);
 
   // Watch for images to display previews
   const mainImageFile = watch("mainImage");
@@ -72,7 +103,6 @@ const AdminPanel = ({
   const mainLandscapeImageFile = watch("mainLandscapeImage");
   const power1ImageFile = watch("power1Image");
   const power2ImageFile = watch("power2Image");
-  const power3ImageFile = watch("power3Image");
 
   // Create URLs for image previews
   const mainImageURL =
@@ -99,10 +129,6 @@ const AdminPanel = ({
     power2ImageFile && power2ImageFile[0]
       ? URL.createObjectURL(power2ImageFile[0])
       : null;
-  const power3ImageURL =
-    power3ImageFile && power3ImageFile[0]
-      ? URL.createObjectURL(power3ImageFile[0])
-      : null;
 
   // Populate form with editing character data when available
   useEffect(() => {
@@ -120,8 +146,6 @@ const AdminPanel = ({
           setExistingPower1Image(editingCharacter.power1Image);
         } else if (key === "power2Image") {
           setExistingPower2Image(editingCharacter.power2Image);
-        } else if (key === "power3Image") {
-          setExistingPower3Image(editingCharacter.power3Image);
         } else if (Array.isArray(editingCharacter[key])) {
           setValue(key, editingCharacter[key]);
         } else {
@@ -135,7 +159,6 @@ const AdminPanel = ({
       setExistingMainLandscapeImage(null);
       setExistingPower1Image(null);
       setExistingPower2Image(null);
-      setExistingPower3Image(null);
     }
   }, [editingCharacter, setValue]);
 
@@ -172,11 +195,6 @@ const AdminPanel = ({
     } else if (existingPower2Image) {
       characterData.power2Image = existingPower2Image;
     }
-    if (power3ImageFile && power3ImageFile[0]) {
-      characterData.power3Image = power3ImageFile[0];
-    } else if (existingPower3Image) {
-      characterData.power3Image = existingPower3Image;
-    }
     if (characterData.storyLine) delete characterData.storyLine;
     if (characterData.origin) delete characterData.origin;
     if (editingCharacter) {
@@ -185,7 +203,6 @@ const AdminPanel = ({
       console.log(characterData);
     } else {
       onCharacterSaved(characterData, false);
-      toast.success("Character created successfully!");
     }
     reset();
     setEditingCharacter(null);
@@ -262,14 +279,16 @@ const AdminPanel = ({
       >
         {/* Main Character Image and Landscape Image in one row */}
         <div className="col-span-1">
-          <label className="block text-gray-300 font-medium mb-2">
+          <label className="block text-gray-300 font-medium mb-1">
             Main Character Image
           </label>
+          <span className="block text-xs text-gray-400 mb-2">Allowed: 800x900 px, Max weight: 2MB</span>
           <input
             type="file"
             accept="image/*"
             {...register("mainImage", {
               required: !editingCharacter && "Main character image is required",
+              validate: validateImage(800, 900, 2 * 1024 * 1024)
             })}
             className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
           />
@@ -303,14 +322,16 @@ const AdminPanel = ({
         </div>
 
         <div className="col-span-1">
-          <label className="block text-gray-300 font-medium mb-2">
+          <label className="block text-gray-300 font-medium mb-1">
             Main Landscape Image
           </label>
+          <span className="block text-xs text-gray-400 mb-2">Allowed: 1200x600 px, Max weight: 3MB</span>
           <input
             type="file"
             accept="image/*"
             {...register("mainLandscapeImage", {
               required: !editingCharacter && "Main landscape image is required",
+              validate: validateImage(1200, 600, 3 * 1024 * 1024)
             })}
             className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
           />
@@ -348,16 +369,18 @@ const AdminPanel = ({
 
         {/* Power Images in one row */}
         <div className="col-span-1 md:col-span-2">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-gray-300 font-medium mb-2">
+              <label className="block text-gray-300 font-medium mb-1">
                 Power 1 Image
               </label>
+              <span className="block text-xs text-gray-400 mb-2">Allowed: 900x400 px, Max weight: 1MB</span>
               <input
                 type="file"
                 accept="image/*"
                 {...register("power1Image", {
                   required: !editingCharacter && "Power 1 image is required",
+                  validate: validateImage(900, 400, 1 * 1024 * 1024)
                 })}
                 className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
               />
@@ -391,14 +414,16 @@ const AdminPanel = ({
             </div>
 
             <div>
-              <label className="block text-gray-300 font-medium mb-2">
+              <label className="block text-gray-300 font-medium mb-1">
                 Power 2 Image
               </label>
+              <span className="block text-xs text-gray-400 mb-2">Allowed: 900x400 px, Max weight: 1MB</span>
               <input
                 type="file"
                 accept="image/*"
                 {...register("power2Image", {
                   required: !editingCharacter && "Power 2 image is required",
+                  validate: validateImage(900, 400, 1 * 1024 * 1024)
                 })}
                 className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
               />
@@ -421,47 +446,6 @@ const AdminPanel = ({
                     <img
                       src={existingPower2Image}
                       alt="Current power 2 image"
-                      className="w-full h-full object-cover"
-                    />
-                    <p className="text-sm text-gray-400 mt-1">
-                      Current image (upload a new one to change)
-                    </p>
-                  </div>
-                )
-              )}
-            </div>
-
-            <div>
-              <label className="block text-gray-300 font-medium mb-2">
-                Power 3 Image
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                {...register("power3Image", {
-                  required: !editingCharacter && "Power 3 image is required",
-                })}
-                className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
-              />
-              {errors.power3Image && (
-                <span className="text-red-500 text-sm mt-1">
-                  {errors.power3Image.message}
-                </span>
-              )}
-              {power3ImageURL ? (
-                <div className="mt-4 w-full h-32 overflow-hidden rounded-lg border-2 border-gray-700">
-                  <img
-                    src={power3ImageURL}
-                    alt="Power 3 preview"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ) : (
-                existingPower3Image && (
-                  <div className="mt-4 w-full h-32 overflow-hidden rounded-lg border-2 border-gray-700">
-                    <img
-                      src={existingPower3Image}
-                      alt="Current power 3 image"
                       className="w-full h-full object-cover"
                     />
                     <p className="text-sm text-gray-400 mt-1">

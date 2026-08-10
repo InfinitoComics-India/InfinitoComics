@@ -11,7 +11,7 @@ const AllNewsPage = () => {
     const fetchBlogs = async () => {
       try {
         const data = await getAllBlogs();
-        setBlogs(data);
+        setBlogs(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Error fetching blogs:", error.message);
       }

@@ -12,9 +12,9 @@ export const loginUser = async (email, password) => {
 
 export const latestBlog = async () => {
   const response = await axios.get( BASE_URL+'/blog/latestblog', {
-    limit : 1
+    params: { limit: 1 }
   });
-  return response?.data?.blogs[0];
+  return response?.data?.blogs?.[0];
 }
 
 export const getFoundationBlogs = async () => {
