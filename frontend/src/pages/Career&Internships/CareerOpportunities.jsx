@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { departments } from "../../constants/career";
 import { Link } from "react-router-dom";
+import { CheckCircle } from "lucide-react";
 import { fetchJob } from "../../services/CareerService";
 import CareerOpportunitiesShimmer from "../../shimmer/Career/CareerOpportunitiesShimmer";
 
@@ -14,6 +15,19 @@ const CareerOpportunities = () => {
   const [fetchError, setFetchError] = useState(false);
   const [selectedDept, setSelectedDept] = useState("All Departments");
   const [selectedJobType, setSelectedJobType] = useState("All Job Types");
+
+  // Track applied jobs from localStorage
+  const [appliedIds, setAppliedIds] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("appliedJobIds") || "[]"); } catch { return []; }
+  });
+  useEffect(() => {
+    const refresh = () => {
+      try { setAppliedIds(JSON.parse(localStorage.getItem("appliedJobIds") || "[]")); } catch {}
+    };
+    window.addEventListener("storage", refresh);
+    const interval = setInterval(refresh, 1000);
+    return () => { window.removeEventListener("storage", refresh); clearInterval(interval); };
+  }, []);
 
   // Read ?type= from URL and pre-set the job type filter
   const location = useLocation();
@@ -146,14 +160,20 @@ const CareerOpportunities = () => {
                         <div className="text-sm text-gray-500 w-32 text-center hidden sm:block">
                           {job.positions} {job.positions === 1 ? "position" : "positions"}
                         </div>
-                        <div className="w-24 text-right">
-                          <Link
-                            to="/careers/apply"
-                            state={{ job }}
-                            className="text-blue-700 font-semibold text-sm tracking-widest uppercase hover:text-blue-900 transition-colors"
-                          >
-                            APPLY &rsaquo;
-                          </Link>
+                        <div className="w-28 text-right">
+                          {appliedIds.includes(job.id) ? (
+                            <span className="text-green-600 font-semibold text-sm tracking-wide uppercase flex items-center justify-end gap-1">
+                              <CheckCircle size={14} /> Applied
+                            </span>
+                          ) : (
+                            <Link
+                              to="/careers/apply"
+                              state={{ job }}
+                              className="text-blue-700 font-semibold text-sm tracking-widest uppercase hover:text-blue-900 transition-colors"
+                            >
+                              APPLY &rsaquo;
+                            </Link>
+                          )}
                         </div>
                       </div>
                     ))}

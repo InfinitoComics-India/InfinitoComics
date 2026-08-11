@@ -1,8 +1,11 @@
 import React, { useState } from "react";
+import axios from "axios";
 import logo from "../../../assets/Logo.png";
 import { useLocation, useNavigate } from "react-router-dom";
-import { MapPin, Clock, Briefcase, Globe, ArrowLeft, X, Upload, CheckCircle } from "lucide-react";
+import { MapPin, Clock, Briefcase, Globe, ArrowLeft, X, Upload, CheckCircle, AlertCircle } from "lucide-react";
 import careerUrls from "../../utils/imagesUrls/carrerUrls.js";
+
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 // ── Application Modal ──────────────────────────────────────────────
 const ApplyModal = ({ job, onClose }) => {
@@ -18,6 +21,7 @@ const ApplyModal = ({ job, onClose }) => {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [fileName, setFileName] = useState("");
+  const [submitError, setSubmitError] = useState("");
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -34,10 +38,45 @@ const ApplyModal = ({ job, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    // Simulate submission — replace with real API call when backend is ready
-    await new Promise((r) => setTimeout(r, 1500));
-    setSubmitting(false);
-    setSubmitted(true);
+    setSubmitError("");
+
+    try {
+      const formData = new FormData();
+      formData.append("jobId",       job._id       || "");
+      formData.append("jobTitle",    job.title     || "");
+      formData.append("department",  job.department || "");
+      formData.append("jobType",     job.jobType   || "");
+      formData.append("fullName",    form.fullName);
+      formData.append("email",       form.email);
+      formData.append("phone",       form.phone);
+      formData.append("linkedin",    form.linkedin);
+      formData.append("portfolio",   form.portfolio);
+      formData.append("coverLetter", form.coverLetter);
+      if (form.resume) {
+        formData.append("resume", form.resume);
+      }
+
+      await axios.post(`${BASE_URL}/career/apply`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      // Mark this job as applied in localStorage so listings update immediately
+      try {
+        const existing = JSON.parse(localStorage.getItem("appliedJobIds") || "[]");
+        if (job._id && !existing.includes(job._id)) {
+          localStorage.setItem("appliedJobIds", JSON.stringify([...existing, job._id]));
+        }
+      } catch {}
+
+      setSubmitted(true);
+    } catch (err) {
+      console.error("Application submission error:", err);
+      setSubmitError(
+        err?.response?.data?.message || "Something went wrong. Please try again."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Prevent background scroll when modal is open
@@ -194,6 +233,12 @@ const ApplyModal = ({ job, onClose }) => {
 
             {/* Submit */}
             <div className="pt-2">
+              {submitError && (
+                <div className="flex items-center gap-2 mb-3 p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
+                  <AlertCircle size={16} className="shrink-0" />
+                  {submitError}
+                </div>
+              )}
               <button
                 type="submit"
                 disabled={submitting}
