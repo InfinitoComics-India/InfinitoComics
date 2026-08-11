@@ -1,6 +1,7 @@
 import React from 'react';
 const Home = () => {
-  const admin = JSON.parse(localStorage.getItem("Admin"));
+  const adminStr = localStorage.getItem("Admin");
+  const admin = adminStr && adminStr !== "undefined" ? JSON.parse(adminStr) : null;
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="text-center p-8 bg-white rounded-lg shadow-lg max-w-md w-full">

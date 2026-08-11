@@ -17,7 +17,7 @@ const Navbar = () => {
   const confirm = (e) => {
     localStorage.clear();
     message.success("LogOut successfully");
-    window.location.href = "/";
+    window.location.href = "/admin";
   };
   const cancel = (e) => {
     console.log(e);

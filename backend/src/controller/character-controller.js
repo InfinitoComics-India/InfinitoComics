@@ -51,6 +51,7 @@ export const createCharacter = async (req, res) => {
     const character = await characterService.createCharacter(characterData);
     res.status(201).json({ success: true, data: character });
   } catch (error) {
+    console.error("Error in createCharacter:", error);
     res.status(400).json({ success: false, message: error.message });
   }
 };
@@ -129,6 +130,7 @@ export const updateCharacter = async (req, res) => {
     const character = await characterService.updateCharacter(req.params.id, updatedData);
     res.status(200).json({ success: true, data: character });
   } catch (error) {
+    console.error("Error in updateCharacter:", error);
     res.status(400).json({ success: false, message: error.message });
   }
 };
