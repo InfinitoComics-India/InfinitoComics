@@ -215,7 +215,10 @@ const handleDelete = async (paperId) => {
             ].map((key) => (
               <div key={key}>
                 <h3 className="font-semibold capitalize border-b pb-1 text-gray-700">{key}</h3>
-                <p className="text-gray-800">{selectedPaper[key]}</p>
+                <div
+                  className="text-gray-800 prose max-w-none"
+                  dangerouslySetInnerHTML={{ __html: selectedPaper[key] }}
+                />
               </div>
             ))}
           </div>

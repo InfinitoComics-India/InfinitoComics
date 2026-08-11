@@ -282,13 +282,13 @@ const AdminPanel = ({
           <label className="block text-gray-300 font-medium mb-1">
             Main Character Image
           </label>
-          <span className="block text-xs text-gray-400 mb-2">Allowed: 300x400 px, Max weight: 2MB</span>
+          <span className="block text-xs text-gray-400 mb-2">Allowed: 800x900 px, Max weight: 2MB</span>
           <input
             type="file"
             accept="image/*"
             {...register("mainImage", {
               required: !editingCharacter && "Main character image is required",
-              validate: validateImage(731, 875, 2 * 1024 * 1024)
+              validate: validateImage(800, 900, 2 * 1024 * 1024)
             })}
             className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
           />
@@ -331,7 +331,7 @@ const AdminPanel = ({
             accept="image/*"
             {...register("mainLandscapeImage", {
               required: !editingCharacter && "Main landscape image is required",
-              validate: validateImage(575, 486, 3 * 1024 * 1024)
+              validate: validateImage(1200, 600, 3 * 1024 * 1024)
             })}
             className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
           />

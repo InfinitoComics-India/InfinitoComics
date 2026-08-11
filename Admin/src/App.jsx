@@ -21,7 +21,7 @@ function App() {
   return (
     <>
 
-    <BrowserRouter basename="/">
+    <BrowserRouter basename="/admin">
       <Routes>
         {/* Main app structure */}
         <Route path="/" element={<Body/>}>

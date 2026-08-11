@@ -17,7 +17,7 @@ const Navbar = () => {
   const confirm = (e) => {
     localStorage.clear();
     message.success("LogOut successfully");
-    window.location.href = "/";
+    window.location.href = "/admin";
   };
   const cancel = (e) => {
     console.log(e);
@@ -70,13 +70,19 @@ const Navbar = () => {
           >
             RESEARCH
           </Link>
-            <Link
-              to="/createfaq"
-              onClick={toggleMenu}
-              className="text-white hover:text-red-500 transition duration-200 px-3 py-2"
-            >
-            FAQS
-            </Link>
+          <Link
+            to="/career"
+            className="text-white hover:text-red-500 transition duration-200 px-3 py-2"
+          >
+            CAREER
+          </Link>
+          <Link
+            to="/createfaq"
+            onClick={toggleMenu}
+            className="text-white hover:text-red-500 transition duration-200 px-3 py-2"
+          >
+          FAQS
+          </Link>
           <Link
             to="/createblog"
             className="text-white hover:text-red-500 transition duration-200 px-3 py-2"
@@ -169,7 +175,14 @@ const Navbar = () => {
             >
               CHARACTERS
             </Link>
-              <Link
+            <Link
+              to="/career"
+              onClick={toggleMenu}
+              className="text-white hover:text-red-500 transition"
+            >
+              CAREER
+            </Link>
+            <Link
               to="/createfaq"
               onClick={toggleMenu}
               className="text-white hover:text-red-500 transition"

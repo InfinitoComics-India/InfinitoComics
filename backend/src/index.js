@@ -17,6 +17,7 @@ import multer from 'multer';
 import adminroutes from './routes/admin-routes.js';
 import timelineRoutes from './routes/timelineRoutes.js';
 import CareerRoutes from './routes/career-routes.js';
+import jobApplicationRoutes from './routes/jobApplication-routes.js';
 import supportRoutes from './routes/support-routes.js';
 import comicRoutes from './routes/comic-routes.js';
 import characterRoutes from './routes/character-routes.js';
@@ -40,6 +41,9 @@ const allowedOrigins = [
   'http://localhost:3002',
   'http://localhost:3003',
   'http://localhost:3004',
+  'http://localhost:3005',
+  'http://localhost:3006',
+  'http://localhost:3007',
 ].filter(Boolean);
 
 app.use(cors({
@@ -48,7 +52,7 @@ app.use(cors({
 }));
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 
 // API Routes
 app.use('/api', userroutes);
@@ -59,6 +63,7 @@ app.use('/admin', adminroutes);
 app.use('/timeline', timelineRoutes);
 app.use('/timeline/aboutUs', aboutTimelineRoutes);
 app.use('/career', CareerRoutes);
+app.use('/career', jobApplicationRoutes);
 app.use('/support', supportRoutes);
 app.use('/comic', comicRoutes);
 app.use('/comicChap', comicChapRoutes);
