@@ -4,7 +4,7 @@ import axios from 'axios';
 import JobForm from './JobForm';
 import JobList from './JobList';
 import ConfirmationModal from './ConfirmationModal';
-import { editJob, fetchJob,sendJob,removeJob } from '../../services/careerServices';
+import { editJob, fetchJob, sendJob, removeJob, fetchApplications, removeApplication, downloadApplicationsExcel } from '../../services/careerServices';
 
 const Career = () => {
   const [jobs, setJobs] = useState([]);
@@ -17,6 +17,14 @@ const Career = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [jobToDelete, setJobToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Applications state
+  const [applications, setApplications] = useState([]);
+  const [appsLoading, setAppsLoading] = useState(false);
+  const [appsError, setAppsError] = useState(null);
+  const [showDeleteAppModal, setShowDeleteAppModal] = useState(false);
+  const [appToDelete, setAppToDelete] = useState(null);
+  const [isDeletingApp, setIsDeletingApp] = useState(false);
 
   // Fetch all jobs
   const fetchJobs = async () => {
@@ -90,6 +98,48 @@ const Career = () => {
     }
   };
 
+  // Fetch applications
+  const fetchAllApplications = async () => {
+    try {
+      setAppsLoading(true);
+      setAppsError(null);
+      const response = await fetchApplications();
+      const data = response.data?.data || [];
+      setApplications(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error fetching applications:', err);
+      setAppsError('Failed to fetch applications. Please try again.');
+    } finally {
+      setAppsLoading(false);
+    }
+  };
+
+  // Handle delete application flow
+  const handleDeleteApp = (app) => {
+    setAppToDelete(app);
+    setShowDeleteAppModal(true);
+  };
+
+  const confirmDeleteApp = async () => {
+    if (!appToDelete) return;
+    try {
+      setIsDeletingApp(true);
+      await removeApplication(appToDelete._id);
+      setApplications(prev => prev.filter(a => a._id !== appToDelete._id));
+      setShowDeleteAppModal(false);
+      setAppToDelete(null);
+    } catch (err) {
+      console.error('Error deleting application:', err);
+    } finally {
+      setIsDeletingApp(false);
+    }
+  };
+
+  const cancelDeleteApp = () => {
+    setShowDeleteAppModal(false);
+    setAppToDelete(null);
+  };
+
   // Handle edit job
   const handleEditJob = (job) => {
     setEditingJob(job);
@@ -127,6 +177,7 @@ const Career = () => {
 
   useEffect(() => {
     fetchJobs();
+    fetchAllApplications();
   }, []);
 
   // Error boundary fallback
@@ -223,6 +274,20 @@ const Career = () => {
             >
               Job List ({jobs.length})
             </button>
+            <button
+              onClick={() => {
+                setActiveTab('applications');
+                setEditingJob(null);
+                fetchAllApplications();
+              }}
+              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                activeTab === 'applications'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Applications ({applications.length})
+            </button>
           </nav>
         </div>
       </div>
@@ -253,6 +318,112 @@ const Career = () => {
             onDeleteJob={handleDeleteJob}
           />
         )}
+        {activeTab === 'applications' && (
+          <div>
+            {/* Toolbar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+              <h2 className="text-lg font-semibold text-gray-800">
+                All Applications
+                <span className="ml-2 text-sm font-normal text-gray-500">({applications.length} total)</span>
+              </h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={fetchAllApplications}
+                  className="px-4 py-2 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Refresh
+                </button>
+                <button
+                  onClick={downloadApplicationsExcel}
+                  className="flex items-center gap-2 px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                  Download Excel
+                </button>
+              </div>
+            </div>
+
+            {/* Error */}
+            {appsError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
+                {appsError}
+              </div>
+            )}
+
+            {/* Loading */}
+            {appsLoading ? (
+              <div className="flex justify-center py-16">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+              </div>
+            ) : applications.length === 0 ? (
+              <div className="text-center py-16 text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p className="text-base font-medium">No applications yet</p>
+                <p className="text-sm mt-1">Applications submitted via the website will appear here.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+                <table className="min-w-full divide-y divide-gray-200 text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      {["#", "Applied On", "Name", "Email", "Phone", "Job Title", "Type", "Resume", "Status", "Actions"].map(h => (
+                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-100">
+                    {applications.map((app, idx) => (
+                      <tr key={app._id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 text-gray-500">{idx + 1}</td>
+                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                          {app.createdAt ? new Date(app.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"}
+                        </td>
+                        <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{app.fullName}</td>
+                        <td className="px-4 py-3 text-gray-600">{app.email}</td>
+                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{app.phone || "—"}</td>
+                        <td className="px-4 py-3 text-gray-800 whitespace-nowrap font-medium">{app.jobTitle}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                            {app.jobType || "—"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-gray-600 max-w-[140px] truncate" title={app.resumeFileName}>
+                          {app.resumeFileName || "—"}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold capitalize
+                            ${app.status === "pending"     ? "bg-yellow-50 text-yellow-700" :
+                              app.status === "reviewed"    ? "bg-blue-50 text-blue-700" :
+                              app.status === "shortlisted" ? "bg-green-50 text-green-700" :
+                                                            "bg-red-50 text-red-700"}`}>
+                            {app.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => handleDeleteApp(app)}
+                            className="text-red-500 hover:text-red-700 transition-colors"
+                            title="Delete application"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       {/* Delete Confirmation Modal */}
@@ -271,6 +442,26 @@ const Career = () => {
           ) : "Are you sure you want to delete this job?"
         }
         confirmText={isDeleting ? "Deleting..." : "Delete Job"}
+        cancelText="Cancel"
+        type="danger"
+      />
+
+      {/* Delete Application Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteAppModal}
+        onClose={cancelDeleteApp}
+        onConfirm={confirmDeleteApp}
+        title="Delete Application"
+        message={
+          appToDelete ? (
+            <span>
+              Are you sure you want to delete the application from <strong>"{appToDelete.fullName}"</strong>?
+              <br /><br />
+              This action cannot be undone.
+            </span>
+          ) : "Are you sure you want to delete this application?"
+        }
+        confirmText={isDeletingApp ? "Deleting..." : "Delete Application"}
         cancelText="Cancel"
         type="danger"
       />

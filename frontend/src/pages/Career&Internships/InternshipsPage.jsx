@@ -179,6 +179,28 @@ const InternshipListings = () => {
   const [fetchError, setFetchError] = useState(false);
   const [selectedDept, setSelectedDept] = useState("All Departments");
 
+  // Track which job IDs the user has already applied for
+  const [appliedIds, setAppliedIds] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("appliedJobIds") || "[]");
+    } catch {
+      return [];
+    }
+  });
+
+  // Listen for storage changes (jobs.jsx sets this after a successful submit)
+  useEffect(() => {
+    const onStorage = () => {
+      try {
+        setAppliedIds(JSON.parse(localStorage.getItem("appliedJobIds") || "[]"));
+      } catch {}
+    };
+    window.addEventListener("storage", onStorage);
+    // Also poll every second in case same-tab storage event isn't fired
+    const interval = setInterval(onStorage, 1000);
+    return () => { window.removeEventListener("storage", onStorage); clearInterval(interval); };
+  }, []);
+
   useEffect(() => {
     const getData = async () => {
       try {
@@ -276,10 +298,16 @@ const InternshipListings = () => {
                         <div className="text-sm text-gray-500 w-32 text-center hidden sm:block">
                           {job.positions} {job.positions === 1 ? "position" : "positions"}
                         </div>
-                        <div className="w-24 text-right">
-                          <Link to="/careers/apply" state={{ job }} className="text-blue-700 font-semibold text-sm tracking-widest uppercase hover:text-blue-900">
-                            APPLY &rsaquo;
-                          </Link>
+                        <div className="w-28 text-right">
+                          {appliedIds.includes(job.id) ? (
+                            <span className="text-green-600 font-semibold text-sm tracking-wide uppercase flex items-center justify-end gap-1">
+                              <CheckCircle size={14} /> Applied
+                            </span>
+                          ) : (
+                            <Link to="/careers/apply" state={{ job }} className="text-blue-700 font-semibold text-sm tracking-widest uppercase hover:text-blue-900">
+                              APPLY &rsaquo;
+                            </Link>
+                          )}
                         </div>
                       </div>
                     ))}
