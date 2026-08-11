@@ -66,7 +66,7 @@ const Footer = () => {
               <Link to={FOUNDATION_BASE_URL}>
                 <span className="font">FOUNDATION</span>
               </Link>
-              <Link to={RESEARCH_BASE_URL}>
+              <Link to={`${RESEARCH_BASE_URL}/browseResearch`}>
                 {" "}
                 <span>RESEARCH</span>
               </Link>
