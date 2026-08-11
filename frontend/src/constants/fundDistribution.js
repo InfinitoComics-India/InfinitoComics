@@ -7,7 +7,7 @@ export const INFINITO_FUND_TOTAL = 1234654;
 export const fundDistribution = [
   {
     id: 'national',
-    name: 'National Development',
+    name: 'Nation Development',
     percent: 20,
     color: '#DE1215', // light red
     subItems: [

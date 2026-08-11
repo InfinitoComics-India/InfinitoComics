@@ -4,7 +4,7 @@ import chartExpanded from '../../assets/Images/SupportUs/chartExpanded.png';
 const fundCategories = [
   {
     id: 'national',
-    title: "National Development",
+    title: "Nation Development",
     percentage: "20%",
     borderClass: "border-[#DE1215]",
     textColor: "text-[#DE1215]",
@@ -61,4 +61,4 @@ const fundCategories = [
 ];
 
 
-export {fundCategories, chartDefault, chartExpanded};
+export { fundCategories, chartDefault, chartExpanded };
