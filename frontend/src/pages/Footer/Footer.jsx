@@ -66,10 +66,10 @@ const Footer = () => {
               <Link to={FOUNDATION_BASE_URL}>
                 <span className="font">FOUNDATION</span>
               </Link>
-              <Link to={`${RESEARCH_BASE_URL}/browseResearch`}>
+              <a href={`${RESEARCH_BASE_URL}/browseResearch`} target="_blank" rel="noopener noreferrer">
                 {" "}
                 <span>RESEARCH</span>
-              </Link>
+              </a>
               <Link to="/support-us">
                 <span>SUPPORT US</span>
               </Link>
@@ -134,7 +134,7 @@ const Footer = () => {
             <Link to="/news">BLOGS & NEWS</Link>
             <Link to={FOUNDATION_BASE_URL}><span className="font">FOUNDATION</span></Link> 
             <a href="https://careers.infinitohq.com" target="_blank" rel="noopener noreferrer">CAREER</a>
-             <Link to={RESEARCH_BASE_URL} > <span>RESEARCH</span></Link>
+             <a href={`${RESEARCH_BASE_URL}/browseResearch`} target="_blank" rel="noopener noreferrer"> <span>RESEARCH</span></a>
             <span>INTERNSHIP</span>
             <Link to="/support-us">SUPPORT US</Link>
           </div>
