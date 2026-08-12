@@ -324,13 +324,13 @@ const Jobs = () => {
         className="flex justify-start items-center w-full h-72 sm:h-80 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${careerUrls.INFINITO_BANNER})` }}
       >
-        <h1 className="font-sans font-extrabold text-2xl sm:text-4xl text-red-600 tracking-[0.2em] scale-y-110 px-6 sm:px-16 md:px-32 lg:px-60">
+        <h1 className="font-sans font-extrabold text-2xl sm:text-4xl text-red-600 tracking-[0.2em] scale-y-110 px-6 sm:px-12 md:px-20">
           INFINITO COMICS
         </h1>
       </div>
 
       {/* Back link */}
-      <div className="bg-[#f3f3f3] px-4 sm:px-6 md:px-15 pt-6">
+      <div className="bg-[#f3f3f3] px-4 sm:px-6 md:px-10 pt-6">
         <button
           onClick={() => navigate("/careers")}
           className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors mb-2"
@@ -341,7 +341,7 @@ const Jobs = () => {
       </div>
 
       {/* Main Content */}
-      <div className="bg-[#f3f3f3] min-h-screen p-4 sm:p-6 md:p-15 pt-4">
+      <div className="bg-[#f3f3f3] min-h-screen p-4 sm:p-6 md:p-10 pt-4">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
 
           {/* Left Content */}
@@ -439,7 +439,7 @@ const Jobs = () => {
           </div>
 
           {/* Right Sidebar */}
-          <div className="bg-white shadow-lg p-8 rounded-md h-fit self-start sticky top-6">
+          <div className="bg-white shadow-lg p-4 sm:p-6 lg:p-8 rounded-md h-fit self-start sticky top-6">
             <h2 className="font-bold text-lg mb-4">About Us</h2>
             <div className="text-center mb-4">
               <img src={logo} alt="Infinito Comics" className="h-12 object-contain mx-auto" />

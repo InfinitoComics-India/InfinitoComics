@@ -34,7 +34,7 @@ const WorkWIthUs = () => {
         backgroundPosition: "center",
       }}
     >
-      <div className="w-full max-w-[1200px] mx-auto px-12 py-10">
+      <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-8 md:px-12 py-10">
         <div className="max-w-xl">
           <p className="mb-4 text-white font-semibold text-sm sm:text-base tracking-widest">
             CAREERS AT INFINITO

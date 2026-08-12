@@ -20,13 +20,13 @@ const ROLES = [
 
 const Hiring = () => (
   <div className="w-full bg-white py-16">
-    <div className="w-full max-w-[1200px] mx-auto px-12 text-center">
+    <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-8 md:px-12 text-center">
       <h2 className="text-2xl md:text-3xl font-bold mb-3">We are always hiring!</h2>
       <p className="text-gray-500 mb-16 text-sm md:text-base">
         Apply for a wide range of positions we have to offer
       </p>
 
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-x-8 gap-y-12 justify-items-center">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 sm:gap-x-8 gap-y-10 sm:gap-y-12 justify-items-center">
         {ROLES.map((role) => (
           <div key={role.seed} className="flex flex-col items-center gap-2">
             <img
