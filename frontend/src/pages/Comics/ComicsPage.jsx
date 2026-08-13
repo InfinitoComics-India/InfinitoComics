@@ -310,24 +310,26 @@ const CharactersSection = ({ characters, onViewMore }) => {
   const ref = useRef(null);
   const [dotIdx, setDotIdx] = useState(0);
   const CARDS_PER_PAGE = 5;
-  const totalDots = Math.ceil(characters.length / CARDS_PER_PAGE);
+  const totalDots = Math.max(1, Math.ceil(characters.length / CARDS_PER_PAGE));
 
   const scroll = (dir) => {
     if (!ref.current) return;
-    ref.current.scrollBy({ left: dir * 700, behavior: "smooth" });
+    ref.current.scrollBy({ left: dir * 800, behavior: "smooth" });
   };
 
-  // Update dot on scroll
   const onScroll = () => {
     if (!ref.current) return;
     const { scrollLeft, scrollWidth, clientWidth } = ref.current;
-    const idx = Math.round((scrollLeft / (scrollWidth - clientWidth)) * (totalDots - 1));
+    const max = scrollWidth - clientWidth;
+    const idx = max > 0 ? Math.round((scrollLeft / max) * (totalDots - 1)) : 0;
     setDotIdx(isNaN(idx) ? 0 : idx);
   };
 
+  // BG colours matching the reference — teal, pink, dark, yellow, grey
+  const BG_COLORS = ["#0d2e35", "#2d0a1e", "#0f0f1a", "#2b2200", "#1a1a1a", "#0a2010"];
+
   return (
     <div style={{ background: "#fff", padding: "clamp(1.2rem,3vw,2.2rem) clamp(1rem,4vw,3rem)" }}>
-      {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.2rem" }}>
         <h2 style={{ fontSize: "clamp(0.7rem,1.5vw,0.88rem)", fontWeight: 900, letterSpacing: "0.18em", textTransform: "uppercase", color: "#111" }}>
           LEARN MORE ABOUT THE CHARACTERS &gt;
@@ -337,33 +339,36 @@ const CharactersSection = ({ characters, onViewMore }) => {
         </button>
       </div>
 
-      {/* Slider */}
       <div style={{ position: "relative", padding: "0 2rem" }}>
-        <button onClick={() => scroll(-1)} aria-label="prev" style={{ position: "absolute", left: 0, top: "40%", transform: "translateY(-50%)", zIndex: 10, background: "#fff", border: "1px solid #ccc", width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
+        <button onClick={() => scroll(-1)} aria-label="prev characters" style={{ position: "absolute", left: 0, top: "42%", transform: "translateY(-50%)", zIndex: 10, background: "#fff", border: "1px solid #ccc", width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
           <ChevronLeft size={16} />
         </button>
 
-        <div ref={ref} onScroll={onScroll} style={{ display: "flex", gap: "clamp(0.5rem,1.2vw,0.9rem)", overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none", paddingBottom: "0.5rem", scrollBehavior: "smooth" }}>
-          {characters.map((char) => (
-            <div key={char._id} style={{ flexShrink: 0, width: "clamp(110px,11vw,145px)", cursor: "pointer" }}>
-              <div style={{ background: char.bgColor || "#1a1a2e", height: "clamp(140px,15vw,190px)", display: "flex", alignItems: "flex-end", justifyContent: "center", overflow: "hidden", position: "relative" }}>
-                <img
-                  src={char.mainImageUrl || char.image}
-                  alt={char.knownAs}
-                  style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }}
-                />
-                {/* Name label */}
-                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.72)", padding: "4px 6px", textAlign: "center" }}>
-                  <span style={{ color: "#fff", fontSize: "0.58rem", fontWeight: 800, letterSpacing: "0.15em", textTransform: "uppercase" }}>
-                    {char.knownAs}
-                  </span>
+        <div ref={ref} onScroll={onScroll} style={{ display: "flex", gap: "clamp(0.6rem,1.5vw,1.1rem)", overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none", paddingBottom: "0.5rem", scrollBehavior: "smooth" }}>
+          {characters.map((char, idx) => {
+            const bg = char.bgColor || BG_COLORS[idx % BG_COLORS.length];
+            return (
+              <div key={char._id} style={{ flexShrink: 0, width: "clamp(120px,12vw,155px)", cursor: "pointer" }}>
+                {/* Card with colored background — character stands inside */}
+                <div style={{ position: "relative", width: "100%", height: "clamp(168px,17vw,215px)", background: bg, overflow: "hidden" }}>
+                  <img
+                    src={char.mainImageUrl || char.image || spotImg1}
+                    alt={char.knownAs}
+                    style={{ position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)", height: "95%", width: "auto", maxWidth: "120%", objectFit: "contain", display: "block" }}
+                  />
+                  {/* Black bottom name strip */}
+                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "#000", padding: "5px 4px", textAlign: "center", zIndex: 2 }}>
+                    <span style={{ color: "#fff", fontSize: "0.55rem", fontWeight: 900, letterSpacing: "0.18em", textTransform: "uppercase" }}>
+                      {char.knownAs}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        <button onClick={() => scroll(1)} aria-label="next" style={{ position: "absolute", right: 0, top: "40%", transform: "translateY(-50%)", zIndex: 10, background: "#fff", border: "1px solid #ccc", width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
+        <button onClick={() => scroll(1)} aria-label="next characters" style={{ position: "absolute", right: 0, top: "42%", transform: "translateY(-50%)", zIndex: 10, background: "#fff", border: "1px solid #ccc", width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
           <ChevronRight size={16} />
         </button>
       </div>
@@ -374,7 +379,8 @@ const CharactersSection = ({ characters, onViewMore }) => {
           <button key={i} onClick={() => {
             if (!ref.current) return;
             const { scrollWidth, clientWidth } = ref.current;
-            ref.current.scrollTo({ left: (i / (totalDots - 1)) * (scrollWidth - clientWidth), behavior: "smooth" });
+            const max = scrollWidth - clientWidth;
+            ref.current.scrollTo({ left: totalDots > 1 ? (i / (totalDots - 1)) * max : 0, behavior: "smooth" });
             setDotIdx(i);
           }} style={{ width: i === dotIdx ? "20px" : "8px", height: "5px", borderRadius: "3px", background: i === dotIdx ? "#e53935" : "#ddd", border: "none", padding: 0, cursor: "pointer", transition: "all 0.3s" }} />
         ))}
@@ -388,11 +394,10 @@ const CharactersSection = ({ characters, onViewMore }) => {
 ═══════════════════════════════════════ */
 const GenresSection = ({ genres, onViewMore }) => {
   const ref = useRef(null);
-  const scroll = (dir) => ref.current?.scrollBy({ left: dir * 600, behavior: "smooth" });
+  const scroll = (dir) => ref.current?.scrollBy({ left: dir * 700, behavior: "smooth" });
 
   return (
     <div style={{ background: "#fff", padding: "clamp(1.2rem,3vw,2.2rem) clamp(1rem,4vw,3rem)" }}>
-      {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.2rem" }}>
         <h2 style={{ fontSize: "clamp(0.7rem,1.5vw,0.88rem)", fontWeight: 900, letterSpacing: "0.18em", textTransform: "uppercase", color: "#111" }}>
           GENRES TO READ &gt;
@@ -402,28 +407,30 @@ const GenresSection = ({ genres, onViewMore }) => {
         </button>
       </div>
 
-      {/* Slider */}
       <div style={{ position: "relative", padding: "0 2rem" }}>
-        <button onClick={() => scroll(-1)} aria-label="prev" style={{ position: "absolute", left: 0, top: "40%", transform: "translateY(-50%)", zIndex: 10, background: "#fff", border: "1px solid #ccc", width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
+        <button onClick={() => scroll(-1)} aria-label="prev genres" style={{ position: "absolute", left: 0, top: "42%", transform: "translateY(-50%)", zIndex: 10, background: "#fff", border: "1px solid #ccc", width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
           <ChevronLeft size={16} />
         </button>
 
-        <div ref={ref} style={{ display: "flex", gap: "clamp(0.5rem,1.2vw,0.9rem)", overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none", paddingBottom: "0.5rem", scrollBehavior: "smooth" }}>
+        <div ref={ref} style={{ display: "flex", gap: "clamp(0.6rem,1.5vw,1.1rem)", overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none", paddingBottom: "0.5rem", scrollBehavior: "smooth" }}>
           {genres.map((genre) => (
-            <div key={genre.id} style={{ flexShrink: 0, width: "clamp(110px,11vw,145px)", cursor: "pointer", position: "relative", overflow: "hidden" }}
-              onMouseEnter={e => e.currentTarget.querySelector("img").style.transform = "scale(1.06)"}
-              onMouseLeave={e => e.currentTarget.querySelector("img").style.transform = "scale(1)"}
+            <div
+              key={genre.id}
+              style={{ flexShrink: 0, width: "clamp(120px,12vw,155px)", cursor: "pointer", position: "relative", overflow: "hidden" }}
+              onMouseEnter={e => { const img = e.currentTarget.querySelector("img"); if (img) img.style.transform = "scale(1.06)"; }}
+              onMouseLeave={e => { const img = e.currentTarget.querySelector("img"); if (img) img.style.transform = "scale(1)"; }}
             >
+              {/* Cover image */}
               <img
                 src={genre.img}
                 alt={genre.label}
-                style={{ width: "100%", height: "clamp(140px,15vw,190px)", objectFit: "cover", display: "block", transition: "transform 0.3s" }}
+                style={{ width: "100%", height: "clamp(168px,17vw,215px)", objectFit: "cover", display: "block", transition: "transform 0.35s ease" }}
               />
-              {/* Dark overlay */}
-              <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)" }} />
-              {/* Genre label */}
-              <div style={{ position: "absolute", bottom: "10px", left: 0, right: 0, textAlign: "center" }}>
-                <span style={{ color: "#fff", fontSize: "0.6rem", fontWeight: 900, letterSpacing: "0.2em", textTransform: "uppercase" }}>
+              {/* Heavy dark overlay — makes it moody */}
+              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.65) 100%)" }} />
+              {/* Genre label — bottom center */}
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "8px 4px", textAlign: "center" }}>
+                <span style={{ color: "#fff", fontSize: "0.6rem", fontWeight: 900, letterSpacing: "0.22em", textTransform: "uppercase", textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>
                   {genre.label}
                 </span>
               </div>
@@ -431,7 +438,7 @@ const GenresSection = ({ genres, onViewMore }) => {
           ))}
         </div>
 
-        <button onClick={() => scroll(1)} aria-label="next" style={{ position: "absolute", right: 0, top: "40%", transform: "translateY(-50%)", zIndex: 10, background: "#fff", border: "1px solid #ccc", width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
+        <button onClick={() => scroll(1)} aria-label="next genres" style={{ position: "absolute", right: 0, top: "42%", transform: "translateY(-50%)", zIndex: 10, background: "#fff", border: "1px solid #ccc", width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
           <ChevronRight size={16} />
         </button>
       </div>
