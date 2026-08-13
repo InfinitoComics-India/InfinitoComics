@@ -2,7 +2,7 @@ import InfinitoBanner from "./infinitoBanner"
 import Founder from './Founder'
 import TeamCarousel from './TeamCarousel'
 import OurVision from './OurVision'
-import TimeLine from '../../components/Journey'
+import Journey from '../../components/Journey'
 
 const index = () => {
   return (
@@ -11,7 +11,7 @@ const index = () => {
       <Founder/>
       <TeamCarousel/>
       <OurVision/>
-      {/* <TimeLine/> */}
+      <Journey/>
     </>
   )
 }
