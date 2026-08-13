@@ -7,20 +7,20 @@ import anushkaImg from "../../assets/Images/aboutUs/anushka.png";
 
 export const teamData = [
   {
+    team: "Software Developer",
+    members: [
+      { name: "Arshiya Singh", year: "(2026–present)", img: arshiyaImg },
+      { name: "Priyam Pinki", year: "(2026–present)", img: priyamImg },
+      { name: "Anushka Upadhyay", year: "(2026–present)", img: anushkaImg },
+    ],
+  },
+  {
     team: "UI/UX",
     members: [
       { name: "Paras Tyagi", year: "(2025–present)", img: parasImg },
       { name: "Anshika Bakshi", year: "(2025–present)", img: anshikaImg },
       { name: "Mansha Mishra", year: "(2025–present)", img: manshaImg },
       { name: "Sujal Karande", year: "(2025–present)", img: "https://i.pravatar.cc/150?u=ui4" },
-    ],
-  },
-  {
-    team: "Software Developer",
-    members: [
-      { name: "Arshiya Singh", year: "(2026–present)", img: arshiyaImg },
-      { name: "Priyam Pinki", year: "(2026–present)", img: priyamImg },
-      { name: "Anushka Upadhyay", year: "(2026–present)", img: anushkaImg },
     ],
   },
 ];
