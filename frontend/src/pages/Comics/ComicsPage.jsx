@@ -2,13 +2,32 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Bookmark } from "lucide-react";
 import { fetchComics } from "../../services/ComicService.js";
+import { getAll as fetchCharacters } from "../../services/CharacterServices.js";
 
 import spotImg1 from "../../../assets/Images/spotlight/image.png";
 import spotImg2 from "../../../assets/Images/spotlight/image (2).png";
 import spotImg3 from "../../../assets/Images/spotlight/image (3).png";
 import heroBg from "../../../assets/Images/character spotlight.png";
 
-/* ─── Demo data ─── */
+/* ─── Demo characters ─── */
+const DEMO_CHARACTERS = [
+  { _id: "c1", knownAs: "Battle Beast",  mainImageUrl: spotImg1, bgColor: "#0d1b2a" },
+  { _id: "c2", knownAs: "Kalari",        mainImageUrl: spotImg2, bgColor: "#2d0a1e" },
+  { _id: "c3", knownAs: "Poison",        mainImageUrl: spotImg3, bgColor: "#1a1a2e" },
+  { _id: "c4", knownAs: "Bullet",        mainImageUrl: spotImg1, bgColor: "#1c2b1a" },
+  { _id: "c5", knownAs: "Rizal",         mainImageUrl: spotImg2, bgColor: "#2b1a0a" },
+  { _id: "c6", knownAs: "Shadow",        mainImageUrl: spotImg3, bgColor: "#0a0a0a" },
+];
+
+/* ─── Demo genres ─── */
+const DEMO_GENRES = [
+  { id: "g1", label: "THRILLER",  img: spotImg1 },
+  { id: "g2", label: "CRIME",     img: spotImg2 },
+  { id: "g3", label: "FANTASY",   img: spotImg3 },
+  { id: "g4", label: "THRILLER",  img: spotImg1 },
+  { id: "g5", label: "CRIME",     img: spotImg2 },
+  { id: "g6", label: "ACTION",    img: spotImg3 },
+];
 const DEMO_COMICS = [
   {
     _id: "demo1", title: "Until Death", authors: ["Stan Lee"], releasedYear: 2025,
@@ -285,19 +304,161 @@ const Shimmer = () => (
 );
 
 /* ═══════════════════════════════════════
+   LEARN MORE ABOUT CHARACTERS
+═══════════════════════════════════════ */
+const CharactersSection = ({ characters, onViewMore }) => {
+  const ref = useRef(null);
+  const [dotIdx, setDotIdx] = useState(0);
+  const CARDS_PER_PAGE = 5;
+  const totalDots = Math.ceil(characters.length / CARDS_PER_PAGE);
+
+  const scroll = (dir) => {
+    if (!ref.current) return;
+    ref.current.scrollBy({ left: dir * 700, behavior: "smooth" });
+  };
+
+  // Update dot on scroll
+  const onScroll = () => {
+    if (!ref.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = ref.current;
+    const idx = Math.round((scrollLeft / (scrollWidth - clientWidth)) * (totalDots - 1));
+    setDotIdx(isNaN(idx) ? 0 : idx);
+  };
+
+  return (
+    <div style={{ background: "#fff", padding: "clamp(1.2rem,3vw,2.2rem) clamp(1rem,4vw,3rem)" }}>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.2rem" }}>
+        <h2 style={{ fontSize: "clamp(0.7rem,1.5vw,0.88rem)", fontWeight: 900, letterSpacing: "0.18em", textTransform: "uppercase", color: "#111" }}>
+          LEARN MORE ABOUT THE CHARACTERS &gt;
+        </h2>
+        <button onClick={onViewMore} style={{ background: "none", border: "none", color: "#e53935", fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer" }}>
+          VIEW MORE &gt;
+        </button>
+      </div>
+
+      {/* Slider */}
+      <div style={{ position: "relative", padding: "0 2rem" }}>
+        <button onClick={() => scroll(-1)} aria-label="prev" style={{ position: "absolute", left: 0, top: "40%", transform: "translateY(-50%)", zIndex: 10, background: "#fff", border: "1px solid #ccc", width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
+          <ChevronLeft size={16} />
+        </button>
+
+        <div ref={ref} onScroll={onScroll} style={{ display: "flex", gap: "clamp(0.5rem,1.2vw,0.9rem)", overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none", paddingBottom: "0.5rem", scrollBehavior: "smooth" }}>
+          {characters.map((char) => (
+            <div key={char._id} style={{ flexShrink: 0, width: "clamp(110px,11vw,145px)", cursor: "pointer" }}>
+              <div style={{ background: char.bgColor || "#1a1a2e", height: "clamp(140px,15vw,190px)", display: "flex", alignItems: "flex-end", justifyContent: "center", overflow: "hidden", position: "relative" }}>
+                <img
+                  src={char.mainImageUrl || char.image}
+                  alt={char.knownAs}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }}
+                />
+                {/* Name label */}
+                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.72)", padding: "4px 6px", textAlign: "center" }}>
+                  <span style={{ color: "#fff", fontSize: "0.58rem", fontWeight: 800, letterSpacing: "0.15em", textTransform: "uppercase" }}>
+                    {char.knownAs}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button onClick={() => scroll(1)} aria-label="next" style={{ position: "absolute", right: 0, top: "40%", transform: "translateY(-50%)", zIndex: 10, background: "#fff", border: "1px solid #ccc", width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
+          <ChevronRight size={16} />
+        </button>
+      </div>
+
+      {/* Pagination dots */}
+      <div style={{ display: "flex", justifyContent: "center", gap: "5px", marginTop: "1rem" }}>
+        {Array.from({ length: totalDots }).map((_, i) => (
+          <button key={i} onClick={() => {
+            if (!ref.current) return;
+            const { scrollWidth, clientWidth } = ref.current;
+            ref.current.scrollTo({ left: (i / (totalDots - 1)) * (scrollWidth - clientWidth), behavior: "smooth" });
+            setDotIdx(i);
+          }} style={{ width: i === dotIdx ? "20px" : "8px", height: "5px", borderRadius: "3px", background: i === dotIdx ? "#e53935" : "#ddd", border: "none", padding: 0, cursor: "pointer", transition: "all 0.3s" }} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/* ═══════════════════════════════════════
+   GENRES TO READ
+═══════════════════════════════════════ */
+const GenresSection = ({ genres, onViewMore }) => {
+  const ref = useRef(null);
+  const scroll = (dir) => ref.current?.scrollBy({ left: dir * 600, behavior: "smooth" });
+
+  return (
+    <div style={{ background: "#fff", padding: "clamp(1.2rem,3vw,2.2rem) clamp(1rem,4vw,3rem)" }}>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.2rem" }}>
+        <h2 style={{ fontSize: "clamp(0.7rem,1.5vw,0.88rem)", fontWeight: 900, letterSpacing: "0.18em", textTransform: "uppercase", color: "#111" }}>
+          GENRES TO READ &gt;
+        </h2>
+        <button onClick={onViewMore} style={{ background: "none", border: "none", color: "#e53935", fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer" }}>
+          VIEW MORE &gt;
+        </button>
+      </div>
+
+      {/* Slider */}
+      <div style={{ position: "relative", padding: "0 2rem" }}>
+        <button onClick={() => scroll(-1)} aria-label="prev" style={{ position: "absolute", left: 0, top: "40%", transform: "translateY(-50%)", zIndex: 10, background: "#fff", border: "1px solid #ccc", width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
+          <ChevronLeft size={16} />
+        </button>
+
+        <div ref={ref} style={{ display: "flex", gap: "clamp(0.5rem,1.2vw,0.9rem)", overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none", paddingBottom: "0.5rem", scrollBehavior: "smooth" }}>
+          {genres.map((genre) => (
+            <div key={genre.id} style={{ flexShrink: 0, width: "clamp(110px,11vw,145px)", cursor: "pointer", position: "relative", overflow: "hidden" }}
+              onMouseEnter={e => e.currentTarget.querySelector("img").style.transform = "scale(1.06)"}
+              onMouseLeave={e => e.currentTarget.querySelector("img").style.transform = "scale(1)"}
+            >
+              <img
+                src={genre.img}
+                alt={genre.label}
+                style={{ width: "100%", height: "clamp(140px,15vw,190px)", objectFit: "cover", display: "block", transition: "transform 0.3s" }}
+              />
+              {/* Dark overlay */}
+              <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)" }} />
+              {/* Genre label */}
+              <div style={{ position: "absolute", bottom: "10px", left: 0, right: 0, textAlign: "center" }}>
+                <span style={{ color: "#fff", fontSize: "0.6rem", fontWeight: 900, letterSpacing: "0.2em", textTransform: "uppercase" }}>
+                  {genre.label}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button onClick={() => scroll(1)} aria-label="next" style={{ position: "absolute", right: 0, top: "40%", transform: "translateY(-50%)", zIndex: 10, background: "#fff", border: "1px solid #ccc", width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
+          <ChevronRight size={16} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+/* ═══════════════════════════════════════
    MAIN PAGE
 ═══════════════════════════════════════ */
 const ComicsPage = () => {
   const [comics, setComics] = useState([]);
+  const [characters, setCharacters] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
-    fetchComics()
-      .then(data => setComics(Array.isArray(data) && data.length > 0 ? data : DEMO_COMICS))
-      .catch(() => setComics(DEMO_COMICS))
-      .finally(() => setLoading(false));
+
+    Promise.all([
+      fetchComics().catch(() => []),
+      fetchCharacters().catch(() => ({ data: [] })),
+    ]).then(([comicsData, charsRes]) => {
+      setComics(Array.isArray(comicsData) && comicsData.length > 0 ? comicsData : DEMO_COMICS);
+      const chars = charsRes?.data || charsRes || [];
+      setCharacters(Array.isArray(chars) && chars.length > 0 ? chars : DEMO_CHARACTERS);
+    }).finally(() => setLoading(false));
   }, []);
 
   const handleNavigate = (id, isDemo) => {
@@ -341,6 +502,24 @@ const ComicsPage = () => {
         <SectionHeader title="NEW RELEASES" />
         <ComicSlider comics={sorted} onCardClick={handleNavigate} />
       </div>
+
+      {/* Divider */}
+      <div style={{ borderTop: "1px solid #efefef", margin: "0 clamp(1rem,4vw,3rem)" }} />
+
+      {/* Characters */}
+      <CharactersSection
+        characters={characters}
+        onViewMore={() => navigate("/characters")}
+      />
+
+      {/* Divider */}
+      <div style={{ borderTop: "1px solid #efefef", margin: "0 clamp(1rem,4vw,3rem)" }} />
+
+      {/* Genres */}
+      <GenresSection
+        genres={DEMO_GENRES}
+        onViewMore={() => navigate("/comics")}
+      />
 
       <div style={{ height: "3rem" }} />
     </div>
