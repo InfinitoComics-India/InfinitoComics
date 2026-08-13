@@ -1,47 +1,47 @@
-import banner from '../../../assets/Images/aboutUs/banner.png'
-import bottom from '../../../assets/Images/aboutUs/Bottom.png'
+import React from 'react';
+import banner from '../../../assets/Images/aboutUs/banner.png';
+import bottom from '../../../assets/Images/aboutUs/Bottom.png';
+
 const InfinitoBanner = () => {
   return (
     <>
       <div
-        className="relative w-full bg-cover bg-center min-h-[60vh] flex items-center justify-center px-4 md:px-10 py-16"
-
+        className="relative w-full bg-cover bg-center min-h-[50vh] sm:min-h-[55vh] md:min-h-[60vh] flex items-center justify-center px-4 md:px-8 py-16 sm:py-20 md:py-24"
+        style={{
+          backgroundImage: `url(${banner})`,
+        }}
       >
-
-        {/* Black Overlay */}
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-opacity-70 z-0"
-          style={{
-            backgroundImage: `url(${banner})`,
-          }}
-        />
+        {/* Dark Overlay */}
+        <div className="absolute inset-0 bg-black/65 z-0" />
 
         {/* Centered Text Content */}
-        <div className="relative z-10 max-w-5xl text-center text-white space-y-6">
-          {/* Main Heading with Stretch Effect */}
-          <h1
-            className="text-4xl md:text-6xl font-extrabold tracking-widest text-red-600 uppercase scale-y-150"
-          >
+        <div className="relative z-10 w-full max-w-[1200px] text-center text-white space-y-6 px-4">
+          {/* Main Heading in Dharma Gothic E font */}
+          <h1 className="text-4xl sm:text-5xl md:text-8xl lg:text-9xl font-black tracking-widest text-[#E50914] uppercase font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif]">
             INFINITO COMICS
           </h1>
 
-          {/* Paragraph with Wider Letter Spacing */}
-          <p className="text-sm md:text-lg font-medium tracking-wider leading-relaxed ">
-            India’s Most Prominent Character Based Entertainment Company With Library Of More Than 2500+ Superheroes. <br />
-            We Are Committed To Bringing You The Best In Comics, Animation, Games And Merchandise.
-          </p>
+          {/* Subtitle Lines in DM Sans font */}
+          <div className="space-y-4 text-gray-100 font-normal text-xs sm:text-sm md:text-base lg:text-lg leading-relaxed max-w-5xl mx-auto font-dmsans">
+            <p className="tracking-wide font-dmsans">
+              India’s Most Prominent Character Based Entertainment Company With Library Of More Than 2500+ Superheroes. We Are<br className="hidden md:inline" />{' '}
+              Committed To Bringing You The Best In Comics, Animation, Games And Merchandise.
+            </p>
 
-          <p className="text-sm md:text-lg font-medium tracking-wide">
-            Discover Our Passion, Expertise, And Mission To Revolutionize The World Of AVGC–XR!
-          </p>
+            <p className="tracking-wide pt-1 font-dmsans">
+              Discover Our Passion, Expertise, And Mission To Revolutionize The World Of AVGC-XR!
+            </p>
+          </div>
         </div>
       </div>
-      <div className='w-full h-30 bg-cover bg-center bg-no-repeat -mt-1'
+
+      {/* Torn-Paper Bottom Transition */}
+      <div
+        className="w-full h-16 sm:h-24 md:h-28 bg-cover bg-center bg-no-repeat -mt-1 pointer-events-none"
         style={{
-          backgroundImage: `url(${bottom})`
+          backgroundImage: `url(${bottom})`,
         }}
       />
-
     </>
   );
 };
