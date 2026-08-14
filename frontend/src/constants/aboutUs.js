@@ -1,6 +1,7 @@
 import anshikaImg from "../../assets/Images/aboutUs/anshika.png";
 import manshaImg from "../../assets/Images/aboutUs/mansha.png";
 import parasImg from "../../assets/Images/aboutUs/paras.png";
+import sujalImg from "../../assets/Images/aboutUs/sujal.png";
 import arshiyaImg from "../../assets/Images/aboutUs/arshiya.png";
 import priyamImg from "../../assets/Images/aboutUs/priyam.png";
 import anushkaImg from "../../assets/Images/aboutUs/anushka.png";
@@ -20,7 +21,7 @@ export const teamData = [
       { name: "Paras Tyagi", year: "(2025–present)", img: parasImg },
       { name: "Anshika Bakshi", year: "(2025–present)", img: anshikaImg },
       { name: "Mansha Mishra", year: "(2025–present)", img: manshaImg },
-      { name: "Sujal Karande", year: "(2025–present)", img: "https://i.pravatar.cc/150?u=ui4" },
+      { name: "Sujal Karande", year: "(2025–present)", img: sujalImg },
     ],
   },
 ];
