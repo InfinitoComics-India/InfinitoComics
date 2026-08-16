@@ -7,19 +7,19 @@ import { FaArrowLeft } from 'react-icons/fa6';
 import founderImg from '../../../assets/Images/aboutUs/founder.png';
 import aboutUsUrls from '../../utils/imagesUrls/aboutUsUrls.js';
 
-// Section 2 Portfolio Card Images (from Rajan's Portfolio)
-import comicsCard from '../../../assets/Images/founderPortfolio/comics_card.png';
-import animationCard from '../../../assets/Images/founderPortfolio/animation_card.png';
-import gamingCard from '../../../assets/Images/founderPortfolio/gaming_card.png';
-import eyewearCard from '../../../assets/Images/founderPortfolio/eyewear_card.png';
+// Section 2 Individual Portfolio Photo Cards
+import characterArtPhoto from '../../../assets/Images/founderPortfolio/sec2_character_art.png';
+import comicCoversPhoto from '../../../assets/Images/founderPortfolio/sec2_comic_covers.png';
+import smartEyewearPhoto from '../../../assets/Images/founderPortfolio/sec2_smart_eyewear_photo.png';
+import merchCollectionPhoto from '../../../assets/Images/founderPortfolio/sec2_merch_collection.png';
 
-// Section 3 Portfolio Card Images (from Rajan's Portfolio)
-import shootingCard from '../../../assets/Images/founderPortfolio/shooting_card.png';
-import archeryCard from '../../../assets/Images/founderPortfolio/archery_card.png';
+// Section 3 Individual Portfolio Photo Cards
+import rifleShootingPhoto from '../../../assets/Images/founderPortfolio/sec3_rifle_shooting_photo.png';
+import archeryActionPhoto from '../../../assets/Images/founderPortfolio/sec3_archery_action_photo.png';
 
-// Section 4 Portfolio Card Images (from Rajan's Portfolio)
-import nitRaipurCard from '../../../assets/Images/founderPortfolio/nit_raipur_card.png';
-import mentorshipCard from '../../../assets/Images/founderPortfolio/mentorship_card.png';
+// Section 4 Individual Portfolio Photo Cards
+import nitRaipurPhoto from '../../../assets/Images/founderPortfolio/sec4_nit_raipur_photo.png';
+import tedxEventsPhoto from '../../../assets/Images/founderPortfolio/sec4_tedx_events_photo.png';
 
 const FounderProfile = () => {
   return (
@@ -171,19 +171,19 @@ const FounderProfile = () => {
             </p>
           </div>
 
-          {/* 4-Card Image Gallery Grid */}
+          {/* 4-Card Image Gallery Grid (Individual Portfolio Photos) */}
           <div className="pt-4 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
             <div className="w-full h-36 sm:h-44 md:h-52 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
-              <img src={comicsCard} alt="150+ Character Universe & Comics" className="w-full h-full object-cover" />
+              <img src={characterArtPhoto} alt="150+ Character Artworks Showcase" className="w-full h-full object-cover" />
             </div>
             <div className="w-full h-36 sm:h-44 md:h-52 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
-              <img src={animationCard} alt="Comic Book Series & Publications" className="w-full h-full object-cover" />
+              <img src={comicCoversPhoto} alt="Published Comic Book Covers" className="w-full h-full object-cover" />
             </div>
             <div className="w-full h-36 sm:h-44 md:h-52 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
-              <img src={gamingCard} alt="70+ Graphics & Branding Projects" className="w-full h-full object-cover" />
+              <img src={smartEyewearPhoto} alt="Next-Gen Smart Audio Eyewear Product Shot" className="w-full h-full object-cover" />
             </div>
             <div className="w-full h-36 sm:h-44 md:h-52 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
-              <img src={eyewearCard} alt="Next-Gen Audio Eyewear & POD Merch" className="w-full h-full object-cover" />
+              <img src={merchCollectionPhoto} alt="Infinito Superhero Apparel & Merch Collection" className="w-full h-full object-cover" />
             </div>
           </div>
         </section>
@@ -208,13 +208,13 @@ const FounderProfile = () => {
             </p>
           </div>
 
-          {/* 2-Card Image Gallery Grid for Sports & Foundation */}
+          {/* 2-Card Image Gallery Grid for Sports & Foundation (Individual Photos) */}
           <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
             <div className="w-full h-52 sm:h-64 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
-              <img src={shootingCard} alt="10m Air Rifle Shooting Gold Medal & Championships" className="w-full h-full object-cover" />
+              <img src={rifleShootingPhoto} alt="10m Air Rifle Shooting Championships & Medals" className="w-full h-full object-cover" />
             </div>
             <div className="w-full h-52 sm:h-64 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
-              <img src={archeryCard} alt="70m Recurve Archery & Patliputra Sports Complex" className="w-full h-full object-cover" />
+              <img src={archeryActionPhoto} alt="70m Recurve Archery Stance & Training" className="w-full h-full object-cover" />
             </div>
           </div>
         </section>
@@ -239,13 +239,13 @@ const FounderProfile = () => {
             </p>
           </div>
 
-          {/* 2-Card Gallery Grid for Mentorship & Collaborations */}
+          {/* 2-Card Gallery Grid for Mentorship & Collaborations (Individual Photos) */}
           <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
             <div className="w-full h-52 sm:h-64 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
-              <img src={nitRaipurCard} alt="NIT Raipur Architectural & Research Journey" className="w-full h-full object-cover" />
+              <img src={nitRaipurPhoto} alt="NIT Raipur Research Newsletter & Architectural Work" className="w-full h-full object-cover" />
             </div>
             <div className="w-full h-52 sm:h-64 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
-              <img src={mentorshipCard} alt="TEDx, E-Summit & Professional Collaborations" className="w-full h-full object-cover" />
+              <img src={tedxEventsPhoto} alt="TEDx NITRaipur, E-Summit & PTI News Collaborations" className="w-full h-full object-cover" />
             </div>
           </div>
         </section>
