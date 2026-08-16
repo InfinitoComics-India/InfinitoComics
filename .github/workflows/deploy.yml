@@ -20,17 +20,22 @@ jobs:
         with:
           node-version: 18
 
-      # Step 3: Install dependencies and Build
-      - name: Install and Build
+      # Step 3: Install dependencies and Build frontend
+      - name: Install and Build Frontend
         run: |
-          cd Research
-          npm install
-          cd ../frontend
+          cd frontend
           npm install
           npm run build
 
-      # Step 4: Deploy the built "dist" folder to Hostinger via FTP
-      - name: Deploy via FTP
+      # Step 4: Install dependencies and Build Research
+      - name: Install and Build Research
+        run: |
+          cd Research
+          npm install
+          npm run build
+
+      # Step 5: Deploy frontend dist to Hostinger
+      - name: Deploy Frontend via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_SERVER }}
@@ -38,6 +43,19 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./frontend/dist/
           server-dir: /public_html/
+          port: 21
+          protocol: ftp
+          security: loose
+
+      # Step 6: Deploy Research dist to research.infinitohq.com subdomain folder
+      - name: Deploy Research via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./Research/dist/
+          server-dir: /public_html/research.infinitohq.com/
           port: 21
           protocol: ftp
           security: loose
