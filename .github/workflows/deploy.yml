@@ -47,7 +47,7 @@ jobs:
           protocol: ftp
           security: loose
 
-      # Step 6: Deploy Research dist to research.infinitohq.com subdomain folder
+      # Step 6: Deploy Research dist to /public_html/research/
       - name: Deploy Research via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
@@ -55,7 +55,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./Research/dist/
-          server-dir: /public_html/research.infinitohq.com/
+          server-dir: /public_html/research/
           port: 21
           protocol: ftp
           security: loose
