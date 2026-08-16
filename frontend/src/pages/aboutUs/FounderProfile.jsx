@@ -7,20 +7,6 @@ import { FaArrowLeft } from 'react-icons/fa6';
 import founderImg from '../../../assets/Images/aboutUs/founder.png';
 import aboutUsUrls from '../../utils/imagesUrls/aboutUsUrls.js';
 
-// Section 2 Individual Portfolio Photo Cards
-import characterArtPhoto from '../../../assets/Images/founderPortfolio/sec2_character_art.png';
-import comicCoversPhoto from '../../../assets/Images/founderPortfolio/sec2_comic_covers.png';
-import smartEyewearPhoto from '../../../assets/Images/founderPortfolio/sec2_smart_eyewear_photo.png';
-import merchCollectionPhoto from '../../../assets/Images/founderPortfolio/sec2_merch_collection.png';
-
-// Section 3 Individual Portfolio Photo Cards
-import rifleShootingPhoto from '../../../assets/Images/founderPortfolio/sec3_rifle_shooting_photo.png';
-import archeryActionPhoto from '../../../assets/Images/founderPortfolio/sec3_archery_action_photo.png';
-
-// Section 4 Individual Portfolio Photo Cards
-import nitRaipurPhoto from '../../../assets/Images/founderPortfolio/sec4_nit_raipur_photo.png';
-import tedxEventsPhoto from '../../../assets/Images/founderPortfolio/sec4_tedx_events_photo.png';
-
 const FounderProfile = () => {
   return (
     <div className="w-full min-h-screen bg-white text-black py-6 sm:py-10 md:py-12 overflow-x-hidden">
@@ -171,20 +157,12 @@ const FounderProfile = () => {
             </p>
           </div>
 
-          {/* 4-Card Image Gallery Grid (Individual Portfolio Photos) */}
+          {/* 4 Empty Gray Placeholders Grid */}
           <div className="pt-4 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-            <div className="w-full h-36 sm:h-44 md:h-52 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
-              <img src={characterArtPhoto} alt="150+ Character Artworks Showcase" className="w-full h-full object-cover" />
-            </div>
-            <div className="w-full h-36 sm:h-44 md:h-52 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
-              <img src={comicCoversPhoto} alt="Published Comic Book Covers" className="w-full h-full object-cover" />
-            </div>
-            <div className="w-full h-36 sm:h-44 md:h-52 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
-              <img src={smartEyewearPhoto} alt="Next-Gen Smart Audio Eyewear Product Shot" className="w-full h-full object-cover" />
-            </div>
-            <div className="w-full h-36 sm:h-44 md:h-52 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
-              <img src={merchCollectionPhoto} alt="Infinito Superhero Apparel & Merch Collection" className="w-full h-full object-cover" />
-            </div>
+            <div className="w-full h-36 sm:h-44 md:h-52 bg-[#D9D9D9]" />
+            <div className="w-full h-36 sm:h-44 md:h-52 bg-[#D9D9D9]" />
+            <div className="w-full h-36 sm:h-44 md:h-52 bg-[#D9D9D9]" />
+            <div className="w-full h-36 sm:h-44 md:h-52 bg-[#D9D9D9]" />
           </div>
         </section>
 
@@ -208,14 +186,10 @@ const FounderProfile = () => {
             </p>
           </div>
 
-          {/* 2-Card Image Gallery Grid for Sports & Foundation (Individual Photos) */}
+          {/* 2 Empty Gray Placeholders Grid */}
           <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            <div className="w-full h-52 sm:h-64 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
-              <img src={rifleShootingPhoto} alt="10m Air Rifle Shooting Championships & Medals" className="w-full h-full object-cover" />
-            </div>
-            <div className="w-full h-52 sm:h-64 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
-              <img src={archeryActionPhoto} alt="70m Recurve Archery Stance & Training" className="w-full h-full object-cover" />
-            </div>
+            <div className="w-full h-52 sm:h-64 bg-[#D9D9D9]" />
+            <div className="w-full h-52 sm:h-64 bg-[#D9D9D9]" />
           </div>
         </section>
 
@@ -239,14 +213,10 @@ const FounderProfile = () => {
             </p>
           </div>
 
-          {/* 2-Card Gallery Grid for Mentorship & Collaborations (Individual Photos) */}
+          {/* 2 Empty Gray Placeholders Grid */}
           <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            <div className="w-full h-52 sm:h-64 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
-              <img src={nitRaipurPhoto} alt="NIT Raipur Research Newsletter & Architectural Work" className="w-full h-full object-cover" />
-            </div>
-            <div className="w-full h-52 sm:h-64 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
-              <img src={tedxEventsPhoto} alt="TEDx NITRaipur, E-Summit & PTI News Collaborations" className="w-full h-full object-cover" />
-            </div>
+            <div className="w-full h-52 sm:h-64 bg-[#D9D9D9]" />
+            <div className="w-full h-52 sm:h-64 bg-[#D9D9D9]" />
           </div>
         </section>
 
