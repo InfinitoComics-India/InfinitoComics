@@ -17,6 +17,10 @@ import eyewearCard from '../../../assets/Images/founderPortfolio/eyewear_card.pn
 import shootingCard from '../../../assets/Images/founderPortfolio/shooting_card.png';
 import archeryCard from '../../../assets/Images/founderPortfolio/archery_card.png';
 
+// Section 4 Portfolio Card Images (from Rajan's Portfolio)
+import nitRaipurCard from '../../../assets/Images/founderPortfolio/nit_raipur_card.png';
+import mentorshipCard from '../../../assets/Images/founderPortfolio/mentorship_card.png';
+
 const FounderProfile = () => {
   return (
     <div className="w-full min-h-screen bg-white text-black py-6 sm:py-10 md:py-12 overflow-x-hidden">
@@ -213,6 +217,81 @@ const FounderProfile = () => {
               <img src={archeryCard} alt="70m Recurve Archery & Patliputra Sports Complex" className="w-full h-full object-cover" />
             </div>
           </div>
+        </section>
+
+        {/* SECTION 4: A SOURCE OF INSPIRATION */}
+        <section className="pt-16 space-y-10">
+          {/* Section Title */}
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-black tracking-widest uppercase font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-black text-center">
+            A SOURCE OF INSPIRATION
+          </h2>
+
+          {/* Mentorship & Leadership Content */}
+          <div className="max-w-4xl mx-auto space-y-4 text-gray-800 text-[13px] sm:text-[14px] leading-relaxed font-dmsans tracking-wide text-left sm:text-justify">
+            <p>
+              Rajan Sharma's journey is an inspiring tale of perseverance, vision, and excellence. As an architect designing India's future, an entrepreneur transforming industries, and an athlete aspiring to represent the nation, Rajan exemplifies the spirit of modern India.
+            </p>
+            <p>
+              This journey of Rajan is framed with the guidance of his mentor Prof. Vivek Agnihotri at NIT Raipur and Mr. Pratik Khandelwal and with the contribution of many people who helped in the transformation of Rajan's Vision.
+            </p>
+            <p>
+              Through his endeavors, he not only showcases what is possible but also inspires others to dream big, work hard, and contribute meaningfully to society. Ar. Rajan Sharma is building a legacy—one that will continue to motivate and shape the leaders of tomorrow.
+            </p>
+          </div>
+
+          {/* 2-Card Gallery Grid for Mentorship & Collaborations */}
+          <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <div className="w-full h-52 sm:h-64 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
+              <img src={nitRaipurCard} alt="NIT Raipur Architectural & Research Journey" className="w-full h-full object-cover" />
+            </div>
+            <div className="w-full h-52 sm:h-64 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
+              <img src={mentorshipCard} alt="TEDx, E-Summit & Professional Collaborations" className="w-full h-full object-cover" />
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 5: ARCHITECT WITH A PURPOSE */}
+        <section className="pt-16 space-y-6">
+          {/* Section Title */}
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-black tracking-widest uppercase font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-black text-center">
+            ARCHITECT WITH A PURPOSE
+          </h2>
+
+          {/* Architectural Content */}
+          <div className="max-w-4xl mx-auto space-y-4 text-gray-800 text-[13px] sm:text-[14px] leading-relaxed font-dmsans tracking-wide text-left sm:text-justify">
+            <p>
+              Rajan's journey as an architect is defined by his ability to envision spaces that blend functionality with sustainability. His designs are not just about structures but about creating environments that inspire and serve communities.
+            </p>
+            <p>
+              As a professional architect, Rajan is dedicated to transforming and awaring nations through architectural journalism, integrating modern design principles, history of architecture along with environmentally conscious design practices are his key expertise. His work highlights the power of architecture to drive change and enhance lives.
+            </p>
+            <p>
+              His membership includes ISHRAE (Indian Society of Heating Refrigeration and Air Conditioning Engineering), FSAI (Fire Security of India), IBC (Indian Building Congress) and JCI (Junior Chamber Internationals) etc.
+            </p>
+          </div>
+        </section>
+
+        {/* SECTION 6: FUTURE ASPIRATIONS */}
+        <section className="pt-12 pb-8 space-y-8">
+          {/* Section Title */}
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-black tracking-widest uppercase font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-black text-center">
+            FUTURE ASPIRATIONS
+          </h2>
+
+          {/* Future Goals & Cybersecurity Content */}
+          <div className="max-w-4xl mx-auto space-y-4 text-gray-800 text-[13px] sm:text-[14px] leading-relaxed font-dmsans tracking-wide text-center">
+            <p>
+              Ar. Rajan Sharma's goals extend across multiple industries, reflecting his ambition to make India a global leader. His future plans include working in the field of cybersecurity to protect India's digital infrastructure.
+            </p>
+          </div>
+
+          {/* Red Accent Line Segment */}
+          <div className="w-48 sm:w-64 h-[2px] bg-[#E50914] mx-auto my-8" />
+
+          {/* Closing Quote / Highlight */}
+          <p className="text-gray-900 text-sm sm:text-base md:text-lg font-bold tracking-wide text-center max-w-3xl mx-auto font-dmsans">
+            Rajan Sharma stands as a beacon of hope, determination, and innovation, embodying the best of what India has to offer.
+          </p>
         </section>
       </div>
     </div>
