@@ -48,6 +48,7 @@ const EMPTY_FORM = {
   discussion: "",
   conclusion: "",
   publicationDate: "",
+  isPublished: false,
   authors: [{ name: "", email: "", affiliation: "" }],
 };
 
@@ -302,6 +303,26 @@ const PaperCreate = () => {
         </div>
 
         <div className="pt-6">
+          {/* Publish toggle */}
+          <div className="flex items-center gap-3 mb-6">
+            <span className="text-sm font-medium text-gray-700">Publish this paper?</span>
+            <button
+              type="button"
+              onClick={() => setForm((prev) => ({ ...prev, isPublished: !prev.isPublished }))}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                form.isPublished ? "bg-green-500" : "bg-gray-300"
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                  form.isPublished ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </button>
+            <span className={`text-sm font-semibold ${form.isPublished ? "text-green-600" : "text-gray-400"}`}>
+              {form.isPublished ? "Published" : "Draft"}
+            </span>
+          </div>
           <button
             type="submit"
             className="w-full bg-blue-600 text-white font-semibold py-3 rounded-md hover:bg-blue-700 transition"
