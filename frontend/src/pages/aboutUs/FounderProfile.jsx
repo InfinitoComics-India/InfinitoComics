@@ -3,8 +3,15 @@ import { Link } from 'react-router-dom';
 import { FaInstagram, FaLinkedinIn, FaFacebookF } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
 import { FaArrowLeft } from 'react-icons/fa6';
+
 import founderImg from '../../../assets/Images/aboutUs/founder.png';
 import aboutUsUrls from '../../utils/imagesUrls/aboutUsUrls.js';
+
+// Section 2 Portfolio Card Images (from Rajan's Portfolio)
+import comicsCard from '../../../assets/Images/founderPortfolio/comics_card.png';
+import animationCard from '../../../assets/Images/founderPortfolio/animation_card.png';
+import gamingCard from '../../../assets/Images/founderPortfolio/gaming_card.png';
+import eyewearCard from '../../../assets/Images/founderPortfolio/eyewear_card.png';
 
 const FounderProfile = () => {
   return (
@@ -57,7 +64,7 @@ const FounderProfile = () => {
               {/* Subtitle & Birthday Grid */}
               <div className="flex flex-col sm:flex-row justify-between items-start gap-6 pt-1">
                 <p className="text-gray-700 text-xs sm:text-sm leading-relaxed max-w-md font-dmsans">
-                  Leads and oversees all operations of the company, including creative direction, financial management, and strategic planning.
+                  Founder &amp; CEO of Infinito Comics (Miraya Corp). Oversees creative direction, character development, and strategic growth across 70+ team members.
                 </p>
 
                 <div className="flex-shrink-0">
@@ -113,15 +120,65 @@ const FounderProfile = () => {
           </div>
         </section>
 
-        {/* Intro Paragraph & Bottom Red Accent Line */}
+        {/* Real Bio Paragraph from Rajan's Portfolio (2 lines formatting) */}
         <div className="pt-8 space-y-8">
           <p className="text-gray-800 text-[13px] sm:text-[14px] leading-relaxed font-dmsans tracking-wide text-center max-w-4xl mx-auto">
-            Ar. Rajan Sharma is a visionary leader whose pursuits span architecture, entrepreneurship, and athletics. With a passion for excellence and a commitment to contributing meaningfully to India’s growth, Rajan has carved a unique path for himself, balancing creativity, innovation, and discipline.
+            Ar. Rajan Sharma is a visionary architect and entrepreneur holding a B.Arch from NIT Raipur and EMBA from IIM Udaipur. Combining design thinking with strategic business management, he leads 70+ creators building India’s premier character-based universe.
           </p>
 
           {/* Centered Red Accent Line Segment below Intro */}
           <div className="w-48 sm:w-64 h-[2px] bg-[#E50914] mx-auto mt-8" />
         </div>
+
+        {/* SECTION 2: ENTREPRENEURIAL VISIONARY (Real Content from Portfolio) */}
+        <section className="pt-12 space-y-10">
+          {/* Section Title */}
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-black tracking-widest uppercase font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-black text-center">
+            ENTREPRENEURIAL VISIONARY
+          </h2>
+
+          {/* Text Paragraphs & Pillars from Portfolio Slides 6, 7, 8, 10, 12 */}
+          <div className="max-w-4xl mx-auto space-y-5 text-gray-800 text-[13px] sm:text-[14px] leading-relaxed font-dmsans tracking-wide text-left sm:text-justify">
+            <p>
+              Rajan’s entrepreneurial journey is driven by a passion to revolutionize storytelling, graphic design, and smart technology. As the Founder &amp; Creative Head of Infinito Comics (a unit of Miraya Corporation), he leads operations across 70+ creative team members to build India’s largest original character universe:
+            </p>
+
+            <ol className="list-decimal list-inside space-y-2 pl-2 font-dmsans">
+              <li>
+                <span className="font-semibold text-black">150+ Character Universe:</span> Engineered over 150 original comic characters with distinct powers, storylines, and rich lore for the Infinito universe.
+              </li>
+              <li>
+                <span className="font-semibold text-black">Comic Book Publication:</span> Oversees end-to-end comic book creation from research and concept art to dynamic poses and published series like <em>Journey to Earth</em>, <em>Dark Hours</em>, and <em>Beauty Ranger</em>.
+              </li>
+              <li>
+                <span className="font-semibold text-black">Next-Gen Audio Eyewear:</span> Innovated smart audio eyewear blending style, Bluetooth connectivity, blue-light filtering, and AR/VR capability.
+              </li>
+              <li>
+                <span className="font-semibold text-black">POD Merchandising &amp; Sports Sponsorship:</span> Designed 100+ superhero apparel items and collectibles, serving as official merchandise partner for the Bihar Archery Association.
+              </li>
+            </ol>
+
+            <p className="pt-2">
+              With over 70+ completed graphics and branding projects for institutions like NIT Raipur, L.G. India, and WaterMark Studio, Rajan seamlessly bridges creative architectural vision with scalable business execution.
+            </p>
+          </div>
+
+          {/* 4-Card Image Gallery Grid */}
+          <div className="pt-4 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+            <div className="w-full h-36 sm:h-44 md:h-52 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
+              <img src={comicsCard} alt="150+ Character Universe & Comics" className="w-full h-full object-cover" />
+            </div>
+            <div className="w-full h-36 sm:h-44 md:h-52 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
+              <img src={animationCard} alt="Comic Book Series & Publications" className="w-full h-full object-cover" />
+            </div>
+            <div className="w-full h-36 sm:h-44 md:h-52 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
+              <img src={gamingCard} alt="70+ Graphics & Branding Projects" className="w-full h-full object-cover" />
+            </div>
+            <div className="w-full h-36 sm:h-44 md:h-52 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
+              <img src={eyewearCard} alt="Next-Gen Audio Eyewear & POD Merch" className="w-full h-full object-cover" />
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );
