@@ -34,7 +34,14 @@ jobs:
           npm install
           npm run build
 
-      # Step 5: Deploy frontend dist to Hostinger
+      # Step 5: Install dependencies and Build Admin
+      - name: Install and Build Admin
+        run: |
+          cd Admin
+          npm install
+          npm run build
+
+      # Step 6: Deploy frontend dist to Hostinger
       - name: Deploy Frontend via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
@@ -47,7 +54,7 @@ jobs:
           protocol: ftp
           security: loose
 
-      # Step 6: Deploy Research dist to /public_html/research/
+      # Step 7: Deploy Research dist to /public_html/research/
       - name: Deploy Research via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
@@ -56,6 +63,19 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./Research/dist/
           server-dir: /public_html/research/
+          port: 21
+          protocol: ftp
+          security: loose
+
+      # Step 8: Deploy Admin dist to /public_html/admin/
+      - name: Deploy Admin via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./Admin/dist/
+          server-dir: /public_html/admin/
           port: 21
           protocol: ftp
           security: loose
