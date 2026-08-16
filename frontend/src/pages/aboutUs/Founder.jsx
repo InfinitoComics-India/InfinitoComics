@@ -1,5 +1,6 @@
 import React from "react";
-import { FaInstagram, FaFacebookF, FaLinkedinIn, FaYoutube } from "react-icons/fa";
+import { Link } from "react-router-dom";
+import { FaInstagram, FaLinkedinIn } from "react-icons/fa";
 import founderImg from "../../../assets/Images/aboutUs/founder.png";
 import aboutUsUrls from "../../utils/imagesUrls/aboutUsUrls.js";
 
@@ -53,27 +54,33 @@ const FounderSection = () => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-2">
               {/* Social Icons */}
               <div className="flex gap-3 justify-center sm:justify-start">
-                <a href="#" className="border border-black p-2.5 hover:bg-black hover:text-white transition">
-                  <FaYoutube className="text-black hover:text-white" />
+                <a
+                  href="https://www.instagram.com/ar.rajansharma/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram Profile"
+                  className="border border-black p-2.5 hover:bg-black hover:text-white transition group"
+                >
+                  <FaInstagram className="text-black group-hover:text-white" />
                 </a>
-                <a href="#" className="border border-black p-2.5 hover:bg-black hover:text-white transition">
-                  <FaFacebookF className="text-black hover:text-white" />
-                </a>
-                <a href="#" className="border border-black p-2.5 hover:bg-black hover:text-white transition">
-                  <FaInstagram className="text-black hover:text-white" />
-                </a>
-                <a href="#" className="border border-black p-2.5 hover:bg-black hover:text-white transition">
-                  <FaLinkedinIn className="text-black hover:text-white" />
+                <a
+                  href="https://www.linkedin.com/in/rajan11/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="LinkedIn Profile"
+                  className="border border-black p-2.5 hover:bg-black hover:text-white transition group"
+                >
+                  <FaLinkedinIn className="text-black group-hover:text-white" />
                 </a>
               </div>
 
               {/* Read More */}
-              <a
-                href="#"
+              <Link
+                to="/founder-profile"
                 className="text-red-600 font-bold text-xs sm:text-sm tracking-wider uppercase text-center sm:text-left hover:underline"
               >
                 READ MORE &gt;
-              </a>
+              </Link>
             </div>
           </div>
         </div>

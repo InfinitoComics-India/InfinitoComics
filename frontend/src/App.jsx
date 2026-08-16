@@ -24,6 +24,7 @@ import Jobs from './pages/Career&Internships/jobs'
 import AllNewsPage from './pages/News_Blogs/AllNewsDisplayPage';
 import OTPVerification from './pages/resentOtp/resendOtp';
 import AboutUs from './pages/aboutUs/index.jsx'
+import FounderProfile from './pages/aboutUs/FounderProfile.jsx'
 import ErrorPage from './pages/ErrorForm/ErrorPage.jsx';
 import SignupStep3 from './pages/Signup/SignupStep3';
 import Cart from './pages/Cart/Cart';
@@ -103,6 +104,7 @@ function App() {
               <Route path="/Dashboard" element={<DashboardPage />} />
               <Route path="/Feedback" element={<FeedbackForm />} />
               <Route path="/aboutUS" element={<AboutUs />} />
+              <Route path="/founder-profile" element={<FounderProfile />} />
               <Route path="/characters" element={<Characters />} />
               <Route path="/characters/biography" element={<Biography />} />
               <Route path="/news" element={<News />} />
