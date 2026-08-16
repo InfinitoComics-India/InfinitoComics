@@ -13,6 +13,10 @@ import animationCard from '../../../assets/Images/founderPortfolio/animation_car
 import gamingCard from '../../../assets/Images/founderPortfolio/gaming_card.png';
 import eyewearCard from '../../../assets/Images/founderPortfolio/eyewear_card.png';
 
+// Section 3 Portfolio Card Images (from Rajan's Portfolio)
+import shootingCard from '../../../assets/Images/founderPortfolio/shooting_card.png';
+import archeryCard from '../../../assets/Images/founderPortfolio/archery_card.png';
+
 const FounderProfile = () => {
   return (
     <div className="w-full min-h-screen bg-white text-black py-6 sm:py-10 md:py-12 overflow-x-hidden">
@@ -30,7 +34,7 @@ const FounderProfile = () => {
 
         {/* SECTION 1: MEET THE FOUNDER */}
         <section className="space-y-8 pt-2">
-          {/* Top Title in Dharma / Bebas style font */}
+          {/* Top Title */}
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-widest uppercase font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-black">
             MEET THE FOUNDER
           </h1>
@@ -130,14 +134,14 @@ const FounderProfile = () => {
           <div className="w-48 sm:w-64 h-[2px] bg-[#E50914] mx-auto mt-8" />
         </div>
 
-        {/* SECTION 2: ENTREPRENEURIAL VISIONARY (Real Content from Portfolio) */}
+        {/* SECTION 2: ENTREPRENEURIAL VISIONARY */}
         <section className="pt-12 space-y-10">
           {/* Section Title */}
           <h2 className="text-xl sm:text-2xl md:text-3xl font-black tracking-widest uppercase font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-black text-center">
             ENTREPRENEURIAL VISIONARY
           </h2>
 
-          {/* Text Paragraphs & Pillars from Portfolio Slides 6, 7, 8, 10, 12 */}
+          {/* Text Paragraphs & Pillars */}
           <div className="max-w-4xl mx-auto space-y-5 text-gray-800 text-[13px] sm:text-[14px] leading-relaxed font-dmsans tracking-wide text-left sm:text-justify">
             <p>
               Rajan’s entrepreneurial journey is driven by a passion to revolutionize storytelling, graphic design, and smart technology. As the Founder &amp; Creative Head of Infinito Comics (a unit of Miraya Corporation), he leads operations across 70+ creative team members to build India’s largest original character universe:
@@ -176,6 +180,37 @@ const FounderProfile = () => {
             </div>
             <div className="w-full h-36 sm:h-44 md:h-52 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
               <img src={eyewearCard} alt="Next-Gen Audio Eyewear & POD Merch" className="w-full h-full object-cover" />
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 3: A LEADER FOR THE FUTURE */}
+        <section className="pt-16 space-y-10">
+          {/* Section Title */}
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-black tracking-widest uppercase font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-black text-center">
+            A LEADER FOR THE FUTURE
+          </h2>
+
+          {/* Athletic & Sponsorship Content */}
+          <div className="max-w-4xl mx-auto space-y-4 text-gray-800 text-[13px] sm:text-[14px] leading-relaxed font-dmsans tracking-wide text-left sm:text-justify">
+            <p>
+              A gold medalist in the 34th Bihar State 10m Air Rifle Shooting Championship, Rajan's athletic achievements are a testament to his discipline and dedication. His passion for sports extends beyond competition—he aspires to represent India on the global stage in the World Cup &amp; Olympics.
+            </p>
+            <p>
+              Rajan is also dedicated towards Archery &amp; his extraordinary performance in 70m Recurve Archery surely uplift him to represent India at higher level. Balancing a demanding training schedule at the Patliputra Sports Complex (Archery) and Patliputra Gun's Shooting Academy (10m Air Rifle Shooting), Rajan's commitment to excellence in sports mirrors his determination in his professional endeavors.
+            </p>
+            <p>
+              He is also supporting and sponsoring other athletes for their future endeavors through Infinito Foundation.
+            </p>
+          </div>
+
+          {/* 2-Card Image Gallery Grid for Sports & Foundation */}
+          <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <div className="w-full h-52 sm:h-64 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
+              <img src={shootingCard} alt="10m Air Rifle Shooting Gold Medal & Championships" className="w-full h-full object-cover" />
+            </div>
+            <div className="w-full h-52 sm:h-64 bg-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
+              <img src={archeryCard} alt="70m Recurve Archery & Patliputra Sports Complex" className="w-full h-full object-cover" />
             </div>
           </div>
         </section>
