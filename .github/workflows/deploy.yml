@@ -47,7 +47,7 @@ jobs:
           cd Admin
           echo "VITE_BASE_URL=https://infinitocomics-68cr.onrender.com" > .env
           npm install
-          npm run build
+          NODE_OPTIONS=--max-old-space-size=4096 npm run build
 
       # Step 6: Deploy frontend dist to Hostinger
       - name: Deploy Frontend via FTP
