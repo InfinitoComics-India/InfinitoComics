@@ -1,45 +1,56 @@
-export // Static data for comic cards
-const comics = [
+import shadow from '../../assets/Images/spotlight/image.png';
+import deadShot from '../../assets/Images/spotlight/image (2).png';
+import quickNinja from '../../assets/Images/spotlight/image (3).png';
+import captainMarvel from '../../assets/Images/captainMarvel.png';
+
+export const comics = [
   {
     id: 1,
-    title: "Wolverine (2025) #6",
+    title: "Shadow",
+    subtitle: '"He\'s the silence before chaos."',
     creator: "Stan Lee",
-    image: "https://i.ibb.co/ftrY63W/captain-marvel.jpg",
+    image: shadow,
   },
   {
     id: 2,
-    title: "Wolverine (2025) #6",
+    title: "Dead Shot",
+    subtitle: '"Half-machine, full menace."',
     creator: "Stan Lee",
-    image: "https://i.ibb.co/mJRDsNv/marvel-red.jpg",
+    image: deadShot,
   },
   {
     id: 3,
-    title: "Wolverine (2025) #6",
-    creator: "Stan Lee",
-    image: "https://i.ibb.co/YXscvND/shadow.jpg",
+    title: "Quick Ninja",
+    subtitle: '"If you saw him, you survived."',
+    creator: "Universe/ Artist",
+    image: quickNinja,
   },
   {
     id: 4,
-    title: "Wolverine (2025) #6",
+    title: "Shadow",
+    subtitle: '"He\'s the silence before chaos."',
     creator: "Stan Lee",
-    image: "https://i.ibb.co/4gCchK8/deadshot.jpg",
+    image: shadow,
   },
   {
     id: 5,
-    title: "Wolverine (2025) #6",
-    creator: "Universe/ Artist",
-    image: "https://i.ibb.co/GTb47f7/quick-ninja.jpg",
+    title: "Dead Shot",
+    subtitle: '"Half-machine, full menace."',
+    creator: "Stan Lee",
+    image: deadShot,
   },
   {
     id: 6,
-    title: "Wolverine (2025) #6",
+    title: "Quick Ninja",
+    subtitle: '"If you saw him, you survived."',
     creator: "Universe/ Artist",
-    image: "https://i.ibb.co/GTb47f7/quick-ninja.jpg",
+    image: quickNinja,
   },
   {
     id: 7,
-    title: "Wolverine (2025) #6",
-    creator: "Universe/ Artist",
-    image: "https://i.ibb.co/GTb47f7/quick-ninja.jpg",
+    title: "Captain Marvel",
+    subtitle: "Classic hero returns.",
+    creator: "Stan Lee",
+    image: captainMarvel,
   },
 ];

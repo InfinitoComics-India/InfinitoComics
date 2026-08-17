@@ -421,7 +421,7 @@ const Comic = () => {
                                 src={
                                     previewImg ||
                                     (typeof comicData.coverImg === "string" && comicData.coverImg) ||
-                                    "/fallback.jpg"
+                                    "https://placehold.co/256x320?text=No+Image"
                                 }
                                 alt="Cover"
                                 className="w-64 h-80 object-cover shadow border border-gray-300"
