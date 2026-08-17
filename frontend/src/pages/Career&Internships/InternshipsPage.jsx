@@ -126,7 +126,7 @@ const Hero = ({ onApply }) => (
   >
     {/* dark overlay */}
     <div className="absolute inset-0 bg-black/55" />
-    <div className="relative w-full max-w-[1200px] mx-auto px-12 py-16">
+    <div className="relative w-full max-w-[1200px] mx-auto px-4 sm:px-8 md:px-12 py-16">
       <p className="text-red-500 font-bold text-sm tracking-widest mb-3 uppercase">
         Internship at Infinito Comics
       </p>
@@ -150,10 +150,10 @@ const Hero = ({ onApply }) => (
 // Section 2 — Why Intern with Us
 const WhyIntern = () => (
   <div className="w-full bg-white py-16">
-    <div className="w-full max-w-[1200px] mx-auto px-12">
+    <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-8 md:px-12">
       <h2 className="text-2xl md:text-3xl font-bold text-center mb-2">Why Intern with Us?</h2>
       <p className="text-center text-gray-500 mb-10">Focus on learning outcomes and industry exposure.</p>
-      <div className="grid grid-cols-2 gap-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
         {WHY_ITEMS.map((item) => (
           <div key={item.label} className="relative overflow-hidden group h-56 sm:h-72">
             <img
@@ -178,6 +178,28 @@ const InternshipListings = () => {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const [selectedDept, setSelectedDept] = useState("All Departments");
+
+  // Track which job IDs the user has already applied for
+  const [appliedIds, setAppliedIds] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("appliedJobIds") || "[]");
+    } catch {
+      return [];
+    }
+  });
+
+  // Listen for storage changes (jobs.jsx sets this after a successful submit)
+  useEffect(() => {
+    const onStorage = () => {
+      try {
+        setAppliedIds(JSON.parse(localStorage.getItem("appliedJobIds") || "[]"));
+      } catch {}
+    };
+    window.addEventListener("storage", onStorage);
+    // Also poll every second in case same-tab storage event isn't fired
+    const interval = setInterval(onStorage, 1000);
+    return () => { window.removeEventListener("storage", onStorage); clearInterval(interval); };
+  }, []);
 
   useEffect(() => {
     const getData = async () => {
@@ -216,7 +238,7 @@ const InternshipListings = () => {
 
   return (
     <div id="internship-listings" className="w-full bg-gray-50 py-10">
-      <div className="w-full max-w-[1200px] mx-auto px-12">
+      <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-8 md:px-12">
         {/* Header */}
         <div className="text-center py-10">
           <h2 className="text-2xl md:text-3xl font-semibold mb-2">Career opportunities</h2>
@@ -227,11 +249,11 @@ const InternshipListings = () => {
 
         <div className="bg-white shadow-sm">
           {/* Filter bar */}
-          <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-4 border-b border-gray-100">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-4 sm:px-6 py-4 border-b border-gray-100 gap-3">
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
               <span className="text-sm font-semibold text-gray-700">Filter by</span>
               <select
-                className="border border-gray-300 p-2 text-sm min-w-[180px] focus:outline-none"
+                className="border border-gray-300 p-2 text-sm w-full sm:min-w-[180px] focus:outline-none"
                 value={selectedDept}
                 onChange={(e) => setSelectedDept(e.target.value)}
               >
@@ -276,10 +298,16 @@ const InternshipListings = () => {
                         <div className="text-sm text-gray-500 w-32 text-center hidden sm:block">
                           {job.positions} {job.positions === 1 ? "position" : "positions"}
                         </div>
-                        <div className="w-24 text-right">
-                          <Link to="/careers/apply" state={{ job }} className="text-blue-700 font-semibold text-sm tracking-widest uppercase hover:text-blue-900">
-                            APPLY &rsaquo;
-                          </Link>
+                        <div className="w-28 text-right">
+                          {appliedIds.includes(job.id) ? (
+                            <span className="text-green-600 font-semibold text-sm tracking-wide uppercase flex items-center justify-end gap-1">
+                              <CheckCircle size={14} /> Applied
+                            </span>
+                          ) : (
+                            <Link to="/careers/apply" state={{ job }} className="text-blue-700 font-semibold text-sm tracking-widest uppercase hover:text-blue-900">
+                              APPLY &rsaquo;
+                            </Link>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -297,7 +325,7 @@ const InternshipListings = () => {
 // Section 4 — Hiring explained (reuse steps)
 const HiringExplained = () => (
   <div className="w-full bg-white py-16">
-    <div className="w-full max-w-[1200px] mx-auto px-12">
+    <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-8 md:px-12">
       <h2 className="text-2xl sm:text-3xl font-bold text-center mb-2">Infinitos' hiring, explained</h2>
       <p className="text-center text-gray-500 text-sm mb-10">Not all heroes wear capes — but we do email back.</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -320,10 +348,10 @@ const HiringExplained = () => (
 // Section 5 — We are always hiring
 const AlwaysHiring = () => (
   <div className="w-full bg-white py-16">
-    <div className="w-full max-w-[1200px] mx-auto px-12 text-center">
+    <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-8 md:px-12 text-center">
       <h2 className="text-2xl md:text-3xl font-bold mb-3">We are always hiring!</h2>
       <p className="text-gray-500 mb-16 text-sm">Apply for a wide range of positions we have to offer</p>
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-x-8 gap-y-12 justify-items-center">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-8 gap-y-12 justify-items-center">
         {ROLES.map((role) => (
           <div key={role.seed} className="flex flex-col items-center gap-2">
             <img
@@ -400,9 +428,9 @@ const VALUE_ICONS = {
 
 const OurValues = () => (
   <div className="w-full bg-white py-16">
-    <div className="w-full max-w-[1200px] mx-auto px-12">
+    <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-8 md:px-12">
       <h2 className="text-2xl md:text-3xl font-bold text-center mb-14">Our Values</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-16 gap-y-14 max-w-3xl mx-auto">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 sm:gap-x-16 gap-y-10 sm:gap-y-14 max-w-3xl mx-auto">
         {VALUES.map((v) => (
           <div key={v.label} className="flex flex-col items-start gap-4">
             {VALUE_ICONS[v.label]}
@@ -417,7 +445,7 @@ const OurValues = () => (
 // Section 7 — Research & Mentorship
 const MentorshipSupport = () => (
   <div className="w-full bg-white py-16">
-    <div className="w-full max-w-[1200px] mx-auto px-12">
+    <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-8 md:px-12">
       <h2 className="text-2xl md:text-3xl font-bold text-center mb-2">Research &amp; Mentorship Support</h2>
       <p className="text-center text-gray-500 text-sm mb-12">We don't just give you tasks — we help you build your future.</p>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -458,7 +486,7 @@ const Testimonials = () => {
 
   return (
     <div className="w-full bg-white py-16">
-      <div className="w-full max-w-[1200px] mx-auto px-12">
+      <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-8 md:px-12">
         <h2 className="text-2xl md:text-3xl font-bold text-center mb-2">Intern Testimonials</h2>
         <p className="text-center text-gray-500 text-sm mb-12">
           At Infinito, your career isn't a ladder. It's a universe — and you get to build it.
@@ -509,7 +537,7 @@ const InternshipDetails = () => {
 
   return (
     <div className="w-full bg-white py-16">
-      <div className="w-full max-w-[1200px] mx-auto px-12">
+      <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-8 md:px-12">
         <h2 className="text-2xl md:text-3xl font-bold text-center mb-12">Internship Details</h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
           {/* Left image */}
@@ -570,3 +598,4 @@ const InternshipsPage = () => {
 };
 
 export default InternshipsPage;
+

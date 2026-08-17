@@ -52,9 +52,7 @@ const Footer = () => {
                 {" "}
                 <span className="">BLOGS & NEWS</span>
               </Link>
-              <Link to="/careers">
-                <span>CAREER</span>
-              </Link>
+              <Link to="/careers"><span>CAREER</span></Link>
               <Link to="/comics">
                 <span>COMICS</span>
               </Link>
@@ -66,10 +64,10 @@ const Footer = () => {
               <Link to={FOUNDATION_BASE_URL}>
                 <span className="font">FOUNDATION</span>
               </Link>
-              <Link to={RESEARCH_BASE_URL}>
+              <a href={`${RESEARCH_BASE_URL}/research/browseResearch`}>
                 {" "}
                 <span>RESEARCH</span>
-              </Link>
+              </a>
               <Link to="/support-us">
                 <span>SUPPORT US</span>
               </Link>
@@ -134,7 +132,7 @@ const Footer = () => {
             <Link to="/news">BLOGS & NEWS</Link>
             <Link to={FOUNDATION_BASE_URL}><span className="font">FOUNDATION</span></Link> 
             <Link to="/careers">CAREER</Link>
-             <Link to={RESEARCH_BASE_URL} > <span>RESEARCH</span></Link>
+             <a href={`${RESEARCH_BASE_URL}/research/browseResearch`}> <span>RESEARCH</span></a>
             <span>INTERNSHIP</span>
             <Link to="/support-us">SUPPORT US</Link>
           </div>
@@ -226,3 +224,4 @@ const Footer = () => {
 };
 
 export default Footer;
+

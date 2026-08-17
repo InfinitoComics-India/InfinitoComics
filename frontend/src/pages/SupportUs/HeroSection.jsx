@@ -119,26 +119,26 @@ function HeroSection() {
           <div className="flex flex-col lg:flex-row justify-between items-center gap-10 w-full max-w-[1200px] mx-auto px-6 lg:px-12">
 
             {/* Left Section */}
-            <div className="w-full lg:w-1/2 font-bebas text-start">
+            <div className="w-full lg:w-1/2 font-bebas text-center lg:text-start">
               <h2 className="text-2xl sm:text-3xl md:text-[1.9rem] font-bold mb-2">SUPPORT INFINITO’S JOURNEY.</h2>
-              <p className="text-lg sm:text-xl mb-6">Infinito Universe • Innovation • National Development</p>
+              <p className="text-lg sm:text-xl mb-6">Infinito Universe • Innovation • Nation Development</p>
 
-              <div className="flex flex-wrap items-center justify-between flex-col sm:flex-row gap-1 my-8 ">
-                <div className='flex flex-col justify-center pr-5 '>
+              <div className="flex flex-wrap items-center justify-center sm:justify-between flex-col sm:flex-row gap-4 sm:gap-1 my-8">
+                <div className='flex flex-col items-center justify-center sm:pr-5'>
                   <p className="text-2xl sm:text-3xl font-bold text-center">{formattedMonthlyFunds}</p>
-                  <p className="text-sm sm:text-md">Monthly Contributions!</p>
+                  <p className="text-sm sm:text-md text-center">Monthly Contributions!</p>
                 </div>
-                <div className='flex flex-col items-center justify-center px-5'>
-                  <p className="text-2xl sm:text-3xl font-bold">{formattedIndividualStat}</p>
-                  <p className="text-sm sm:text-md">Individuals</p>
+                <div className='flex flex-col items-center justify-center sm:px-5'>
+                  <p className="text-2xl sm:text-3xl font-bold text-center">{formattedIndividualStat}</p>
+                  <p className="text-sm sm:text-md text-center">Individuals</p>
                 </div>
-                <div className='flex flex-col justify-center items-center px-5 '>
-                  <p className="text-2xl sm:text-3xl font-bold">{summaryStats.corporates}</p>
-                  <p className="text-sm sm:text-md">Corporates</p>
+                <div className='flex flex-col items-center justify-center sm:px-5'>
+                  <p className="text-2xl sm:text-3xl font-bold text-center">{summaryStats.corporates}</p>
+                  <p className="text-sm sm:text-md text-center">Corporates</p>
                 </div>
               </div>
 
-              <p className="text-sm sm:text-md mb-3">
+              <p className="text-sm sm:text-md mb-3 text-center lg:text-start">
                 Every support counts towards making this universe a better place and keeping this story alive!
               </p>
               <p className="cursor-pointer text-sm sm:text-md">

@@ -60,17 +60,25 @@ const Checkout = () => {
   };
 
   return (
-    <div style={{ background: '#f3f4f6', minHeight: '100vh', padding: '3rem 0' }}>
-      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 3rem', display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
+    <div style={{ background: '#f3f4f6', minHeight: '100vh', padding: 'clamp(1.5rem, 4vw, 3rem) 0' }}>
+      <div style={{
+        maxWidth: '1100px',
+        margin: '0 auto',
+        padding: '0 clamp(1rem, 4vw, 3rem)',
+        display: 'flex',
+        flexWrap: 'wrap',       /* stacks on mobile */
+        gap: '2rem',
+        alignItems: 'flex-start',
+      }}>
 
-        {/* Cart */}
-        <div style={{ flex: '0 0 38%', maxWidth: '38%' }}>
+        {/* Cart — full width on mobile, 38% on desktop */}
+        <div style={{ flex: '1 1 260px' }}>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#111', marginBottom: '1.5rem' }}>Your Cart</h2>
           <div style={{ background: '#e0e0e0', width: '100px', height: '130px', borderRadius: '4px' }} />
         </div>
 
-        {/* Form */}
-        <div style={{ flex: 1, background: '#fff', padding: '2rem 2.5rem', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
+        {/* Form — full width on mobile, grows on desktop */}
+        <div style={{ flex: '2 1 300px', background: '#fff', padding: 'clamp(1.2rem, 3vw, 2rem) clamp(1rem, 3vw, 2.5rem)', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
 
           {/* Steps */}
           <div style={{ display: 'flex', marginBottom: '2rem' }}>
@@ -83,18 +91,16 @@ const Checkout = () => {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '0.75rem', fontWeight: 700, marginBottom: '4px',
                 }}>{i + 1}</div>
-                <span style={{ fontSize: '0.68rem', color: i === step ? '#DD1215' : '#999', fontWeight: i === step ? 700 : 400 }}>{label}</span>
+                <span style={{ fontSize: 'clamp(0.58rem, 1.5vw, 0.68rem)', color: i === step ? '#DD1215' : '#999', fontWeight: i === step ? 700 : 400, textAlign: 'center' }}>{label}</span>
               </div>
             ))}
           </div>
 
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111', marginBottom: '1.5rem' }}>
+          <h2 style={{ fontSize: 'clamp(1.2rem, 3vw, 1.5rem)', fontWeight: 700, color: '#111', marginBottom: '1.5rem' }}>
             {isLogin ? 'Log-in or Register' : 'Create Account'}
           </h2>
 
           <form onSubmit={handleSubmit}>
-
-            {/* Signup-only fields */}
             {!isLogin && (
               <>
                 <div style={{ marginBottom: '1rem' }}>
@@ -112,13 +118,11 @@ const Checkout = () => {
               </>
             )}
 
-            {/* Email */}
             <div style={{ marginBottom: '1rem' }}>
               <label style={lbl}>Email</label>
               <input style={inp} type="email" placeholder="Please type your email here" value={form.email} required onChange={set('email')} />
             </div>
 
-            {/* Password */}
             <div style={{ marginBottom: '0.8rem', position: 'relative' }}>
               <label style={lbl}>Password</label>
               <div style={{ position: 'relative' }}>
@@ -161,14 +165,12 @@ const Checkout = () => {
             </p>
           </form>
 
-          {/* Divider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: '1.5rem 0' }}>
             <div style={{ flex: 1, height: '1px', background: '#e0e0e0' }} />
             <span style={{ fontSize: '0.75rem', color: '#999' }}>or</span>
             <div style={{ flex: 1, height: '1px', background: '#e0e0e0' }} />
           </div>
 
-          {/* Social login */}
           <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
             {[<FaGoogle size={20} />, <MdOutlinePassword size={20} />, <FaApple size={20} />].map((icon, i) => (
               <button key={i} style={{ width: '52px', height: '52px', border: '1px solid #ddd', background: '#fff', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#444' }}>

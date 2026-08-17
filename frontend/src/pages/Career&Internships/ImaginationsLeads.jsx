@@ -14,7 +14,7 @@ const ImaginationsLeads = () => {
 
   return (
     <div className="w-full bg-white py-16 space-y-20">
-      <div className="w-full max-w-[1200px] mx-auto px-12">
+      <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-8 md:px-12">
 
         {/* Section title */}
         <div className="flex flex-col items-center text-center max-w-3xl mx-auto py-10">
@@ -32,7 +32,7 @@ const ImaginationsLeads = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
           <div className="border p-6 rounded-md">
             <h3 className="font-bold mb-2 text-xl">Connected by Stories</h3>
-            <p className="text-gray-600 text-lg tracking-tight">
+            <p className="text-gray-600 text-base md:text-lg tracking-tight">
               From anywhere in the world, we come together to create something unforgettable.
             </p>
           </div>
@@ -92,7 +92,7 @@ const ImaginationsLeads = () => {
               helping you feel your best—on and off the page. From rest and recharge time to
               holistic support, we make sure you thrive with a clear mind and a full heart.
             </p>
-            <div className="flex flex-col gap-4 text-lg mt-8">
+            <div className="flex flex-col gap-3 text-base mt-6">
               <p>Generous time off to rest, create, and give back</p>
               <p>Comprehensive healthcare for body and mind</p>
               <p>Support for your well-being, family, and future</p>

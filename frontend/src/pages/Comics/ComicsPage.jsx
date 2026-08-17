@@ -1,606 +1,265 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Bookmark } from "lucide-react";
+import { Bookmark, ChevronLeft, ChevronRight } from "lucide-react";
 import { fetchComics } from "../../services/ComicService.js";
-// Local spotlight images (already used in spotlightData)
-import spotImg1 from "../../../assets/Images/spotlight/image.png";
-import spotImg2 from "../../../assets/Images/spotlight/image (2).png";
-import spotImg3 from "../../../assets/Images/spotlight/image (3).png";
+import heroImg from "../../../assets/Images/quick-vision.png";
 
-// Hero banner image — the "Until Death" comic artwork
-import heroBg from "../../../assets/Images/character spotlight.png";
+/* ─── Shimmer ─────────────────────────────────────────────── */
+const CardShimmer = () => (
+  <div className="flex-shrink-0 animate-pulse" style={{ width: "155px" }}>
+    <div className="w-[155px] h-[200px] bg-gray-200" />
+    <div className="h-3 bg-gray-200 mt-2 w-4/5 rounded" />
+    <div className="h-3 bg-gray-200 mt-1 w-3/5 rounded" />
+  </div>
+);
 
-/* ─────────────────────────────────────────────────────
-   Build demo comics from existing local data so the
-   page looks exactly like the reference even with
-   an empty database.
-─────────────────────────────────────────────────────── */
-const DEMO_COMICS = [
-  {
-    _id: "demo1",
-    title: "Superman: The Knight of Steel #107",
-    authors: ["Jerry Siegel", "Joe Shuster"],
-    releasedYear: 2025,
-    description:
-      "When a mysterious rift hurls Superman into a medieval realm, the Man of Steel must trade his cape for a sword to battle dragons, dark magic, and destiny itself.",
-    coverImg: spotImg1,
-    bannerImg: spotImg1,
-    tag: "NEW RELEASE",
-    isDemo: true,
-  },
-  {
-    _id: "demo2",
-    title: "Dead Shot",
-    authors: ["Stan Lee"],
-    releasedYear: 2025,
-    description: "Precision, power, and no second chances.",
-    coverImg: spotImg2,
-    bannerImg: spotImg2,
-    isDemo: true,
-  },
-  {
-    _id: "demo3",
-    title: "Quice Ninja",
-    authors: ["Universe/ Artist"],
-    releasedYear: 2025,
-    description: "Silent, swift, and absolutely deadly.",
-    coverImg: spotImg3,
-    bannerImg: spotImg3,
-    isDemo: true,
-  },
-  {
-    _id: "demo4",
-    title: "Shadow",
-    authors: ["Stan Lee"],
-    releasedYear: 2025,
-    description: "He walks between light and darkness.",
-    coverImg: spotImg1,
-    bannerImg: spotImg1,
-    isDemo: true,
-  },
-  {
-    _id: "demo5",
-    title: "Wolverine (2025) #6",
-    authors: ["Stan Lee"],
-    releasedYear: 2025,
-    description: "The claws are back.",
-    coverImg: spotImg2,
-    bannerImg: spotImg2,
-    isDemo: true,
-  },
-];
+const SpotlightShimmer = () => (
+  <div className="flex gap-4 animate-pulse">
+    <div className="w-[138px] h-[174px] bg-gray-200 flex-shrink-0" />
+    <div className="flex-1 space-y-2 py-1">
+      <div className="h-4 bg-gray-200 rounded w-3/4" />
+      <div className="h-3 bg-gray-200 rounded w-1/2" />
+      <div className="h-3 bg-gray-200 rounded w-full" />
+      <div className="h-3 bg-gray-200 rounded w-5/6" />
+    </div>
+  </div>
+);
 
-/* ═══════════════════════════════════════════════════
-   HERO BANNER
-   Uses the character spotlight image directly
-═══════════════════════════════════════════════════ */
-const HeroBanner = ({ comic, onReadNow }) => {
+/* ─── Hero Banner ─────────────────────────────────────────── */
+const HeroBanner = ({ comic }) => {
+  const navigate = useNavigate();
   return (
-    <div className="w-full" style={{ background: "#0a0a0a", lineHeight: 0 }}>
+    <div className="relative w-full overflow-hidden bg-black" style={{ minHeight: "260px" }}>
       <img
-        src={heroBg}
-        alt="Comic Spotlight - Until Death"
-        style={{
-          display: "block",
-          width: "100%",
-          height: "auto",
-        }}
+        src={comic?.bannerImg || comic?.coverImg || heroImg}
+        alt="Comic Spotlight"
+        className="absolute inset-0 w-full h-full object-cover object-top pointer-events-none"
+        style={{ opacity: 0.85 }}
       />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: "linear-gradient(to right, rgba(0,0,0,0.88) 36%, rgba(0,0,0,0.2) 65%, transparent)" }}
+      />
+      <div className="w-full max-w-[1200px] mx-auto px-12 relative z-10 flex items-center" style={{ minHeight: "260px" }}>
+        <div className="flex flex-col justify-center py-16" style={{ maxWidth: "480px" }}>
+          <p className="text-[0.62rem] font-bold tracking-[0.22em] text-gray-300 uppercase mb-2">
+            Comic Spotlight
+          </p>
+          <h1
+            className="font-black uppercase leading-none mb-4 whitespace-nowrap"
+            style={{
+              color: "#DD1215",
+              fontSize: "clamp(2.8rem, 6vw, 4.2rem)",
+              fontFamily: "Impact, Arial Black, sans-serif",
+              letterSpacing: "0.05em",
+            }}
+          >
+            {comic?.title || "UNTIL DEATH"}
+          </h1>
+          <p className="text-gray-200 text-xs leading-relaxed mb-6 max-w-xs">
+            {comic?.description || "A moody Mumbai street surfer with custom weapons, fog-cutting vision, and a speed-boosting ride—meet the rogue who upgrades on the fly and never plays by the rules."}
+          </p>
+          <button
+            onClick={() => comic && navigate(`/comicChap/${comic._id}/chapters`)}
+            className="self-start border border-white text-white text-xs font-bold tracking-[0.12em] px-5 py-2 uppercase hover:bg-white hover:text-black transition-all"
+          >
+            Read Now &rsaquo;
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
 
-/* ═══════════════════════════════════════════════════
-   TORN PAPER EDGE
-   White jagged shape cutting up from black→white
-═══════════════════════════════════════════════════ */
+/* ─── Torn edge ───────────────────────────────────────────── */
 const TornEdge = () => (
-  <div style={{ background: "#0a0a0a", lineHeight: 0, display: "block" }}>
+  <div style={{ background: '#000', marginBottom: '-1px', lineHeight: 0 }}>
     <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 1440 54"
+      viewBox="0 0 1440 40"
       preserveAspectRatio="none"
-      style={{ display: "block", width: "100%", height: "54px" }}
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ display: 'block', width: '100%', height: '40px' }}
     >
       <path
-        fill="#ffffff"
-        d="
-          M0,54 L0,42
-          C24,24 48,50 72,36
-          C96,22 120,46 144,34
-          C168,20 192,44 216,30
-          C240,16 264,42 288,28
-          C312,14 336,40 360,26
-          C384,12 408,38 432,24
-          C456,10 480,36 504,22
-          C528,8 552,34 576,20
-          C600,6 624,32 648,18
-          C672,4 696,30 720,16
-          C744,2 768,28 792,14
-          C816,0 840,26 864,12
-          C888,0 912,24 936,12
-          C960,0 984,22 1008,10
-          C1032,0 1056,20 1080,10
-          C1104,0 1128,18 1152,8
-          C1176,0 1200,16 1224,8
-          C1248,0 1272,14 1296,6
-          C1320,0 1344,12 1368,4
-          C1392,0 1416,10 1440,2
-          L1440,54 Z
-        "
+        fill="white"
+        d="M0,40 L0,28 C40,36 55,14 90,26 C115,34 130,10 165,22 C195,32 215,8 250,20 C278,30 295,6 330,18 C360,28 375,4 415,16 C445,26 465,2 500,14 C530,24 548,0 582,12 C612,22 632,38 668,26 C698,16 718,32 754,20 C784,10 802,26 838,14 C868,4 888,20 924,8 C954,18 972,34 1008,22 C1038,12 1058,28 1094,16 C1124,6 1142,22 1178,10 C1208,0 1228,16 1264,4 C1294,14 1314,30 1350,18 C1380,8 1400,24 1440,12 L1440,40 Z"
       />
     </svg>
   </div>
 );
-
-/* ═══════════════════════════════════════════════════
-   TODAY'S SPOTLIGHT SECTION
-═══════════════════════════════════════════════════ */
-const TodaysSpotlight = ({ comics, onReadNow }) => {
-  const [activeIdx, setActiveIdx] = useState(0);
-  if (!comics.length) return null;
-
-  const featured = comics[activeIdx];
-
-  return (
-    <div style={{ background: "#fff", padding: "2.5rem 3rem 2rem" }}>
-      {/* Section title */}
-      <h2
-        style={{
-          fontSize: "0.9rem",
-          fontWeight: 900,
-          letterSpacing: "0.2em",
-          textTransform: "uppercase",
-          marginBottom: "1.6rem",
-          color: "#111",
-        }}
-      >
-        TODAY'S SPOTLIGHT
-      </h2>
-
-      <div style={{ display: "flex", gap: "1.5rem", alignItems: "flex-start", flexWrap: "wrap" }}>
-        {/* ── LEFT: featured comic ── */}
-        <div style={{ display: "flex", gap: "1.2rem", flex: 1, minWidth: 0 }}>
-          {/* Cover + badge */}
-          <div style={{ position: "relative", flexShrink: 0, width: "130px" }}>
-            <img
-              src={featured.coverImg}
-              alt={featured.title}
-              style={{
-                width: "130px",
-                height: "185px",
-                objectFit: "cover",
-                display: "block",
-                boxShadow: "0 2px 12px rgba(0,0,0,0.18)",
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                bottom: 0,
-                left: 0,
-                right: 0,
-                background: "#000",
-                color: "#fff",
-                textAlign: "center",
-                fontSize: "0.52rem",
-                fontWeight: 800,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                padding: "4px 0",
-              }}
-            >
-              NEW RELEASE
-            </div>
-          </div>
-
-          {/* Info */}
-          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            <div>
-              <h3
-                style={{
-                  fontSize: "1.35rem",
-                  fontWeight: 800,
-                  color: "#000",
-                  lineHeight: 1.2,
-                  marginBottom: "0.3rem",
-                }}
-              >
-                {featured.title}
-              </h3>
-
-              <div style={{ display: "flex", alignItems: "baseline", gap: "1rem", marginBottom: "0.6rem" }}>
-                <p
-                  style={{
-                    fontSize: "0.62rem",
-                    fontWeight: 700,
-                    color: "#888",
-                    letterSpacing: "0.1em",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  {Array.isArray(featured.authors)
-                    ? featured.authors.join(" AND ")
-                    : featured.authors}
-                </p>
-                {featured.releasedYear && (
-                  <span style={{ fontSize: "0.68rem", color: "#bbb" }}>
-                    {featured.releasedYear}
-                  </span>
-                )}
-              </div>
-
-              <p
-                style={{
-                  fontSize: "0.8rem",
-                  color: "#555",
-                  lineHeight: 1.6,
-                  maxWidth: "360px",
-                }}
-              >
-                {featured.description}
-              </p>
-            </div>
-
-            {/* Buttons */}
-            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginTop: "1.2rem" }}>
-              <button
-                style={{
-                  border: "1px solid #222",
-                  background: "transparent",
-                  padding: "0.42rem",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Bookmark size={14} />
-              </button>
-              <button
-                onClick={() => onReadNow(featured._id, featured.isDemo)}
-                style={{
-                  background: "#e53935",
-                  color: "#fff",
-                  border: "none",
-                  fontSize: "0.65rem",
-                  fontWeight: 800,
-                  letterSpacing: "0.16em",
-                  textTransform: "uppercase",
-                  padding: "0.5rem 1.4rem",
-                  cursor: "pointer",
-                }}
-              >
-                READ NOW &gt;
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* ── RIGHT: thumbnail selectors ── */}
-        <div style={{ display: "flex", gap: "0.6rem", flexShrink: 0 }}>
-          {comics.slice(0, 4).map((comic, i) => (
-            <button
-              key={comic._id}
-              onClick={() => setActiveIdx(i)}
-              style={{
-                padding: 0,
-                border: i === activeIdx ? "2px solid #e53935" : "2px solid transparent",
-                background: "none",
-                cursor: "pointer",
-                opacity: i === activeIdx ? 1 : 0.65,
-                transition: "opacity 0.2s",
-                width: "110px",
-                flexShrink: 0,
-              }}
-            >
-              <img
-                src={comic.coverImg}
-                alt={comic.title}
-                style={{
-                  width: "110px",
-                  height: "155px",
-                  objectFit: "cover",
-                  display: "block",
-                }}
-              />
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-/* ═══════════════════════════════════════════════════
-   SINGLE COMIC CARD (used in sliders)
-═══════════════════════════════════════════════════ */
-const ComicCard = ({ comic, onClick, upcoming }) => (
-  <div
-    onClick={!upcoming ? onClick : undefined}
-    style={{
-      flexShrink: 0,
-      width: "155px",
-      cursor: upcoming ? "default" : "pointer",
-    }}
-  >
-    <div style={{ position: "relative", overflow: "hidden" }}>
-      {upcoming && (
-        <span
-          style={{
-            position: "absolute",
-            top: "6px",
-            left: "6px",
-            zIndex: 10,
-            background: "#16a34a",
-            color: "#fff",
-            fontSize: "0.5rem",
-            fontWeight: 800,
-            letterSpacing: "0.15em",
-            textTransform: "uppercase",
-            padding: "2px 6px",
-          }}
-        >
-          UPCOMING
-        </span>
-      )}
-      <img
-        src={comic.coverImg || "https://placehold.co/155x215/111/ccc?text=Cover"}
-        alt={comic.title}
-        style={{
-          width: "155px",
-          height: "215px",
-          objectFit: "cover",
-          display: "block",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.15)",
-          filter: upcoming ? "grayscale(100%)" : "none",
-          opacity: upcoming ? 0.6 : 1,
-          transition: "transform 0.25s",
-        }}
-        onMouseEnter={(e) => { if (!upcoming) e.currentTarget.style.transform = "scale(1.04)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
-      />
-    </div>
-    <p
-      style={{
-        marginTop: "0.5rem",
-        fontSize: "0.72rem",
-        fontWeight: 600,
-        color: upcoming ? "#aaa" : "#222",
-        letterSpacing: "0.03em",
-        whiteSpace: "nowrap",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-      }}
-    >
-      {comic.title}
-      {comic.releasedYear ? ` (${comic.releasedYear})` : ""}
-    </p>
-    <p
-      style={{
-        fontSize: "0.68rem",
-        color: "#999",
-        whiteSpace: "nowrap",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-      }}
-    >
-      {Array.isArray(comic.authors) ? comic.authors.join(", ") : comic.authors || ""}
-    </p>
-  </div>
-);
-
-/* ═══════════════════════════════════════════════════
-   HORIZONTAL SLIDER
-═══════════════════════════════════════════════════ */
-const ComicSlider = ({ comics, onCardClick, upcomingFrom = Infinity }) => {
-  const ref = useRef(null);
-  const scroll = (dir) => ref.current?.scrollBy({ left: dir * 370, behavior: "smooth" });
-
-  return (
-    <div style={{ position: "relative" }}>
-      {/* Left arrow */}
-      <button
-        onClick={() => scroll(-1)}
-        aria-label="scroll left"
-        style={{
-          position: "absolute",
-          left: "-2rem",
-          top: "45%",
-          transform: "translateY(-50%)",
-          zIndex: 10,
-          background: "#fff",
-          border: "1px solid #ccc",
-          width: "28px",
-          height: "28px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
-        }}
-      >
-        <ChevronLeft size={16} />
-      </button>
-
-      {/* Cards row */}
-      <div
-        ref={ref}
-        style={{
-          display: "flex",
-          gap: "1.1rem",
-          overflowX: "auto",
-          scrollbarWidth: "none",
-          msOverflowStyle: "none",
-          paddingBottom: "0.5rem",
-          scrollBehavior: "smooth",
-        }}
-      >
-        {comics.map((comic, i) => (
-          <ComicCard
-            key={comic._id}
-            comic={comic}
-            onClick={() => onCardClick(comic._id, comic.isDemo)}
-            upcoming={i >= upcomingFrom}
-          />
-        ))}
-      </div>
-
-      {/* Right arrow */}
-      <button
-        onClick={() => scroll(1)}
-        aria-label="scroll right"
-        style={{
-          position: "absolute",
-          right: "-2rem",
-          top: "45%",
-          transform: "translateY(-50%)",
-          zIndex: 10,
-          background: "#fff",
-          border: "1px solid #ccc",
-          width: "28px",
-          height: "28px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
-        }}
-      >
-        <ChevronRight size={16} />
-      </button>
-    </div>
-  );
-};
-
-/* ═══════════════════════════════════════════════════
-   SECTION HEADER ROW
-═══════════════════════════════════════════════════ */
-const SectionHeader = ({ title }) => (
-  <div
-    style={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: "1.2rem",
-    }}
-  >
-    <h2
-      style={{
-        fontSize: "0.88rem",
-        fontWeight: 900,
-        letterSpacing: "0.18em",
-        textTransform: "uppercase",
-        color: "#111",
-      }}
-    >
-      {title} &gt;
-    </h2>
-    <button
-      style={{
-        background: "none",
-        border: "none",
-        color: "#e53935",
-        fontSize: "0.62rem",
-        fontWeight: 700,
-        letterSpacing: "0.14em",
-        textTransform: "uppercase",
-        cursor: "pointer",
-      }}
-    >
-      VIEW MORE &gt;
-    </button>
-  </div>
-);
-
-/* ═══════════════════════════════════════════════════
-   SHIMMER SKELETON
-═══════════════════════════════════════════════════ */
-const Shimmer = () => (
-  <div style={{ animation: "pulse 1.5s infinite" }}>
-    <div style={{ background: "#1a1a1a", height: "420px" }} />
-    <div style={{ background: "#fff", padding: "2.5rem 3rem" }}>
-      <div style={{ background: "#eee", height: "16px", width: "180px", marginBottom: "1.5rem", borderRadius: "3px" }} />
-      <div style={{ display: "flex", gap: "1.2rem" }}>
-        <div style={{ background: "#eee", width: "130px", height: "185px", flexShrink: 0, borderRadius: "3px" }} />
-        <div style={{ flex: 1 }}>
-          {[80, 50, 100, 90, 70].map((w, i) => (
-            <div key={i} style={{ background: "#eee", height: "12px", width: `${w}%`, marginBottom: "10px", borderRadius: "3px" }} />
-          ))}
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
-/* ═══════════════════════════════════════════════════
-   MAIN COMICS PAGE
-═══════════════════════════════════════════════════ */
-const ComicsPage = () => {
-  const [comics, setComics] = useState([]);
-  const [loading, setLoading] = useState(true);
+/* ─── Today's Spotlight ───────────────────────────────────── */
+const TodaysSpotlight = ({ comics, isLoading }) => {
   const navigate = useNavigate();
+  const featured = comics[0];
+  const sideCards = comics.slice(1, 3);
+
+  if (!isLoading && comics.length === 0) return null;
+
+  return (
+    <div className="w-full max-w-[1200px] mx-auto px-12 mt-10 mb-6">
+      <h2 className="text-[0.68rem] font-black tracking-[0.22em] uppercase text-gray-900 mb-5">
+        Today's Spotlight
+      </h2>
+      {isLoading ? (
+        <SpotlightShimmer />
+      ) : (
+        <div className="flex flex-col md:flex-row gap-5 items-start">
+          {/* featured */}
+          <div
+            className="flex gap-4 flex-1 cursor-pointer group"
+            onClick={() => navigate(`/comicChap/${featured._id}/chapters`)}
+          >
+            <div className="relative flex-shrink-0">
+              <img
+                src={featured.coverImg}
+                alt={featured.title}
+                className="w-[138px] h-[174px] object-cover shadow-md"
+              />
+              <div className="absolute bottom-0 left-0 right-0 bg-black text-white text-[0.52rem] font-bold tracking-widest text-center py-1 uppercase">
+                New Release
+              </div>
+            </div>
+            <div className="flex flex-col justify-between py-1 flex-1">
+              <div>
+                <h3 className="text-[0.95rem] font-bold text-gray-900 leading-snug group-hover:text-red-600 transition-colors">
+                  {featured.title}
+                </h3>
+                <p className="text-[0.6rem] font-bold tracking-widest text-gray-400 uppercase mt-1">
+                  {Array.isArray(featured.authors) ? featured.authors.join(" and ") : featured.authors}
+                  {featured.releasedYear && <span className="ml-3 normal-case font-normal">{featured.releasedYear}</span>}
+                </p>
+                <p className="text-[0.72rem] text-gray-500 mt-2 leading-relaxed line-clamp-4">
+                  {featured.description}
+                </p>
+              </div>
+              <div className="flex items-center gap-3 mt-3">
+                <button onClick={(e) => e.stopPropagation()} className="border border-gray-300 p-1.5 hover:border-black transition">
+                  <Bookmark size={13} />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); navigate(`/comicChap/${featured._id}/chapters`); }}
+                  className="bg-red-600 text-white text-[0.6rem] font-bold tracking-widest px-4 py-1.5 hover:bg-red-700 transition uppercase"
+                >
+                  Read Now &rsaquo;
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* side cards */}
+          {sideCards.length > 0 && (
+            <div className="flex gap-3 flex-shrink-0">
+              {sideCards.map((comic) => (
+                <div key={comic._id} onClick={() => navigate(`/comicChap/${comic._id}/chapters`)} className="cursor-pointer group">
+                  <img
+                    src={comic.coverImg}
+                    alt={comic.title}
+                    className="w-[125px] h-[160px] object-cover shadow group-hover:opacity-80 transition"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ─── Comic Row ───────────────────────────────────────────── */
+const ComicRow = ({ title, comics, isLoading, navigate }) => {
+  const sliderRef = useRef(null);
+  const scroll = (dir) => sliderRef.current?.scrollBy({ left: dir * 180, behavior: "smooth" });
+
+  if (!isLoading && comics.length === 0) return null;
+
+  return (
+    <div className="w-full max-w-[1200px] mx-auto px-12 mt-10 mb-2">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-[0.75rem] font-black tracking-[0.18em] uppercase text-gray-900">
+          {title} &rsaquo;
+        </h2>
+        <button className="text-red-600 text-[0.62rem] font-bold tracking-widest hover:underline uppercase">
+          View More &rsaquo;
+        </button>
+      </div>
+
+      <div className="relative">
+        <button
+          onClick={() => scroll(-1)}
+          className="absolute -left-6 top-[45%] -translate-y-1/2 z-10 bg-white border border-gray-300 shadow p-1.5 hover:bg-gray-100"
+        >
+          <ChevronLeft size={16} />
+        </button>
+
+        <div ref={sliderRef} className="flex overflow-x-auto gap-3 no-scrollbar scroll-smooth pb-1">
+          {isLoading
+            ? [...Array(5)].map((_, i) => <CardShimmer key={i} />)
+            : comics.map((comic) => (
+                <div
+                  key={comic._id}
+                  onClick={() => navigate(`/comicChap/${comic._id}/chapters`)}
+                  className="flex-shrink-0 cursor-pointer group"
+                  style={{ width: "155px" }}
+                >
+                  <div className="relative overflow-hidden">
+                    <img
+                      src={comic.coverImg}
+                      alt={comic.title}
+                      className="w-[155px] h-[200px] object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div
+                      className="absolute bottom-0 left-0 right-0 px-2 py-2"
+                      style={{ background: "linear-gradient(to top, rgba(0,0,0,0.82) 70%, transparent)" }}
+                    >
+                      <p className="text-white text-[0.58rem] font-black uppercase tracking-wide leading-tight line-clamp-1">
+                        {comic.title}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-[0.7rem] font-semibold text-gray-800 mt-1.5 leading-snug line-clamp-2">
+                    {comic.title}{comic.releasedYear ? ` (${comic.releasedYear})` : ""}
+                  </p>
+                  <p className="text-[0.62rem] text-gray-400 truncate">
+                    {Array.isArray(comic.authors) ? comic.authors.join(", ") : comic.authors || ""}
+                  </p>
+                </div>
+              ))}
+        </div>
+
+        <button
+          onClick={() => scroll(1)}
+          className="absolute -right-6 top-[45%] -translate-y-1/2 z-10 bg-white border border-gray-300 shadow p-1.5 hover:bg-gray-100"
+        >
+          <ChevronRight size={16} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+/* ─── Page ────────────────────────────────────────────────── */
+const ComicsPage = () => {
+  const navigate = useNavigate();
+  const [comics, setComics] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "instant" });
     fetchComics()
-      .then((data) => {
-        // Use real data if available, fall back to demo so page always looks populated
-        setComics(Array.isArray(data) && data.length > 0 ? data : DEMO_COMICS);
-      })
-      .catch(() => setComics(DEMO_COMICS))
-      .finally(() => setLoading(false));
+      .then((data) => setComics(Array.isArray(data) ? data : []))
+      .catch(() => setComics([]))
+      .finally(() => setIsLoading(false));
   }, []);
 
-  const handleNavigate = (id, isDemo) => {
-    if (isDemo) return; // demo cards — no navigation
-    navigate(`/comicChap/${id}/chapters`);
-  };
-
-  if (loading) return <Shimmer />;
-
-  // Newest first
-  const sorted = [...comics].reverse();
-  const hero = sorted[0];
-  // For spotlight: show up to 4 comics as clickable thumbnails
-  const spotlightList = sorted.slice(0, 4);
-  // Sliders
-  const favs = sorted;
-  const releases = sorted;
-
-  const SECTION_PADDING = "2.2rem 3rem";
+  const reversed = [...comics].reverse();
 
   return (
-    <div style={{ background: "#fff", minHeight: "100vh" }}>
-      {/* ── Hero banner ── */}
-      <HeroBanner comic={hero} onReadNow={handleNavigate} />
-
-      {/* ── Torn paper edge ── */}
+    <div className="bg-white">
+      <HeroBanner comic={reversed[0]} />
       <TornEdge />
-
-      {/* ── Today's Spotlight ── */}
-      <TodaysSpotlight comics={spotlightList} onReadNow={handleNavigate} />
-
-      {/* Thin divider */}
-      <div style={{ borderTop: "1px solid #efefef", margin: "0 3rem" }} />
-
-      {/* ── Fan Favourites ── */}
-      <div style={{ background: "#fff", padding: SECTION_PADDING }}>
-        <SectionHeader title="FAN FAVOURITES" />
-        <ComicSlider comics={favs} onCardClick={handleNavigate} upcomingFrom={2} />
-      </div>
-
-      {/* Thin divider */}
-      <div style={{ borderTop: "1px solid #efefef", margin: "0 3rem" }} />
-
-      {/* ── New Releases ── */}
-      <div style={{ background: "#fff", padding: SECTION_PADDING }}>
-        <SectionHeader title="NEW RELEASES" />
-        <ComicSlider comics={releases} onCardClick={handleNavigate} />
-      </div>
-
-      {/* Bottom spacing */}
-      <div style={{ height: "3rem" }} />
+      <TodaysSpotlight comics={reversed} isLoading={isLoading} />
+      <ComicRow title="Fan Favourites" comics={reversed} isLoading={isLoading} navigate={navigate} />
+      <ComicRow title="New Releases" comics={reversed} isLoading={isLoading} navigate={navigate} />
     </div>
   );
 };

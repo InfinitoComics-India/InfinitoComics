@@ -26,3 +26,20 @@ export const fetchJob = async ()=>{
     return res;
 }
     
+
+// ── Job Applications ────────────────────────────────────────────────
+
+export const fetchApplications = async () => {
+    const res = await axios.get(BACKEND_URL + "/career/applications");
+    return res;
+};
+
+export const removeApplication = async (id) => {
+    const res = await axios.delete(BACKEND_URL + `/career/applications/${id}`);
+    return res;
+};
+
+// Triggers a file download directly in the browser
+export const downloadApplicationsExcel = () => {
+    window.open(BACKEND_URL + "/career/applications/export", "_blank");
+};

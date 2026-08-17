@@ -165,7 +165,10 @@ const handleDelete = async (paperId) => {
                       ))}
                     </div>
                   </div>
-                  <div className="mt-4 flex gap-3">
+                  <div className="mt-4 flex gap-3 items-center">
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${paper.isPublished ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
+                      {paper.isPublished ? "Published" : "Draft"}
+                    </span>
                     <button
                       onClick={() => handleView(paper)}
                       className="text-blue-600 font-medium hover:underline"
@@ -215,7 +218,10 @@ const handleDelete = async (paperId) => {
             ].map((key) => (
               <div key={key}>
                 <h3 className="font-semibold capitalize border-b pb-1 text-gray-700">{key}</h3>
-                <p className="text-gray-800">{selectedPaper[key]}</p>
+                <div
+                  className="text-gray-800 prose max-w-none"
+                  dangerouslySetInnerHTML={{ __html: selectedPaper[key] }}
+                />
               </div>
             ))}
           </div>
@@ -260,6 +266,27 @@ const handleDelete = async (paperId) => {
             className="border px-4 py-2 rounded"
             required
           />
+
+          {/* Publish toggle */}
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-gray-700">Publish this paper?</span>
+            <button
+              type="button"
+              onClick={() => setForm((prev) => ({ ...prev, isPublished: !prev.isPublished }))}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                form.isPublished ? "bg-green-500" : "bg-gray-300"
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                  form.isPublished ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </button>
+            <span className={`text-sm font-semibold ${form.isPublished ? "text-green-600" : "text-gray-400"}`}>
+              {form.isPublished ? "Published" : "Draft"}
+            </span>
+          </div>
 
           <div>
             <label className="font-semibold">Authors</label>

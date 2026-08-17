@@ -43,7 +43,7 @@ const Header = () => {
             <a href={FOUNDATION_BASE_URL} target="_blank" rel="noopener noreferrer" className="hover:text-white font-bold">
               Foundation
             </a>
-            <a href={RESEARCH_BASE_URL} target="_blank" rel="noopener noreferrer" className="hover:text-white font-bold">
+            <a href={`${RESEARCH_BASE_URL}/research/browseResearch`} className="hover:text-white font-bold">
               Research
             </a>
             <Link
@@ -225,7 +225,7 @@ const Header = () => {
             href="#"
             onClick={(e) => {
               e.preventDefault();
-              window.open(`${RESEARCH_BASE_URL}/?from=main`, "_blank");
+              window.location.href = `${RESEARCH_BASE_URL}/research/browseResearch`;
             }}
             className="hover:underline block font-bold"
           >

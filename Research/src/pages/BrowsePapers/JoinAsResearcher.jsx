@@ -11,19 +11,6 @@ const TOPICS = [
   'Technical Issues', 'Cybersecurity',
 ];
 
-/* Single avatar — perfect circle, no border */
-const Circle = ({ src, size, top, left, right, objPos = 'center center' }) => (
-  <div style={{
-    position: 'absolute', top, left, right,
-    width: size, height: size,
-    borderRadius: '50%',
-    overflow: 'hidden',
-    boxShadow: '0 2px 20px rgba(0,0,0,0.08)',
-  }}>
-    <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: objPos, display: 'block' }} />
-  </div>
-);
-
 const JoinAsResearcher = () => {
   const [form, setForm] = useState({ fullName: '', topics: [], email: '', details: '' });
   const [submitted, setSubmitted] = useState(false);
@@ -56,21 +43,26 @@ const JoinAsResearcher = () => {
   };
 
   return (
-    <section style={{ background: '#f3f4f6', padding: '4rem 0 5rem' }}>
+    <section style={{ background: '#f3f4f6', padding: 'clamp(2rem, 5vw, 5rem) 0' }}>
       <div style={{
-        maxWidth: '1200px', margin: '0 auto', padding: '0 3rem',
-        display: 'flex', gap: '3rem', alignItems: 'flex-start',
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '0 clamp(1rem, 4vw, 3rem)',
+        display: 'flex',
+        flexWrap: 'wrap',          /* stacks on mobile */
+        gap: '2rem',
+        alignItems: 'flex-start',
       }}>
 
-        {/* ── LEFT ── */}
-        <div style={{ flex: '0 0 62%', maxWidth: '62%' }}>
+        {/* ── LEFT: form ── */}
+        <div style={{ flex: '1 1 300px', minWidth: 0 }}>
           <h2 style={{
             color: '#DD1215', fontWeight: 900,
-            fontSize: 'clamp(2.2rem, 5vw, 3.5rem)',
+            fontSize: 'clamp(1.8rem, 5vw, 3.5rem)',
             textTransform: 'uppercase', marginBottom: '0.6rem', lineHeight: 1.1,
           }}>JOIN AS RESEARCHER</h2>
           <p style={{ fontSize: '0.88rem', color: '#333', marginBottom: '1.8rem', lineHeight: 1.6 }}>
-            We're always happy to listen and discuss your thoughts, ideas,<br />
+            We're always happy to listen and discuss your thoughts, ideas,
             or feedback. Let us know what's on your mind!
           </p>
 
@@ -80,7 +72,7 @@ const JoinAsResearcher = () => {
             </p>
           ) : (
             <form onSubmit={handleSubmit}>
-              <div style={{ background: '#fff', padding: '1.8rem 2rem 2rem', boxShadow: '0 1px 8px rgba(0,0,0,0.07)' }}>
+              <div style={{ background: '#fff', padding: 'clamp(1rem, 3vw, 2rem)', boxShadow: '0 1px 8px rgba(0,0,0,0.07)' }}>
 
                 <div style={{ marginBottom: '1.2rem' }}>
                   <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#111', marginBottom: '7px' }}>Full Name</label>
@@ -96,7 +88,7 @@ const JoinAsResearcher = () => {
                       const active = form.topics.includes(topic);
                       return (
                         <button key={topic} type="button" onClick={() => toggleTopic(topic)} style={{
-                          padding: '7px 16px', fontSize: '0.8rem', fontWeight: 500,
+                          padding: '7px 14px', fontSize: '0.8rem', fontWeight: 500,
                           border: `1px solid ${active ? '#DD1215' : '#ccc'}`,
                           background: active ? '#DD1215' : '#fff',
                           color: active ? '#fff' : '#222',
@@ -116,14 +108,14 @@ const JoinAsResearcher = () => {
 
                 <div style={{ marginBottom: '1.5rem' }}>
                   <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#111', marginBottom: '7px' }}>
-                    Can you give us more details on you interest/research area (Max 500 words)?
+                    Can you give us more details on your interest/research area (Max 500 words)?
                   </label>
                   <textarea placeholder="Enter a topic" rows={5} value={form.details}
                     onChange={e => setForm({ ...form, details: e.target.value })}
                     style={{ width: '100%', border: '1px solid #ccc', padding: '11px 14px', fontSize: '0.84rem', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', flexWrap: 'wrap' }}>
                   <button type="submit" disabled={submitting} style={{
                     background: '#DD1215', color: '#fff', border: 'none',
                     padding: '0.65rem 1.6rem', fontSize: '0.8rem', fontWeight: 700,
@@ -142,16 +134,33 @@ const JoinAsResearcher = () => {
           )}
         </div>
 
-        {/* ── RIGHT: 4 circles matching reference layout ── */}
-        <div style={{ flex: 1, position: 'relative', minHeight: '420px' }}>
+        {/* ── RIGHT: avatars — responsive grid on mobile, absolute on desktop ── */}
+        <div className="hidden md:block" style={{ flex: '0 0 320px', position: 'relative', minHeight: '420px' }}>
           {/* Top-right — very large man */}
-          <Circle src={rectangle} size="200px" top="0" right="0" />
-          {/* Middle-left — large woman */}
-          <Circle src={maskGroup} size="155px" top="130px" left="0" />
-          {/* Middle-right — medium woman */}
-          <Circle src={maskGroup} size="120px" top="190px" right="20px" objPos="center top" />
-          {/* Bottom-center — medium man */}
-          <Circle src={rectangle} size="120px" top="300px" left="80px" objPos="center 20%" />
+          <div style={{ position: 'absolute', top: 0, right: 0, width: '200px', height: '200px', borderRadius: '50%', overflow: 'hidden', boxShadow: '0 2px 20px rgba(0,0,0,0.08)' }}>
+            <img src={rectangle} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center center', display: 'block' }} />
+          </div>
+          {/* Middle-left */}
+          <div style={{ position: 'absolute', top: '130px', left: 0, width: '155px', height: '155px', borderRadius: '50%', overflow: 'hidden', boxShadow: '0 2px 20px rgba(0,0,0,0.08)' }}>
+            <img src={maskGroup} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center center', display: 'block' }} />
+          </div>
+          {/* Middle-right */}
+          <div style={{ position: 'absolute', top: '190px', right: '20px', width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden', boxShadow: '0 2px 20px rgba(0,0,0,0.08)' }}>
+            <img src={maskGroup} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }} />
+          </div>
+          {/* Bottom-center */}
+          <div style={{ position: 'absolute', top: '300px', left: '80px', width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden', boxShadow: '0 2px 20px rgba(0,0,0,0.08)' }}>
+            <img src={rectangle} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 20%', display: 'block' }} />
+          </div>
+        </div>
+
+        {/* Mobile: show avatars as a simple flex row */}
+        <div className="flex md:hidden justify-center gap-4 w-full flex-wrap">
+          {[rectangle, maskGroup, rectangle, maskGroup].map((src, i) => (
+            <div key={i} style={{ width: '72px', height: '72px', borderRadius: '50%', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.1)' }}>
+              <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            </div>
+          ))}
         </div>
 
       </div>

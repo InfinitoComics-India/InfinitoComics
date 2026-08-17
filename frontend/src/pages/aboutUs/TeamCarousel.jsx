@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {teamData} from "../../constants/aboutUs"
+import { teamData } from "../../constants/aboutUs";
 import bgtop from "../../../assets/Images/spotlighttopbg.png";
 import bgbottom from "../../../assets/Images/spotlightbottombg.png";
 
@@ -19,86 +19,96 @@ const TeamCarousel = () => {
 
   return (
     <>
-          <div
-            className="w-full pt-20 -mb-1"
-            style={{
-              backgroundImage: `url(${bgtop})`, // template literal used here
-              backgroundSize: "cover", // Make it responsive
-            }}
-          />
-    <div className="w-full bg-[#171717]  text-white py-8 px-4 sm:px-8 md:px-16 lg:px-24 transition-all duration-500 ease-in-out">
-      {/* Heading */}
-      <h2 className="text-center text-2xl sm:text-3xl md:text-4xl font-bold tracking-widest mb-8 sm:mb-10 uppercase">
-        Team {teamData[index].team}
-      </h2>
+      <div
+        className="w-full pt-20 -mb-1"
+        style={{
+          backgroundImage: `url(${bgtop})`,
+          backgroundSize: "cover",
+        }}
+      />
+      <div className="w-full bg-[#171717] text-white py-8 px-4 sm:px-8 md:px-16 lg:px-24 transition-all duration-500 ease-in-out">
+        {/* Heading */}
+        <h2 className="text-center text-2xl sm:text-3xl md:text-4xl font-bold tracking-widest mb-8 sm:mb-10 uppercase">
+          Team {teamData[index].team}
+        </h2>
 
-      {/* Main grid */}
-      <div className="flex flex-col sm:flex-row gap-6 sm:items-center sm:justify-between w-full">
-        {/* Mobile: arrows beside grid, Desktop: arrows at ends */}
-        <div className="flex w-full items-center">
-          {/* Left arrow */}
-          <button
-            onClick={prevSlide}
-            className="text-white text-2xl sm:text-3xl hover:text-red-500 transition-all px-2 mb-0 sm:mb-0 flex-shrink-0"
-            style={{ order: 1 }}
-          >
-            &lt;
-          </button>
+        {/* Main grid */}
+        <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between w-full max-w-[1200px] mx-auto">
+          <div className="flex w-full items-center justify-between">
+            {/* Left arrow */}
+            <button
+              onClick={prevSlide}
+              className="text-white text-2xl sm:text-3xl hover:text-red-500 transition-all px-2 flex-shrink-0 cursor-pointer"
+              style={{ order: 1 }}
+              aria-label="Previous Slide"
+            >
+              &lt;
+            </button>
 
-          {/* Members */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 justify-items-center w-full mx-20 extra-gap-mobile" style={{ order: 2 }}>
-            {teamData[index].members.map((member, idx) => (
-              <div key={idx} className="text-center space-y-2">
-                <img
-                  src={member.img}
-                  alt={member.name}
-                  className="rounded-full border-4 border-white w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 lg:w-48 lg:h-48 object-cover aspect-square mx-auto"
-                />
-                <p className="text-xs sm:text-sm md:text-base font-semibold tracking-wide uppercase mt-3 sm:mt-5">{member.name}</p>
-                <p className="text-[10px] sm:text-xs md:text-sm tracking-widest text-gray-300 uppercase">{member.year}</p>
-              </div>
-            ))}
+            {/* Members */}
+            <div
+              className="flex flex-wrap justify-center items-center gap-6 sm:gap-8 md:gap-12 w-full mx-2 sm:mx-6 extra-gap-mobile"
+              style={{ order: 2 }}
+            >
+              {teamData[index].members.map((member, idx) => (
+                <div key={idx} className="text-center space-y-2 max-w-[140px] sm:max-w-[180px] md:max-w-[200px]">
+                  <img
+                    src={member.img}
+                    alt={member.name}
+                    className="rounded-full border-4 border-white w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 lg:w-44 lg:h-44 object-cover aspect-square mx-auto shadow-md"
+                  />
+                  <p className="text-xs sm:text-sm md:text-base font-semibold tracking-wide uppercase mt-3 sm:mt-5">
+                    {member.name}
+                  </p>
+                  <p className="text-[10px] sm:text-xs md:text-sm tracking-widest text-gray-300 uppercase">
+                    {member.year}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Right arrow */}
+            <button
+              onClick={nextSlide}
+              className="text-white text-2xl sm:text-3xl hover:text-red-500 transition-all px-2 flex-shrink-0 cursor-pointer"
+              style={{ order: 3 }}
+              aria-label="Next Slide"
+            >
+              &gt;
+            </button>
           </div>
+        </div>
 
-          {/* Right arrow */}
-          <button
-            onClick={nextSlide}
-            className="text-white text-2xl sm:text-3xl hover:text-red-500 transition-all px-2 flex-shrink-0"
-            style={{ order: 3 }}
-          >
-            &gt;
-          </button>
+        {/* Custom style for mobile */}
+        <style>{`
+          @media (max-width: 470px) {
+            .extra-gap-mobile {
+              gap: 2.5rem !important;
+            }
+          }
+        `}</style>
+
+        {/* Pagination Dots */}
+        <div className="flex justify-center mt-8 space-x-2">
+          {teamData.map((_, dotIndex) => (
+            <div
+              key={dotIndex}
+              onClick={() => setIndex(dotIndex)}
+              className={`h-1.5 rounded-full cursor-pointer transition-all duration-300 ${
+                dotIndex === index ? "bg-red-500 w-6" : "bg-white/60 w-3"
+              }`}
+            ></div>
+          ))}
         </div>
       </div>
 
-      {/* Custom style for extra small screens (470px or less) */}
-      <style>{`
-        @media (max-width: 470px) {
-          .extra-gap-mobile {
-            gap: 2.5rem !important;
-          }
-        }
-      `}</style>
-      {/* Pagination Dots */}
-      <div className="flex justify-center mt-6 space-x-2">
-        {teamData.map((_, dotIndex) => (
-          <div
-            key={dotIndex}
-            onClick={() => setIndex(dotIndex)}
-            className={`w-4 h-1 rounded-full cursor-pointer ${
-              dotIndex === index ? "bg-red-500 w-4" : "bg-white"
-            }`}
-          ></div>
-        ))}
-      </div>
-    </div>
-    <div
-            className="w-full pb-20 -mt-1"
-            style={{
-              backgroundImage: `url(${bgbottom})`, //  template literal used here
-              backgroundSize: "cover", // Make it responsive
-            }}
-          />
+      <div
+        className="w-full pb-20 -mt-1"
+        style={{
+          backgroundImage: `url(${bgbottom})`,
+          backgroundSize: "cover",
+        }}
+      />
     </>
   );
 };

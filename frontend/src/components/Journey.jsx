@@ -1,182 +1,135 @@
 import React, { useState, useEffect } from "react";
 import { getAllAboutStories } from "../services/aboutUs";
 
+const defaultStories = [
+  {
+    _id: "1",
+    title: "STARTED AT RAIPUR",
+    description:
+      "In 2022, Infinito is started business at Raipur, Chhattisgarh and company is a result of collaborative efforts and contributions from individuals across India.",
+    month: "AUGUST",
+    year: "2022",
+  },
+  {
+    _id: "2",
+    title: "CORE TEAM DEVELOPMENT",
+    description:
+      "With a determined mindset, we embarked on building a robust team to drive the growth of Infinito. Additionally, we achieved our first milestone by generating revenue through services in the AVGC-XR industry.",
+    month: "MAY",
+    year: "2023",
+  },
+  {
+    _id: "3",
+    title: "LONG–RUN PLANNING & INTEGRATION",
+    description:
+      "With a bold vision and unwavering dedication, we are launching an exciting range of merchandise while advancing in-house animation and gaming projects, seamlessly integrating ABM, AR, VR, and MR technologies.",
+    month: "AUGUST",
+    year: "2024",
+  },
+  {
+    _id: "4",
+    title: "WE ARE LIVE!",
+    description:
+      "We are now live and committed to creating impactful solutions that drive the growth and development of the AVGC–XR industry in India.",
+    month: "JANUARY",
+    year: "2025",
+  },
+];
+
 function Journey() {
-  const [stories, setStories] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [stories, setStories] = useState(defaultStories);
 
   useEffect(() => {
     const fetchStories = async () => {
       try {
-        const allStories = await getAllAboutStories();
-        setStories(allStories);
+        const fetchedStories = await getAllAboutStories();
+        if (fetchedStories && fetchedStories.length > 0) {
+          setStories(fetchedStories);
+        }
       } catch (error) {
-        console.error("Error fetching About Us stories:", error);
+        console.error("Error fetching About Us stories, using defaults:", error);
       }
     };
     fetchStories();
   }, []);
 
-  const handleNext = () => {
-    if (currentIndex < stories.length - 1) setCurrentIndex((prev) => prev + 1);
-  };
-
-  const handlePrev = () => {
-    if (currentIndex > 0) setCurrentIndex((prev) => prev - 1);
-  };
-
   return (
-    <div className="flex justify-center">
-      <div className="relative w-11/12 lg:w-2/3">
-        <h2 className="text-start text-3xl font-bold mb-12 tracking-widest">
+    <div className="w-full px-4 sm:px-8 md:px-12 lg:px-20 py-8 sm:py-16 bg-white text-black font-sans mb-16">
+      {/* Section Heading */}
+      <div className="max-w-6xl mx-auto mb-12 sm:mb-16">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-wider uppercase font-['Bebas_Neue','Dharma_Gothic_E',sans-serif]">
           OUR JOURNEY
         </h2>
+      </div>
 
-        {/* 🔹 MOBILE VIEW – Pagination with same layout */}
-        <div className="block lg:hidden relative">
-          {stories.length > 0 && (
-            <div className="relative flex flex-row items-center py-12">
-              {/* Central Line */}
-              <div className="absolute left-1/2 transform -translate-x-1 bg-black w-[3px] h-full z-0" />
+      {/* Timeline Section */}
+      <div className="max-w-5xl mx-auto relative">
+        {/* Continuous Center Vertical Spine Line */}
+        <div className="absolute left-1/2 transform -translate-x-[1.25px] top-0 bottom-0 w-[2.5px] bg-black z-0" />
 
-              {currentIndex % 2 === 0 ? (
-                <>
-                  {/* LEFT TEXT */}
-                  <div className="w-1/2 text-right pr-4">
-                    <h3 className="text-red-600 font-bold text-lg uppercase">
-                      {stories[currentIndex]?.title}
-                    </h3>
-                    <p className="text-gray-700 text-sm mt-3">
-                      {stories[currentIndex]?.description}
-                    </p>
-                  </div>
-
-                  {/* RIGHT DATE */}
-                  <div className="w-1/2 text-center text-2xl font-bold tracking-widest text-gray-900">
-                    <div>{stories[currentIndex]?.month?.toUpperCase()}</div>
-                    <div className="text-5xl tracking-widest">
-                      {stories[currentIndex]?.year}
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* LEFT DATE */}
-                  <div className="w-1/2 text-center text-2xl font-bold tracking-widest text-gray-900">
-                    <div>{stories[currentIndex]?.month?.toUpperCase()}</div>
-                    <div className="text-5xl tracking-widest">
-                      {stories[currentIndex]?.year}
-                    </div>
-                  </div>
-
-                  {/* RIGHT TEXT */}
-                  <div className="w-1/2 text-left pl-4">
-                    <h3 className="text-red-600 font-bold text-lg uppercase">
-                      {stories[currentIndex]?.title}
-                    </h3>
-                    <p className="text-gray-700 text-sm mt-3">
-                      {stories[currentIndex]?.description}
-                    </p>
-                  </div>
-                </>
-              )}
-
-              {/* 🔹 Colored Line */}
-              <div
-                className={`absolute left-1/2 transform -translate-x-1 w-[3px] h-full ${
-                  currentIndex % 2 === 0
-                    ? "bg-gradient-to-b from-red-500 to-red-500"
-                    : "bg-gradient-to-b from-gray-700 to-gray-700"
-                }`}
-              />
-            </div>
-          )}
-
-          {/* 🔹 Pagination Controls */}
-          <div className="flex justify-between mt-4">
-            <button
-              onClick={handlePrev}
-              disabled={currentIndex === 0}
-              className={`px-4 py-2 rounded ${
-                currentIndex === 0
-                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  : "bg-red-600 text-white"
-              }`}
-            >
-              Prev
-            </button>
-            <button
-              onClick={handleNext}
-              disabled={currentIndex === stories.length - 1}
-              className={`px-4 py-2 rounded ${
-                currentIndex === stories.length - 1
-                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  : "bg-red-600 text-white"
-              }`}
-            >
-              Next
-            </button>
-          </div>
-
-          <p className="text-sm text-gray-600 mt-2 text-center">
-            Showing : {currentIndex + 1} / {stories.length}
-          </p>
-        </div>
-
-        {/* 🔹 DESKTOP VIEW – Show all blocks */}
-        <div className="hidden lg:block relative">
-          <div className="absolute left-1/2 transform -translate-x-1 bg-black w-[3px] h-full z-0" />
+        <div className="flex flex-col gap-12 sm:gap-20 relative z-10">
           {stories.map((story, index) => {
-            const isOdd = index % 2 === 0;
-            return (
-              <div
-                key={story._id}
-                className="relative z-10 flex flex-row items-center py-12"
-              >
-                {isOdd ? (
-                  <>
-                    <div className="w-1/2 text-right pr-5">
-                      <h3 className="text-red-600 font-bold text-lg uppercase">
-                        {story.title}
-                      </h3>
-                      <p className="text-gray-700 text-sm mt-3">
-                        {story.description}
-                      </p>
-                    </div>
-                    <div className="w-1/2 text-center text-2xl font-bold tracking-widest text-gray-900">
-                      <div className="text-4xl">{story.month?.toUpperCase()}</div>
-                      <div className="text-6xl tracking-widest">
-                        {story.year}
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-1/2 text-center text-2xl font-bold tracking-widest text-gray-900">
-                      <div className="text-4xl">{story.month?.toUpperCase()}</div>
-                      <div className="text-6xl tracking-widest">
-                        {story.year}
-                      </div>
-                    </div>
-                    <div className="w-1/2 text-left pl-5">
-                      <h3 className="text-red-600 font-bold text-lg uppercase">
-                        {story.title}
-                      </h3>
-                      <p className="text-gray-700 text-sm mt-3">
-                        {story.description}
-                      </p>
-                    </div>
-                  </>
-                )}
+            const isRedLine = index % 2 === 0;
+            const isLeftText = index % 2 === 0;
 
-                {/* Colored Line */}
+            return (
+              <div key={story._id || index} className="relative w-full flex items-center min-h-[160px]">
+                {/* Individual Colored Line Segment on Vertical Spine */}
                 <div
-                  className={`absolute left-1/2 transform -translate-x-1 w-[3px] h-full ${
-                    isOdd
-                      ? "bg-gradient-to-b from-red-500 to-red-500"
-                      : "bg-gradient-to-b from-gray-700 to-gray-700"
-                  }`}
+                  className={"absolute left-1/2 transform -translate-x-[1.25px] top-0 bottom-0 w-[2.5px] " + (isRedLine ? "bg-[#E50914]" : "bg-black")}
                 />
+
+                {isLeftText ? (
+                  /* ITEM 1 & 3: Text on LEFT, Date on RIGHT */
+                  <div className="w-full flex flex-row items-center">
+                    {/* Left Column: Title + Description */}
+                    <div className="w-1/2 text-right pr-6 sm:pr-10 md:pr-14">
+                      <h3 className="text-[#E50914] font-extrabold text-base sm:text-lg md:text-xl uppercase tracking-wide mb-2 sm:mb-3">
+                        {story.title}
+                      </h3>
+                      <p className="text-xs sm:text-sm md:text-base leading-relaxed text-black/90 font-medium max-w-md ml-auto">
+                        {story.description}
+                      </p>
+                      {/* Optional small red indicator arrow */}
+                      <span className="text-[#E50914] text-xs font-bold block mt-1">
+                        &gt;
+                      </span>
+                    </div>
+
+                    {/* Right Column: Month + Year */}
+                    <div className="w-1/2 text-left pl-6 sm:pl-10 md:pl-14">
+                      <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-extrabold uppercase text-black tracking-[0.35em] mb-1">
+                        {story.month}
+                      </div>
+                      <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-black tracking-tight font-sans">
+                        {story.year}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* ITEM 2 & 4: Date on LEFT, Text on RIGHT */
+                  <div className="w-full flex flex-row items-center">
+                    {/* Left Column: Month + Year */}
+                    <div className="w-1/2 text-right pr-6 sm:pr-10 md:pr-14">
+                      <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-extrabold uppercase text-black tracking-[0.35em] mb-1">
+                        {story.month}
+                      </div>
+                      <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-black tracking-tight font-sans">
+                        {story.year}
+                      </div>
+                    </div>
+
+                    {/* Right Column: Title + Description */}
+                    <div className="w-1/2 text-left pl-6 sm:pl-10 md:pl-14">
+                      <h3 className="text-[#E50914] font-extrabold text-base sm:text-lg md:text-xl uppercase tracking-wide mb-2 sm:mb-3">
+                        {story.title}
+                      </h3>
+                      <p className="text-xs sm:text-sm md:text-base leading-relaxed text-black/90 font-medium max-w-md">
+                        {story.description}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
