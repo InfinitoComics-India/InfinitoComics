@@ -54,7 +54,7 @@ export default function CharacterSpotlight() {
       {/* Overlay */}
       <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-transparent z-10 "></div>
       {/* Content */}
-      <div className="relative z-20 flex flex-col justify-center h-[60vh] md:h-[70vh] px-6 md:px-20 md:mx-35 mx-10">
+      <div className="relative z-20 flex flex-col justify-center h-[60vh] md:h-[70vh] w-full max-w-[1200px] mx-auto px-6 lg:px-12">
         <div className="max-w-lg pt-16 md:pt-0">
           <div className="text-white text-sm tracking-widest mb-2">
             {tab.subtitle}

@@ -82,8 +82,8 @@ const FeaturedCharactersCarousel = () => {
   if (loading) return <CharacterCarouselShimmer />;
 
   return (
-    <div className="w-full px-4 py-8 sm:py-12 bg-white">
-      <div className="max-w-full mx-4 sm:mx-8 lg:mx-20 xl:mx-40">
+    <div className="w-full py-8 sm:py-12 bg-white">
+      <div className="w-full max-w-[1200px] mx-auto px-6 lg:px-12">
         {/* Title & View All */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-10 gap-4">
           <h2 className="text-lg sm:text-xl md:text-2xl font-bold tracking-widest uppercase text-center sm:text-left">

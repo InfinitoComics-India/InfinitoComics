@@ -72,7 +72,8 @@ export default function CharacterBrowser() {
   }, [search, atoz]);
 
   return (
-    <div className="w-full max-w-7xl mx-auto py-8 px-2">
+    <div className="w-full py-8 bg-white">
+      <div className="w-full max-w-[1200px] mx-auto px-6 lg:px-12">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
         <h2 className="text-lg md:text-xl font-bold tracking-widest mb-2 md:mb-0">
@@ -202,5 +203,6 @@ export default function CharacterBrowser() {
         )}
       </div>
     </div>
+  </div>
   );
 }
