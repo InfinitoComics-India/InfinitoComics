@@ -14,7 +14,11 @@ export default {
     SECRET_ACCESS_KEY: process.env.SECRET_ACCESS_KEY,
     S3_BUCKET_NAME: process.env.S3_BUCKET_NAME,
     AWS_REGION: process.env.AWS_REGION,
-    // Hostinger file storage
+    // Cloudinary image storage
+    CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+    CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
+    CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
+    // Hostinger file storage (legacy)
     HOSTINGER_UPLOAD_URL: process.env.HOSTINGER_UPLOAD_URL,
     HOSTINGER_BASE_URL: process.env.HOSTINGER_BASE_URL,
     HOSTINGER_API_KEY: process.env.HOSTINGER_API_KEY,

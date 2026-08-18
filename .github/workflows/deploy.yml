@@ -24,6 +24,10 @@ jobs:
       - name: Install and Build Frontend
         run: |
           cd frontend
+          echo "VITE_BASE_URL=https://infinitocomics-68cr.onrender.com" > .env
+          echo "VITE_RESEARCH_BASE_URL=https://research.infinitohq.com" >> .env
+          echo "VITE_FOUNDATION_BASE_URL=https://foundation.infinitohq.com" >> .env
+          echo "VITE_FRONTEND_BASE_URL=https://infinitohq.com" >> .env
           npm install
           npm run build
 
@@ -31,6 +35,9 @@ jobs:
       - name: Install and Build Research
         run: |
           cd Research
+          echo "VITE_FRONTEND_URL=https://infinitohq.com" > .env
+          echo "VITE_BACKEND_URL=https://infinitocomics-68cr.onrender.com" >> .env
+          echo "VITE_FRONTEND_BASE_URL=https://infinitohq.com" >> .env
           npm install
           npm run build
 
@@ -38,8 +45,9 @@ jobs:
       - name: Install and Build Admin
         run: |
           cd Admin
+          echo "VITE_BASE_URL=https://infinitocomics-68cr.onrender.com" > .env
           npm install
-          npm run build
+          NODE_OPTIONS=--max-old-space-size=4096 npm run build
 
       # Step 6: Deploy frontend dist to Hostinger
       - name: Deploy Frontend via FTP
