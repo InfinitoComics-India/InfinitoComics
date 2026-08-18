@@ -139,12 +139,12 @@ const FounderProfile = () => {
           </div>
 
           {/* 4 Empty Gray Placeholders Grid */}
-          <div className="pt-4 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+          {/* <div className="pt-4 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
             <div className="w-full h-36 sm:h-44 md:h-52 bg-[#D9D9D9]" />
             <div className="w-full h-36 sm:h-44 md:h-52 bg-[#D9D9D9]" />
             <div className="w-full h-36 sm:h-44 md:h-52 bg-[#D9D9D9]" />
             <div className="w-full h-36 sm:h-44 md:h-52 bg-[#D9D9D9]" />
-          </div>
+          </div> */}
         </section>
 
         {/* SECTION 3: A LEADER FOR THE FUTURE */}
@@ -168,10 +168,10 @@ const FounderProfile = () => {
           </div>
 
           {/* 2 Empty Gray Placeholders Grid */}
-          <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          {/* <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
             <div className="w-full h-52 sm:h-64 bg-[#D9D9D9]" />
             <div className="w-full h-52 sm:h-64 bg-[#D9D9D9]" />
-          </div>
+          </div> */}
         </section>
 
         {/* SECTION 4: A SOURCE OF INSPIRATION */}
@@ -195,10 +195,10 @@ const FounderProfile = () => {
           </div>
 
           {/* 2 Empty Gray Placeholders Grid */}
-          <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          {/* <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
             <div className="w-full h-52 sm:h-64 bg-[#D9D9D9]" />
             <div className="w-full h-52 sm:h-64 bg-[#D9D9D9]" />
-          </div>
+          </div> */}
         </section>
 
         {/* SECTION 5: ARCHITECT WITH A PURPOSE */}
