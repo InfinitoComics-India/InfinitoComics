@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaInstagram, FaLinkedinIn, FaFacebookF } from 'react-icons/fa';
-import { FaXTwitter } from 'react-icons/fa6';
+import { FaInstagram, FaLinkedinIn } from 'react-icons/fa';
 import { FaArrowLeft } from 'react-icons/fa6';
 
 import founderImg from '../../../assets/Images/aboutUs/founder.png';
@@ -74,15 +73,6 @@ const FounderProfile = () => {
               {/* Social Icons Row */}
               <div className="flex gap-3 pt-2">
                 <a
-                  href="https://www.facebook.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Facebook Profile"
-                  className="border border-black p-2 hover:bg-black hover:text-white transition group"
-                >
-                  <FaFacebookF className="text-black group-hover:text-white text-sm" />
-                </a>
-                <a
                   href="https://www.instagram.com/ar.rajansharma/"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -99,15 +89,6 @@ const FounderProfile = () => {
                   className="border border-black p-2 hover:bg-black hover:text-white transition group"
                 >
                   <FaLinkedinIn className="text-black group-hover:text-white text-sm" />
-                </a>
-                <a
-                  href="https://x.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="X Twitter Profile"
-                  className="border border-black p-2 hover:bg-black hover:text-white transition group"
-                >
-                  <FaXTwitter className="text-black group-hover:text-white text-sm" />
                 </a>
               </div>
             </div>

@@ -6,9 +6,9 @@ const defaultStories = [
     _id: "1",
     title: "STARTED AT RAIPUR",
     description:
-      "In 2022, Infinito is started business at Raipur, Chhattisgarh and company is a result of collaborative efforts and contributions from individuals across India.",
+      "In 2023, Infinito is started business at Raipur, Chhattisgarh and company is a result of collaborative efforts and contributions from individuals across India.",
     month: "AUGUST",
-    year: "2022",
+    year: "2023",
   },
   {
     _id: "2",
@@ -16,7 +16,7 @@ const defaultStories = [
     description:
       "With a determined mindset, we embarked on building a robust team to drive the growth of Infinito. Additionally, we achieved our first milestone by generating revenue through services in the AVGC-XR industry.",
     month: "MAY",
-    year: "2023",
+    year: "2024",
   },
   {
     _id: "3",
@@ -24,7 +24,7 @@ const defaultStories = [
     description:
       "With a bold vision and unwavering dedication, we are launching an exciting range of merchandise while advancing in-house animation and gaming projects, seamlessly integrating ABM, AR, VR, and MR technologies.",
     month: "AUGUST",
-    year: "2024",
+    year: "2025",
   },
   {
     _id: "4",
@@ -32,7 +32,7 @@ const defaultStories = [
     description:
       "We are now live and committed to creating impactful solutions that drive the growth and development of the AVGC–XR industry in India.",
     month: "JANUARY",
-    year: "2025",
+    year: "2026",
   },
 ];
 
