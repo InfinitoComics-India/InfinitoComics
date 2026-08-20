@@ -36,9 +36,6 @@ const Footer = () => {
           <div className="px-4">
             <div className="w-44 mx-auto">
               <img src={logo} alt="Infinito Logo" className="w-full h-auto" />
-              <p className="text-[8px] pt-1 leading-tight text-white text-center">
-                WHERE IMAGINATIONS BREAKS BOUNDARIES
-              </p>
               <p className="mt-4 text-[11px] leading-relaxed text-gray-300 text-left">
                 India’s Most Prominent Character Based Entertainment Company
                 With Library Of More Than 2500+ Superheroes
@@ -120,9 +117,6 @@ const Footer = () => {
           <div className="w-56 mx-auto mb-2">
             <img src={logo} alt="Infinito Logo" className="w-full h-auto" />
           </div>
-          <p className="text-[10.5px]  leading-tight">
-            WHERE IMAGINATIONS BREAKS BOUNDARIES
-          </p>
           <p className="mt-3  text-[12px] text-left px-8  text-[#B4B4B4] leading-snug">
             India’s Most Prominent Character Based Entertainment Company With
             Library Of More Than 2500+ Superheroes
