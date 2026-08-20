@@ -93,15 +93,15 @@ const CareerOpportunities = () => {
       </div>
 
       {/* Card — constrained to same width as navbar */}
-      <div className="w-full max-w-[1200px] mx-auto px-12">
+      <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-8 md:px-12">
         <div className="bg-white shadow-sm">
 
           {/* Filter bar */}
-          <div className="flex flex-col md:flex-row justify-between items-center px-6 py-5 border-b border-gray-100">
-            <div className="flex flex-col md:flex-row gap-4 items-center">
-              <span className="font-semibold text-sm text-gray-700">Filter by</span>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <span className="font-semibold text-sm text-gray-700 hidden sm:inline">Filter by</span>
               <select
-                className="border border-gray-300 p-2 text-sm min-w-[180px] focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="border border-gray-300 p-2 text-sm w-full sm:min-w-[180px] focus:outline-none focus:ring-2 focus:ring-red-500"
                 value={selectedDept}
                 onChange={(e) => setSelectedDept(e.target.value)}
                 aria-label="Filter by department"
@@ -109,7 +109,7 @@ const CareerOpportunities = () => {
                 {departments.map((dep) => <option key={dep} value={dep}>{dep}</option>)}
               </select>
               <select
-                className="border border-gray-300 p-2 text-sm min-w-[180px] focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="border border-gray-300 p-2 text-sm w-full sm:min-w-[180px] focus:outline-none focus:ring-2 focus:ring-red-500"
                 value={selectedJobType}
                 onChange={(e) => setSelectedJobType(e.target.value)}
                 aria-label="Filter by job type"
@@ -117,7 +117,7 @@ const CareerOpportunities = () => {
               {CAREER_JOB_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
               </select>
             </div>
-            <p className="mt-4 md:mt-0 text-sm text-gray-500">
+            <p className="text-sm text-gray-500 shrink-0">
               {filteredJobs.length} {filteredJobs.length === 1 ? "open position" : "open positions"}
             </p>
           </div>
@@ -141,10 +141,10 @@ const CareerOpportunities = () => {
               </div>
             ) : (
               filteredDepts.map((dept) => (
-                <div key={dept} className="mb-10 px-6 mt-12">
+                <div key={dept} className="mb-10 px-3 sm:px-6 mt-12">
                   {/* Department divider label */}
                   <div className="border-t border-gray-200 relative mb-3">
-                    <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-red-600 text-white px-5 py-1 text-xs font-bold tracking-widest uppercase whitespace-nowrap">
+                    <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-red-600 text-white px-3 sm:px-5 py-1 text-xs font-bold tracking-wide sm:tracking-widest uppercase max-w-[80vw] text-center">
                       {dept}
                     </span>
                   </div>
@@ -154,13 +154,13 @@ const CareerOpportunities = () => {
                     {filteredJobs.filter((job) => job.department === dept).map((job) => (
                       <div
                         key={job.id}
-                        className="flex flex-row justify-between items-center px-4 py-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors"
+                        className="flex flex-wrap justify-between items-center px-2 sm:px-4 py-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors gap-2"
                       >
-                        <div className="text-gray-800 font-medium flex-1">{job.title}</div>
-                        <div className="text-sm text-gray-500 w-32 text-center hidden sm:block">
+                        <div className="text-gray-800 font-medium flex-1 min-w-0 pr-2">{job.title}</div>
+                        <div className="text-sm text-gray-500 w-28 text-center hidden sm:block shrink-0">
                           {job.positions} {job.positions === 1 ? "position" : "positions"}
                         </div>
-                        <div className="w-28 text-right">
+                        <div className="shrink-0 text-right">
                           {appliedIds.includes(job.id) ? (
                             <span className="text-green-600 font-semibold text-sm tracking-wide uppercase flex items-center justify-end gap-1">
                               <CheckCircle size={14} /> Applied

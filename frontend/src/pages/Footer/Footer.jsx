@@ -52,9 +52,7 @@ const Footer = () => {
                 {" "}
                 <span className="">BLOGS & NEWS</span>
               </Link>
-              <a href="https://careers.infinitohq.com" target="_blank" rel="noopener noreferrer">
-                <span>CAREER</span>
-              </a>
+              <Link to="/careers"><span>CAREER</span></Link>
               <Link to="/comics">
                 <span>COMICS</span>
               </Link>
@@ -66,10 +64,10 @@ const Footer = () => {
               <Link to={FOUNDATION_BASE_URL}>
                 <span className="font">FOUNDATION</span>
               </Link>
-              <Link to={RESEARCH_BASE_URL}>
+              <a href={`${RESEARCH_BASE_URL}/research/browseResearch`}>
                 {" "}
                 <span>RESEARCH</span>
-              </Link>
+              </a>
               <Link to="/support-us">
                 <span>SUPPORT US</span>
               </Link>
@@ -133,8 +131,8 @@ const Footer = () => {
           <div className="mt-8 grid grid-cols-2 gap-y-4 px-5 pr-2 gap-x-12 text-sm font-medium text-left">
             <Link to="/news">BLOGS & NEWS</Link>
             <Link to={FOUNDATION_BASE_URL}><span className="font">FOUNDATION</span></Link> 
-            <a href="https://careers.infinitohq.com" target="_blank" rel="noopener noreferrer">CAREER</a>
-             <Link to={RESEARCH_BASE_URL} > <span>RESEARCH</span></Link>
+            <Link to="/careers">CAREER</Link>
+             <a href={`${RESEARCH_BASE_URL}/research/browseResearch`}> <span>RESEARCH</span></a>
             <span>INTERNSHIP</span>
             <Link to="/support-us">SUPPORT US</Link>
           </div>
@@ -226,3 +224,4 @@ const Footer = () => {
 };
 
 export default Footer;
+

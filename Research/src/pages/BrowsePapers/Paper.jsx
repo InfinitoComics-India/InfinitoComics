@@ -12,8 +12,10 @@ const Paper = () => {
     const fetchData = async () => {
       try {
         const res = await researchBrowse();
-        if (res && Array.isArray(res.data)) {
-          setData(res.data);
+        // API returns { success, message, data: [...] } wrapped in axios response
+        const papers = res?.data?.data;
+        if (Array.isArray(papers) && papers.length > 0) {
+          setData(papers);
         } else {
           setData([]);
         }
