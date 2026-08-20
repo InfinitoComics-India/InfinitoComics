@@ -28,10 +28,9 @@ const TABS = ["OUR VALUES", "OUR BENEFITS", "BELONGING AT INFINITO"];
 
 const ValuesTab = () => (
   <div className="w-full bg-white py-12">
-    <div className="w-full max-w-[1200px] mx-auto px-12">
+    <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-8 md:px-12">
       <h2 className="text-xl md:text-2xl font-bold mb-10 text-center">We care for:</h2>
-      {/* Row 1 — 3 items centered */}
-      <div className="flex flex-wrap justify-center gap-x-16 gap-y-6 mb-8">
+      <div className="flex flex-wrap justify-center gap-x-8 sm:gap-x-16 gap-y-6 mb-8">
         {CARE_ITEMS.slice(0, 3).map((item) => (
           <div key={item.label} className="flex items-center gap-4">
             <img src={item.img} alt={item.label} className="w-14 h-14 rounded-lg object-cover shadow-sm" />
@@ -39,8 +38,7 @@ const ValuesTab = () => (
           </div>
         ))}
       </div>
-      {/* Row 2 — 2 items centered */}
-      <div className="flex flex-wrap justify-center gap-x-16 gap-y-6">
+      <div className="flex flex-wrap justify-center gap-x-8 sm:gap-x-16 gap-y-6">
         {CARE_ITEMS.slice(3).map((item) => (
           <div key={item.label} className="flex items-center gap-4">
             <img src={item.img} alt={item.label} className="w-14 h-14 rounded-lg object-cover shadow-sm" />
@@ -54,7 +52,7 @@ const ValuesTab = () => (
 
 const BenefitsTab = () => (
   <div className="w-full bg-white py-12">
-    <div className="w-full max-w-[1200px] mx-auto px-12">
+    <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-8 md:px-12">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {BENEFITS.map((b) => (
           <div key={b.title} className="bg-gray-50 rounded-xl p-6 flex flex-col gap-3">
@@ -70,7 +68,7 @@ const BenefitsTab = () => (
 
 const BelongingTab = () => (
   <div className="w-full bg-white py-12">
-    <div className="w-full max-w-[1200px] mx-auto px-12">
+    <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-8 md:px-12">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {BELONGING.map((b, i) => (
           <div
@@ -93,13 +91,13 @@ const ValuesTabs = () => {
     <div className="w-full">
       {/* Tab bar — full width background, inner content constrained */}
       <div className="w-full border-b border-gray-200">
-        <div className="w-full max-w-[1200px] mx-auto px-12">
+        <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-8 md:px-12">
           <div className="flex">
             {TABS.map((tab, i) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(i)}
-                className={`flex-1 py-4 text-xs sm:text-sm font-bold tracking-widest uppercase transition-colors focus:outline-none ${
+                className={`flex-1 py-3 sm:py-4 text-xs font-bold tracking-wide sm:tracking-widest uppercase transition-colors focus:outline-none leading-tight text-center ${
                   activeTab === i ? "bg-red-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"
                 }`}
               >

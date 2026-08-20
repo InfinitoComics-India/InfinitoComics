@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import logo from "../../../assets/Logo.png";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -266,6 +266,27 @@ const Jobs = () => {
   const { job } = location.state || {};
   const [showApply, setShowApply] = useState(false);
 
+  // Check if this specific job was already applied for
+  const [alreadyApplied, setAlreadyApplied] = useState(() => {
+    try {
+      const ids = JSON.parse(localStorage.getItem("appliedJobIds") || "[]");
+      return job?._id ? ids.includes(job._id) : false;
+    } catch { return false; }
+  });
+
+  // Update when localStorage changes (e.g. after modal submission)
+  useEffect(() => {
+    const refresh = () => {
+      try {
+        const ids = JSON.parse(localStorage.getItem("appliedJobIds") || "[]");
+        setAlreadyApplied(job?._id ? ids.includes(job._id) : false);
+      } catch {}
+    };
+    window.addEventListener("storage", refresh);
+    const interval = setInterval(refresh, 800);
+    return () => { window.removeEventListener("storage", refresh); clearInterval(interval); };
+  }, [job?._id]);
+
   if (!job) {
     return (
       <div className="min-h-screen bg-[#f3f3f3] flex flex-col items-center justify-center gap-6 px-4">
@@ -303,13 +324,13 @@ const Jobs = () => {
         className="flex justify-start items-center w-full h-72 sm:h-80 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${careerUrls.INFINITO_BANNER})` }}
       >
-        <h1 className="font-sans font-extrabold text-2xl sm:text-4xl text-red-600 tracking-[0.2em] scale-y-110 px-6 sm:px-16 md:px-32 lg:px-60">
+        <h1 className="font-sans font-extrabold text-2xl sm:text-4xl text-red-600 tracking-[0.2em] scale-y-110 px-6 sm:px-12 md:px-20">
           INFINITO COMICS
         </h1>
       </div>
 
       {/* Back link */}
-      <div className="bg-[#f3f3f3] px-4 sm:px-6 md:px-15 pt-6">
+      <div className="bg-[#f3f3f3] px-4 sm:px-6 md:px-10 pt-6">
         <button
           onClick={() => navigate("/careers")}
           className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors mb-2"
@@ -320,7 +341,7 @@ const Jobs = () => {
       </div>
 
       {/* Main Content */}
-      <div className="bg-[#f3f3f3] min-h-screen p-4 sm:p-6 md:p-15 pt-4">
+      <div className="bg-[#f3f3f3] min-h-screen p-4 sm:p-6 md:p-10 pt-4">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
 
           {/* Left Content */}
@@ -336,10 +357,15 @@ const Jobs = () => {
                   </span>
                 </div>
                 <button
-                  onClick={() => setShowApply(true)}
-                  className="self-start sm:self-auto py-2 px-5 sm:py-3 sm:px-7 bg-[#dd1215] text-white text-xs sm:text-sm tracking-[3px] hover:bg-red-700 transition-colors whitespace-nowrap"
+                  onClick={() => !alreadyApplied && setShowApply(true)}
+                  disabled={alreadyApplied}
+                  className={`self-start sm:self-auto py-2 px-5 sm:py-3 sm:px-7 text-white text-xs sm:text-sm tracking-[3px] transition-colors whitespace-nowrap ${
+                    alreadyApplied
+                      ? "bg-green-600 cursor-default"
+                      : "bg-[#dd1215] hover:bg-red-700"
+                  }`}
                 >
-                  APPLY &gt;
+                  {alreadyApplied ? "✓ APPLIED" : "APPLY >"}
                 </button>
               </div>
 
@@ -398,17 +424,22 @@ const Jobs = () => {
               {/* Bottom Apply */}
               <div className="mt-6 pt-4 border-t border-gray-100">
                 <button
-                  onClick={() => setShowApply(true)}
-                  className="py-3 px-8 bg-[#dd1215] text-white text-sm tracking-[3px] hover:bg-red-700 transition-colors"
+                  onClick={() => !alreadyApplied && setShowApply(true)}
+                  disabled={alreadyApplied}
+                  className={`py-3 px-8 text-white text-sm tracking-[3px] transition-colors ${
+                    alreadyApplied
+                      ? "bg-green-600 cursor-default"
+                      : "bg-[#dd1215] hover:bg-red-700"
+                  }`}
                 >
-                  APPLY &gt;
+                  {alreadyApplied ? "✓ APPLIED" : "APPLY >"}
                 </button>
               </div>
             </div>
           </div>
 
           {/* Right Sidebar */}
-          <div className="bg-white shadow-lg p-8 rounded-md h-fit self-start sticky top-6">
+          <div className="bg-white shadow-lg p-4 sm:p-6 lg:p-8 rounded-md h-fit self-start sticky top-6">
             <h2 className="font-bold text-lg mb-4">About Us</h2>
             <div className="text-center mb-4">
               <img src={logo} alt="Infinito Comics" className="h-12 object-contain mx-auto" />
@@ -440,10 +471,15 @@ const Jobs = () => {
               </div>
             </div>
             <button
-              onClick={() => setShowApply(true)}
-              className="mt-6 w-full py-3 bg-[#dd1215] text-white text-sm tracking-[3px] hover:bg-red-700 transition-colors"
+              onClick={() => !alreadyApplied && setShowApply(true)}
+              disabled={alreadyApplied}
+              className={`mt-6 w-full py-3 text-white text-sm tracking-[3px] transition-colors ${
+                alreadyApplied
+                  ? "bg-green-600 cursor-default"
+                  : "bg-[#dd1215] hover:bg-red-700"
+              }`}
             >
-              APPLY NOW &gt;
+              {alreadyApplied ? "✓ APPLIED" : "APPLY NOW >"}
             </button>
           </div>
 

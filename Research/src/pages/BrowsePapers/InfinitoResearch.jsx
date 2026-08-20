@@ -45,45 +45,37 @@ const InfinitoCarousel = ({ researchPaper, isLoading }) => {
   };
 
   return (
-    /* 
-      Layout: gray top gap (70px) + full-width black band
-      Inside black band: same maxWidth:1200px centered container as BrowsePapers
-      Left col = text, Right col = white card (starts ABOVE the black band via negative margin)
-    */
     <div style={{ background: "#f3f4f6" }}>
 
-      {/* Gray spacer — 70px above black */}
-      <div style={{ height: "70px", position: "relative", zIndex: 0 }}>
-        {/* White card starts here — in the gray zone */}
-      </div>
+      {/* Gray spacer — only on desktop so card overlaps into it */}
+      <div className="hidden md:block" style={{ height: "70px", background: "#f3f4f6" }} />
 
       {/* Full-width black band */}
       <div style={{ background: "#000", position: "relative" }}>
-        
-        {/* Same centered container as BrowsePapers: maxWidth 1200px, padding 0 3rem */}
+
         <div style={{
           maxWidth: "1200px",
           margin: "0 auto",
-          padding: "0 3rem",
+          padding: "0 clamp(1rem, 4vw, 3rem)",
           display: "flex",
           alignItems: "flex-start",
           position: "relative",
         }}>
 
-          {/* LEFT: text content */}
-          <div style={{ flex: "0 0 53%", maxWidth: "53%", padding: "2.5rem 2rem 3rem 0" }}>
-            
+          {/* LEFT: text — full width on mobile, 53% on desktop */}
+          <div className="w-full md:w-[53%]" style={{ padding: "2rem clamp(0px,2vw,2rem) 2.5rem 0", flexShrink: 0 }}>
+
             {/* INFINITO RESEARCH heading */}
-            <div style={{ display: "flex", alignItems: "center", marginBottom: "1.3rem", flexWrap: "nowrap" }}>
+            <div style={{ display: "flex", alignItems: "center", marginBottom: "1.3rem", flexWrap: "wrap", gap: "4px" }}>
               <span style={{
                 background: "#DD1215", color: "#fff", fontWeight: 900,
-                fontSize: "clamp(2rem, 3.5vw, 3rem)", letterSpacing: "0.05em",
-                textTransform: "uppercase", padding: "3px 12px", lineHeight: 1.2, whiteSpace: "nowrap",
+                fontSize: "clamp(1.6rem, 4vw, 3rem)", letterSpacing: "0.05em",
+                textTransform: "uppercase", padding: "3px 12px", lineHeight: 1.2,
               }}>INFINITO</span>
               <span style={{
                 color: "#fff", fontWeight: 900,
-                fontSize: "clamp(2rem, 3.5vw, 3rem)", letterSpacing: "0.05em",
-                textTransform: "uppercase", paddingLeft: "8px", lineHeight: 1.2, whiteSpace: "nowrap",
+                fontSize: "clamp(1.6rem, 4vw, 3rem)", letterSpacing: "0.05em",
+                textTransform: "uppercase", paddingLeft: "8px", lineHeight: 1.2,
               }}>RESEARCH</span>
             </div>
 
@@ -110,43 +102,44 @@ const InfinitoCarousel = ({ researchPaper, isLoading }) => {
             </div>
           </div>
 
-          {/* RIGHT: white card — pulled up via marginTop to start in the gray gap */}
-          <div style={{
-            flex: "0 0 47%",
-            maxWidth: "47%",
-            marginTop: "-70px",       /* pulls card up into the 70px gray gap */
-            marginBottom: "-2rem",    /* extends slightly below black band */
-            paddingLeft: "1.5rem",
-          }}>
-            <div style={{
-              background: "#fff",
-              boxShadow: "0 4px 28px rgba(0,0,0,0.15)",
-              padding: "2rem 2.2rem",
-            }}>
-              <h2 style={{ fontWeight: 800, fontSize: "1.6rem", color: "#111", lineHeight: 1.2, marginBottom: "0.5rem" }}>
-                {paper.title}
-              </h2>
-              <p style={{ fontSize: "0.95rem", color: "#aaa", marginBottom: "1rem", fontWeight: 400 }}>
-                {getSubtitle()}
-              </p>
+          {/* RIGHT: white card — full width below on mobile, 47% beside on desktop */}
+          {/* On desktop: pulled up via negative marginTop to overlap into gray spacer */}
+          <div
+            className="w-full md:w-[47%]"
+            style={{ flexShrink: 0, paddingLeft: "clamp(0px, 1.5vw, 1.5rem)" }}
+          >
+            {/* Negative margin only on md+ via inline style override via a wrapper */}
+            <div className="md:-mt-[70px] md:-mb-8 mb-0">
               <div style={{
-                borderLeft: "3px solid #d0d0d0", paddingLeft: "0.9rem",
-                fontSize: "0.85rem", color: "#555", lineHeight: 1.75, marginBottom: "1.6rem",
-                textAlign: "justify",
-                display: "-webkit-box", WebkitLineClamp: 7, WebkitBoxOrient: "vertical", overflow: "hidden",
+                background: "#fff",
+                boxShadow: "0 4px 28px rgba(0,0,0,0.15)",
+                padding: "1.5rem clamp(1rem, 2.5vw, 2.2rem)",
               }}>
-                {paper.abstract}
+                <h2 style={{ fontWeight: 800, fontSize: "clamp(1.1rem, 2.5vw, 1.6rem)", color: "#111", lineHeight: 1.2, marginBottom: "0.5rem" }}>
+                  {paper.title}
+                </h2>
+                <p style={{ fontSize: "0.95rem", color: "#aaa", marginBottom: "1rem", fontWeight: 400 }}>
+                  {getSubtitle()}
+                </p>
+                <div style={{
+                  borderLeft: "3px solid #d0d0d0", paddingLeft: "0.9rem",
+                  fontSize: "0.85rem", color: "#555", lineHeight: 1.75, marginBottom: "1.6rem",
+                  textAlign: "justify",
+                  display: "-webkit-box", WebkitLineClamp: 7, WebkitBoxOrient: "vertical", overflow: "hidden",
+                }}>
+                  {paper.abstract}
+                </div>
+                <button onClick={handleClick} style={{
+                  border: "2px solid #1a1a1a", background: "transparent", color: "#1a1a1a",
+                  fontSize: "0.78rem", fontWeight: 700, letterSpacing: "0.06em",
+                  padding: "0.6rem 1.6rem", cursor: paper.isDemo ? "default" : "pointer",
+                  transition: "background 0.2s, color 0.2s",
+                }}
+                  onMouseEnter={e => { if (!paper.isDemo) { e.currentTarget.style.background = "#000"; e.currentTarget.style.color = "#fff"; } }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#1a1a1a"; }}>
+                  VIEW PAPER &rsaquo;
+                </button>
               </div>
-              <button onClick={handleClick} style={{
-                border: "2px solid #1a1a1a", background: "transparent", color: "#1a1a1a",
-                fontSize: "0.78rem", fontWeight: 700, letterSpacing: "0.06em",
-                padding: "0.6rem 1.6rem", cursor: paper.isDemo ? "default" : "pointer",
-                transition: "background 0.2s, color 0.2s",
-              }}
-                onMouseEnter={e => { if (!paper.isDemo) { e.currentTarget.style.background = "#000"; e.currentTarget.style.color = "#fff"; } }}
-                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#1a1a1a"; }}>
-                VIEW PAPER &rsaquo;
-              </button>
             </div>
           </div>
 
