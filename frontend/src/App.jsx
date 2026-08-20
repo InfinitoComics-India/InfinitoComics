@@ -84,6 +84,10 @@ function App() {
     return <NetworkError />;
   }
 
+  const isSupportSubdomain =
+    window.location.hostname.includes("supportus") ||
+    window.location.hostname.includes("foundation");
+
   return (
     <>
       <Toaster position="top-right" reverseOrder={false} />
@@ -91,7 +95,7 @@ function App() {
         <BrowserRouter basename="/">
           <Routes>
             <Route path="/" element={<Body />}>
-              <Route index element={<Home />} />
+              <Route index element={isSupportSubdomain ? <SupportUs /> : <Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/loggedin" element={<Loggedin />} />
               <Route path="/Premium" element={<Premium />} />
