@@ -18,10 +18,10 @@ export const teamData = [
   {
     team: "UI/UX",
     members: [
-      { name: "Paras Tyagi", year: "(2025–present)", img: parasImg },
-      { name: "Anshika Bakshi", year: "(2025–present)", img: anshikaImg },
-      { name: "Mansha Mishra", year: "(2025–present)", img: manshaImg },
-      { name: "Sujal Karande", year: "(2025–present)", img: sujalImg },
+      { name: "Paras Tyagi", year: "(2025–2026)", img: parasImg },
+      { name: "Anshika Bakshi", year: "(2025–2026)", img: anshikaImg },
+      { name: "Mansha Mishra", year: "(2025–2026)", img: manshaImg },
+      { name: "Sujal Karande", year: "(2025–2026)", img: sujalImg },
     ],
   },
 ];
