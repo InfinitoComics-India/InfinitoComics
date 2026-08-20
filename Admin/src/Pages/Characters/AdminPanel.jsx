@@ -3,18 +3,12 @@ import { useForm } from "react-hook-form";
 import ChipField from "./ChipField";
 import { toast } from 'react-toastify';
 
-// Helper function to validate image dimensions and file size (weight)
-const validateImage = (width, height, maxSizeBytes) => {
+// Helper function to validate image dimensions
+const validateImage = (width, height) => {
   return async (fileList) => {
     if (!fileList || fileList.length === 0) return true;
     const file = fileList[0];
     if (!file) return true;
-
-    // Verify weight (file size)
-    if (file.size > maxSizeBytes) {
-      const sizeMB = maxSizeBytes / (1024 * 1024);
-      return `File size must be less than ${sizeMB}MB (current: ${(file.size / (1024 * 1024)).toFixed(2)}MB)`;
-    }
 
     // Verify dimensions
     return new Promise((resolve) => {
@@ -22,8 +16,8 @@ const validateImage = (width, height, maxSizeBytes) => {
       img.src = URL.createObjectURL(file);
       img.onload = () => {
         URL.revokeObjectURL(img.src);
-        if (img.width !== width || img.height !== height) {
-          resolve(`Image dimensions must be exactly ${width}x${height}px (current: ${img.width}x${img.height}px)`);
+        if (img.width > width || img.height > height) {
+          resolve(`Image dimensions must be below ${width}x${height}px (current: ${img.width}x${img.height}px)`);
         } else {
           resolve(true);
         }
@@ -282,13 +276,13 @@ const AdminPanel = ({
           <label className="block text-gray-300 font-medium mb-1">
             Main Character Image
           </label>
-          <span className="block text-xs text-gray-400 mb-2">Allowed: 800x900 px, Max weight: 2MB</span>
+          <span className="block text-xs text-gray-400 mb-2">Max allowed: 800x900 px</span>
           <input
             type="file"
             accept="image/*"
             {...register("mainImage", {
               required: !editingCharacter && "Main character image is required",
-              validate: validateImage(800, 900, 2 * 1024 * 1024)
+              validate: validateImage(800, 900)
             })}
             className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
           />
@@ -325,13 +319,13 @@ const AdminPanel = ({
           <label className="block text-gray-300 font-medium mb-1">
             Main Landscape Image
           </label>
-          <span className="block text-xs text-gray-400 mb-2">Allowed: 1200x600 px, Max weight: 3MB</span>
+          <span className="block text-xs text-gray-400 mb-2">Max allowed: 1900x600 px</span>
           <input
             type="file"
             accept="image/*"
             {...register("mainLandscapeImage", {
               required: !editingCharacter && "Main landscape image is required",
-              validate: validateImage(1200, 600, 3 * 1024 * 1024)
+              validate: validateImage(1900, 600)
             })}
             className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
           />
@@ -374,13 +368,13 @@ const AdminPanel = ({
               <label className="block text-gray-300 font-medium mb-1">
                 Power 1 Image
               </label>
-              <span className="block text-xs text-gray-400 mb-2">Allowed: 900x400 px, Max weight: 1MB</span>
+              <span className="block text-xs text-gray-400 mb-2">Max allowed: 1600X900 px</span>
               <input
                 type="file"
                 accept="image/*"
                 {...register("power1Image", {
                   required: !editingCharacter && "Power 1 image is required",
-                  validate: validateImage(900, 400, 1 * 1024 * 1024)
+                  validate: validateImage(1600,900)
                 })}
                 className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
               />
@@ -417,13 +411,13 @@ const AdminPanel = ({
               <label className="block text-gray-300 font-medium mb-1">
                 Power 2 Image
               </label>
-              <span className="block text-xs text-gray-400 mb-2">Allowed: 900x400 px, Max weight: 1MB</span>
+              <span className="block text-xs text-gray-400 mb-2">Max allowed: 1600X900 px</span>
               <input
                 type="file"
                 accept="image/*"
                 {...register("power2Image", {
                   required: !editingCharacter && "Power 2 image is required",
-                  validate: validateImage(900, 400, 1 * 1024 * 1024)
+                  validate: validateImage(1600, 900)
                 })}
                 className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
               />

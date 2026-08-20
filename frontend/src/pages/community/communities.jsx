@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import banner from '../../../assets/Images/career/banner.png';
 import logo from '../../../assets/Logo.png';
-import { CheckCircle2, Share2, Globe, ArrowRight } from 'lucide-react';
-import { FaFacebookF, FaInstagram, FaTwitter, FaDiscord, FaReddit } from 'react-icons/fa';
+import { CheckCircle2, Share2, Globe } from 'lucide-react';
+import { FaFacebookF, FaInstagram, FaTwitter, FaDiscord, FaReddit, FaYoutube } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import ComingSoon from '../../components/comingSoon/comingSoon';
 
@@ -86,10 +86,20 @@ const communities = () => {
   }, []);
 
   const handleShare = () => {
-    const shareLink = activeTab === 'discord' ? inviteUrl : "https://www.reddit.com/r/InfinitoComics/";
+    let shareLink = "";
+    if (activeTab === 'discord') {
+      shareLink = inviteUrl;
+    } else if (activeTab === 'reddit') {
+      shareLink = "https://www.reddit.com/r/InfinitoComics/";
+    } else {
+      shareLink = "https://www.instagram.com/infinitoHQ/";
+    }
+
     navigator.clipboard.writeText(shareLink)
       .then(() => {
-        toast.success(`${activeTab === 'discord' ? 'Discord invite' : 'Reddit community'} link copied to clipboard!`);
+        toast.success(`${
+          activeTab === 'discord' ? 'Discord invite' : activeTab === 'reddit' ? 'Reddit community' : 'Instagram profile'
+        } link copied to clipboard!`);
       })
       .catch(() => {
         toast.error("Failed to copy link.");
@@ -101,7 +111,8 @@ const communities = () => {
   }
 
   const isDiscord = activeTab === 'discord';
-  const currentStats = isDiscord ? stats.discord : stats.reddit;
+  const isReddit = activeTab === 'reddit';
+  const isInstagram = activeTab === 'instagram';
 
   return (
     <div className="w-full min-h-screen bg-[#F2F3F5] text-black font-sans pb-20">
@@ -109,7 +120,7 @@ const communities = () => {
         
         {/* Tab Switcher Bar */}
         <div className="flex justify-center mb-8">
-          <div className="bg-white p-1.5 rounded-full shadow-sm flex gap-2 border border-gray-200">
+          <div className="bg-white p-1.5 rounded-full shadow-sm flex flex-wrap gap-2 border border-gray-200">
             <button
               onClick={() => setActiveTab('discord')}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-full font-bold text-sm transition-all cursor-pointer ${
@@ -124,13 +135,24 @@ const communities = () => {
             <button
               onClick={() => setActiveTab('reddit')}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-full font-bold text-sm transition-all cursor-pointer ${
-                !isDiscord
+                isReddit
                   ? 'bg-[#FF4500] text-white shadow-md'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
               <FaReddit size={18} />
               Reddit Community
+            </button>
+            <button
+              onClick={() => setActiveTab('instagram')}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-full font-bold text-sm transition-all cursor-pointer ${
+                isInstagram
+                  ? 'bg-[#E1306C] text-white shadow-md'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              <FaInstagram size={18} />
+              Instagram Feed
             </button>
           </div>
         </div>
@@ -150,24 +172,24 @@ const communities = () => {
 
             {/* Platform Branding Top Left */}
             <div className="absolute top-6 left-6 text-white flex items-center gap-2 drop-shadow-md">
-              {isDiscord ? <FaDiscord size={28} /> : <FaReddit size={28} />}
+              {isDiscord ? <FaDiscord size={28} /> : isReddit ? <FaReddit size={28} /> : <FaInstagram size={28} />}
               <span className="font-black text-xl tracking-wider uppercase">
-                {isDiscord ? 'Discord' : 'Reddit'}
+                {isDiscord ? 'Discord' : isReddit ? 'Reddit' : 'Instagram'}
               </span>
             </div>
 
             {/* Open Button Top Right */}
             <div className="absolute top-6 right-6">
               <a
-                href={isDiscord ? inviteUrl : "https://www.reddit.com/r/InfinitoComics/"}
+                href={isDiscord ? inviteUrl : isReddit ? "https://www.reddit.com/r/InfinitoComics/" : "https://www.instagram.com/infinitoHQ/"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`text-white px-5 py-2.5 rounded-full font-bold text-xs sm:text-sm tracking-wide transition-all shadow-md flex items-center gap-2 ${
-                  isDiscord ? 'bg-[#5865F2] hover:bg-[#4752C4]' : 'bg-[#FF4500] hover:bg-[#e03d00]'
+                  isDiscord ? 'bg-[#5865F2] hover:bg-[#4752C4]' : isReddit ? 'bg-[#FF4500] hover:bg-[#e03d00]' : 'bg-[#E1306C] hover:bg-[#c12a5c]'
                 }`}
               >
-                {isDiscord ? <FaDiscord size={18} /> : <FaReddit size={18} />}
-                {isDiscord ? 'Open Discord' : 'Open Reddit'}
+                {isDiscord ? <FaDiscord size={18} /> : isReddit ? <FaReddit size={18} /> : <FaInstagram size={18} />}
+                {isDiscord ? 'Open Discord' : isReddit ? 'Open Reddit' : 'Open Instagram'}
               </a>
             </div>
 
@@ -175,7 +197,7 @@ const communities = () => {
             <div className="absolute -bottom-16 left-6 md:left-12 w-28 h-28 md:w-36 md:h-36 rounded-full bg-white p-1.5 shadow-md flex items-center justify-center z-10 overflow-hidden">
               <div 
                 className={`w-full h-full rounded-full flex items-center justify-center p-4 transition-colors duration-500 ${
-                  isDiscord ? 'bg-[#18181b]' : 'bg-[#ffefe9]'
+                  isDiscord ? 'bg-[#18181b]' : isReddit ? 'bg-[#ffefe9]' : 'bg-[#fff0f5]'
                 }`}
               >
                 <img
@@ -201,7 +223,7 @@ const communities = () => {
                     Verified
                   </span>
                   <h1 className="text-2xl md:text-3xl font-black text-gray-900 uppercase tracking-wider">
-                    {isDiscord ? 'Infinito Official' : 'r/InfinitoComics'}
+                    {isDiscord ? 'Infinito Official' : isReddit ? 'r/InfinitoComics' : 'infinitoHQ'}
                   </h1>
                 </div>
 
@@ -209,22 +231,50 @@ const communities = () => {
                 <p className="text-gray-600 text-base md:text-lg font-medium mb-6 leading-relaxed">
                   {isDiscord 
                     ? 'This is your community home for all things Infinito! Come join the fun!'
-                    : 'Welcome to the official home of Infinito Comics on Reddit!'
+                    : isReddit 
+                      ? 'Welcome to the official home of Infinito Comics on Reddit!'
+                      : 'Follow our official Instagram profile for daily updates, character art, and sneak peeks!'
                   }
                 </p>
 
                 {/* Presence & Members Stats */}
                 <div className="flex items-center gap-5 text-sm font-bold text-gray-500 mb-8 border-b border-gray-100 pb-6">
-                  <span className="flex items-center gap-2">
-                    <span className={`w-2.5 h-2.5 rounded-full inline-block animate-pulse ${
-                      isDiscord ? 'bg-[#23a55a]' : 'bg-[#FF4500]'
-                    }`}></span>
-                    {currentStats.online.toLocaleString()} {isDiscord ? 'Online' : 'Active Users'}
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#b5bac1] inline-block"></span>
-                    {currentStats.members.toLocaleString()} {isDiscord ? 'Members' : 'Subscribers'}
-                  </span>
+                  {isDiscord && (
+                    <>
+                      <span className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#23a55a] inline-block animate-pulse"></span>
+                        {stats.discord.online.toLocaleString()} Online
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#b5bac1] inline-block"></span>
+                        {stats.discord.members.toLocaleString()} Members
+                      </span>
+                    </>
+                  )}
+                  {isReddit && (
+                    <>
+                      <span className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#FF4500] inline-block animate-pulse"></span>
+                        {stats.reddit.online.toLocaleString()} Active Users
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#b5bac1] inline-block"></span>
+                        {stats.reddit.members.toLocaleString()} Subscribers
+                      </span>
+                    </>
+                  )}
+                  {isInstagram && (
+                    <>
+                      <span className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#E1306C] inline-block animate-pulse"></span>
+                        84 Posts
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#b5bac1] inline-block"></span>
+                        1,248 Followers
+                      </span>
+                    </>
+                  )}
                 </div>
 
                 {/* About Content */}
@@ -235,7 +285,9 @@ const communities = () => {
                   <p className="text-gray-700 text-sm md:text-base leading-relaxed font-normal">
                     {isDiscord
                       ? 'From sneak peeks and writer Q&As to fan discussions and exclusive giveaways, server membership comes with plenty of reasons to stick around. Want to show off your fan art? Chat with the creators? Discuss the latest chapters? The Infinito Official Discord server is the place to be. Join today and find your place in the universe!'
-                      : 'Welcome to the official community for Infinito Comics! Join us to discuss our latest chapters, share your fan art, chat with the creators, and connect with fellow comic book fans.'
+                      : isReddit
+                        ? 'Welcome to the official community for Infinito Comics! Join us to discuss our latest chapters, share your fan art, chat with the creators, and connect with fellow comic book fans.'
+                        : 'Stay up-to-date with daily announcements, behind-the-scenes content, exclusive artwork previews, and community highlights on our official Instagram feed.'
                     }
                   </p>
                 </div>
@@ -259,21 +311,21 @@ const communities = () => {
                   {/* Engagement Action Buttons */}
                   <div className="flex flex-col gap-3 mb-8">
                     <a
-                      href={isDiscord ? inviteUrl : "https://www.reddit.com/r/InfinitoComics/"}
+                      href={isDiscord ? inviteUrl : isReddit ? "https://www.reddit.com/r/InfinitoComics/" : "https://www.instagram.com/infinitoHQ/"}
                       target="_blank"
                       rel="noopener noreferrer"
                       className={`w-full text-white py-3.5 px-4 rounded-md font-bold text-center block transition-all shadow-sm tracking-wide text-sm ${
-                        isDiscord ? 'bg-[#5865F2] hover:bg-[#4752C4]' : 'bg-[#FF4500] hover:bg-[#e03d00]'
+                        isDiscord ? 'bg-[#5865F2] hover:bg-[#4752C4]' : isReddit ? 'bg-[#FF4500] hover:bg-[#e03d00]' : 'bg-[#E1306C] hover:bg-[#c12a5c]'
                       }`}
                     >
-                      {isDiscord ? 'Join Server' : 'Join Subreddit'}
+                      {isDiscord ? 'Join Server' : isReddit ? 'Join Subreddit' : 'Follow on Instagram'}
                     </a>
                     <button
                       onClick={handleShare}
                       className="w-full bg-black hover:bg-neutral-800 text-white py-3.5 px-4 rounded-md font-bold text-center flex items-center justify-center gap-2 transition-all shadow-sm tracking-wide text-sm cursor-pointer"
                     >
                       <Share2 size={16} />
-                      {isDiscord ? 'Share Server' : 'Share Subreddit'}
+                      {isDiscord ? 'Share Server' : isReddit ? 'Share Subreddit' : 'Share Profile'}
                     </button>
                   </div>
 
@@ -303,7 +355,8 @@ const communities = () => {
                       {[
                         { icon: <FaFacebookF size={18} />, link: "https://www.facebook.com/infinitoHQ" },
                         { icon: <FaInstagram size={18} />, link: "https://www.instagram.com/infinitoHQ/" },
-                        { icon: <FaTwitter size={18} />, link: "https://x.com/InfinitoHQ" }
+                        { icon: <FaTwitter size={18} />, link: "https://x.com/InfinitoHQ" },
+                        { icon: <FaYoutube size={18} />, link: "https://www.youtube.com/@InfinitoHQ" }
                       ].map((social, i) => (
                         <a
                           key={i}
