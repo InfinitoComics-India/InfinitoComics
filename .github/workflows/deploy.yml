@@ -87,3 +87,16 @@ jobs:
           port: 21
           protocol: ftp
           security: loose
+
+      # Step 9: Deploy SupportUs dist to /public_html/supportus/
+      - name: Deploy SupportUs via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./frontend/dist/
+          server-dir: /public_html/supportus/
+          port: 21
+          protocol: ftp
+          security: loose
