@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaInstagram, FaLinkedinIn, FaFacebookF } from 'react-icons/fa';
-import { FaXTwitter } from 'react-icons/fa6';
+import { FaInstagram, FaLinkedinIn } from 'react-icons/fa';
 import { FaArrowLeft } from 'react-icons/fa6';
 
 import founderImg from '../../../assets/Images/aboutUs/founder.png';
@@ -74,15 +73,6 @@ const FounderProfile = () => {
               {/* Social Icons Row */}
               <div className="flex gap-3 pt-2">
                 <a
-                  href="https://www.facebook.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Facebook Profile"
-                  className="border border-black p-2 hover:bg-black hover:text-white transition group"
-                >
-                  <FaFacebookF className="text-black group-hover:text-white text-sm" />
-                </a>
-                <a
                   href="https://www.instagram.com/ar.rajansharma/"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -99,15 +89,6 @@ const FounderProfile = () => {
                   className="border border-black p-2 hover:bg-black hover:text-white transition group"
                 >
                   <FaLinkedinIn className="text-black group-hover:text-white text-sm" />
-                </a>
-                <a
-                  href="https://x.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="X Twitter Profile"
-                  className="border border-black p-2 hover:bg-black hover:text-white transition group"
-                >
-                  <FaXTwitter className="text-black group-hover:text-white text-sm" />
                 </a>
               </div>
             </div>
@@ -158,12 +139,12 @@ const FounderProfile = () => {
           </div>
 
           {/* 4 Empty Gray Placeholders Grid */}
-          <div className="pt-4 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+          {/* <div className="pt-4 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
             <div className="w-full h-36 sm:h-44 md:h-52 bg-[#D9D9D9]" />
             <div className="w-full h-36 sm:h-44 md:h-52 bg-[#D9D9D9]" />
             <div className="w-full h-36 sm:h-44 md:h-52 bg-[#D9D9D9]" />
             <div className="w-full h-36 sm:h-44 md:h-52 bg-[#D9D9D9]" />
-          </div>
+          </div> */}
         </section>
 
         {/* SECTION 3: A LEADER FOR THE FUTURE */}
@@ -187,10 +168,10 @@ const FounderProfile = () => {
           </div>
 
           {/* 2 Empty Gray Placeholders Grid */}
-          <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          {/* <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
             <div className="w-full h-52 sm:h-64 bg-[#D9D9D9]" />
             <div className="w-full h-52 sm:h-64 bg-[#D9D9D9]" />
-          </div>
+          </div> */}
         </section>
 
         {/* SECTION 4: A SOURCE OF INSPIRATION */}
@@ -214,10 +195,10 @@ const FounderProfile = () => {
           </div>
 
           {/* 2 Empty Gray Placeholders Grid */}
-          <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          {/* <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
             <div className="w-full h-52 sm:h-64 bg-[#D9D9D9]" />
             <div className="w-full h-52 sm:h-64 bg-[#D9D9D9]" />
-          </div>
+          </div> */}
         </section>
 
         {/* SECTION 5: ARCHITECT WITH A PURPOSE */}
