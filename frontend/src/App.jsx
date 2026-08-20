@@ -84,9 +84,10 @@ function App() {
     return <NetworkError />;
   }
 
+  const hostname = typeof window !== 'undefined' ? window.location.hostname.toLowerCase() : '';
   const isSupportSubdomain =
-    window.location.hostname.includes("supportus") ||
-    window.location.hostname.includes("foundation");
+    hostname.includes("supportus") ||
+    hostname.includes("foundation");
 
   return (
     <>
