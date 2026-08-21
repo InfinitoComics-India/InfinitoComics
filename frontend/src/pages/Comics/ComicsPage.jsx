@@ -128,29 +128,34 @@ const TodaysSpotlight = ({ comics, isLoading }) => {
 /* ─── Comic Row ───────────────────────────────────────────── */
 const ComicRow = ({ title, comics, isLoading, navigate }) => {
   const sliderRef = useRef(null);
-  const scroll = (dir) => sliderRef.current?.scrollBy({ left: dir * 180, behavior: "smooth" });
+  const scroll = (dir) => sliderRef.current?.scrollBy({ left: dir * 260, behavior: "smooth" });
   if (!isLoading && comics.length === 0) return null;
   return (
     <div className="w-full max-w-[1200px] mx-auto px-12 mt-10 mb-2">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-[0.75rem] font-black tracking-[0.18em] uppercase text-gray-900">{title} &rsaquo;</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-sm font-black tracking-[0.18em] uppercase text-gray-900">{title} &rsaquo;</h2>
         <button className="text-red-600 text-[0.62rem] font-bold tracking-widest hover:underline uppercase">View More &rsaquo;</button>
       </div>
       <div className="relative">
         <button onClick={() => scroll(-1)} className="absolute -left-6 top-[45%] -translate-y-1/2 z-10 bg-white border border-gray-300 shadow p-1.5 hover:bg-gray-100"><ChevronLeft size={16} /></button>
-        <div ref={sliderRef} className="flex overflow-x-auto gap-3 no-scrollbar scroll-smooth pb-1">
-          {isLoading ? [...Array(5)].map((_, i) => <CardShimmer key={i} />) : comics.map((comic) => (
-            <div key={comic._id} onClick={() => navigate(`/comicChap/${comic._id}/chapters`)} className="flex-shrink-0 cursor-pointer group" style={{ width: "155px" }}>
-              <div className="relative overflow-hidden">
-                <img src={comic.coverImg} alt={comic.title} className="w-[155px] h-[200px] object-cover group-hover:scale-105 transition-transform duration-300" />
-                <div className="absolute bottom-0 left-0 right-0 px-2 py-2" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.82) 70%, transparent)" }}>
-                  <p className="text-white text-[0.58rem] font-black uppercase tracking-wide leading-tight line-clamp-1">{comic.title}</p>
+        <div ref={sliderRef} className="flex overflow-x-auto gap-6 no-scrollbar scroll-smooth pb-2">
+          {isLoading
+            ? [...Array(5)].map((_, i) => (
+                <div key={i} className="flex-shrink-0 animate-pulse" style={{ width: "220px" }}>
+                  <div className="w-[220px] h-[280px] bg-gray-200" />
+                  <div className="h-10 bg-gray-800 mt-2 w-full" />
                 </div>
-              </div>
-              <p className="text-[0.7rem] font-semibold text-gray-800 mt-1.5 leading-snug line-clamp-2">{comic.title}{comic.releasedYear ? ` (${comic.releasedYear})` : ""}</p>
-              <p className="text-[0.62rem] text-gray-400 truncate">{Array.isArray(comic.authors) ? comic.authors.join(", ") : comic.authors || ""}</p>
-            </div>
-          ))}
+              ))
+            : comics.map((comic) => (
+                <div key={comic._id} onClick={() => navigate(`/comicChap/${comic._id}/chapters`)} className="flex-shrink-0 cursor-pointer group" style={{ width: "220px" }}>
+                  <div className="w-[220px] h-[280px] overflow-hidden bg-gray-100">
+                    <img src={comic.coverImg} alt={comic.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  </div>
+                  <div className="bg-black text-white text-sm font-medium text-center py-3 px-2 truncate">
+                    {comic.title}
+                  </div>
+                </div>
+              ))}
         </div>
         <button onClick={() => scroll(1)} className="absolute -right-6 top-[45%] -translate-y-1/2 z-10 bg-white border border-gray-300 shadow p-1.5 hover:bg-gray-100"><ChevronRight size={16} /></button>
       </div>
