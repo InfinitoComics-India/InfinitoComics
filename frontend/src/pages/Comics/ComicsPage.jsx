@@ -296,8 +296,9 @@ const ComicsPage = () => {
       <TodaysSpotlight comics={reversed} isLoading={isLoading} />
       <ComicRow title="Fan Favourites" comics={reversed} isLoading={isLoading} navigate={navigate} />
       <ComicRow title="New Releases" comics={reversed} isLoading={isLoading} navigate={navigate} />
-      <CharactersRow characters={characters} isLoading={charsLoading} />
-      <GenresRow comics={reversed} isLoading={isLoading} />
+      <div className="mb-16">
+        <GenresRow comics={reversed} isLoading={isLoading} />
+      </div>
     </div>
   );
 };
