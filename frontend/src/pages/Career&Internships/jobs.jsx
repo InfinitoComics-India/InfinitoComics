@@ -17,10 +17,12 @@ const ApplyModal = ({ job, onClose }) => {
     portfolio: "",
     coverLetter: "",
     resume: null,
+    portfolioPdf: null,
   });
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [fileName, setFileName] = useState("");
+  const [portfolioFileName, setPortfolioFileName] = useState("");
   const [submitError, setSubmitError] = useState("");
 
   const handleChange = (e) => {
@@ -32,6 +34,14 @@ const ApplyModal = ({ job, onClose }) => {
     if (file) {
       setForm({ ...form, resume: file });
       setFileName(file.name);
+    }
+  };
+
+  const handlePortfolioFile = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setForm({ ...form, portfolioPdf: file });
+      setPortfolioFileName(file.name);
     }
   };
 
@@ -54,6 +64,9 @@ const ApplyModal = ({ job, onClose }) => {
       formData.append("coverLetter", form.coverLetter);
       if (form.resume) {
         formData.append("resume", form.resume);
+      }
+      if (form.portfolioPdf) {
+        formData.append("portfolioPdf", form.portfolioPdf);
       }
 
       await axios.post(`${BASE_URL}/career/apply`, formData, {
@@ -216,11 +229,29 @@ const ApplyModal = ({ job, onClose }) => {
               </label>
             </div>
 
-            {/* Cover Letter */}
+            {/* Portfolio PDF Upload */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Cover Letter <span className="text-gray-400 font-normal">(optional)</span>
+                Portfolio PDF <span className="text-gray-400 font-normal">(optional)</span>
               </label>
+              <label className="flex items-center gap-3 border-2 border-dashed border-gray-300 rounded-md px-4 py-4 cursor-pointer hover:border-red-400 transition-colors">
+                <Upload size={20} className="text-gray-400 shrink-0" />
+                <div>
+                  <p className="text-sm text-gray-600">
+                    {portfolioFileName ? portfolioFileName : "Click to upload Portfolio PDF"}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">PDF only · Max 10 MB</p>
+                </div>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={handlePortfolioFile}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            {/* Cover Letter */}
               <textarea
                 name="coverLetter"
                 value={form.coverLetter}
