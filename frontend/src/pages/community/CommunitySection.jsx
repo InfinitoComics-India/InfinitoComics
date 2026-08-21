@@ -37,30 +37,65 @@ const CommunitySection = () => {
         </a>
       </div>
 
-      {/* Responsive grid of community cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mx-4 sm:mx-10 lg:mx-40">
-        {communities.map((community, index) => (
-          <div key={index} className="flex flex-col">
-            
-            {/* Card with background image and join button */}
-            <div
-              className="relative w-full h-[200px] sm:h-[220px] md:h-[250px] bg-gradient-to-br from-gray-200 to-black rounded overflow-hidden"
-              style={{
-                backgroundImage: `url(${community.imageUrl})`, // Card image background
-                backgroundSize: "cover",                       // Cover the card
-                backgroundPosition: "center",                  // Center the image
-              }}
-            >
-              {/* Join Now button placed at bottom right */}
-              <button className="absolute bottom-4 right-4 text-white tracking-widest px-6 py-2 border border-white hover:bg-white hover:text-black transition-all duration-300">
-                JOIN NOW &rsaquo;
-              </button>
-            </div>
+      {/* Responsive layout: Communities grid on the left, Discord widget on the right */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 mx-4 sm:mx-10 lg:mx-40">
+        
+        {/* Left Column: Core Community Cards (Spans 2 columns on large screens) */}
+        <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {communities.map((community, index) => (
+              <div key={index} className="flex flex-col">
+                
+                {/* Card with background image and join button */}
+                <div
+                  className="relative w-full h-[200px] sm:h-[220px] md:h-[250px] bg-gradient-to-br from-gray-200 to-black rounded overflow-hidden shadow-sm"
+                  style={{
+                    backgroundImage: `url(${community.imageUrl})`, // Card image background
+                    backgroundSize: "cover",                       // Cover the card
+                    backgroundPosition: "center",                  // Center the image
+                  }}
+                >
+                  {/* Join Now button opening Discord server invite */}
+                  <a
+                    href="https://discord.com/widget?id=1537443865278029826"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute bottom-4 right-4 text-white text-xs tracking-widest px-6 py-2 border border-white hover:bg-white hover:text-black transition-all duration-300 font-semibold"
+                  >
+                    JOIN NOW &rsaquo;
+                  </a>
+                </div>
 
-            {/* Community name displayed below the card */}
-            <p className="text-xl font-semibold text-black mt-2">{community.name}</p>
+                {/* Community name displayed below the card */}
+                <p className="text-xl font-semibold text-black mt-2">{community.name}</p>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
+
+        {/* Right Column: Live Discord Widget (Spans 1 column on large screens) */}
+        <div className="flex flex-col w-full">
+          <div className="mb-4">
+            <h3 className="font-sans font-bold text-lg tracking-wider uppercase text-gray-800">
+              Live Discord Server
+            </h3>
+            <p className="text-sm text-gray-500">See who's online and join the conversation!</p>
+          </div>
+          
+          <div className="w-full flex justify-center lg:justify-start">
+            <iframe
+              src="https://discord.com/widget?id=1537443865278029826&theme=dark"
+              width="100%"
+              height="400"
+              className="max-w-[350px] lg:max-w-none rounded-md shadow-lg border-0"
+              allowTransparency="true"
+              frameBorder="0"
+              sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+              title="InfinitoComics Discord Widget"
+            ></iframe>
+          </div>
+        </div>
+
       </div>
     </div>
   );
