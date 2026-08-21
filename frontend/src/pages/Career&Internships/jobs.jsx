@@ -252,6 +252,10 @@ const ApplyModal = ({ job, onClose }) => {
             </div>
 
             {/* Cover Letter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Cover Letter <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
               <textarea
                 name="coverLetter"
                 value={form.coverLetter}
