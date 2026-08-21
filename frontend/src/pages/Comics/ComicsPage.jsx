@@ -162,29 +162,64 @@ const ComicRow = ({ title, comics, isLoading, navigate }) => {
 const CharactersRow = ({ characters, isLoading }) => {
   const navigate = useNavigate();
   const sliderRef = useRef(null);
-  const scroll = (dir) => sliderRef.current?.scrollBy({ left: dir * 180, behavior: "smooth" });
+  const scroll = (dir) => sliderRef.current?.scrollBy({ left: dir * 300, behavior: "smooth" });
   if (!isLoading && characters.length === 0) return null;
   return (
-    <div className="w-full max-w-[1200px] mx-auto px-12 mt-10 mb-2">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-[0.75rem] font-black tracking-[0.18em] uppercase text-gray-900">Learn more about the Characters &rsaquo;</h2>
-        <button onClick={() => navigate("/characters")} className="text-red-600 text-[0.62rem] font-bold tracking-widest hover:underline uppercase">View More &rsaquo;</button>
+    <div className="w-full max-w-[1200px] mx-auto px-12 mt-10 mb-10">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-sm font-black tracking-[0.18em] uppercase text-gray-900">
+          Featured Characters
+        </h2>
+        <button onClick={() => navigate("/characters")} className="text-red-600 text-[0.62rem] font-bold tracking-widest hover:underline uppercase">
+          View More &rsaquo;
+        </button>
       </div>
+
       <div className="relative">
-        <button onClick={() => scroll(-1)} className="absolute -left-6 top-[45%] -translate-y-1/2 z-10 bg-white border border-gray-300 shadow p-1.5 hover:bg-gray-100"><ChevronLeft size={16} /></button>
-        <div ref={sliderRef} className="flex overflow-x-auto gap-4 no-scrollbar scroll-smooth pb-1">
-          {isLoading ? [...Array(5)].map((_, i) => <CardShimmer key={i} />) : characters.map((char) => (
-            <div key={char._id} onClick={() => navigate(`/characters/${char._id}`)} className="flex-shrink-0 cursor-pointer group text-center" style={{ width: "140px" }}>
-              <img
-                src={char.images?.[0] || char.coverImg || "https://via.placeholder.com/140x180"}
-                alt={char.name}
-                className="w-[140px] h-[180px] object-cover object-top group-hover:scale-105 transition-transform duration-300"
-              />
-              <p className="text-[0.68rem] font-bold uppercase tracking-wide mt-1.5 text-gray-800 truncate">{char.name}</p>
-            </div>
-          ))}
+        <button
+          onClick={() => scroll(-1)}
+          className="absolute -left-6 top-[45%] -translate-y-1/2 z-10 bg-white border border-gray-300 shadow p-1.5 hover:bg-gray-100"
+        >
+          <ChevronLeft size={16} />
+        </button>
+
+        <div ref={sliderRef} className="flex overflow-x-auto gap-6 no-scrollbar scroll-smooth pb-2">
+          {isLoading
+            ? [...Array(4)].map((_, i) => (
+                <div key={i} className="flex-shrink-0 animate-pulse" style={{ width: "220px" }}>
+                  <div className="w-[220px] h-[280px] bg-gray-200" />
+                  <div className="h-10 bg-gray-800 mt-2 w-full" />
+                </div>
+              ))
+            : characters.map((char) => (
+                <div
+                  key={char._id}
+                  onClick={() => navigate(`/characters/${char._id}`)}
+                  className="flex-shrink-0 cursor-pointer group"
+                  style={{ width: "220px" }}
+                >
+                  {/* Image */}
+                  <div className="w-[220px] h-[280px] overflow-hidden bg-gray-100">
+                    <img
+                      src={char.images?.[0] || char.coverImg || "https://via.placeholder.com/220x280"}
+                      alt={char.name}
+                      className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  {/* Name black bar */}
+                  <div className="bg-black text-white text-sm font-medium text-center py-3 px-2 truncate">
+                    {char.name}
+                  </div>
+                </div>
+              ))}
         </div>
-        <button onClick={() => scroll(1)} className="absolute -right-6 top-[45%] -translate-y-1/2 z-10 bg-white border border-gray-300 shadow p-1.5 hover:bg-gray-100"><ChevronRight size={16} /></button>
+
+        <button
+          onClick={() => scroll(1)}
+          className="absolute -right-6 top-[45%] -translate-y-1/2 z-10 bg-white border border-gray-300 shadow p-1.5 hover:bg-gray-100"
+        >
+          <ChevronRight size={16} />
+        </button>
       </div>
     </div>
   );
