@@ -61,6 +61,7 @@ jobs:
           port: 21
           protocol: ftp
           security: loose
+          dangerous-clean-slate: true
 
       # Step 7: Deploy Research dist to /public_html/research/
       - name: Deploy Research via FTP
