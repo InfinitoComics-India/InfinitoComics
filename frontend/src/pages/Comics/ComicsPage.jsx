@@ -14,45 +14,46 @@ const CardShimmer = () => (
   </div>
 );
 
-/* ─── Hero Banner — always static ────────────────────────── */
+/* ─── Hero Banner — matches Character Spotlight style ────── */
 const HeroBanner = () => {
   const navigate = useNavigate();
   return (
-    <div className="relative w-full overflow-hidden bg-black" style={{ minHeight: "320px" }}>
+    <div className="relative bg-black" style={{ minHeight: "70vh" }}>
+      {/* Background image */}
       <img
         src={heroImg}
         alt="Comic Spotlight"
-        className="absolute inset-0 w-full h-full object-cover object-top pointer-events-none"
-        style={{ opacity: 0.85 }}
+        className="absolute inset-0 w-full h-full object-cover object-right md:object-center opacity-90 transition-all duration-500"
+        style={{ zIndex: 0 }}
       />
+      {/* Gradient overlay — left to right like character page */}
       <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: "linear-gradient(to right, rgba(0,0,0,0.88) 36%, rgba(0,0,0,0.2) 65%, transparent)" }}
+        className="absolute inset-0 z-10"
+        style={{ background: "linear-gradient(to right, rgba(0,0,0,0.90) 35%, rgba(0,0,0,0.55) 60%, transparent 100%)" }}
       />
-      <div className="w-full max-w-[1200px] mx-auto px-12 relative z-10 flex items-center" style={{ minHeight: "320px" }}>
-        <div className="flex flex-col justify-center py-16" style={{ maxWidth: "480px" }}>
-          <p className="text-[0.62rem] font-bold tracking-[0.22em] text-gray-300 uppercase mb-2">
+      {/* Content */}
+      <div className="relative z-20 flex flex-col justify-center h-[60vh] md:h-[70vh] w-full max-w-[1200px] mx-auto px-6 lg:px-12">
+        <div className="max-w-lg pt-16 md:pt-0">
+          <p className="text-white text-xs tracking-[0.22em] uppercase mb-2">
             Comic Spotlight
           </p>
           <h1
-            className="font-black uppercase leading-none mb-4 whitespace-nowrap"
+            className="font-extrabold uppercase leading-none mb-4"
             style={{
               color: "#DD1215",
-              fontSize: "clamp(2.8rem, 6vw, 4.2rem)",
+              fontSize: "clamp(2.8rem, 6vw, 4.5rem)",
               fontFamily: "Impact, Arial Black, sans-serif",
-              letterSpacing: "0.05em",
+              letterSpacing: "0.08em",
             }}
           >
             UNTIL DEATH
           </h1>
-          <p className="text-gray-200 text-xs leading-relaxed mb-6 max-w-xs">
+          <p className="text-white text-base md:text-lg mb-8 max-w-sm leading-relaxed">
             A moody Mumbai street surfer with custom weapons, fog-cutting vision,
             and a speed-boosting ride—meet the rogue who upgrades on the fly and
             never plays by the rules.
           </p>
-          <button
-            className="self-start border border-white text-white text-xs font-bold tracking-[0.12em] px-5 py-2 uppercase hover:bg-white hover:text-black transition-all"
-          >
+          <button className="border border-white text-white px-6 py-2 text-xs tracking-widest hover:bg-white hover:text-black transition uppercase">
             Read Now &rsaquo;
           </button>
         </div>
