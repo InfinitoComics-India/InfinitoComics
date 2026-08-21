@@ -6,7 +6,7 @@ export default function PowersCarousel({ character }) {
   const powers = [
     character?.power1ImageUrl || "/images/placeholder.png",
     character?.power2ImageUrl || "/images/placeholder.png",
-    character?.power3ImageUrl || "/images/placeholder.png",
+    
   ];
 
   return (
@@ -31,7 +31,7 @@ export default function PowersCarousel({ character }) {
               flex gap-6 flex-wrap justify-center
             "
           >
-            {["POWER 1", "POWER 2", "POWER 3"].map((label, i) => (
+            {["POWER 1", "POWER 2"].map((label, i) => (
               <button
                 key={i}
                 onClick={() => setActive(i)}

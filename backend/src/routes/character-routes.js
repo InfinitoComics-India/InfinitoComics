@@ -28,7 +28,6 @@ router.post(
     { name : 'mainLandscapeImage', maxCount : 1},
     { name : 'power1Image', maxCount : 1},
     { name : 'power2Image', maxCount : 1},
-    { name : 'power3Image', maxCount : 1},
   ]),
   createCharacter
 );
@@ -40,7 +39,6 @@ router.patch('/update/:id', adminauthenticate, upload.fields([
      { name : 'mainLandscapeImage', maxCount : 1},
     { name : 'power1Image', maxCount : 1},
     { name : 'power2Image', maxCount : 1},
-    { name : 'power3Image', maxCount : 1},
   ]), updateCharacter);
 router.delete('/delete/:id', adminauthenticate, deleteCharacter);
 

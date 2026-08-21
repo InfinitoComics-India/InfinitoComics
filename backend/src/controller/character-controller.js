@@ -14,8 +14,7 @@ export const createCharacter = async (req, res) => {
       'originImage',
       'mainLandscapeImage',
       'power1Image',
-      'power2Image',
-      'power3Image'
+      'power2Image'
     ];
     const uploadedImages = {};
     for (const field of imageFields) {
@@ -44,8 +43,7 @@ export const createCharacter = async (req, res) => {
       mainImageUrl: uploadedImages['mainImage'] || "",
       mainLandscapeImageUrl: uploadedImages['mainLandscapeImage'] || "",
       power1ImageUrl: uploadedImages['power1Image'] || "",
-      power2ImageUrl: uploadedImages['power2Image'] || "",
-      power3ImageUrl: uploadedImages['power3Image'] || ""
+      power2ImageUrl: uploadedImages['power2Image'] || ""
     };
 
     const character = await characterService.createCharacter(characterData);
@@ -93,8 +91,7 @@ export const updateCharacter = async (req, res) => {
       'originImage',
       'mainLandscapeImage',
       'power1Image',
-      'power2Image',
-      'power3Image'
+      'power2Image'
     ];
     const uploadedImages = {};
     for (const field of imageFields) {
@@ -122,7 +119,6 @@ export const updateCharacter = async (req, res) => {
       mainLandscapeImageUrl: uploadedImages['mainLandscapeImage'] || existingCharacter.mainLandscapeImage,
       power1ImageUrl: uploadedImages['power1Image'] || existingCharacter.power1Image,
       power2ImageUrl: uploadedImages['power2Image'] || existingCharacter.power2Image,
-      power3ImageUrl: uploadedImages['power3Image'] || existingCharacter.power3Image,
       storyLine,
       origin
     };

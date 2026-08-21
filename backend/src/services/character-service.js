@@ -87,8 +87,7 @@ const characterData = {
                 mainImageUrl: data.mainImageUrl,
                 mainLandscapeImageUrl: data.mainLandscapeImageUrl,
                 power1ImageUrl: data.power1ImageUrl,
-                power2ImageUrl: data.power2ImageUrl,
-                power3ImageUrl: data.power3ImageUrl
+                power2ImageUrl: data.power2ImageUrl
             };
             const character = await this.characterRepository.create(characterData);
             return character;
