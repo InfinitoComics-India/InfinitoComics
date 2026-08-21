@@ -169,7 +169,7 @@ const CharacterManager = () => {
       const formData = new FormData();
       Object.keys(cleanCharacter).forEach(key => {
         if (key !== 'mainImage' && key !== 'storylineImage' && key !== 'originImage' &&
-          key !== 'mainLandscapeImage' && key !== 'power1Image' && key !== 'power2Image' && key !== 'power3Image') {
+          key !== 'mainLandscapeImage' && key !== 'power1Image' && key !== 'power2Image') {
           if (Array.isArray(cleanCharacter[key])) {
             cleanCharacter[key].forEach(item => {
               formData.append(key, item);
@@ -211,14 +211,6 @@ const CharacterManager = () => {
           formData.append('power2Image', cleanCharacter.power2Image);
         } else if (typeof cleanCharacter.power2Image === 'string') {
           formData.append('power2ImageUrl', cleanCharacter.power2Image);
-        }
-      }
-
-      if (cleanCharacter.power3Image) {
-        if (cleanCharacter.power3Image instanceof File) {
-          formData.append('power3Image', cleanCharacter.power3Image);
-        } else if (typeof cleanCharacter.power3Image === 'string') {
-          formData.append('power3ImageUrl', cleanCharacter.power3Image);
         }
       }
 

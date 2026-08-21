@@ -119,10 +119,6 @@ const CharacterSchema = new mongoose.Schema({
     type :String,
     required : true
   },
-  power3ImageUrl:{
-    type: String,
-    required: false
-  },
  
 
 

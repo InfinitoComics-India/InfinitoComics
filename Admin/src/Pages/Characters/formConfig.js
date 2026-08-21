@@ -39,9 +39,6 @@ export const cleanCharacterData = (character) => {
   if (character.power2ImageUrl) {
     cleanCharacter.power2Image = character.power2ImageUrl;
   }
-  if (character.power3ImageUrl) {
-    cleanCharacter.power3Image = character.power3ImageUrl;
-  }
 
   // Fix: Convert birthDate to YYYY-MM-DD for input type="date"
   if (character.birthDate) {
@@ -70,7 +67,6 @@ export const cleanCharacterData = (character) => {
   delete cleanCharacter.mainLandscapeImageUrl;
   delete cleanCharacter.power1ImageUrl;
   delete cleanCharacter.power2ImageUrl;
-  delete cleanCharacter.power3ImageUrl;
 
   return cleanCharacter;
 };
