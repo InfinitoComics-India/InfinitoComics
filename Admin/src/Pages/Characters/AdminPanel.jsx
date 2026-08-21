@@ -163,7 +163,7 @@ const AdminPanel = ({
   }, [editingCharacter, setValue]);
 
   // Handle form submission
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     const characterData = { ...data };
     if (mainImageFile && mainImageFile[0]) {
       characterData.mainImage = mainImageFile[0];
@@ -197,15 +197,18 @@ const AdminPanel = ({
     }
     if (characterData.storyLine) delete characterData.storyLine;
     if (characterData.origin) delete characterData.origin;
+    let success = false;
     if (editingCharacter) {
       characterData._id = editingCharacter._id;
-      onCharacterSaved(characterData, true);
+      success = await onCharacterSaved(characterData, true);
       console.log(characterData);
     } else {
-      onCharacterSaved(characterData, false);
+      success = await onCharacterSaved(characterData, false);
     }
-    reset();
-    setEditingCharacter(null);
+    if (success) {
+      reset();
+      setEditingCharacter(null);
+    }
   };
 
   const handleCancel = () => {

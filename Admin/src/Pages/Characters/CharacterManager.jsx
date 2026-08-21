@@ -151,11 +151,13 @@ const CharacterManager = () => {
         const res = await updateCharacter(cleanCharacter._id, dataToSend, headers);
         await fetchCharacters();
         toast.success('Character updated successfully!');
+        setEditingCharacter(null);
+        setOriginalCharacter(null);
+        return true;
       } catch (error) {
         toast.error('Failed to update character on server.');
+        return false;
       }
-      setEditingCharacter(null);
-      setOriginalCharacter(null);
     } else {
       // ---- POST REQUEST FOR CREATE ----
       const newId = String(nextId);
@@ -240,11 +242,13 @@ const CharacterManager = () => {
         const res = await createCharacter(formData);
         await fetchCharacters();
         toast.success('Character created successfully!');
+        return true;
       } catch (error) {
         console.error('Error creating character:', error);
         const newCharacter = { ...cleanCharacter, _id: newId };
         setCharacters(prevCharacters => [...prevCharacters, newCharacter]);
         toast.error('Error creating character on server. Added locally.');
+        return false;
       }
     }
   };
