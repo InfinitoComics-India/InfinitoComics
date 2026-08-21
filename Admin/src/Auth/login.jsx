@@ -29,7 +29,7 @@ const LoginPage = () => {
   // 🔐 Redirect if already logged in
   useEffect(() => {
     const token = localStorage.getItem("authToken");
-    if (token) {
+    if (token && token !== "undefined") {
       navigate("/");
     } else {
       setCheckingAuth(false);
@@ -40,8 +40,8 @@ const LoginPage = () => {
     try {
       setIsSubmitting(true);
       const response = await login(data);
-      const token = response?.data?.token;
-      const admin = response?.data?.admin;
+      const token = response?.data?.data?.token;
+      const admin = response?.data?.data?.admin;
 
       localStorage.setItem("authToken", token);
       localStorage.setItem("Admin", JSON.stringify(admin));
