@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 import { BACKEND_URL } from "../../Utils/constant";
+import RichEditor from "../../components/RichEditor";
 
 const ResearchManager = () => {
   const [papers, setPapers] = useState([]);
@@ -67,6 +68,11 @@ const handleDelete = async (paperId) => {
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  // For RichEditor fields — receives HTML string directly (not an event)
+  const handleRichChange = (key, html) => {
+    setForm((prev) => ({ ...prev, [key]: html }));
   };
 
   const handleAuthorChange = (index, field, value) => {
@@ -248,15 +254,16 @@ const handleDelete = async (paperId) => {
             "discussion",
             "conclusion",
           ].map((key) => (
-            <textarea
-              key={key}
-              name={key}
-              value={form[key]}
-              onChange={handleChange}
-              placeholder={key}
-              className="w-full border px-4 py-2 rounded"
-              required
-            />
+            <div key={key} className="space-y-1">
+              <label className="block font-semibold capitalize text-gray-700">
+                {key.replace(/([A-Z])/g, " $1")}
+              </label>
+              <RichEditor
+                value={form[key]}
+                onChange={(html) => handleRichChange(key, html)}
+                placeholder={`Enter ${key.replace(/([A-Z])/g, " $1").toLowerCase()}…`}
+              />
+            </div>
           ))}
           <input
             type="date"
