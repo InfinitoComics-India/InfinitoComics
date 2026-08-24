@@ -44,10 +44,7 @@ class ResearchPaperService {
                 throw new Error('Paper not found');
             }
 
-            if (existingPaper.createdBy.toString() !== userId) {
-                throw new Error('Not authorized to update this paper');
-            }
-
+            // Any authenticated admin can update any paper
             const { _id, createdBy, createdAt, ...updateData } = data;
 
             const updatedPaper = await this.researchPaperRepository.update(paperId, updateData);
@@ -65,9 +62,7 @@ class ResearchPaperService {
                 throw new Error('Paper not found');
             }
 
-            if (existingPaper.createdBy.toString() !== userId) {
-                throw new Error('Not authorized to delete this paper');
-            }
+            // Any authenticated admin can delete any paper
 
             const response = await this.researchPaperRepository.destroy(paperId);
             return response;
