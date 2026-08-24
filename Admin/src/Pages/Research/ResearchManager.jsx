@@ -91,7 +91,11 @@ const handleDelete = async (paperId) => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`${BACKEND_URL}/research-papers/${selectedPaper._id}`, form);
+      await axios.put(`${BACKEND_URL}/research-papers/${selectedPaper._id}`, form, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
+      });
       toast.success("Paper updated successfully!");
       fetchPapers();
       setMode("list");
