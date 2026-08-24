@@ -5,6 +5,10 @@ import Image from "@tiptap/extension-image";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import Placeholder from "@tiptap/extension-placeholder";
+import Table from "@tiptap/extension-table";
+import TableRow from "@tiptap/extension-table-row";
+import TableHeader from "@tiptap/extension-table-header";
+import TableCell from "@tiptap/extension-table-cell";
 
 // ── Toolbar button helper ──────────────────────────────────────────
 const ToolBtn = ({ onClick, active, title, children }) => (
@@ -40,6 +44,10 @@ const RichEditor = ({ value, onChange, placeholder = "Start typing…" }) => {
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Placeholder.configure({ placeholder }),
       Image.configure({ inline: false, allowBase64: true }),
+      Table.configure({ resizable: true }),
+      TableRow,
+      TableHeader,
+      TableCell,
     ],
     content: value || "",
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
@@ -154,6 +162,40 @@ const RichEditor = ({ value, onChange, placeholder = "Start typing…" }) => {
 
         <span className="w-px bg-gray-300 mx-1" />
 
+        {/* Table controls */}
+        <ToolBtn
+          onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+          active={false}
+          title="Insert table"
+        >⊞ Table</ToolBtn>
+        <ToolBtn
+          onClick={() => editor.chain().focus().addColumnAfter().run()}
+          active={false}
+          title="Add column"
+        >+Col</ToolBtn>
+        <ToolBtn
+          onClick={() => editor.chain().focus().deleteColumn().run()}
+          active={false}
+          title="Delete column"
+        >-Col</ToolBtn>
+        <ToolBtn
+          onClick={() => editor.chain().focus().addRowAfter().run()}
+          active={false}
+          title="Add row"
+        >+Row</ToolBtn>
+        <ToolBtn
+          onClick={() => editor.chain().focus().deleteRow().run()}
+          active={false}
+          title="Delete row"
+        >-Row</ToolBtn>
+        <ToolBtn
+          onClick={() => editor.chain().focus().deleteTable().run()}
+          active={false}
+          title="Delete table"
+        >✕ Table</ToolBtn>
+
+        <span className="w-px bg-gray-300 mx-1" />
+
         <ToolBtn onClick={() => editor.chain().focus().undo().run()} active={false} title="Undo">↩</ToolBtn>
         <ToolBtn onClick={() => editor.chain().focus().redo().run()} active={false} title="Redo">↪</ToolBtn>
       </div>
@@ -161,7 +203,7 @@ const RichEditor = ({ value, onChange, placeholder = "Start typing…" }) => {
       {/* ── Editor area ── */}
       <EditorContent
         editor={editor}
-        className="min-h-[160px] px-4 py-3 prose prose-sm max-w-none focus:outline-none text-gray-800"
+        className="min-h-[160px] px-4 py-3 prose prose-sm max-w-none focus:outline-none text-gray-800 [&_table]:border-collapse [&_table]:w-full [&_td]:border [&_td]:border-gray-400 [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-gray-400 [&_th]:px-3 [&_th]:py-2 [&_th]:bg-gray-100 [&_th]:font-semibold"
       />
 
       {/* Paste hint */}
