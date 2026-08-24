@@ -10,8 +10,7 @@ class ResearchPaperService {
         try {
             const requiredFields = [
                 'title', 'authors', 'abstract', 'introduction',
-                'relatedWork', 'methodology', 'experimentalResults',
-                'discussion', 'conclusion', 'publicationDate'
+                'methodology', 'discussion', 'conclusion', 'publicationDate'
             ];
 
             for (const field of requiredFields) {

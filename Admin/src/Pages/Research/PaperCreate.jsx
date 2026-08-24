@@ -8,18 +8,32 @@ import RichEditor from "../../components/RichEditor";
 
 // Map Word document heading/section names to form field keys
 const SECTION_MAP = {
-  "title":                "title",
-  "abstract":             "abstract",
-  "introduction":         "introduction",
-  "related work":         "relatedWork",
-  "relatedwork":          "relatedWork",
-  "methodology":          "methodology",
-  "experimental results": "experimentalResults",
-  "experimentalresults":  "experimentalResults",
-  "results":              "experimentalResults",
-  "discussion":           "discussion",
-  "conclusion":           "conclusion",
-  "conclusions":          "conclusion",
+  "title":                        "title",
+  "abstract":                     "abstract",
+  "keywords":                     "keywords",
+  "introduction":                 "introduction",
+  "literature study":             "literatureStudy",
+  "literature review":            "literatureStudy",
+  "literature study/review":      "literatureStudy",
+  "literaturestudy":              "literatureStudy",
+  "research gap":                 "researchGap",
+  "research gap & related works": "researchGap",
+  "researchgap":                  "researchGap",
+  "objectives":                   "objectives",
+  "objective":                    "objectives",
+  "methodology":                  "methodology",
+  "survey/data analysis":         "surveyDataAnalysis",
+  "survey data analysis":         "surveyDataAnalysis",
+  "data analysis":                "surveyDataAnalysis",
+  "experiments":                  "experiments",
+  "experiment":                   "experiments",
+  "experiment results":           "experimentResults",
+  "experimental results":         "experimentResults",
+  "results":                      "experimentResults",
+  "discussion":                   "discussion",
+  "conclusion":                   "conclusion",
+  "conclusions":                  "conclusion",
+  "references":                   "references",
 };
 
 // Extract authors from lines like "Author: John Doe, john@email.com, MIT"
@@ -41,12 +55,18 @@ const parseAuthors = (text) => {
 const EMPTY_FORM = {
   title: "",
   abstract: "",
+  keywords: "",
   introduction: "",
-  relatedWork: "",
+  literatureStudy: "",
+  researchGap: "",
+  objectives: "",
   methodology: "",
-  experimentalResults: "",
+  surveyDataAnalysis: "",
+  experiments: "",
+  experimentResults: "",
   discussion: "",
   conclusion: "",
+  references: "",
   publicationDate: "",
   isPublished: false,
   authors: [{ name: "", email: "", affiliation: "" }],
@@ -139,7 +159,24 @@ const PaperCreate = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem("authToken");
-      await axios.post(`${BACKEND_URL}/research-papers`, form, {
+
+      // Convert keywords string to array
+      const keywordsArray = form.keywords
+        ? form.keywords.split(",").map(k => k.trim()).filter(Boolean)
+        : [];
+
+      // Convert references string (one per line) to array of objects
+      const referencesArray = form.references
+        ? form.references.split("\n").map(r => r.trim()).filter(Boolean).map(text => ({ text }))
+        : [];
+
+      const payload = {
+        ...form,
+        keywords: keywordsArray,
+        references: referencesArray,
+      };
+
+      await axios.post(`${BACKEND_URL}/research-papers`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -165,8 +202,9 @@ const PaperCreate = () => {
           📄 Auto-fill from Word Document
         </p>
         <p className="text-xs text-blue-600 mb-3">
-          Upload a <strong>.docx</strong> file with section headings (Title, Abstract,
-          Introduction, Related Work, Methodology, Experimental Results, Discussion, Conclusion).
+          Upload a <strong>.docx</strong> file with section headings (Title, Abstract, Keywords,
+          Introduction, Literature Study/Review, Research Gap, Objectives, Methodology,
+          Survey/Data Analysis, Experiments, Experiment Results, Discussion, Conclusion, References).
           The form will be filled automatically.
         </p>
         <div className="flex items-center gap-4">
@@ -214,16 +252,22 @@ const PaperCreate = () => {
 
         {/* Text sections */}
         {[
-          { key: "abstract",             label: "Abstract" },
-          { key: "introduction",         label: "Introduction" },
-          { key: "relatedWork",          label: "Related Work" },
-          { key: "methodology",          label: "Methodology" },
-          { key: "experimentalResults",  label: "Experimental Results" },
-          { key: "discussion",           label: "Discussion" },
-          { key: "conclusion",           label: "Conclusion" },
-        ].map(({ key, label }) => (
+          { key: "abstract",            label: "Abstract",                       required: true },
+          { key: "introduction",        label: "Introduction",                   required: true },
+          { key: "literatureStudy",     label: "Literature Study/Review",        required: false },
+          { key: "researchGap",         label: "Research Gap & Related Works",   required: false },
+          { key: "objectives",          label: "Objectives",                     required: false },
+          { key: "methodology",         label: "Methodology",                    required: true },
+          { key: "surveyDataAnalysis",  label: "Survey/Data Analysis",           required: false },
+          { key: "experiments",         label: "Experiments",                    required: false },
+          { key: "experimentResults",   label: "Experiment Results",             required: false },
+          { key: "discussion",          label: "Discussion",                     required: true },
+          { key: "conclusion",          label: "Conclusion",                     required: true },
+        ].map(({ key, label, required }) => (
           <div key={key}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {label} {required && <span className="text-red-500">*</span>}
+            </label>
             <RichEditor
               value={form[key]}
               onChange={(html) => setForm((prev) => ({ ...prev, [key]: html }))}
@@ -231,6 +275,32 @@ const PaperCreate = () => {
             />
           </div>
         ))}
+
+        {/* Keywords */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Keywords <span className="text-gray-400 font-normal">(comma-separated)</span></label>
+          <input
+            type="text"
+            name="keywords"
+            value={form.keywords}
+            onChange={handleChange}
+            placeholder="e.g. machine learning, neural networks, NLP"
+            className="w-full border border-gray-300 px-4 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {/* References */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">References <span className="text-gray-400 font-normal">(one per line)</span></label>
+          <textarea
+            name="references"
+            value={form.references}
+            onChange={handleChange}
+            rows={6}
+            placeholder={"[1] Author, Title, Journal, Year\n[2] Author, Title, Conference, Year"}
+            className="w-full border border-gray-300 px-4 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+          />
+        </div>
 
         {/* Publication date */}
         <div>

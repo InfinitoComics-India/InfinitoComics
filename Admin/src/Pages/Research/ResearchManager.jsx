@@ -216,67 +216,146 @@ const handleDelete = async (paperId) => {
             <strong className="text-gray-700">Authors:</strong>{" "}
             {selectedPaper.authors.map((a) => a.name).join(", ")}
           </p>
+          {selectedPaper.keywords?.length > 0 && (
+            <p>
+              <strong className="text-gray-700">Keywords:</strong>{" "}
+              {selectedPaper.keywords.join(", ")}
+            </p>
+          )}
           <div className="grid gap-4 mt-4">
             {[
-              "abstract",
-              "introduction",
-              "relatedWork",
-              "methodology",
-              "experimentalResults",
-              "discussion",
-              "conclusion",
-            ].map((key) => (
-              <div key={key}>
-                <h3 className="font-semibold capitalize border-b pb-1 text-gray-700">{key}</h3>
-                <div
-                  className="text-gray-800 prose max-w-none"
-                  dangerouslySetInnerHTML={{ __html: selectedPaper[key] }}
-                />
-              </div>
-            ))}
+              { key: "abstract",           label: "Abstract" },
+              { key: "introduction",       label: "Introduction" },
+              { key: "literatureStudy",    label: "Literature Study/Review" },
+              { key: "researchGap",        label: "Research Gap & Related Works" },
+              { key: "objectives",         label: "Objectives" },
+              { key: "methodology",        label: "Methodology" },
+              { key: "surveyDataAnalysis", label: "Survey/Data Analysis" },
+              { key: "experiments",        label: "Experiments" },
+              { key: "experimentResults",  label: "Experiment Results" },
+              { key: "discussion",         label: "Discussion" },
+              { key: "conclusion",         label: "Conclusion" },
+            ].map(({ key, label }) =>
+              selectedPaper[key] ? (
+                <div key={key}>
+                  <h3 className="font-semibold border-b pb-1 text-gray-700">{label}</h3>
+                  <div
+                    className="text-gray-800 prose max-w-none mt-2"
+                    dangerouslySetInnerHTML={{ __html: selectedPaper[key] }}
+                  />
+                </div>
+              ) : null
+            )}
           </div>
+          {selectedPaper.references?.length > 0 && (
+            <div>
+              <h3 className="font-semibold border-b pb-1 text-gray-700">References</h3>
+              <ol className="list-none mt-2 space-y-1">
+                {selectedPaper.references.map((ref, i) => (
+                  <li key={i} className="text-sm text-gray-700">
+                    {i + 1}. {typeof ref === "string" ? ref : ref.text}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
         </div>
       )}
 
       {mode === "edit" && form && (
         <form onSubmit={handleUpdate} className="bg-white p-6 mt-6 rounded shadow space-y-6">
           <h2 className="text-2xl font-bold text-gray-800">Edit Paper</h2>
-          <input
-            name="title"
-            value={form.title}
-            onChange={handleChange}
-            placeholder="Title"
-            className="w-full border px-4 py-2 rounded"
-            required
-          />
+
+          {/* Title */}
+          <div>
+            <label className="block font-semibold text-gray-700 mb-1">Title <span className="text-red-500">*</span></label>
+            <input
+              name="title"
+              value={form.title}
+              onChange={handleChange}
+              placeholder="Title"
+              className="w-full border px-4 py-2 rounded"
+              required
+            />
+          </div>
+
+          {/* Rich text sections */}
           {[
-            "abstract",
-            "introduction",
-            "relatedWork",
-            "methodology",
-            "experimentalResults",
-            "discussion",
-            "conclusion",
-          ].map((key) => (
+            { key: "abstract",           label: "Abstract",                     required: true },
+            { key: "introduction",       label: "Introduction",                 required: true },
+            { key: "literatureStudy",    label: "Literature Study/Review",      required: false },
+            { key: "researchGap",        label: "Research Gap & Related Works", required: false },
+            { key: "objectives",         label: "Objectives",                   required: false },
+            { key: "methodology",        label: "Methodology",                  required: true },
+            { key: "surveyDataAnalysis", label: "Survey/Data Analysis",         required: false },
+            { key: "experiments",        label: "Experiments",                  required: false },
+            { key: "experimentResults",  label: "Experiment Results",           required: false },
+            { key: "discussion",         label: "Discussion",                   required: true },
+            { key: "conclusion",         label: "Conclusion",                   required: true },
+          ].map(({ key, label, required }) => (
             <div key={key} className="space-y-1">
-              <label className="block font-semibold capitalize text-gray-700">
-                {key.replace(/([A-Z])/g, " $1")}
+              <label className="block font-semibold text-gray-700">
+                {label} {required && <span className="text-red-500">*</span>}
               </label>
               <RichEditor
-                value={form[key]}
+                value={form[key] || ""}
                 onChange={(html) => handleRichChange(key, html)}
-                placeholder={`Enter ${key.replace(/([A-Z])/g, " $1").toLowerCase()}…`}
+                placeholder={`Enter ${label.toLowerCase()}…`}
               />
             </div>
           ))}
-          <input
-            type="date"
-            name="publicationDate"
-            value={form.publicationDate}
-            onChange={handleChange}
-            className="border px-4 py-2 rounded"
-            required
-          />
+
+          {/* Keywords */}
+          <div>
+            <label className="block font-semibold text-gray-700 mb-1">
+              Keywords <span className="text-gray-400 font-normal text-sm">(comma-separated)</span>
+            </label>
+            <input
+              type="text"
+              name="keywords"
+              value={Array.isArray(form.keywords) ? form.keywords.join(", ") : (form.keywords || "")}
+              onChange={(e) => setForm((prev) => ({ ...prev, keywords: e.target.value.split(",").map(k => k.trim()).filter(Boolean) }))}
+              placeholder="e.g. machine learning, neural networks"
+              className="w-full border px-4 py-2 rounded"
+            />
+          </div>
+
+          {/* References */}
+          <div>
+            <label className="block font-semibold text-gray-700 mb-1">
+              References <span className="text-gray-400 font-normal text-sm">(one per line)</span>
+            </label>
+            <textarea
+              name="references"
+              rows={6}
+              value={
+                Array.isArray(form.references)
+                  ? form.references.map(r => typeof r === "string" ? r : r.text).join("\n")
+                  : (form.references || "")
+              }
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  references: e.target.value.split("\n").map(r => r.trim()).filter(Boolean).map(text => ({ text })),
+                }))
+              }
+              placeholder={"[1] Author, Title, Journal, Year\n[2] Author, Title, Conference, Year"}
+              className="w-full border px-4 py-2 rounded font-mono text-sm"
+            />
+          </div>
+
+          {/* Publication date */}
+          <div>
+            <label className="block font-semibold text-gray-700 mb-1">Publication Date <span className="text-red-500">*</span></label>
+            <input
+              type="date"
+              name="publicationDate"
+              value={form.publicationDate}
+              onChange={handleChange}
+              className="border px-4 py-2 rounded"
+              required
+            />
+          </div>
 
           {/* Publish toggle */}
           <div className="flex items-center gap-3">
@@ -299,8 +378,9 @@ const handleDelete = async (paperId) => {
             </span>
           </div>
 
+          {/* Authors */}
           <div>
-            <label className="font-semibold">Authors</label>
+            <label className="font-semibold text-gray-700">Authors</label>
             {form.authors.map((author, i) => (
               <div key={i} className="flex flex-col sm:flex-row gap-2 mt-2">
                 <input

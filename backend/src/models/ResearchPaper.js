@@ -46,17 +46,33 @@ const ResearchPaperSchema = new mongoose.Schema({
     type: String, 
     required: [true, 'Introduction is required']
   },
-  relatedWork: {
+  literatureStudy: {
     type: String,
-    required: [true, 'Related work section is required']
+    default: ''
+  },
+  researchGap: {
+    type: String,
+    default: ''
+  },
+  objectives: {
+    type: String,
+    default: ''
   },
   methodology: {
     type: String,
     required: [true, 'Methodology section is required']
   },
-  experimentalResults: {
+  surveyDataAnalysis: {
     type: String,
-    required: [true, 'Experimental results section is required']
+    default: ''
+  },
+  experiments: {
+    type: String,
+    default: ''
+  },
+  experimentResults: {
+    type: String,
+    default: ''
   },
   discussion: {
     type: String,

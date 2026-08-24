@@ -196,11 +196,21 @@ const ReadResearch = () => {
               </div>
             )}
 
-            {isUnlocked && ['relatedWork', 'methodology', 'experimentalResults', 'discussion', 'conclusion'].map(key => (
+            {isUnlocked && [
+              { key: 'literatureStudy',   label: 'Literature Study/Review' },
+              { key: 'researchGap',       label: 'Research Gap & Related Works' },
+              { key: 'objectives',        label: 'Objectives' },
+              { key: 'methodology',       label: 'Methodology' },
+              { key: 'surveyDataAnalysis',label: 'Survey/Data Analysis' },
+              { key: 'experiments',       label: 'Experiments' },
+              { key: 'experimentResults', label: 'Experiment Results' },
+              { key: 'discussion',        label: 'Discussion' },
+              { key: 'conclusion',        label: 'Conclusion' },
+            ].map(({ key, label }) => (
               paper[key] ? (
                 <div key={key} style={{ marginBottom: '1.8rem' }}>
-                  <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#111', marginBottom: '0.6rem', textTransform: 'capitalize' }}>
-                    {key.replace(/([A-Z])/g, ' $1')}
+                  <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#111', marginBottom: '0.6rem' }}>
+                    {label}
                   </h2>
                   <div style={{ fontSize: '0.9rem', color: '#333', lineHeight: 1.75, textAlign: 'justify' }}
                     dangerouslySetInnerHTML={{ __html: paper[key] }} />
