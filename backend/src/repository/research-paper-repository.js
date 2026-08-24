@@ -26,6 +26,16 @@ class ResearchPaperRepository extends CrudRepository {
         }
     }
 
+    async update(id, data) {
+        try {
+            const paper = await ResearchPaper.findByIdAndUpdate(id, data, { new: true });
+            return paper;
+        } catch (error) {
+            console.log("Something went wrong in repository layer (update)");
+            throw error;
+        }
+    }
+
     async destroy(id) {
         try {
             const result = await ResearchPaper.findByIdAndDelete(id);
