@@ -171,61 +171,73 @@ const AnimationPage = () => {
   return (
     <div className="w-full min-h-screen bg-black text-white font-sans overflow-x-hidden selection:bg-[#E50914] selection:text-white">
       {/* ─── SECTION 1: HERO BANNER ──────────────────────────────────────── */}
-      <section className="relative w-full h-[75vh] min-h-[500px] max-h-[750px] bg-black flex items-end justify-start overflow-hidden">
-        {/* Background Visual */}
-        <div
-          className="absolute inset-0 w-full h-full bg-cover bg-center transition-all duration-1000 ease-in-out transform scale-105"
-          style={{ backgroundImage: `url(${activeHero.bgImage})` }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/70" />
-        </div>
+      <section className="relative w-full h-[75vh] min-h-[500px] max-h-[750px] bg-black overflow-hidden">
+        {heroSlides.map((slide, idx) => {
+          const isActive = idx === currentHeroIndex;
+          return (
+            <div
+              key={slide.id}
+              className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out flex items-end justify-start ${
+                isActive ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none"
+              }`}
+            >
+              {/* Background Visual */}
+              <div
+                className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-1000 transform scale-105"
+                style={{ backgroundImage: `url(${slide.bgImage})` }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/70" />
+              </div>
 
-        {/* Center Play Button Overlay (for video slides) */}
-        {activeHero.isPlayVideo && (
-          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-            <button className="pointer-events-auto p-4 rounded-full text-white/90 hover:text-white hover:scale-110 transition-all duration-300 group">
-              <PlayCircle className="w-16 h-16 sm:w-20 sm:h-20 stroke-[1.25] drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] group-hover:drop-shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all" />
-            </button>
-          </div>
-        )}
+              {/* Center Play Button Overlay (for video slides) */}
+              {slide.isPlayVideo && (
+                <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                  <button className="pointer-events-auto p-4 rounded-full text-white/90 hover:text-white hover:scale-110 transition-all duration-300 group">
+                    <PlayCircle className="w-16 h-16 sm:w-20 sm:h-20 stroke-[1.25] drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] group-hover:drop-shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all" />
+                  </button>
+                </div>
+              )}
 
-        {/* Hero Left Content Overlay */}
-        <div className="relative z-20 max-w-6xl w-full mx-auto px-4 sm:px-8 md:px-12 pb-12 sm:pb-16 space-y-4">
-          <div className="max-w-xl space-y-3">
-            {activeHero.subtitle && (
-              <p className="text-xs sm:text-sm font-bold tracking-[0.2em] text-gray-300 uppercase font-dmsans">
-                {activeHero.subtitle}
-              </p>
-            )}
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-white drop-shadow-md leading-none">
-              {activeHero.title}
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-200 leading-relaxed font-dmsans max-w-md drop-shadow">
-              {activeHero.description}
-            </p>
+              {/* Hero Left Content Overlay */}
+              <div className="relative z-20 max-w-6xl w-full mx-auto px-4 sm:px-8 md:px-12 pb-12 sm:pb-16 space-y-4">
+                <div className="max-w-xl space-y-3">
+                  {slide.subtitle && (
+                    <p className="text-xs sm:text-sm font-bold tracking-[0.2em] text-gray-300 uppercase font-dmsans">
+                      {slide.subtitle}
+                    </p>
+                  )}
+                  <h1 className="text-3xl sm:text-5xl md:text-6xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-white drop-shadow-md leading-none">
+                    {slide.title}
+                  </h1>
+                  <p className="text-xs sm:text-sm text-gray-200 leading-relaxed font-dmsans max-w-md drop-shadow">
+                    {slide.description}
+                  </p>
 
-            <div className="pt-2">
-              <button className="px-6 py-2.5 bg-black/60 border border-white text-white text-xs sm:text-sm font-bold tracking-widest uppercase hover:bg-white hover:text-black transition-all duration-300">
-                {activeHero.btnText}
-              </button>
+                  <div className="pt-2">
+                    <button className="px-6 py-2.5 bg-black/60 border border-white text-white text-xs sm:text-sm font-bold tracking-widest uppercase hover:bg-white hover:text-black transition-all duration-300">
+                      {slide.btnText}
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          );
+        })}
 
-          {/* Hero Bottom Carousel Indicators */}
-          <div className="flex gap-2 justify-center pt-6">
-            {heroSlides.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentHeroIndex(idx)}
-                aria-label={`Slide ${idx + 1}`}
-                className={`h-1 transition-all duration-300 ${
-                  idx === currentHeroIndex
-                    ? "w-8 bg-[#E50914]"
-                    : "w-5 bg-white/50 hover:bg-white"
-                }`}
-              />
-            ))}
-          </div>
+        {/* Hero Bottom Carousel Indicators */}
+        <div className="absolute bottom-4 left-0 right-0 z-30 flex gap-2 justify-center">
+          {heroSlides.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentHeroIndex(idx)}
+              aria-label={`Slide ${idx + 1}`}
+              className={`h-1 transition-all duration-300 ${
+                idx === currentHeroIndex
+                  ? "w-8 bg-[#E50914]"
+                  : "w-5 bg-white/50 hover:bg-white"
+              }`}
+            />
+          ))}
         </div>
       </section>
 
