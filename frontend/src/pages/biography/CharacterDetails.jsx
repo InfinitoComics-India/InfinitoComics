@@ -31,7 +31,7 @@ export default function CharacterDetail({ character }) {
             <img
               src={storyLineImage}
               alt="Storyline"
-              className="w-full h-64 object-cover rounded mb-4"
+              className="w-full h-auto rounded mb-4"
               draggable="false"
             />
           ) : (
