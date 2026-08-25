@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { PlayCircle, ChevronLeft, ChevronRight, Search, Plus, ChevronDown } from "lucide-react";
 import JoinUltimate from "../Home/JoinUltimate";
