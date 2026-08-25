@@ -253,6 +253,34 @@ const PaperCreate = () => {
         {/* Text sections */}
         {[
           { key: "abstract",            label: "Abstract",                       required: true },
+        ].map(({ key, label, required }) => (
+          <div key={key}>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {label} {required && <span className="text-red-500">*</span>}
+            </label>
+            <RichEditor
+              value={form[key]}
+              onChange={(html) => setForm((prev) => ({ ...prev, [key]: html }))}
+              placeholder={`Enter ${label.toLowerCase()}…`}
+            />
+          </div>
+        ))}
+
+        {/* Keywords — immediately after Abstract */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Keywords <span className="text-gray-400 font-normal">(comma-separated)</span></label>
+          <input
+            type="text"
+            name="keywords"
+            value={form.keywords}
+            onChange={handleChange}
+            placeholder="e.g. machine learning, neural networks, NLP"
+            className="w-full border border-gray-300 px-4 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {/* Remaining text sections */}
+        {[
           { key: "introduction",        label: "Introduction",                   required: true },
           { key: "literatureStudy",     label: "Literature Study/Review",        required: false },
           { key: "researchGap",         label: "Research Gap & Related Works",   required: false },
@@ -275,19 +303,6 @@ const PaperCreate = () => {
             />
           </div>
         ))}
-
-        {/* Keywords */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Keywords <span className="text-gray-400 font-normal">(comma-separated)</span></label>
-          <input
-            type="text"
-            name="keywords"
-            value={form.keywords}
-            onChange={handleChange}
-            placeholder="e.g. machine learning, neural networks, NLP"
-            className="w-full border border-gray-300 px-4 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
 
         {/* References */}
         <div>

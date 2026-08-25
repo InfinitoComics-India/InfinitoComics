@@ -282,6 +282,36 @@ const handleDelete = async (paperId) => {
           {/* Rich text sections */}
           {[
             { key: "abstract",           label: "Abstract",                     required: true },
+          ].map(({ key, label, required }) => (
+            <div key={key} className="space-y-1">
+              <label className="block font-semibold text-gray-700">
+                {label} {required && <span className="text-red-500">*</span>}
+              </label>
+              <RichEditor
+                value={form[key] || ""}
+                onChange={(html) => handleRichChange(key, html)}
+                placeholder={`Enter ${label.toLowerCase()}…`}
+              />
+            </div>
+          ))}
+
+          {/* Keywords — immediately after Abstract */}
+          <div>
+            <label className="block font-semibold text-gray-700 mb-1">
+              Keywords <span className="text-gray-400 font-normal text-sm">(comma-separated)</span>
+            </label>
+            <input
+              type="text"
+              name="keywords"
+              value={Array.isArray(form.keywords) ? form.keywords.join(", ") : (form.keywords || "")}
+              onChange={(e) => setForm((prev) => ({ ...prev, keywords: e.target.value.split(",").map(k => k.trim()).filter(Boolean) }))}
+              placeholder="e.g. machine learning, neural networks"
+              className="w-full border px-4 py-2 rounded"
+            />
+          </div>
+
+          {/* Remaining rich text sections */}
+          {[
             { key: "introduction",       label: "Introduction",                 required: true },
             { key: "literatureStudy",    label: "Literature Study/Review",      required: false },
             { key: "researchGap",        label: "Research Gap & Related Works", required: false },
@@ -304,21 +334,6 @@ const handleDelete = async (paperId) => {
               />
             </div>
           ))}
-
-          {/* Keywords */}
-          <div>
-            <label className="block font-semibold text-gray-700 mb-1">
-              Keywords <span className="text-gray-400 font-normal text-sm">(comma-separated)</span>
-            </label>
-            <input
-              type="text"
-              name="keywords"
-              value={Array.isArray(form.keywords) ? form.keywords.join(", ") : (form.keywords || "")}
-              onChange={(e) => setForm((prev) => ({ ...prev, keywords: e.target.value.split(",").map(k => k.trim()).filter(Boolean) }))}
-              placeholder="e.g. machine learning, neural networks"
-              className="w-full border px-4 py-2 rounded"
-            />
-          </div>
 
           {/* References */}
           <div>
