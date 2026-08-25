@@ -34,6 +34,7 @@ import Characters from './pages/Characters/index.jsx'
 import Biography from './pages/biography/Index.jsx'
 import { Toaster } from 'react-hot-toast'
 import Games from './pages/Games/Games.jsx'
+import AnimationPage from './pages/Animation/AnimationPage.jsx'
 import NotFound from './constants/errorPage/NotFound.jsx'
 import NetworkError from './constants/errorPage/NetworkError'
 import { RESEARCH_BASE_URL, FOUNDATION_BASE_URL } from './utils/constants.js'
@@ -132,7 +133,7 @@ function App() {
               <Route path="/children-privacy-policy" element={<ChildrensPrivacyPolicy />} />
               <Route path="/anti-harassment" element={<AntiHarassmentPolicy />} />
               <Route path="/ErrorReport" element={<ErrorPage />} />
-              <Route path="/animation" element={<Community />} />
+              <Route path="/animation" element={<AnimationPage />} />
               <Route path="/shop" element={<Community />} />
               <Route path="*" element={<NotFound />} />
             </Route>
