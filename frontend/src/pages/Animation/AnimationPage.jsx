@@ -24,17 +24,23 @@ const battleBeastPoster = "/battle-beast.png";
 const heroSlides = [
   {
     id: 1,
+    subtitle: "ANIMATION SPOTLIGHT",
     title: "SPIDERMAN - MULTIVERSE",
     description:
       "One day Spiderman ate a spider, he checked on it, he died. You think that's the end. NAHHH!! There are other Spidermen in the multiverse. WHATTT?? Other spidermen live in it!!",
+    btnText: "PLAY VIDEO >",
     bgImage: spidermanHero,
+    isPlayVideo: true,
   },
   {
     id: 2,
-    title: "MARVEL RIVALS - ETERNAL STORM",
+    subtitle: "COMIC SPOTLIGHT",
+    title: "UNTIL DEATH",
     description:
-      "An ancient force awakens in the cosmic depths. Heroes will rise, dimensions will collide, and the Infinito Universe will never be the same.",
-    bgImage: rivalImg,
+      "A moody Mumbai street surfer with custom weapons, fog-cutting vision, and a speed-boosting ride—meet the rogue who upgrades on the fly and never rules.",
+    btnText: "READ NOW >",
+    bgImage: quickVision,
+    isPlayVideo: false,
   },
 ];
 
@@ -152,27 +158,43 @@ const AnimationPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activePage, setActivePage] = useState(1);
 
+  // Automatic hero slider timer (changes slide every 5 seconds)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentHeroIndex((prev) => (prev + 1) % heroSlides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
   const activeHero = heroSlides[currentHeroIndex];
 
   return (
     <div className="w-full min-h-screen bg-black text-white font-sans overflow-x-hidden selection:bg-[#E50914] selection:text-white">
       {/* ─── SECTION 1: HERO BANNER ──────────────────────────────────────── */}
       <section className="relative w-full h-[75vh] min-h-[500px] max-h-[750px] bg-black flex items-end justify-start overflow-hidden">
+        {/* Background Visual */}
         <div
-          className="absolute inset-0 w-full h-full bg-cover bg-center transition-all duration-700 ease-in-out transform scale-105"
+          className="absolute inset-0 w-full h-full bg-cover bg-center transition-all duration-1000 ease-in-out transform scale-105"
           style={{ backgroundImage: `url(${activeHero.bgImage})` }}
         >
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/70" />
         </div>
 
-        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-          <button className="pointer-events-auto p-4 rounded-full text-white/90 hover:text-white hover:scale-110 transition-all duration-300 group">
-            <PlayCircle className="w-16 h-16 sm:w-20 sm:h-20 stroke-[1.25] drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] group-hover:drop-shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all" />
-          </button>
-        </div>
+        {/* Center Play Button Overlay (for video slides) */}
+        {activeHero.isPlayVideo && (
+          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+            <button className="pointer-events-auto p-4 rounded-full text-white/90 hover:text-white hover:scale-110 transition-all duration-300 group">
+              <PlayCircle className="w-16 h-16 sm:w-20 sm:h-20 stroke-[1.25] drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] group-hover:drop-shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all" />
+            </button>
+          </div>
+        )}
 
+        {/* Hero Left Content Overlay */}
         <div className="relative z-20 max-w-6xl w-full mx-auto px-4 sm:px-8 md:px-12 pb-12 sm:pb-16 space-y-4">
           <div className="max-w-xl space-y-3">
+            <p className="text-xs sm:text-sm font-bold tracking-[0.2em] text-gray-300 uppercase font-dmsans">
+              {activeHero.subtitle}
+            </p>
             <h1 className="text-3xl sm:text-5xl md:text-6xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-white drop-shadow-md leading-none">
               {activeHero.title}
             </h1>
@@ -182,11 +204,12 @@ const AnimationPage = () => {
 
             <div className="pt-2">
               <button className="px-6 py-2.5 bg-black/60 border border-white text-white text-xs sm:text-sm font-bold tracking-widest uppercase hover:bg-white hover:text-black transition-all duration-300">
-                PLAY VIDEO &gt;
+                {activeHero.btnText}
               </button>
             </div>
           </div>
 
+          {/* Hero Bottom Carousel Indicators */}
           <div className="flex gap-2 justify-center pt-6">
             {heroSlides.map((_, idx) => (
               <button
