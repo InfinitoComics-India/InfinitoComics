@@ -22,14 +22,12 @@
 
 # Cache-busting for React/Vite SPA
 <IfModule mod_headers.c>
-  # 1. Never cache index.html so the browser always gets the newest version
   <FilesMatch "\.(html|htm)$">
     Header set Cache-Control "no-cache, no-store, must-revalidate"
     Header set Pragma "no-cache"
     Header set Expires 0
   </FilesMatch>
 
-  # 2. Cache JS, CSS, and media assets aggressively (Vite hashes their filenames automatically)
   <FilesMatch "\.(js|css|png|jpg|jpeg|gif|ico|svg|webp|woff|woff2|ttf|eot)$">
     Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
