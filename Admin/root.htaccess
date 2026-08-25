@@ -1,0 +1,3 @@
+RewriteEngine On
+RewriteRule ^$ /admin/ [R=301,L]
+RewriteRule ^index\.html$ /admin/ [R=301,L]

@@ -89,6 +89,25 @@ jobs:
           protocol: ftp
           security: loose
 
+      # Step 8b: Deploy root redirect .htaccess → admin.infinitohq.com redirects to /admin/
+      - name: Prepare root htaccess
+        run: |
+          mkdir -p ./root_htaccess
+          cp ./Admin/root.htaccess ./root_htaccess/.htaccess
+
+      - name: Deploy root htaccess via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./root_htaccess/
+          server-dir: /public_html/
+          port: 21
+          protocol: ftp
+          security: loose
+          dangerous-clean-slate: false
+
       # Step 9: Deploy SupportUs dist to /public_html/supportus/
       - name: Deploy SupportUs via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
