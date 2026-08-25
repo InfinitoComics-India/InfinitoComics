@@ -7,6 +7,13 @@
   RewriteCond %{HTTP_HOST} ^research\.infinitohq\.com$ [NC]
   RewriteRule ^ - [L]
 
+  # Do not rewrite requests to /admin/ or /research/ subdirectories
+  RewriteCond %{REQUEST_URI} ^/admin [NC]
+  RewriteRule ^ - [L]
+
+  RewriteCond %{REQUEST_URI} ^/research [NC]
+  RewriteRule ^ - [L]
+
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
