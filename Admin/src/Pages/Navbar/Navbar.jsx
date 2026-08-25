@@ -20,9 +20,10 @@ const NAV_ITEMS = [
 ];
 
 const Navbar = () => {
+  const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Read fresh on every render — login.jsx stores Admin after navigating here
   const token = localStorage.getItem("authToken");
   const role = getRole();
-  const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const toggleMenu = () => setMobileMenuOpen(!isMobileMenuOpen);
 

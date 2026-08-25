@@ -48,7 +48,7 @@ const LoginPage = () => {
 
       setShowSuccess(true);
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      navigate("/");
+      window.location.href = "/admin";
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
       alert(
