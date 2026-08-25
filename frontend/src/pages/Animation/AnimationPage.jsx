@@ -24,7 +24,7 @@ const battleBeastPoster = "/battle-beast.png";
 const heroSlides = [
   {
     id: 1,
-    subtitle: "ANIMATION SPOTLIGHT",
+    subtitle: "",
     title: "SPIDERMAN - MULTIVERSE",
     description:
       "One day Spiderman ate a spider, he checked on it, he died. You think that's the end. NAHHH!! There are other Spidermen in the multiverse. WHATTT?? Other spidermen live in it!!",
@@ -192,9 +192,11 @@ const AnimationPage = () => {
         {/* Hero Left Content Overlay */}
         <div className="relative z-20 max-w-6xl w-full mx-auto px-4 sm:px-8 md:px-12 pb-12 sm:pb-16 space-y-4">
           <div className="max-w-xl space-y-3">
-            <p className="text-xs sm:text-sm font-bold tracking-[0.2em] text-gray-300 uppercase font-dmsans">
-              {activeHero.subtitle}
-            </p>
+            {activeHero.subtitle && (
+              <p className="text-xs sm:text-sm font-bold tracking-[0.2em] text-gray-300 uppercase font-dmsans">
+                {activeHero.subtitle}
+              </p>
+            )}
             <h1 className="text-3xl sm:text-5xl md:text-6xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-white drop-shadow-md leading-none">
               {activeHero.title}
             </h1>
