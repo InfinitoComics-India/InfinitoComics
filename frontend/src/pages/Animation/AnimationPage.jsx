@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { PlayCircle, ChevronLeft, ChevronRight, Search, Plus, ChevronDown } from "lucide-react";
+import JoinUltimate from "../Home/JoinUltimate";
 
 // Image Assets
 import spidermanHero from "../../../assets/Images/character spotlight.png";
@@ -646,40 +647,8 @@ const AnimationPage = () => {
         </div>
       </section>
 
-      {/* ─── SECTION 9: JOIN THE ULTIMATE UNIVERSE HERO CALLOUT ────────────── */}
-      <section className="relative w-full bg-[#0B132B] text-white py-16 sm:py-20 px-4 sm:px-8 md:px-12 overflow-hidden">
-        {/* Top Torn Paper Transition */}
-        <div
-          className="absolute top-0 left-0 right-0 h-10 bg-cover bg-center z-10 pointer-events-none"
-          style={{ backgroundImage: `url(${bgtop})` }}
-        />
-
-        <div className="max-w-6xl mx-auto relative z-20 flex flex-col md:flex-row items-center justify-between gap-10">
-          {/* Left Character Visual (Ninja with glowing katana) */}
-          <div className="w-full md:w-1/2 max-w-md flex justify-center">
-            <img
-              src={quickVision}
-              alt="Join the Ultimate Universe Ninja"
-              className="w-full h-auto object-contain max-h-[380px] drop-shadow-[0_0_25px_rgba(147,51,234,0.5)]"
-            />
-          </div>
-
-          {/* Right Text & Call to Action */}
-          <div className="w-full md:w-1/2 space-y-5 text-left">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-wide text-white leading-tight font-dmsans">
-              Join the Ultimate Universe
-            </h2>
-            <p className="text-xs sm:text-sm text-gray-300 leading-relaxed font-dmsans max-w-md">
-              Be the first to know about new releases, exclusive content, and special events. Plus, get a free digital comic when you sign up!
-            </p>
-            <div className="pt-2">
-              <button className="px-6 py-3 bg-[#E50914] text-white text-xs sm:text-sm font-bold tracking-widest uppercase shadow-md hover:bg-red-700 transition-all duration-300">
-                JOIN NOW &gt;
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* ─── SECTION 9: JOIN THE ULTIMATE UNIVERSE ───────────────────────── */}
+      <JoinUltimate />
     </div>
   );
 };
