@@ -653,10 +653,13 @@ const AdminPanel = ({
               <label className="block text-gray-300 font-medium mb-1">
                 Story Line Image
               </label>
+              <span className="block text-xs text-gray-400 mb-2">Max allowed: 1600x900 px</span>
               <input
                 type="file"
                 accept="image/*"
-                {...register("storylineImage")}
+                {...register("storylineImage", {
+                  validate: validateImage(1600, 900)
+                })}
                 className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
               />
               {errors.storylineImage && (
@@ -715,10 +718,13 @@ const AdminPanel = ({
               <label className="block text-gray-300 font-medium mb-1">
                 Origin Image
               </label>
+              <span className="block text-xs text-gray-400 mb-2">Max allowed: 1000x1000 px</span>
               <input
                 type="file"
                 accept="image/*"
-                {...register("originImage")}
+                {...register("originImage", {
+                  validate: validateImage(1000, 1000)
+                })}
                 className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
               />
               {errors.originImage && (
