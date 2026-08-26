@@ -28,7 +28,7 @@ const ResearchPaperSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['business', 'technology', 'design & creativity', 'psychology & culture', 'law & policy'],
+    enum: ['business', 'technology', 'design & creativity', 'psychology & culture', 'society & policy'],
     default: 'business',
     trim: true
   },

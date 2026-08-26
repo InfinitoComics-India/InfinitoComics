@@ -293,7 +293,7 @@ const handleDelete = async (paperId) => {
               <option value="technology">Technology</option>
               <option value="design & creativity">Design & Creativity</option>
               <option value="psychology & culture">Psychology & Culture</option>
-              <option value="law & policy">Law & Policy</option>
+              <option value="society & policy">Society & Policy</option>
             </select>
           </div>
 

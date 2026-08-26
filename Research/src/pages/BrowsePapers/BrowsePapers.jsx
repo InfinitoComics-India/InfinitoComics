@@ -40,7 +40,7 @@ const CATEGORIES = [
   { key: 'technology',            label: 'Technology' },
   { key: 'design & creativity',   label: 'Design & Creativity' },
   { key: 'psychology & culture',  label: 'Psychology & Culture' },
-  { key: 'law & policy',          label: 'Law & Policy' },
+  { key: 'society & policy',      label: 'Society & Policy' },
 ];
 
 const BrowsePapers = ({ allPapers, isLoading }) => {
