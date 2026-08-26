@@ -5,7 +5,7 @@ import JoinUltimate from "../Home/JoinUltimate";
 
 // Image Assets
 import s1 from "../../../assets/Images/s1.jpg";
-import s2 from "../../../assets/Images/s2.jpg";
+import s2 from "../../../assets/Images/s2.png";
 import rivalImg from "../../../assets/Images/rival.png";
 import bgtop from "../../../assets/Images/spotlighttopbg.png";
 import bgbottom from "../../../assets/Images/spotlightbottombg.png";
@@ -23,20 +23,8 @@ const kalariPoster = "/kalari.png";
 const battleBeastPoster = "/battle-beast.png";
 
 const heroSlides = [
-  {
-    id: 1,
-    title: "SPIDERMAN - MULTIVERSE",
-    description:
-      "One day Spiderman ate a spider, he checked on it, he died. You think that's the end. NAAAAH!! There are other Spidermen. WHERE ???? In other worlds. WHATTT ?? Other spidermen live on !!",
-    bgImage: s1,
-  },
-  {
-    id: 2,
-    title: "MARVEL RIVALS - ETERNAL STORM",
-    description:
-      "An ancient force awakens in the cosmic depths. Heroes will rise, dimensions will collide, and the Infinito Universe will never be the same.",
-    bgImage: s2,
-  },
+  { id: 1, bgImage: s1 },
+  { id: 2, bgImage: s2 },
 ];
 
 const videoCardsData = [
@@ -163,12 +151,10 @@ const AnimationPage = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const activeHero = heroSlides[currentHeroIndex];
-
   return (
     <div className="w-full min-h-screen bg-black text-white font-sans overflow-x-hidden selection:bg-[#E50914] selection:text-white">
       {/* ─── SECTION 1: HERO BANNER ──────────────────────────────────────── */}
-      <section className="relative w-full h-[75vh] min-h-[500px] max-h-[750px] bg-black flex items-end justify-start overflow-hidden">
+      <section className="relative w-full h-[70vh] min-h-[480px] max-h-[700px] bg-black flex items-end justify-start overflow-hidden">
         {heroSlides.map((slide, idx) => (
           <div
             key={slide.id}
@@ -176,10 +162,7 @@ const AnimationPage = () => {
               idx === currentHeroIndex ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
             }`}
             style={{ backgroundImage: `url(${slide.bgImage})` }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/75 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40" />
-          </div>
+          />
         ))}
 
         <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
@@ -188,23 +171,8 @@ const AnimationPage = () => {
           </button>
         </div>
 
-        <div className="relative z-30 max-w-6xl w-full mx-auto px-4 sm:px-8 md:px-12 pb-10 sm:pb-14 space-y-4">
-          <div className="max-w-md space-y-3">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-white drop-shadow-md leading-none transition-all duration-500">
-              {activeHero.title}
-            </h1>
-            <p className="text-[11px] sm:text-xs text-gray-300 leading-relaxed font-dmsans max-w-xs drop-shadow transition-all duration-500">
-              {activeHero.description}
-            </p>
-
-            <div className="pt-2">
-              <button className="px-5 py-2 bg-black/50 border border-white text-white text-[11px] sm:text-xs font-bold tracking-widest uppercase hover:bg-white hover:text-black transition-all duration-300">
-                PLAY VIDEO &gt;
-              </button>
-            </div>
-          </div>
-
-          <div className="flex gap-1.5 justify-center pt-8">
+        <div className="relative z-30 max-w-6xl w-full mx-auto px-4 sm:px-8 md:px-12 pb-6 space-y-4">
+          <div className="flex gap-1.5 justify-center">
             {heroSlides.map((_, idx) => (
               <button
                 key={idx}
