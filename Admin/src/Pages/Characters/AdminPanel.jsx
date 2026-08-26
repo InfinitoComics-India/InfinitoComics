@@ -665,7 +665,7 @@ const AdminPanel = ({
             </div>
             <div>
               <label className="block text-gray-300 font-medium mb-1">
-                Story Line Image
+                Dynamic Pose 1 Image
               </label>
               <span className="block text-xs text-gray-400 mb-2">Max allowed: 1600x900 px</span>
               <input
@@ -730,7 +730,7 @@ const AdminPanel = ({
             </div>
             <div>
               <label className="block text-gray-300 font-medium mb-1">
-                Origin Image
+                Dynamic Pose 2 Image
               </label>
               <span className="block text-xs text-gray-400 mb-2">Max allowed: 1000x1000 px</span>
               <input
