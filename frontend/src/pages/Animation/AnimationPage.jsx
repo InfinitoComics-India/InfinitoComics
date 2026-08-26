@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { PlayCircle, ChevronLeft, ChevronRight, Search, Plus, ChevronDown } from "lucide-react";
 import JoinUltimate from "../Home/JoinUltimate";
 
 // Image Assets
-import spidermanHero from "../../../assets/Images/character spotlight.png";
+import s1 from "../../../assets/Images/s1.jpg";
+import s2 from "../../../assets/Images/s2.jpg";
 import rivalImg from "../../../assets/Images/rival.png";
 import bgtop from "../../../assets/Images/spotlighttopbg.png";
 import bgbottom from "../../../assets/Images/spotlightbottombg.png";
@@ -27,35 +28,14 @@ const heroSlides = [
     title: "SPIDERMAN - MULTIVERSE",
     description:
       "One day Spiderman ate a spider, he checked on it, he died. You think that's the end. NAAAAH!! There are other Spidermen. WHERE ???? In other worlds. WHATTT ?? Other spidermen live on !!",
-    bgImage: spidermanHero,
+    bgImage: s1,
   },
   {
     id: 2,
-    title: "SPIDERMAN - MULTIVERSE",
-    description:
-      "One day Spiderman ate a spider, he checked on it, he died. You think that's the end. NAAAAH!! There are other Spidermen. WHERE ???? In other worlds. WHATTT ?? Other spidermen live on !!",
-    bgImage: spidermanHero,
-  },
-  {
-    id: 3,
     title: "MARVEL RIVALS - ETERNAL STORM",
     description:
       "An ancient force awakens in the cosmic depths. Heroes will rise, dimensions will collide, and the Infinito Universe will never be the same.",
-    bgImage: rivalImg,
-  },
-  {
-    id: 4,
-    title: "SPIDERMAN - MULTIVERSE",
-    description:
-      "One day Spiderman ate a spider, he checked on it, he died. You think that's the end. NAAAAH!! There are other Spidermen. WHERE ???? In other worlds. WHATTT ?? Other spidermen live on !!",
-    bgImage: spidermanHero,
-  },
-  {
-    id: 5,
-    title: "MARVEL RIVALS - ETERNAL STORM",
-    description:
-      "An ancient force awakens in the cosmic depths. Heroes will rise, dimensions will collide, and the Infinito Universe will never be the same.",
-    bgImage: rivalImg,
+    bgImage: s2,
   },
 ];
 
@@ -175,32 +155,45 @@ const AnimationPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activePage, setActivePage] = useState(1);
 
+  // Auto-play hero slider every 3.5 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentHeroIndex((prev) => (prev + 1) % heroSlides.length);
+    }, 3500);
+    return () => clearInterval(timer);
+  }, []);
+
   const activeHero = heroSlides[currentHeroIndex];
 
   return (
     <div className="w-full min-h-screen bg-black text-white font-sans overflow-x-hidden selection:bg-[#E50914] selection:text-white">
       {/* ─── SECTION 1: HERO BANNER ──────────────────────────────────────── */}
       <section className="relative w-full h-[75vh] min-h-[500px] max-h-[750px] bg-black flex items-end justify-start overflow-hidden">
-        <div
-          className="absolute inset-0 w-full h-full bg-cover bg-center transition-all duration-700 ease-in-out"
-          style={{ backgroundImage: `url(${activeHero.bgImage})` }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/75 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40" />
-        </div>
+        {heroSlides.map((slide, idx) => (
+          <div
+            key={slide.id}
+            className={`absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
+              idx === currentHeroIndex ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
+            }`}
+            style={{ backgroundImage: `url(${slide.bgImage})` }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/75 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40" />
+          </div>
+        ))}
 
-        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+        <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
           <button className="pointer-events-auto p-4 rounded-full text-white/90 hover:text-white hover:scale-110 transition-all duration-300 group">
             <PlayCircle className="w-14 h-14 sm:w-18 sm:h-18 stroke-[1.25] drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] group-hover:drop-shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all" />
           </button>
         </div>
 
-        <div className="relative z-20 max-w-6xl w-full mx-auto px-4 sm:px-8 md:px-12 pb-10 sm:pb-14 space-y-4">
+        <div className="relative z-30 max-w-6xl w-full mx-auto px-4 sm:px-8 md:px-12 pb-10 sm:pb-14 space-y-4">
           <div className="max-w-md space-y-3">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-white drop-shadow-md leading-none">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-white drop-shadow-md leading-none transition-all duration-500">
               {activeHero.title}
             </h1>
-            <p className="text-[11px] sm:text-xs text-gray-300 leading-relaxed font-dmsans max-w-xs drop-shadow">
+            <p className="text-[11px] sm:text-xs text-gray-300 leading-relaxed font-dmsans max-w-xs drop-shadow transition-all duration-500">
               {activeHero.description}
             </p>
 
@@ -219,7 +212,7 @@ const AnimationPage = () => {
                 aria-label={`Slide ${idx + 1}`}
                 className={`h-[3px] transition-all duration-300 ${
                   idx === currentHeroIndex
-                    ? "w-5 bg-[#E50914]"
+                    ? "w-6 bg-[#E50914]"
                     : "w-4 bg-white/70 hover:bg-white"
                 }`}
               />
