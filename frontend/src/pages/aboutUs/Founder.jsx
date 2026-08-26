@@ -38,16 +38,7 @@ const FounderSection = () => {
 
             {/* Paragraph */}
             <p className="text-gray-800 text-xs sm:text-sm md:text-base leading-relaxed tracking-wide font-dmsans">
-              Leads and oversees all operations of the company, including creative
-              direction, financial management, and strategic planning. Paragraph on
-              Our founder – a lil extract– if u may.! gotta bring the boss in focus
-              obviously – come on! guys – write some good stuff ! see it gotta be
-              this long Leads and oversees all operations of the company, including
-              creative direction, financial management, and strategic planning.
-              Paragraph on Our founder – a lil extract– if u may.! gotta bring the
-              boss in focus obviously – come on! guys – write some good stuff ! see
-              it gotta be this long Leads and oversees all operations of the
-              company, including creative direction, financial management.
+              Ar. Rajan Sharma is a visionary architect and entrepreneur holding a B.Arch from NIT Raipur and EMBA from IIM Udaipur. Combining design thinking with strategic business management, he leads 70+ creators building India’s premier original character universe. As Founder &amp; Creative Head of Infinito Comics (a unit of Miraya Corporation), he oversees creative direction, character development, comic publishing, smart audio eyewear innovation, and strategic growth across 70+ team members.
             </p>
 
             {/* Icons and Read More */}
@@ -74,13 +65,13 @@ const FounderSection = () => {
                 </a>
               </div>
 
-              {/* Read More */}
-              <Link
+              {/* Read More (Commented Out) */}
+              {/* <Link
                 to="/founder-profile"
                 className="text-red-600 font-bold text-xs sm:text-sm tracking-wider uppercase text-center sm:text-left hover:underline"
               >
                 READ MORE &gt;
-              </Link>
+              </Link> */}
             </div>
           </div>
         </div>

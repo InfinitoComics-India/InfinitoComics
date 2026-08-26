@@ -1,7 +1,16 @@
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
+
 export default {
-    PORT: process.env.PORT,
+    PORT: process.env.PORT || 3000,
     MONGODB_URL: process.env.MONGODB_URL,
     JWT_SECRET_KEY:process.env.JWT_SECRET_KEY,
     JWT_EXPIRY_DATE: process.env.JWT_EXPIRY_DATE,

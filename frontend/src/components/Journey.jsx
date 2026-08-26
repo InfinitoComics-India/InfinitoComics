@@ -31,7 +31,7 @@ const defaultStories = [
     title: "WE ARE LIVE!",
     description:
       "We are now live and committed to creating impactful solutions that drive the growth and development of the AVGC–XR industry in India.",
-    month: "JANUARY",
+    month: "OCTOBER",
     year: "2026",
   },
 ];
