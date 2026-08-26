@@ -13,11 +13,11 @@ class AdminService {
                 throw new Error('Admin with this email already exists');
             }
             const newAdmin = await this.adminRepository.create(adminData);
-            // Generate JWT token for the new admin
             const payload = {
                 id: newAdmin._id,
                 email: newAdmin.email,
                 role: newAdmin.role,
+                roles: newAdmin.roles || (newAdmin.role ? [newAdmin.role] : []),
             };
             const token = jwt.sign(payload, config.JWT_SECRET_KEY, { 
                 expiresIn: config.JWT_EXPIRY_DATE 
@@ -38,11 +38,11 @@ class AdminService {
             if (!isPasswordValid) {
                 throw new Error('Invalid password');
             }
-            // Generate JWT token for the admin
             const payload = {
                 id: admin._id,
                 email: admin.email,
                 role: admin.role,
+                roles: admin.roles || (admin.role ? [admin.role] : []),
             };
             const token = jwt.sign(payload, config.JWT_SECRET_KEY, { 
                 expiresIn: config.JWT_EXPIRY_DATE 

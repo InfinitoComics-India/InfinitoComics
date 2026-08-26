@@ -1,6 +1,6 @@
 // Role definitions — maps each role to the routes it can access
-export const ROLES = {
-  superadmin:       ["*"],  // all routes
+export const ROLE_ROUTES = {
+  superadmin:       ["*"],
   comics_admin:     ["/comic", "/comicChap"],
   character_admin:  ["/characters"],
   research_admin:   ["/research"],
@@ -17,14 +17,27 @@ export const getAdmin = () => {
   }
 };
 
-// Get the role string
-export const getRole = () => getAdmin()?.role || null;
+// Get roles as array — supports both old string role and new array roles
+export const getRoles = () => {
+  const admin = getAdmin();
+  if (!admin) return [];
+  // New format: roles is an array
+  if (Array.isArray(admin.roles)) return admin.roles;
+  // Old format: role is a string
+  if (admin.role) return [admin.role];
+  return [];
+};
+
+// Check if admin has superadmin role
+export const isSuperAdmin = () => getRoles().includes("superadmin");
 
 // Check if the current admin can access a given path prefix
 export const canAccess = (path) => {
-  const role = getRole();
-  if (!role) return false;
-  const allowed = ROLES[role] || [];
-  if (allowed.includes("*")) return true;
-  return allowed.some((prefix) => path.startsWith(prefix));
+  const roles = getRoles();
+  if (!roles.length) return false;
+  if (roles.includes("superadmin")) return true;
+  return roles.some((role) => {
+    const allowed = ROLE_ROUTES[role] || [];
+    return allowed.some((prefix) => path.startsWith(prefix));
+  });
 };

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import URLs from '../../Utils/utils.js';
 import { LogOut } from "lucide-react";
 import { Button, message, Popconfirm } from "antd";
-import { getRole } from '../../Utils/auth.js';
+import { getRoles } from '../../Utils/auth.js';
 
 // All nav items with their route and which roles can see them
 const NAV_ITEMS = [
@@ -21,9 +21,8 @@ const NAV_ITEMS = [
 
 const Navbar = () => {
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
-  // Read fresh on every render — login.jsx stores Admin after navigating here
   const token = localStorage.getItem("authToken");
-  const role = getRole();
+  const roles = getRoles();
 
   const toggleMenu = () => setMobileMenuOpen(!isMobileMenuOpen);
 
@@ -33,8 +32,8 @@ const Navbar = () => {
     window.location.href = "/admin";
   };
 
-  // Filter nav items to only those the current role can see
-  const visibleItems = NAV_ITEMS.filter(item => role && item.roles.includes(role));
+  // Filter nav items — show if any of the admin's roles is in the item's roles list
+  const visibleItems = NAV_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
 
   const NavLinks = ({ onClick }) => (
     <>

@@ -21,9 +21,22 @@ const AdminSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  // roles is now an array (max 4), but we keep role as fallback for backward compat
+  roles: {
+    type: [String],
+    enum: {
+      values: VALID_ROLES,
+      message: `Each role must be one of: ${VALID_ROLES.join(", ")}`
+    },
+    validate: {
+      validator: (v) => Array.isArray(v) && v.length >= 1 && v.length <= 4,
+      message: "An admin must have between 1 and 4 roles"
+    },
+    default: undefined
+  },
+  // Keep old role field for backward compatibility
   role: {
     type: String,
-    required: true,
     enum: {
       values: VALID_ROLES,
       message: `Role must be one of: ${VALID_ROLES.join(", ")}`
@@ -34,8 +47,7 @@ const AdminSchema = new mongoose.Schema({
 AdminSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   try {
-    const saltRounds = 10;
-    this.password = await bcrypt.hash(this.password, saltRounds);
+    this.password = await bcrypt.hash(this.password, 10);
     next();
   } catch (error) {
     next(error);
