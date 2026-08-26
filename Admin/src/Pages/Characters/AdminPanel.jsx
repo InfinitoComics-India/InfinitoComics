@@ -283,7 +283,7 @@ const AdminPanel = ({
         {/* Main Character Image and Landscape Image in one row */}
         <div className="col-span-1">
           <label className="block text-gray-300 font-medium mb-1">
-            Main Character Image
+            Main Character Image (Standing Image)
           </label>
 <<<<<<< Updated upstream
           <span className="block text-xs text-gray-400 mb-2">Allowed: 300x400 px, Max weight: 2MB</span>
@@ -385,13 +385,21 @@ const AdminPanel = ({
               <label className="block text-gray-300 font-medium mb-1">
                 Power 1 Image
               </label>
+<<<<<<< Updated upstream
               <span className="block text-xs text-gray-400 mb-2">Allowed: 900x400 px, Max weight: 1MB</span>
+=======
+              <span className="block text-xs text-gray-400 mb-2">Max allowed: 1920x900 px</span>
+>>>>>>> Stashed changes
               <input
                 type="file"
                 accept="image/*"
                 {...register("power1Image", {
                   required: !editingCharacter && "Power 1 image is required",
+<<<<<<< Updated upstream
                   validate: validateImage(900, 400, 1 * 1024 * 1024)
+=======
+                  validate: validateImage(1920, 900)
+>>>>>>> Stashed changes
                 })}
                 className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
               />
@@ -428,13 +436,21 @@ const AdminPanel = ({
               <label className="block text-gray-300 font-medium mb-1">
                 Power 2 Image
               </label>
+<<<<<<< Updated upstream
               <span className="block text-xs text-gray-400 mb-2">Allowed: 900x400 px, Max weight: 1MB</span>
+=======
+              <span className="block text-xs text-gray-400 mb-2">Max allowed: 1920x900 px</span>
+>>>>>>> Stashed changes
               <input
                 type="file"
                 accept="image/*"
                 {...register("power2Image", {
                   required: !editingCharacter && "Power 2 image is required",
+<<<<<<< Updated upstream
                   validate: validateImage(900, 400, 1 * 1024 * 1024)
+=======
+                  validate: validateImage(1920, 900)
+>>>>>>> Stashed changes
                 })}
                 className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
               />
