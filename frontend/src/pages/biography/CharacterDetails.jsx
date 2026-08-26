@@ -30,12 +30,12 @@ export default function CharacterDetail({ character }) {
           {storyLineImage ? (
             <img
               src={storyLineImage}
-              alt="Storyline"
+              alt="Dynamic Pose 1"
               className="w-full h-64 object-cover rounded mb-4"
               draggable="false"
             />
           ) : (
-            <p className="text-gray-500">No storyline image available</p>
+            <p className="text-gray-500">No Dynamic Pose 1 image available</p>
           )}
           <p className="text-base font-normal mb-4">
             {storyLineText}

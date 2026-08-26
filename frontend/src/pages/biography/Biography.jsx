@@ -134,7 +134,7 @@ export default function Biography({ character }) {
               <div className="mb-6 mt-5">
                 <img
                   src={character.origin?.image || character.mainImageUrl || null}
-                  alt="character"
+                  alt="Dynamic Pose 2"
                   className="w-full max-w-lg rounded mx-auto"
                 />
               </div>

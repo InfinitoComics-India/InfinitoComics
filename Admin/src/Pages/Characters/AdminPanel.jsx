@@ -279,13 +279,13 @@ const AdminPanel = ({
           <label className="block text-gray-300 font-medium mb-1">
             Main Character Image
           </label>
-          <span className="block text-xs text-gray-400 mb-2">Max allowed: 800x900 px</span>
+          <span className="block text-xs text-gray-400 mb-2">Max allowed: 600x900 px</span>
           <input
             type="file"
             accept="image/*"
             {...register("mainImage", {
               required: !editingCharacter && "Main character image is required",
-              validate: validateImage(800, 900)
+              validate: validateImage(600, 900)
             })}
             className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
           />
@@ -651,7 +651,7 @@ const AdminPanel = ({
             </div>
             <div>
               <label className="block text-gray-300 font-medium mb-1">
-                Story Line Image
+                Dynamic Pose 1 Image
               </label>
               <span className="block text-xs text-gray-400 mb-2">Max allowed: 1600x900 px</span>
               <input
@@ -716,7 +716,7 @@ const AdminPanel = ({
             </div>
             <div>
               <label className="block text-gray-300 font-medium mb-1">
-                Origin Image
+                Dynamic Pose 2 Image
               </label>
               <span className="block text-xs text-gray-400 mb-2">Max allowed: 1000x1000 px</span>
               <input
