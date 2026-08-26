@@ -44,13 +44,13 @@ body {
   }
 }
 
-@font-face {
+/* @font-face {
   font-family: 'Broken Console';
   src: url('/broken_console/Broken Console Bold.otf') format('opentype'),
        url('/broken_console/Broken Console Bold.ttf') format('truetype');
   font-weight: bold;
   font-style: normal;
-}
+} */
 
 .bungee-tint-regular {
   font-family: "Bungee Tint", sans-serif;
