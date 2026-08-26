@@ -279,6 +279,24 @@ const handleDelete = async (paperId) => {
             />
           </div>
 
+          {/* Category */}
+          <div>
+            <label className="block font-semibold text-gray-700 mb-1">Category <span className="text-red-500">*</span></label>
+            <select
+              name="category"
+              value={form.category || "business"}
+              onChange={handleChange}
+              className="w-full border px-4 py-2 rounded bg-white"
+              required
+            >
+              <option value="business">Business</option>
+              <option value="technology">Technology</option>
+              <option value="design & creativity">Design & Creativity</option>
+              <option value="psychology & culture">Psychology & Culture</option>
+              <option value="law & policy">Law & Policy</option>
+            </select>
+          </div>
+
           {/* Rich text sections */}
           {[
             { key: "abstract",           label: "Abstract",                     required: true },

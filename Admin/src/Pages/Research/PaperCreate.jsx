@@ -54,6 +54,7 @@ const parseAuthors = (text) => {
 
 const EMPTY_FORM = {
   title: "",
+  category: "business",
   abstract: "",
   keywords: "",
   introduction: "",
@@ -248,6 +249,24 @@ const PaperCreate = () => {
             className="w-full border border-gray-300 px-4 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
+        </div>
+
+        {/* Category */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Category <span className="text-red-500">*</span></label>
+          <select
+            name="category"
+            value={form.category}
+            onChange={handleChange}
+            required
+            className="w-full border border-gray-300 px-4 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          >
+            <option value="business">Business</option>
+            <option value="technology">Technology</option>
+            <option value="design & creativity">Design & Creativity</option>
+            <option value="psychology & culture">Psychology & Culture</option>
+            <option value="law & policy">Law & Policy</option>
+          </select>
         </div>
 
         {/* Text sections */}

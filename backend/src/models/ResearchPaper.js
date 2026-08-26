@@ -26,6 +26,12 @@ const ResearchPaperSchema = new mongoose.Schema({
     required: [true, 'Title is required'],
     trim: true
   },
+  category: {
+    type: String,
+    enum: ['business', 'technology', 'design & creativity', 'psychology & culture', 'law & policy'],
+    default: 'business',
+    trim: true
+  },
   authors: {
     type: [AuthorSchema],
     required: true, 

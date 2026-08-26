@@ -35,11 +35,12 @@ const DEMO_PAPERS = [
 ];
 
 const CATEGORIES = [
-  { key: 'all', label: 'Business' },
-  { key: 'technology', label: 'Technology' },
-  { key: 'design & creativity', label: 'Design & Creativity' },
-  { key: 'psychology & culture', label: 'Psychology & Culture' },
-  { key: 'law & policy', label: 'Law & Policy' },
+  { key: 'all',                   label: 'All' },
+  { key: 'business',              label: 'Business' },
+  { key: 'technology',            label: 'Technology' },
+  { key: 'design & creativity',   label: 'Design & Creativity' },
+  { key: 'psychology & culture',  label: 'Psychology & Culture' },
+  { key: 'law & policy',          label: 'Law & Policy' },
 ];
 
 const BrowsePapers = ({ allPapers, isLoading }) => {
