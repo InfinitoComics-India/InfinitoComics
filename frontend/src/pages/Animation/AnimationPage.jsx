@@ -4,7 +4,8 @@ import { PlayCircle, ChevronLeft, ChevronRight, Search, Plus, ChevronDown } from
 import JoinUltimate from "../Home/JoinUltimate";
 
 // Image Assets
-import spidermanHero from "../../../assets/Images/character spotlight.png";
+import s1 from "../../../assets/Images/s1.jpg";
+import s2 from "../../../assets/Images/s2.jpg";
 import rivalImg from "../../../assets/Images/rival.png";
 import bgtop from "../../../assets/Images/spotlighttopbg.png";
 import bgbottom from "../../../assets/Images/spotlightbottombg.png";
@@ -24,23 +25,17 @@ const battleBeastPoster = "/battle-beast.png";
 const heroSlides = [
   {
     id: 1,
-    subtitle: "",
     title: "SPIDERMAN - MULTIVERSE",
     description:
-      "One day Spiderman ate a spider, he checked on it, he died. You think that's the end. NAHHH!! There are other Spidermen in the multiverse. WHATTT?? Other spidermen live in it!!",
-    btnText: "PLAY VIDEO >",
-    bgImage: spidermanHero,
-    isPlayVideo: true,
+      "One day Spiderman ate a spider, he checked on it, he died. You think that's the end. NAAAAH!! There are other Spidermen. WHERE ???? In other worlds. WHATTT ?? Other spidermen live on !!",
+    bgImage: s1,
   },
   {
     id: 2,
-    subtitle: "COMIC SPOTLIGHT",
-    title: "UNTIL DEATH",
+    title: "MARVEL RIVALS - ETERNAL STORM",
     description:
-      "A moody Mumbai street surfer with custom weapons, fog-cutting vision, and a speed-boosting ride—meet the rogue who upgrades on the fly and never rules.",
-    btnText: "READ NOW >",
-    bgImage: quickVision,
-    isPlayVideo: false,
+      "An ancient force awakens in the cosmic depths. Heroes will rise, dimensions will collide, and the Infinito Universe will never be the same.",
+    bgImage: s2,
   },
 ];
 
@@ -51,11 +46,13 @@ const videoCardsData = [
   { id: 4, title: "Watch Trailer", img: trailer4 },
 ];
 
+import upcomingEvent from "../../../assets/Images/upcomingEvent.png";
+
 const timelineCardsData = [
-  { id: 1, title: "RELEASE TIMELINE", year: "2022", img: trailer1 },
-  { id: 2, title: "RELEASE TIMELINE", year: "2023", img: trailer2 },
-  { id: 3, title: "RELEASE TIMELINE", year: "2024", img: trailer3 },
-  { id: 4, title: "RELEASE TIMELINE", year: "2025", img: trailer4 },
+  { id: 1, title: "RELEASE TIMELINE", year: "2022", img: upcomingEvent },
+  { id: 2, title: "RELEASE TIMELINE", year: "2025", img: upcomingEvent },
+  { id: 3, title: "RELEASE TIMELINE", year: "2025", img: upcomingEvent },
+  { id: 4, title: "RELEASE TIMELINE", year: "2025", img: upcomingEvent },
 ];
 
 const franchiseCardsData = [
@@ -158,11 +155,11 @@ const AnimationPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activePage, setActivePage] = useState(1);
 
-  // Automatic hero slider timer (changes slide every 5 seconds)
+  // Auto-play hero slider every 3.5 seconds
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentHeroIndex((prev) => (prev + 1) % heroSlides.length);
-    }, 5000);
+    }, 3500);
     return () => clearInterval(timer);
   }, []);
 
@@ -171,73 +168,56 @@ const AnimationPage = () => {
   return (
     <div className="w-full min-h-screen bg-black text-white font-sans overflow-x-hidden selection:bg-[#E50914] selection:text-white">
       {/* ─── SECTION 1: HERO BANNER ──────────────────────────────────────── */}
-      <section className="relative w-full h-[75vh] min-h-[500px] max-h-[750px] bg-black overflow-hidden">
-        {heroSlides.map((slide, idx) => {
-          const isActive = idx === currentHeroIndex;
-          return (
-            <div
-              key={slide.id}
-              className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out flex items-end justify-start ${
-                isActive ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none"
-              }`}
-            >
-              {/* Background Visual */}
-              <div
-                className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-1000 transform scale-105"
-                style={{ backgroundImage: `url(${slide.bgImage})` }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/70" />
-              </div>
+      <section className="relative w-full h-[75vh] min-h-[500px] max-h-[750px] bg-black flex items-end justify-start overflow-hidden">
+        {heroSlides.map((slide, idx) => (
+          <div
+            key={slide.id}
+            className={`absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
+              idx === currentHeroIndex ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
+            }`}
+            style={{ backgroundImage: `url(${slide.bgImage})` }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/75 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40" />
+          </div>
+        ))}
 
-              {/* Center Play Button Overlay (for video slides) */}
-              {slide.isPlayVideo && (
-                <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                  <button className="pointer-events-auto p-4 rounded-full text-white/90 hover:text-white hover:scale-110 transition-all duration-300 group">
-                    <PlayCircle className="w-16 h-16 sm:w-20 sm:h-20 stroke-[1.25] drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] group-hover:drop-shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all" />
-                  </button>
-                </div>
-              )}
+        <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+          <button className="pointer-events-auto p-4 rounded-full text-white/90 hover:text-white hover:scale-110 transition-all duration-300 group">
+            <PlayCircle className="w-14 h-14 sm:w-18 sm:h-18 stroke-[1.25] drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] group-hover:drop-shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all" />
+          </button>
+        </div>
 
-              {/* Hero Left Content Overlay */}
-              <div className="relative z-20 max-w-6xl w-full mx-auto px-4 sm:px-8 md:px-12 pb-12 sm:pb-16 space-y-4">
-                <div className="max-w-xl space-y-3">
-                  {slide.subtitle && (
-                    <p className="text-xs sm:text-sm font-bold tracking-[0.2em] text-gray-300 uppercase font-dmsans">
-                      {slide.subtitle}
-                    </p>
-                  )}
-                  <h1 className="text-3xl sm:text-5xl md:text-6xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-white drop-shadow-md leading-none">
-                    {slide.title}
-                  </h1>
-                  <p className="text-xs sm:text-sm text-gray-200 leading-relaxed font-dmsans max-w-md drop-shadow">
-                    {slide.description}
-                  </p>
+        <div className="relative z-30 max-w-6xl w-full mx-auto px-4 sm:px-8 md:px-12 pb-10 sm:pb-14 space-y-4">
+          <div className="max-w-md space-y-3">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-white drop-shadow-md leading-none transition-all duration-500">
+              {activeHero.title}
+            </h1>
+            <p className="text-[11px] sm:text-xs text-gray-300 leading-relaxed font-dmsans max-w-xs drop-shadow transition-all duration-500">
+              {activeHero.description}
+            </p>
 
-                  <div className="pt-2">
-                    <button className="px-6 py-2.5 bg-black/60 border border-white text-white text-xs sm:text-sm font-bold tracking-widest uppercase hover:bg-white hover:text-black transition-all duration-300">
-                      {slide.btnText}
-                    </button>
-                  </div>
-                </div>
-              </div>
+            <div className="pt-2">
+              <button className="px-5 py-2 bg-black/50 border border-white text-white text-[11px] sm:text-xs font-bold tracking-widest uppercase hover:bg-white hover:text-black transition-all duration-300">
+                PLAY VIDEO &gt;
+              </button>
             </div>
-          );
-        })}
+          </div>
 
-        {/* Hero Bottom Carousel Indicators */}
-        <div className="absolute bottom-4 left-0 right-0 z-30 flex gap-2 justify-center">
-          {heroSlides.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setCurrentHeroIndex(idx)}
-              aria-label={`Slide ${idx + 1}`}
-              className={`h-1 transition-all duration-300 ${
-                idx === currentHeroIndex
-                  ? "w-8 bg-[#E50914]"
-                  : "w-5 bg-white/50 hover:bg-white"
-              }`}
-            />
-          ))}
+          <div className="flex gap-1.5 justify-center pt-8">
+            {heroSlides.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setCurrentHeroIndex(idx)}
+                aria-label={`Slide ${idx + 1}`}
+                className={`h-[3px] transition-all duration-300 ${
+                  idx === currentHeroIndex
+                    ? "w-6 bg-[#E50914]"
+                    : "w-4 bg-white/70 hover:bg-white"
+                }`}
+              />
+            ))}
+          </div>
         </div>
       </section>
 
@@ -312,13 +292,13 @@ const AnimationPage = () => {
       </section>
 
       {/* ─── SECTION 3: SPOTLIGHT (DARK BG WITH TORN PAPER EDGES) ─────────── */}
-      <section className="relative w-full bg-black text-white">
+      <section className="relative w-full bg-white text-white">
         <div
-          className="w-full h-12 sm:h-16 md:h-20 bg-cover bg-center -mb-1 relative z-10 pointer-events-none"
+          className="w-full pt-16 sm:pt-20 md:pt-24 -mb-1 relative z-10 pointer-events-none bg-cover bg-center"
           style={{ backgroundImage: `url(${bgtop})` }}
         />
 
-        <div className="w-full bg-[#171717] py-10 sm:py-16 px-4 sm:px-8 md:px-12">
+        <div className="w-full bg-[#171717] py-10 sm:py-16 px-4 sm:px-8 md:px-12 relative z-0">
           <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-10 md:gap-14">
             <div className="w-full md:w-1/2 space-y-4">
               <h2 className="text-white text-4xl sm:text-6xl md:text-7xl font-black tracking-wider uppercase font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] leading-none">
@@ -332,9 +312,9 @@ const AnimationPage = () => {
               </h3>
 
               <p className="text-xs sm:text-sm text-gray-300 leading-relaxed font-dmsans max-w-md">
-                First off, damn, Ryan Gosling, he looks so bad in that suit. I love it! <br />
-                Also I don't know who wrote this. So sorry. T_T I love you. <br />
-                Also I know, that you know, that I know, that you know, that I know!
+                First off, damn, ryan gosling. He looks so bad in that suit. Haha lol <br />
+                Also I dont know what to write here. So sorry. T_T. Byeeeee <br />
+                Also, I know, that you know, that I know, that you know, that I know, that you know, that I know!
               </p>
 
               <div className="pt-4">
@@ -362,7 +342,7 @@ const AnimationPage = () => {
         </div>
 
         <div
-          className="w-full h-12 sm:h-16 md:h-20 bg-cover bg-center -mt-1 relative z-10 pointer-events-none"
+          className="w-full pb-16 sm:pb-20 md:pb-24 -mt-1 relative z-10 pointer-events-none bg-cover bg-center"
           style={{ backgroundImage: `url(${bgbottom})` }}
         />
       </section>
@@ -389,47 +369,75 @@ const AnimationPage = () => {
         </div>
       </section>
 
-      {/* ─── SECTION 5: RELEASE TIMELINE (DARK BG WITH RED FILM REEL DECOR) ─── */}
-      <section className="relative w-full bg-[#111111] text-white py-12 sm:py-16 overflow-hidden">
-        <div className="flex flex-col lg:flex-row items-stretch max-w-7xl mx-auto">
-          <div className="w-full lg:w-48 bg-[#E50914] flex flex-row lg:flex-col items-center justify-around py-6 px-4 flex-shrink-0 shadow-lg">
-            <div className="w-8 h-8 sm:w-12 sm:h-12 bg-black rounded-full border-2 border-white/20 shadow-inner" />
-            <div className="w-8 h-8 sm:w-12 sm:h-12 bg-black rounded-full border-2 border-white/20 shadow-inner" />
-            <div className="w-8 h-8 sm:w-12 sm:h-12 bg-black rounded-full border-2 border-white/20 shadow-inner" />
-            <div className="w-8 h-8 sm:w-12 sm:h-12 bg-black rounded-full border-2 border-white/20 shadow-inner" />
+      {/* ─── SECTION 5: RELEASE TIMELINE (DARK BG WITH RED CAMERA GRAPHIC) ─── */}
+      <section className="relative w-full bg-[#171717] text-white py-10 sm:py-14 px-4 sm:px-8 md:px-12 overflow-hidden">
+        {/* Top Dash Indicators */}
+        <div className="flex gap-1.5 justify-center pb-8">
+          {[0, 1, 2, 3, 4].map((idx) => (
+            <div
+              key={idx}
+              className={`h-[3px] transition-all duration-300 ${
+                idx === 1 ? "w-5 bg-[#E50914]" : "w-4 bg-white/40"
+              }`}
+            />
+          ))}
+        </div>
+
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-start relative">
+          {/* Left Red Movie Camera / Projector Graphic */}
+          <div className="relative flex-shrink-0 z-20 flex items-center -mr-2 md:-mr-6 hidden sm:flex">
+            <svg
+              viewBox="0 0 260 320"
+              className="w-48 sm:w-60 md:w-72 h-auto text-[#C8232B] fill-current drop-shadow-xl"
+            >
+              {/* Camera Film Reel Top Circle */}
+              <circle cx="100" cy="100" r="90" fill="#C8232B" />
+              {/* Reel Holes */}
+              <circle cx="50" cy="70" r="18" fill="#171717" />
+              <circle cx="115" cy="50" r="18" fill="#171717" />
+              <circle cx="145" cy="115" r="18" fill="#171717" />
+              <circle cx="80" cy="140" r="18" fill="#171717" />
+
+              {/* Lens Funnel pointing into white box */}
+              <polygon points="140,140 260,90 260,250 140,200" fill="#C8232B" />
+
+              {/* Camera Main Body */}
+              <rect x="0" y="170" width="140" height="150" fill="#C8232B" />
+            </svg>
           </div>
 
-          <div className="flex-1 p-6 sm:p-10 space-y-8 bg-[#171717]">
-            <div className="flex items-center justify-between border-b border-gray-800 pb-4">
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-white">
+          {/* White Card Container */}
+          <div className="bg-white text-black p-6 sm:p-8 md:p-10 w-full rounded-none shadow-2xl relative z-10 space-y-6">
+            <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+              <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-black">
                 RELEASE TIMELINE
               </h2>
 
               <Link
                 to="/animation"
-                className="text-[#E50914] text-xs sm:text-sm font-bold uppercase tracking-wider hover:underline"
+                className="text-[#E50914] text-xs font-bold uppercase tracking-wider hover:underline"
               >
                 VIEW ALL &gt;
               </Link>
             </div>
 
+            {/* 4 Timeline Video Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
               {timelineCardsData.map((card) => (
-                <div key={card.id} className="group cursor-pointer space-y-2">
-                  <div className="relative w-full aspect-video bg-gray-900 overflow-hidden shadow-md group-hover:shadow-xl transition-all duration-300">
+                <div key={card.id} className="group cursor-pointer space-y-1.5">
+                  <div className="relative w-full aspect-[16/9] bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
                     <img
                       src={card.img}
                       alt={card.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors" />
                   </div>
 
                   <div>
-                    <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-200 group-hover:text-[#E50914] transition-colors font-dmsans">
+                    <p className="text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-black group-hover:text-[#E50914] transition-colors font-dmsans">
                       {card.title}
                     </p>
-                    <p className="text-[10px] sm:text-xs text-gray-400 font-dmsans">
+                    <p className="text-[10px] sm:text-xs text-gray-500 font-dmsans">
                       {card.year}
                     </p>
                   </div>
