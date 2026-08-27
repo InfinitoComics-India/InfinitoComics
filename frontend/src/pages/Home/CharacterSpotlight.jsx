@@ -22,8 +22,8 @@ const CharacterSpotlight = () => {
       {/*  Black semi-transparent overlay for better text readability */}
       <div className="absolute inset-0 bg-black/40"></div>
 
-      {/*  Content wrapper: Flex column on mobile, row on medium screens and above */}
-      <div className="flex flex-col-reverse md:flex-row items-center justify-between mx-[10%] px-6 py-12 md:py-20 gap-8 relative z-10">
+      {/*  Content wrapper */}
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-8 md:px-16 py-12 md:py-20">
         {/*  Left Section: Text Content */}
         <div className="md:w-1/2 text-center md:text-left mt-8 md:mt-16">
           {/*  Label */}

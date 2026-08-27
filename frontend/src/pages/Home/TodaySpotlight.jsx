@@ -12,8 +12,8 @@ const TodaySpotlight = () => {
   }, []);
 
   return loading ? <TodaySpotLightShimmer /> : (
-    <div className="px-2 sm:px-4 md:px-16 py-8 sm:py-14 bg-white font-dmsans overflow-x-hidden">
-      <div className="w-full max-w-7xl mx-auto">
+    <div className="py-8 sm:py-14 bg-white font-dmsans overflow-x-hidden">
+      <div className="w-full max-w-7xl mx-auto px-8 md:px-16">
         <h2 className="text-2xl sm:text-3xl md:text-[36px] font-black tracking-widest uppercase mb-6 sm:mb-10 text-left">
           Today's Spotlight
         </h2>
