@@ -55,41 +55,45 @@ const Home = () => {
         <div className="absolute inset-0 bg-black/40"></div>
 
         {/* Text Overlay (aligned to left) */}
-        <div className="absolute inset-0 flex flex-col items-start justify-center text-left px-8 md:px-16 z-20 md:mx-30">
-          <h2 className="text-5xl md:text-6xl font-bold uppercase py-10 leading-tight">
-            Rise of the <br />{" "}
-            <span className="text-red-500">Eternal Storm</span>
-          </h2>
-          <p className="mt-4 max-w-2xl text-lg md:text-xl">
-            An ancient force awakens in the cosmic depths. Heroes will rise,
-            dimensions will collide, and the Infinito Universe will never be the
-            same.
-          </p>
-          <button className="mt-14 bg-[#DD1215] hover:bg-red-600 text-white font-semibold py-2 px-4 rounded transition duration-300">
-            Read Now
-          </button>
+        <div className="absolute inset-0 flex flex-col items-start justify-center text-left z-20">
+          <div className="w-full max-w-7xl mx-auto px-8 md:px-16">
+            <h2 className="text-5xl md:text-6xl font-bold uppercase py-10 leading-tight">
+              Rise of the <br />{" "}
+              <span className="text-red-500">Eternal Storm</span>
+            </h2>
+            <p className="mt-4 max-w-2xl text-lg md:text-xl">
+              An ancient force awakens in the cosmic depths. Heroes will rise,
+              dimensions will collide, and the Infinito Universe will never be the
+              same.
+            </p>
+            <button className="mt-14 bg-[#DD1215] hover:bg-red-600 text-white font-semibold py-2 px-4 rounded transition duration-300">
+              Read Now
+            </button>
+          </div>
         </div>
 
         {/* Bottom Navigation */}
-        <div className="absolute bottom-5 left-0 right-0 flex justify-between items-end px-8 md:px-16 z-30">
-          {images.map((image, index) => (
-            <button
-              key={image.id}
-              onClick={() => handleSelect(index)}
-              className={`flex-1 text-left text-xs md:text-sm font-medium relative transition-colors px-2 pb-1 ${
-                current === index ? "text-red-500" : "text-white"
-              }`}
-            >
-              <span className="block text-[11px] leading-tight">
-                Rise of the <span className="font-bold block">Eternal Storm</span>
-              </span>
-              <span
-                className={`block mt-1 h-[2px] bg-red-500 transition-all duration-300 ${
-                  current === index ? "w-full" : "w-0"
+        <div className="absolute bottom-5 left-0 right-0 z-30">
+          <div className="w-full max-w-7xl mx-auto px-8 md:px-16 flex justify-between items-end">
+            {images.map((image, index) => (
+              <button
+                key={image.id}
+                onClick={() => handleSelect(index)}
+                className={`flex-1 text-left text-xs md:text-sm font-medium relative transition-colors px-2 pb-1 ${
+                  current === index ? "text-red-500" : "text-white"
                 }`}
-              ></span>
-            </button>
-          ))}
+              >
+                <span className="block text-[11px] leading-tight">
+                  Rise of the <span className="font-bold block">Eternal Storm</span>
+                </span>
+                <span
+                  className={`block mt-1 h-[2px] bg-red-500 transition-all duration-300 ${
+                    current === index ? "w-full" : "w-0"
+                  }`}
+                ></span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
