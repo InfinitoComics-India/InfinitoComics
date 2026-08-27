@@ -34,7 +34,7 @@ function Comic() {
   const reversedComics = (comics || []).slice().reverse();
 
   return (
-    <div className="w-11/12 lg:w-2/3 mx-auto mt-16">
+    <div className="w-full max-w-7xl mx-auto px-8 md:px-16 mt-16">
       <div className="flex justify-between items-center mb-4 ">
         <h2 className="text-3xl font-bold text-gray-800 uppercase tracking-widest">Fan Favourites &gt;</h2>
         <button className="text-red-600 text-[0.8rem] font-bold tracking-widest hover:underline hover:cursor-pointer">VIEW MORE &gt;</button>

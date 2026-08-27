@@ -13,12 +13,12 @@ const TodaySpotlight = () => {
 
   return loading ? <TodaySpotLightShimmer /> : (
     <div className="px-2 sm:px-4 md:px-16 py-8 sm:py-14 bg-white font-dmsans overflow-x-hidden">
-      <div className="w-full mx-auto">
-        <h2 className="text-2xl sm:text-3xl md:text-[36px] font-black tracking-widest uppercase mb-6 sm:mb-10 text-center md:text-left lg:mx-50 mx-10">
+      <div className="w-full max-w-7xl mx-auto">
+        <h2 className="text-2xl sm:text-3xl md:text-[36px] font-black tracking-widest uppercase mb-6 sm:mb-10 text-left">
           Today's Spotlight
         </h2>
 
-        <div className="flex flex-col md:flex-row gap-6 transition-all duration-500 ease-in-out overflow-x-auto md:overflow-hidden lg:mx-50 mx-10">
+        <div className="flex flex-col md:flex-row gap-6 transition-all duration-500 ease-in-out overflow-x-auto md:overflow-hidden">
           {spotlightData.map((comic) => {
             const isHovered = hoveredId === comic.id;
 
