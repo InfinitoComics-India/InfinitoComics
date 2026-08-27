@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
@@ -11,21 +11,21 @@ const items = [
   {
     id: 1,
     title: 'Studio Ghibli Graphicx',
-    price: '₹599.00',
+    price: 'â‚¹599.00',
     image: tshirtImage,
     tag: 'NEW RELEASES',
   },
   {
     id: 2,
     title: 'Studio Ghibli Graphicx',
-    price: '₹599.00',
+    price: 'â‚¹599.00',
     image: tshirtImage,
     tag: 'TSHIRTS',
   },
   {
     id: 3,
     title: 'Studio Ghibli Graphicx',
-    price: '₹599.00',
+    price: 'â‚¹599.00',
     image: tshirtImage,
     tag: 'COLLECTIBLES',
   },
@@ -104,14 +104,14 @@ const renderCard = (item) => (
 
   return loading?<LandingMerchShimmer/>: (
     <div className="bg-white py-16 px-4 md:px-10 lg:px-20">
-      <div className="w-full">
+      <div className="w-full max-w-7xl mx-auto">
 {/* Headings */}
-<div className="mb-10 mx-5 md:mx-50 text-center md:text-left">
+<div className="mb-10 text-left">
   <p className="text-sm sm:text-base md:text-lg font-medium text-black tracking-wide">
     Exclusive Merch
   </p>
   <h2 className="text-xl sm:text-2xl md:text-4xl font-bold tracking-widest uppercase leading-tight">
-    Collector’s Paradise
+    Collectorâ€™s Paradise
   </h2>
 </div>
 
@@ -137,3 +137,4 @@ const renderCard = (item) => (
 };
 
 export default CollectorShowcase;
+
