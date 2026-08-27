@@ -71,18 +71,20 @@ const Home = () => {
         </div>
 
         {/* Bottom Navigation */}
-        <div className="absolute bottom-5 left-0 right-0 flex justify-center space-x-40 z-30">
+        <div className="absolute bottom-5 left-0 right-0 flex justify-between items-end px-8 md:px-16 z-30">
           {images.map((image, index) => (
             <button
               key={image.id}
               onClick={() => handleSelect(index)}
-              className={`text-lg md:text-base font-large relative transition-colors ${
+              className={`flex-1 text-left text-xs md:text-sm font-medium relative transition-colors px-2 pb-1 ${
                 current === index ? "text-red-500" : "text-white"
               }`}
             >
-              Rise of the <span className="font-bold">Eternal Storm</span>
+              <span className="block text-[11px] leading-tight">
+                Rise of the <span className="font-bold block">Eternal Storm</span>
+              </span>
               <span
-                className={`block h-[2px] bg-red-500 transition-all duration-300 ${
+                className={`block mt-1 h-[2px] bg-red-500 transition-all duration-300 ${
                   current === index ? "w-full" : "w-0"
                 }`}
               ></span>
