@@ -26,7 +26,7 @@ const Navbar = () => {
           <div className="hidden md:flex gap-10 text-[1rem] text-gray-300">
             <a href={`${FRONTEND_BASE_URL}/news`} className="hover:text-white">Blogs &amp; News</a>
             <a href={FOUNDATION_BASE_URL} target="_blank" rel="noopener noreferrer" className="hover:text-white">Foundation</a>
-            <Link to="/browseResearch" className="hover:text-white">Research</Link>
+            <Link to="/" className="hover:text-white">Research</Link>
             <Link to={`${FRONTEND_BASE_URL}/support-us`} className="hover:text-white flex items-center gap-1">
               <Heart size={14} /> Support Us
             </Link>
@@ -125,7 +125,7 @@ const Navbar = () => {
           <a href={`${FRONTEND_BASE_URL}/aboutUS`} className="block font-bold hover:text-white">About Us</a>
           <a href="https://www.infinitostyle.com/" target="_blank" rel="noopener noreferrer"
             className="block font-bold hover:text-white flex items-center gap-2"><ShoppingBag size={14} /> SHOP</a>
-          <Link to="/browseResearch" className="block font-bold hover:text-white">Research</Link>
+          <Link to="/" className="block font-bold hover:text-white">Research</Link>
           <a href={`${FRONTEND_BASE_URL}/news`} className="block font-bold hover:text-white">Blogs &amp; News</a>
           {!user && (
             <button className="w-full border border-white px-6 py-3 uppercase text-md hover:bg-white hover:text-black transition tracking-wider"

@@ -42,7 +42,7 @@ const Checkout = () => {
         const user = res.data?.token?.user || res.data?.user || res.data?.data;
         if (user) { dispatch(addUser(user)); localStorage.setItem('user', JSON.stringify(user)); }
         if (token) localStorage.setItem('token', typeof token === 'string' ? token : JSON.stringify(token));
-        navigate('/browseResearch');
+        navigate('/');
       } else {
         await axios.post(`${BACKEND_URL}/api/signup`, {
           name: form.name, email: form.email, password: form.password,

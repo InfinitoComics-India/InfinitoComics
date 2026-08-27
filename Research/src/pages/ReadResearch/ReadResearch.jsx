@@ -96,7 +96,7 @@ const ReadResearch = () => {
         {/* Back to Home */}
         <div style={{ padding: '1.2rem 0', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <button
-            onClick={() => navigate('/browseResearch')}
+            onClick={() => navigate('/')}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
               fontSize: '0.82rem', color: '#333', display: 'flex', alignItems: 'center', gap: '6px',

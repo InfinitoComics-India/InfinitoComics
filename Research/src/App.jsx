@@ -50,12 +50,12 @@ useEffect(() => {
    <BrowserRouter basename="/research" >
     <Routes>
       <Route path="/" element={<Body/>} >
-      <Route path="/" element={<Home/>} />
+      <Route index element={<Paper/>} />
+      <Route path="home" element={<Home/>} />
       <Route path="ResearchPlans" element={<ResearchPlans/>} />
       <Route path="readresearch/:id" element={<ReadResearch />} />
       <Route path="browseResearch" element={<Paper/>} />
       <Route path="/checkout" element={<Checkout/>} />
-      
       </Route>
     </Routes>
    </BrowserRouter>

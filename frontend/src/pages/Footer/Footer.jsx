@@ -62,7 +62,7 @@ const Footer = () => {
               <Link to={FOUNDATION_BASE_URL}>
                 <span className="font">FOUNDATION</span>
               </Link>
-              <a href={`${RESEARCH_BASE_URL}/research/browseResearch`}>
+              <a href={`${RESEARCH_BASE_URL}/research`}>
                 {" "}
                 <span>RESEARCH</span>
               </a>
@@ -128,7 +128,7 @@ const Footer = () => {
             <Link to={FOUNDATION_BASE_URL}><span className="font">FOUNDATION</span></Link> 
             <Link to="/careers">CAREER</Link>
              <Link to="/internships">INTERNSHIP</Link>
-             <a href={`${RESEARCH_BASE_URL}/research/browseResearch`}> <span>RESEARCH</span></a>
+             <a href={`${RESEARCH_BASE_URL}/research`}> <span>RESEARCH</span></a>
             <Link to="/support-us">SUPPORT US</Link>
           </div>
 
