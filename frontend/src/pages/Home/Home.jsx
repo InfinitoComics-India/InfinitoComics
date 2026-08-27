@@ -30,8 +30,8 @@ const Home = () => {
       <LandingComponent />
       <CharacterCarousel/>
       <CharacterSpotlight />
-      {/* <TodaySpotlight /> */}
-      {/* <Comic/> */}
+      <TodaySpotlight />
+      <Comic/>
       {/* <HeroSection/> */}
       <LandingMerch />
       <JoinUltimate />
