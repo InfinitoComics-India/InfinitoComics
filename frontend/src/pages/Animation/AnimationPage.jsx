@@ -5,7 +5,7 @@ import JoinUltimate from "../Home/JoinUltimate";
 
 // Image Assets
 import s1 from "../../../assets/Images/s1.jpg";
-import s2 from "../../../assets/Images/s2.jpg";
+import s2 from "../../../assets/Images/s2.png";
 import rivalImg from "../../../assets/Images/rival.png";
 import bgtop from "../../../assets/Images/spotlighttopbg.png";
 import bgbottom from "../../../assets/Images/spotlightbottombg.png";
@@ -25,25 +25,27 @@ const battleBeastPoster = "/battle-beast.png";
 const heroSlides = [
   {
     id: 1,
-    title: "SPIDERMAN - MULTIVERSE",
+    title: "INFINITO COMICS - A NEW SAGA",
     description:
-      "One day Spiderman ate a spider, he checked on it, he died. You think that's the end. NAAAAH!! There are other Spidermen. WHERE ???? In other worlds. WHATTT ?? Other spidermen live on !!",
+      "Step into India's premier original character universe. Experience breathtaking animation, rich lore, and epic superhero action.",
+    youtubeId: "jImhvA9uNVU",
     bgImage: s1,
   },
   {
     id: 2,
-    title: "MARVEL RIVALS - ETERNAL STORM",
+    title: "MULTIVERSE UNLEASHED | INFINITO SAGA",
     description:
-      "An ancient force awakens in the cosmic depths. Heroes will rise, dimensions will collide, and the Infinito Universe will never be the same.",
+      "An ancient force awakens across dimensions. Heroes will rise, worlds will collide, and the Infinito Universe will never be the same.",
+    youtubeId: "27VGbZNOSjo",
     bgImage: s2,
   },
 ];
 
 const videoCardsData = [
-  { id: 1, title: "Watch Trailer", img: trailer1 },
-  { id: 2, title: "Watch Trailer", img: trailer2 },
-  { id: 3, title: "Watch Trailer", img: trailer3 },
-  { id: 4, title: "Watch Trailer", img: trailer4 },
+  { id: 1, title: "Watch Trailer", img: trailer1, youtubeId: "jImhvA9uNVU" },
+  { id: 2, title: "Watch Trailer", img: trailer2, youtubeId: "27VGbZNOSjo" },
+  { id: 3, title: "Watch Trailer", img: trailer3, youtubeId: "jImhvA9uNVU" },
+  { id: 4, title: "Watch Trailer", img: trailer4, youtubeId: "27VGbZNOSjo" },
 ];
 
 import upcomingEvent from "../../../assets/Images/upcomingEvent.png";
@@ -75,7 +77,7 @@ const browseComicsData = [
 ];
 
 // Helper Component for a Video Row Section
-const VideoRowSection = ({ genreTitle }) => {
+const VideoRowSection = ({ genreTitle, onPlayVideo }) => {
   const [activeIndex, setActiveIndex] = useState(0);
 
   return (
@@ -103,7 +105,11 @@ const VideoRowSection = ({ genreTitle }) => {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 w-full">
           {videoCardsData.map((video) => (
-            <div key={video.id} className="group cursor-pointer space-y-2">
+            <div
+              key={video.id}
+              onClick={() => onPlayVideo && onPlayVideo(video.youtubeId)}
+              className="group cursor-pointer space-y-2"
+            >
               <div className="relative w-full aspect-video bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
                 <img
                   src={video.img}
@@ -149,17 +155,18 @@ const VideoRowSection = ({ genreTitle }) => {
 
 const AnimationPage = () => {
   const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
+  const [selectedVideoModal, setSelectedVideoModal] = useState(null);
   const [recIndex, setRecIndex] = useState(0);
   const [franchiseIndex, setFranchiseIndex] = useState(0);
   const [btsIndex, setBtsIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [activePage, setActivePage] = useState(1);
 
-  // Auto-play hero slider every 3.5 seconds
+  // Auto-play hero slider every 7 seconds
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentHeroIndex((prev) => (prev + 1) % heroSlides.length);
-    }, 3500);
+    }, 7000);
     return () => clearInterval(timer);
   }, []);
 
@@ -177,17 +184,22 @@ const AnimationPage = () => {
             }`}
             style={{ backgroundImage: `url(${slide.bgImage})` }}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/75 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40" />
+            {/* Background YouTube Autoplay Video */}
+            {idx === currentHeroIndex && (
+              <iframe
+                src={`https://www.youtube-nocookie.com/embed/${slide.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${slide.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1`}
+                title={slide.title}
+                className="w-full h-full object-cover scale-125 pointer-events-none opacity-80"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/75 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 pointer-events-none" />
           </div>
         ))}
 
-        <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-          <button className="pointer-events-auto p-4 rounded-full text-white/90 hover:text-white hover:scale-110 transition-all duration-300 group">
-            <PlayCircle className="w-14 h-14 sm:w-18 sm:h-18 stroke-[1.25] drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] group-hover:drop-shadow-[0_0_20px_rgba(229,9,20,0.8)] transition-all" />
-          </button>
-        </div>
 
+        {/* Slide Info Overlay */}
         <div className="relative z-30 max-w-6xl w-full mx-auto px-4 sm:px-8 md:px-12 pb-10 sm:pb-14 space-y-4">
           <div className="max-w-md space-y-3">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-white drop-shadow-md leading-none transition-all duration-500">
@@ -197,10 +209,21 @@ const AnimationPage = () => {
               {activeHero.description}
             </p>
 
-            <div className="pt-2">
-              <button className="px-5 py-2 bg-black/50 border border-white text-white text-[11px] sm:text-xs font-bold tracking-widest uppercase hover:bg-white hover:text-black transition-all duration-300">
-                PLAY VIDEO &gt;
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={() => setSelectedVideoModal(activeHero.youtubeId)}
+                className="px-5 py-2 bg-[#E50914] text-white text-[11px] sm:text-xs font-bold tracking-widest uppercase hover:bg-red-700 transition-all duration-300 shadow-md"
+              >
+                PLAY VIDEO
               </button>
+              <a
+                href={`https://www.youtube.com/watch?v=${activeHero.youtubeId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-black/60 border border-white/70 text-white text-[11px] sm:text-xs font-bold tracking-widest uppercase hover:bg-white hover:text-black transition-all duration-300"
+              >
+                WATCH ON YOUTUBE
+              </a>
             </div>
           </div>
 
@@ -694,6 +717,28 @@ const AnimationPage = () => {
 
       {/* ─── SECTION 9: JOIN THE ULTIMATE UNIVERSE ───────────────────────── */}
       <JoinUltimate />
+
+      {/* ─── VIDEO MODAL POPUP ────────────────────────────────────────────── */}
+      {selectedVideoModal && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-4xl aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
+            <button
+              onClick={() => setSelectedVideoModal(null)}
+              className="absolute top-3 right-3 text-white bg-black/70 hover:bg-[#E50914] w-9 h-9 flex items-center justify-center rounded-full z-20 transition-colors font-bold text-lg"
+              aria-label="Close Modal"
+            >
+              ✕
+            </button>
+            <iframe
+              src={`https://www.youtube.com/embed/${selectedVideoModal}?autoplay=1`}
+              title="YouTube Video Player"
+              className="w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
