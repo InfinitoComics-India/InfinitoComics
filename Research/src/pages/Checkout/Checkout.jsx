@@ -22,7 +22,7 @@ const lbl = {
 const Checkout = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [step] = useState(0);
+  const [step, setStep] = useState(0);
   const [showPass, setShowPass] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ name: '', email: '', password: '', username: '', dob: '' });
@@ -42,7 +42,7 @@ const Checkout = () => {
         const user = res.data?.token?.user || res.data?.user || res.data?.data;
         if (user) { dispatch(addUser(user)); localStorage.setItem('user', JSON.stringify(user)); }
         if (token) localStorage.setItem('token', typeof token === 'string' ? token : JSON.stringify(token));
-        navigate('/');
+        setStep(1); // Move to Address step instead of navigating away
       } else {
         await axios.post(`${BACKEND_URL}/api/signup`, {
           name: form.name, email: form.email, password: form.password,

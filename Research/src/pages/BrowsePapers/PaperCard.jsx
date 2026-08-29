@@ -18,14 +18,20 @@ const PaperCard = ({ paper }) => {
           ? paper.authors.map(a => typeof a === 'string' ? a : (a?.name || '')).filter(Boolean).join(', ')
           : paper.authors}
       </p>
-      <p className="text-sm text-[#000000] line-clamp-2 border-[#BAB7B7] border-l-4 pl-2 mt-4 whitespace-pre-wrap">
-        {paper.abstract}
-      </p>
+      <div
+        className="text-sm text-[#000000] line-clamp-2 border-[#BAB7B7] border-l-4 pl-2 mt-4"
+        dangerouslySetInnerHTML={{
+          __html: paper.abstract?.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').trim() || ''
+        }}
+      />
 
       <div className="flex justify-between items-center mt-4">
         <p className="text-sm text-gray-500">
           {(() => {
-            const date = new Date(paper.datePublished);
+            const raw = paper.publicationDate || paper.datePublished;
+            if (!raw) return '';
+            const date = new Date(raw);
+            if (isNaN(date.getTime())) return '';
             const day = String(date.getDate()).padStart(2, '0');
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const year = date.getFullYear();
