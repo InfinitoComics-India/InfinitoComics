@@ -70,15 +70,20 @@ const Checkout = () => {
     setStep(2);
   };
 
-  // Step 2 — Payment
-  const handlePaymentSubmit = (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setStep(3);
-    }, 1500);
-  };
+    // Step 2 — Payment
+    const handlePaymentSubmit = (e) => {
+      e.preventDefault();
+      setLoading(true);
+      setTimeout(() => {
+        // Mark user as subscribed in localStorage
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        user.researchSubscribed = true;
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('researchSubscribed', 'true');
+        setLoading(false);
+        setStep(3);
+      }, 1500);
+    };
 
   const stepContent = () => {
     // Step 0 — Login

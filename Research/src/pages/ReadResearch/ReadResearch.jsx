@@ -7,6 +7,15 @@ const ReadResearch = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isUnlocked, setIsUnlocked] = useState(false);
+
+  // Check subscription from localStorage
+  useEffect(() => {
+    const subscribed = localStorage.getItem('researchSubscribed') === 'true';
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (subscribed || user?.researchSubscribed) {
+      setIsUnlocked(true);
+    }
+  }, []);
   const [paper, setPaper] = useState(null);
   const [allPapers, setAllPapers] = useState([]);
   const [loading, setLoading] = useState(true);
