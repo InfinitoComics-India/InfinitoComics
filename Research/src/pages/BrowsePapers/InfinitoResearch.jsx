@@ -126,9 +126,11 @@ const InfinitoCarousel = ({ researchPaper, isLoading }) => {
                   fontSize: "0.85rem", color: "#555", lineHeight: 1.75, marginBottom: "1.6rem",
                   textAlign: "justify",
                   display: "-webkit-box", WebkitLineClamp: 7, WebkitBoxOrient: "vertical", overflow: "hidden",
-                }}>
-                  {paper.abstract}
-                </div>
+                }}
+                  dangerouslySetInnerHTML={{
+                    __html: (paper.abstract || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+                  }}
+                />
                 <button onClick={handleClick} style={{
                   border: "2px solid #1a1a1a", background: "transparent", color: "#1a1a1a",
                   fontSize: "0.78rem", fontWeight: 700, letterSpacing: "0.06em",
