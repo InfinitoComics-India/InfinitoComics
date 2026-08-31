@@ -15,7 +15,13 @@ const Paper = () => {
         // API returns { success, message, data: [...] } wrapped in axios response
         const papers = res?.data?.data;
         if (Array.isArray(papers) && papers.length > 0) {
-          setData(papers);
+          // Sort by publicationDate descending — newest first
+          const sorted = [...papers].sort((a, b) => {
+            const dateA = new Date(a.publicationDate || a.datePublished || 0);
+            const dateB = new Date(b.publicationDate || b.datePublished || 0);
+            return dateB - dateA;
+          });
+          setData(sorted);
         } else {
           setData([]);
         }

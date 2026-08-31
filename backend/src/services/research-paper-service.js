@@ -90,18 +90,13 @@ class ResearchPaperService {
         }
     }
 
-    async getAllPapers(page = 1, limit = 10, filters = {}) {
+    async getAllPapers(page = 1, limit = 100, filters = {}) {
         try {
-            const query = { isPublished: true, ...filters };
-
-            const papers = await this.researchPaperRepository.getAll(
-                page,
-                limit,
-                query,
-                { publicationDate: -1 }
+            const papers = await this.researchPaperRepository.getAll();
+            // Sort by publicationDate descending — newest first
+            return papers.sort((a, b) =>
+                new Date(b.publicationDate || 0) - new Date(a.publicationDate || 0)
             );
-
-            return papers;
         } catch (error) {
             console.log("Something went wrong in service layer");
             throw error;

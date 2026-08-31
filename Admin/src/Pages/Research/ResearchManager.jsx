@@ -22,7 +22,11 @@ const ResearchManager = () => {
     try {
       const res = await axios.get(`${BACKEND_URL}/research-papers`);
       const docs = res?.data?.data || res?.data?.docs || [];
-      setPapers(docs);
+      // Sort newest first
+      const sorted = [...docs].sort((a, b) =>
+        new Date(b.publicationDate || 0) - new Date(a.publicationDate || 0)
+      );
+      setPapers(sorted);
     } catch (err) {
       toast.error("Failed to load papers.");
       console.error("Fetch error:", err);
