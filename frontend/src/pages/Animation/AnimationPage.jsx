@@ -389,7 +389,7 @@ const AnimationPage = () => {
       </section>
 
       {/* ─── SECTION 4: EXPLORE OUR CREATIONS (GENRE 1, GENRE 2, GENRE 3) ──── */}
-      <section className="w-full bg-white text-black py-12 sm:py-16 px-4 sm:px-8 md:px-12">
+      {/* <section className="w-full bg-white text-black py-12 sm:py-16 px-4 sm:px-8 md:px-12">
         <div className="max-w-6xl mx-auto space-y-10">
           <div className="flex items-center justify-between border-b border-gray-200 pb-4">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-black">
@@ -408,7 +408,7 @@ const AnimationPage = () => {
           <VideoRowSection genreTitle="Genre 2" />
           <VideoRowSection genreTitle="Genre 3" />
         </div>
-      </section>
+      </section> */}
 
       {/* ─── SECTION 5: RELEASE TIMELINE (DARK BG WITH RED CAMERA GRAPHIC) ─── */}
       <section className="relative w-full bg-[#171717] text-white py-10 sm:py-14 px-4 sm:px-8 md:px-12 overflow-hidden">
