@@ -15,52 +15,53 @@ function App() {
    const dispatch = useDispatch();
 
 useEffect(() => {
-  // Always try to sync user from main site on load
-  const syncUserFromMain = () => {
-    const iframe = document.createElement('iframe');
-    iframe.src = `${FRONTEND_BASE_URL}?request-user=1`;
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
-    setTimeout(() => document.body.removeChild(iframe), 5000);
-  };
+  const MAIN_URL = import.meta.env.VITE_FRONTEND_BASE_URL || 'https://infinitohq.com';
+
+  // Load cached user immediately
+  const cachedUser = localStorage.getItem("user");
+  if (cachedUser) {
+    try { dispatch(addUser(JSON.parse(cachedUser))); } catch {}
+  }
+
+  // Load auth bridge iframe to sync user from main site
+  const iframe = document.createElement('iframe');
+  iframe.src = `${MAIN_URL}/auth-bridge.html`;
+  iframe.style.cssText = 'display:none;width:0;height:0;border:none;position:absolute;';
+  document.body.appendChild(iframe);
 
   const handleMessage = (event) => {
-    if (event.origin !== `${FRONTEND_BASE_URL}`) return;
-
-    if (event.data?.type === "user-data") {
-      try {
-        const userData = JSON.parse(event.data.payload);
-        dispatch(addUser(userData));
-        localStorage.setItem("user", JSON.stringify(userData));
-      } catch (err) {
-        console.error("Failed to parse user", err);
+    if (event.data?.type === 'auth-bridge') {
+      if (event.data.user) {
+        try {
+          const userData = JSON.parse(event.data.user);
+          dispatch(addUser(userData));
+          localStorage.setItem("user", event.data.user);
+        } catch {}
+      }
+      if (event.data.token) {
+        localStorage.setItem("authtoken", event.data.token);
+      }
+      // Clean up iframe
+      if (document.body.contains(iframe)) {
+        document.body.removeChild(iframe);
       }
     }
 
-    // Also handle direct postMessage from main site
-    if (event.data === "request-user") {
-      const user = localStorage.getItem("user");
-      if (user && event.source) {
-        event.source.postMessage({ type: "user-data", payload: user }, event.origin);
-      }
+    // Legacy postMessage support
+    if (event.data?.type === "user-data" && event.data?.payload) {
+      try {
+        const userData = JSON.parse(event.data.payload);
+        dispatch(addUser(userData));
+        localStorage.setItem("user", event.data.payload);
+      } catch {}
     }
   };
 
   window.addEventListener("message", handleMessage);
-
-  // Load user from localStorage on mount (at least show cached user)
-  const cachedUser = localStorage.getItem("user");
-  if (cachedUser) {
-    try {
-      dispatch(addUser(JSON.parse(cachedUser)));
-    } catch {}
-  }
-
-  // Request fresh user from main site
-  window.parent.postMessage("request-user", `${FRONTEND_BASE_URL}`);
-  window.opener?.postMessage("request-user", `${FRONTEND_BASE_URL}`);
-
-  return () => window.removeEventListener("message", handleMessage);
+  return () => {
+    window.removeEventListener("message", handleMessage);
+    if (document.body.contains(iframe)) document.body.removeChild(iframe);
+  };
 }, [dispatch]);
 
   

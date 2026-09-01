@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head><title>Auth Bridge</title></head>
+<body>
+<script>
+  // This page runs on infinitohq.com and reads its localStorage
+  // then sends it to whoever embedded this iframe
+  const user = localStorage.getItem('user');
+  const token = localStorage.getItem('authtoken');
+  window.parent.postMessage({
+    type: 'auth-bridge',
+    user: user,
+    token: token
+  }, '*');
+</script>
+</body>
+</html>
