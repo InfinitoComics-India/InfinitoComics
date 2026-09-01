@@ -15,33 +15,52 @@ function App() {
    const dispatch = useDispatch();
 
 useEffect(() => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const fromMain = urlParams.get("from");
+  // Always try to sync user from main site on load
+  const syncUserFromMain = () => {
+    const iframe = document.createElement('iframe');
+    iframe.src = `${FRONTEND_BASE_URL}?request-user=1`;
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+    setTimeout(() => document.body.removeChild(iframe), 5000);
+  };
 
-  if (fromMain === "main" && window.opener) {
-    console.log(" Requesting user from main app");
-    window.opener.postMessage("request-user", `${FRONTEND_BASE_URL}`);
+  const handleMessage = (event) => {
+    if (event.origin !== `${FRONTEND_BASE_URL}`) return;
 
-    const handleMessage = (event) => {
-      if (event.origin !== `${FRONTEND_BASE_URL}`) return;
-
-      if (event.data?.type === "user-data") {
-        try {
-          const userData = JSON.parse(event.data.payload);
-          dispatch(addUser(userData));
-          localStorage.setItem("user", JSON.stringify(userData));
-          console.log("Got user from 3001:", userData);
-        } catch (err) {
-          console.error("Failed to parse user", err);
-        }
+    if (event.data?.type === "user-data") {
+      try {
+        const userData = JSON.parse(event.data.payload);
+        dispatch(addUser(userData));
+        localStorage.setItem("user", JSON.stringify(userData));
+      } catch (err) {
+        console.error("Failed to parse user", err);
       }
-    };
+    }
 
-    window.addEventListener("message", handleMessage);
+    // Also handle direct postMessage from main site
+    if (event.data === "request-user") {
+      const user = localStorage.getItem("user");
+      if (user && event.source) {
+        event.source.postMessage({ type: "user-data", payload: user }, event.origin);
+      }
+    }
+  };
 
-    // Proper cleanup
-    return () => window.removeEventListener("message", handleMessage);
+  window.addEventListener("message", handleMessage);
+
+  // Load user from localStorage on mount (at least show cached user)
+  const cachedUser = localStorage.getItem("user");
+  if (cachedUser) {
+    try {
+      dispatch(addUser(JSON.parse(cachedUser)));
+    } catch {}
   }
+
+  // Request fresh user from main site
+  window.parent.postMessage("request-user", `${FRONTEND_BASE_URL}`);
+  window.opener?.postMessage("request-user", `${FRONTEND_BASE_URL}`);
+
+  return () => window.removeEventListener("message", handleMessage);
 }, [dispatch]);
 
   

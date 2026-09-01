@@ -32,7 +32,11 @@ const Login = () => {
       setError('');
       const data = await loginUser(email, password);
       localStorage.setItem('authtoken', data.token.token);
+      localStorage.setItem('user', JSON.stringify(data.token.user));
       dispatch(addUser(data.token.user));
+      // Broadcast user update to research subdomain
+      const RESEARCH_URL = import.meta.env.VITE_RESEARCH_BASE_URL || 'https://research.infinitohq.com';
+      window.postMessage({ type: "user-data", payload: JSON.stringify(data.token.user) }, '*');
       toast.success('Login successful!');
       setTimeout(() => navigate('/'), 1500);
     } catch (err) {
