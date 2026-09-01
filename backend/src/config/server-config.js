@@ -37,6 +37,7 @@ export default {
     SMTP_PORT: process.env.SMTP_PORT,
     SMTP_SERVER: process.env.SMTP_SERVER,
     FORGET_PASSWORD_EXPIRY: process.env.FORGET_PASSWORD_EXPIRY,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
     // Razorpay (optional)
     RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
     RAZORPAY_SECRET_KEY: process.env.RAZORPAY_SECRET_KEY

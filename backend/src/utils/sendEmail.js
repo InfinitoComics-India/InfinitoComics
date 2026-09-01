@@ -1,31 +1,19 @@
-import nodemailer from "nodemailer"
-import config from "../config/server-config.js"
+import { Resend } from 'resend';
+import config from '../config/server-config.js';
 
-const transporter = nodemailer.createTransport({
-  host: config.SMTP_SERVER,
-  port: 587,
-  secure: false,  // STARTTLS
-  auth: {
-    user: config.EMAIL_ID,
-    pass: config.EMAIL_PASS
-  },
-  tls: {
-    rejectUnauthorized: false
-  }
-});
+const resend = new Resend(config.RESEND_API_KEY);
 
 export const sendEmail = async (to, subject, text) => {
-  if (!config.EMAIL_PASS) {
-    console.warn('⚠️  EMAIL_PASS not set - skipping email to:', to);
-    console.warn('   Set EMAIL_ID and EMAIL_PASS in backend/.env to enable emails.');
+  if (!config.RESEND_API_KEY) {
+    console.warn('⚠️  RESEND_API_KEY not set - skipping email to:', to);
     return;
   }
   try {
-    await transporter.sendMail({
-      from: config.EMAIL_ID,
+    await resend.emails.send({
+      from: 'Infinito Comics <onboarding@resend.dev>',
       to,
       subject,
-      text
+      text,
     });
     console.log('✅ Email sent to:', to);
   } catch (error) {
@@ -34,27 +22,25 @@ export const sendEmail = async (to, subject, text) => {
 };
 
 export const sendForgotPasswordEmail = async (toEmail, resetLink, userName) => {
-  const mailOptions = {
-    from: config.EMAIL_ID,
+  await resend.emails.send({
+    from: 'Infinito Comics <onboarding@resend.dev>',
     to: toEmail,
-    subject: 'Reset Your Password - Schedula',
+    subject: 'Reset Your Password - Infinito Comics',
     html: `
       <div style="font-family:sans-serif; max-width:600px; margin:auto;">
-        <h2 style="color:#333;">Hi ${userName || ''},</h2>
-        <p>We received a request to reset your password. Click the button below to reset it:</p>
-        <a href="${resetLink}" style="background-color:#28a745;color:white;padding:12px 20px;
+        <h2 style="color:#DD1215;">Hi ${userName || ''},</h2>
+        <p>We received a request to reset your password. Click the button below:</p>
+        <a href="${resetLink}" style="background-color:#DD1215;color:white;padding:12px 20px;
           text-decoration:none;border-radius:5px;display:inline-block;margin:20px 0;">
           Reset Password
         </a>
-        <p>If the button doesn't work, copy this link and open it in your browser:</p>
+        <p>If the button doesn't work, copy this link:</p>
         <p><a href="${resetLink}">${resetLink}</a></p>
-        <p>This link will expire in 10 minutes.</p>
+        <p>This link expires in 10 minutes.</p>
         <hr/>
-        <p style="color:#888; font-size:12px;">If you did not request a password reset, you can ignore this email.</p>
-        <p style="color:#ccc; font-size:12px;">© ${new Date().getFullYear()} Schedula</p>
+        <p style="color:#888; font-size:12px;">If you did not request this, ignore this email.</p>
+        <p style="color:#ccc; font-size:12px;">© ${new Date().getFullYear()} Infinito Comics</p>
       </div>
     `,
-  };
-
-  await transporter.sendMail(mailOptions);
+  });
 };
