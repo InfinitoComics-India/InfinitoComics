@@ -16,11 +16,14 @@ import trailer2 from "../../../assets/Images/Ultimate/trailer2.png";
 import trailer3 from "../../../assets/Images/Ultimate/trailer3.png";
 import trailer4 from "../../../assets/Images/Ultimate/trailer4.png";
 
-// Character Poster Images from public directory
-const rizalPoster = "/rizal.png";
-const poisonPoster = "/poison.png";
-const kalariPoster = "/kalari.png";
-const battleBeastPoster = "/battle-beast.png";
+import upcomingEvent from "../../../assets/Images/upcomingEvent.png";
+
+const timelineCardsData = [
+  { id: 1, title: "RELEASE TIMELINE", year: "2022", img: upcomingEvent },
+  { id: 2, title: "RELEASE TIMELINE", year: "2025", img: upcomingEvent },
+  { id: 3, title: "RELEASE TIMELINE", year: "2025", img: upcomingEvent },
+  { id: 4, title: "RELEASE TIMELINE", year: "2025", img: upcomingEvent },
+];
 
 // Hero section - single video
 const heroVideo = {
@@ -40,31 +43,21 @@ const secondVideo = {
   youtubeId: "jImhvA9uNVU",
 };
 
+// Video cards with actual YouTube thumbnails
 const videoCardsData = [
-  { id: 1, title: "Watch Trailer", img: trailer1, youtubeId: "jImhvA9uNVU" },
-  { id: 2, title: "Watch Trailer", img: trailer2, youtubeId: "27VGbZNOSjo" },
-  { id: 3, title: "Watch Trailer", img: trailer3, youtubeId: "jImhvA9uNVU" },
-  { id: 4, title: "Watch Trailer", img: trailer4, youtubeId: "27VGbZNOSjo" },
+  { 
+    id: 1, 
+    title: "MULTIVERSE UNLEASHED", 
+    youtubeId: "27VGbZNOSjo",
+    thumbnail: `https://img.youtube.com/vi/27VGbZNOSjo/maxresdefault.jpg`
+  },
+  { 
+    id: 2, 
+    title: "INFINITO COMICS", 
+    youtubeId: "jImhvA9uNVU",
+    thumbnail: `https://img.youtube.com/vi/jImhvA9uNVU/maxresdefault.jpg`
+  },
 ];
-
-import upcomingEvent from "../../../assets/Images/upcomingEvent.png";
-
-const timelineCardsData = [
-  { id: 1, title: "RELEASE TIMELINE", year: "2022", img: upcomingEvent },
-  { id: 2, title: "RELEASE TIMELINE", year: "2025", img: upcomingEvent },
-  { id: 3, title: "RELEASE TIMELINE", year: "2025", img: upcomingEvent },
-  { id: 4, title: "RELEASE TIMELINE", year: "2025", img: upcomingEvent },
-];
-
-const franchiseCardsData = [
-  { id: 1, title: "Wolverine (2025) #6", img: rizalPoster },
-  { id: 2, title: "Wolverine (2025) #6", img: rizalPoster },
-  { id: 3, title: "Wolverine (2025) #6", img: poisonPoster },
-  { id: 4, title: "Wolverine (2025) #6", img: poisonPoster },
-  { id: 5, title: "Wolverine (2025) #6", img: kalariPoster },
-];
-
-// Remove browseComicsData - we'll fetch it dynamically
 
 // Helper Component for a Video Row Section
 const VideoRowSection = ({ genreTitle, onPlayVideo }) => {
@@ -156,6 +149,13 @@ const AnimationPage = () => {
   const [filteredComics, setFilteredComics] = useState([]);
   const [isLoadingComics, setIsLoadingComics] = useState(true);
 
+  // Characters data state
+  const [characters, setCharacters] = useState([]);
+  const [isLoadingCharacters, setIsLoadingCharacters] = useState(true);
+
+  // Ref for character slider
+  const characterSliderRef = React.useRef(null);
+
   // Fetch comics on component mount
   useEffect(() => {
     fetchComics()
@@ -170,6 +170,20 @@ const AnimationPage = () => {
         setFilteredComics([]);
       })
       .finally(() => setIsLoadingComics(false));
+  }, []);
+
+  // Fetch characters on component mount
+  useEffect(() => {
+    fetchCharacters()
+      .then((data) => {
+        const chars = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+        setCharacters(chars);
+      })
+      .catch((error) => {
+        console.error("Error fetching characters:", error);
+        setCharacters([]);
+      })
+      .finally(() => setIsLoadingCharacters(false));
   }, []);
 
   // Filter comics based on search query
@@ -195,6 +209,17 @@ const AnimationPage = () => {
   const totalPages = Math.ceil(filteredComics.length / comicsPerPage);
   const startIndex = (activePage - 1) * comicsPerPage;
   const paginatedComics = filteredComics.slice(startIndex, startIndex + comicsPerPage);
+
+  // Character slider scroll function
+  const scrollCharacters = (direction) => {
+    if (characterSliderRef.current) {
+      const scrollAmount = 200; // Adjust scroll distance
+      characterSliderRef.current.scrollBy({
+        left: direction * scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   return (
     <div className="w-full min-h-screen bg-black text-white font-sans overflow-x-hidden selection:bg-[#E50914] selection:text-white">
@@ -270,7 +295,11 @@ const AnimationPage = () => {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 w-full">
               {videoCardsData.map((video) => (
-                <div key={video.id} className="group cursor-pointer space-y-2.5">
+                <div 
+                  key={video.id} 
+                  onClick={() => setSelectedVideoModal(video.youtubeId)}
+                  className="group cursor-pointer space-y-2.5"
+                >
                   <div className="relative w-full aspect-video bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
                     <img
                       src={video.img}
@@ -479,7 +508,7 @@ const AnimationPage = () => {
             </h2>
 
             <Link
-              to="/animation"
+              to="/characters"
               className="text-[#E50914] text-xs sm:text-sm font-bold uppercase tracking-wider hover:underline"
             >
               VIEW ALL &gt;
@@ -487,52 +516,76 @@ const AnimationPage = () => {
           </div>
 
           <div className="relative flex items-center gap-2 sm:gap-4">
-            <button
-              onClick={() => setFranchiseIndex((prev) => Math.max(0, prev - 1))}
-              className="hidden sm:flex p-2.5 border border-gray-300 text-black hover:border-black hover:bg-gray-50 transition-all flex-shrink-0"
-              aria-label="Previous"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
+            {/* Left Arrow - show if there are characters */}
+            {!isLoadingCharacters && characters.length > 5 && (
+              <button
+                onClick={() => scrollCharacters(-1)}
+                className="hidden sm:flex p-2.5 border border-gray-300 text-black hover:border-black hover:bg-gray-50 transition-all flex-shrink-0"
+                aria-label="Previous"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+            )}
 
-            {/* 5 Vertical Franchise Poster Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 sm:gap-5 w-full">
-              {franchiseCardsData.map((card) => (
-                <div key={card.id} className="group cursor-pointer space-y-2">
-                  <div className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
-                    <img
-                      src={card.img}
-                      alt={card.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+            {/* Character Cards Container */}
+            <div className="w-full overflow-hidden">
+              <div 
+                ref={characterSliderRef}
+                className="flex overflow-x-auto gap-4 sm:gap-5 no-scrollbar scroll-smooth pb-2"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                {isLoadingCharacters ? (
+                  // Loading shimmer
+                  [...Array(5)].map((_, i) => (
+                    <div key={i} className="flex-shrink-0 animate-pulse" style={{ width: '155px' }}>
+                      <div className="w-full aspect-[3/4] bg-gray-200" />
+                      <div className="h-3 bg-gray-200 rounded mt-2 w-4/5" />
+                    </div>
+                  ))
+                ) : characters.length === 0 ? (
+                  // No characters
+                  <div className="w-full text-center py-8">
+                    <p className="text-gray-500 text-sm">No characters available</p>
                   </div>
+                ) : (
+                  // Display all characters with horizontal scroll
+                  characters.map((character) => (
+                    <div 
+                      key={character._id} 
+                      onClick={() => navigate(`/characters/${character._id}`)}
+                      className="flex-shrink-0 group cursor-pointer space-y-2"
+                      style={{ width: '155px' }}
+                    >
+                      <div className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
+                        <img
+                          src={character.images?.[0] || character.coverImg || "https://via.placeholder.com/300x400"}
+                          alt={character.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      </div>
 
-                  <p className="text-xs font-bold text-gray-900 group-hover:text-[#E50914] transition-colors font-dmsans">
-                    {card.title}
-                  </p>
-                </div>
-              ))}
+                      <p className="text-xs font-bold text-gray-900 group-hover:text-[#E50914] transition-colors font-dmsans line-clamp-1">
+                        {character.name}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
 
-            <button
-              onClick={() => setFranchiseIndex((prev) => Math.min(4, prev + 1))}
-              className="hidden sm:flex p-2.5 border border-gray-300 text-black hover:border-black hover:bg-gray-50 transition-all flex-shrink-0"
-              aria-label="Next"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
+            {/* Right Arrow - show if there are characters */}
+            {!isLoadingCharacters && characters.length > 5 && (
+              <button
+                onClick={() => scrollCharacters(1)}
+                className="hidden sm:flex p-2.5 border border-gray-300 text-black hover:border-black hover:bg-gray-50 transition-all flex-shrink-0"
+                aria-label="Next"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            )}
           </div>
 
-          <div className="flex gap-1.5 justify-center pt-2">
-            {franchiseCardsData.map((_, idx) => (
-              <div
-                key={idx}
-                className={`h-1 transition-all duration-300 ${
-                  idx === franchiseIndex ? "w-6 bg-[#E50914]" : "w-4 bg-gray-300"
-                }`}
-              />
-            ))}
-          </div>
+          {/* Pagination dots removed - using continuous scroll now */}
         </div>
       </section>
 
