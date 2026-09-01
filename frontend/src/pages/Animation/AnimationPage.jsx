@@ -284,59 +284,49 @@ const AnimationPage = () => {
             </Link>
           </div>
 
-          <div className="relative flex items-center gap-2 sm:gap-4">
-            <button
-              onClick={() => setRecIndex((prev) => Math.max(0, prev - 1))}
-              className="hidden sm:flex p-2.5 border border-gray-300 text-black hover:border-black hover:bg-gray-50 transition-all flex-shrink-0"
-              aria-label="Previous"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
+          {/* Simple grid - no slider needed for 2 videos */}
+          <div className={`grid ${videoCardsData.length <= 4 ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2 md:grid-cols-4'} gap-4 sm:gap-6 w-full`}>
+            {videoCardsData.map((video) => (
+              <div 
+                key={video.id} 
+                className="group cursor-pointer space-y-2.5"
+              >
+                <div className="relative w-full aspect-video bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
+                  <img
+                    src={video.thumbnail}
+                    alt={video.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 w-full">
-              {videoCardsData.map((video) => (
-                <div 
-                  key={video.id} 
-                  onClick={() => setSelectedVideoModal(video.youtubeId)}
-                  className="group cursor-pointer space-y-2.5"
-                >
-                  <div className="relative w-full aspect-video bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
-                    <img
-                      src={video.img}
-                      alt={video.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
-
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <PlayCircle className="w-10 h-10 sm:w-12 sm:h-12 text-white stroke-[1.5] group-hover:scale-110 transition-transform duration-300 drop-shadow-md" />
-                    </div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <button
+                      onClick={() => setSelectedVideoModal(video.youtubeId)}
+                      className="w-12 h-12 sm:w-14 sm:h-14 bg-[#E50914] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg"
+                    >
+                      <PlayCircle className="w-8 h-8 sm:w-10 sm:h-10 text-white stroke-[1.5]" />
+                    </button>
                   </div>
 
-                  <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-black group-hover:text-[#E50914] transition-colors font-dmsans">
-                    {video.title}
-                  </p>
+                  {/* Small "Open on YouTube" button */}
+                  <a
+                    href={`https://www.youtube.com/watch?v=${video.youtubeId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute bottom-2 right-2 bg-black/80 hover:bg-[#E50914] text-white text-[9px] sm:text-[10px] font-bold px-2 py-1 uppercase tracking-wider transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1"
+                  >
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    </svg>
+                    YT
+                  </a>
                 </div>
-              ))}
-            </div>
 
-            <button
-              onClick={() => setRecIndex((prev) => Math.min(3, prev + 1))}
-              className="hidden sm:flex p-2.5 border border-gray-300 text-black hover:border-black hover:bg-gray-50 transition-all flex-shrink-0"
-              aria-label="Next"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-
-          <div className="flex gap-1.5 justify-center pt-2">
-            {videoCardsData.map((_, idx) => (
-              <div
-                key={idx}
-                className={`h-1 transition-all duration-300 ${
-                  idx === recIndex ? "w-6 bg-[#E50914]" : "w-4 bg-gray-300"
-                }`}
-              />
+                <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-black group-hover:text-[#E50914] transition-colors font-dmsans">
+                  {video.title}
+                </p>
+              </div>
             ))}
           </div>
         </div>
