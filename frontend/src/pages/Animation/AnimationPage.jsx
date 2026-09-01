@@ -4,8 +4,6 @@ import { PlayCircle, ChevronLeft, ChevronRight, Search, Plus, ChevronDown } from
 import JoinUltimate from "../Home/JoinUltimate";
 
 // Image Assets
-import s1 from "../../../assets/Images/s1.jpg";
-import s2 from "../../../assets/Images/s2.png";
 import rivalImg from "../../../assets/Images/rival.png";
 import bgtop from "../../../assets/Images/spotlighttopbg.png";
 import bgbottom from "../../../assets/Images/spotlightbottombg.png";
@@ -22,24 +20,23 @@ const poisonPoster = "/poison.png";
 const kalariPoster = "/kalari.png";
 const battleBeastPoster = "/battle-beast.png";
 
-const heroSlides = [
-  {
-    id: 1,
-    title: "INFINITO COMICS - A NEW SAGA",
-    description:
-      "Step into India's premier original character universe. Experience breathtaking animation, rich lore, and epic superhero action.",
-    youtubeId: "jImhvA9uNVU",
-    bgImage: s1,
-  },
-  {
-    id: 2,
-    title: "MULTIVERSE UNLEASHED | INFINITO SAGA",
-    description:
-      "An ancient force awakens across dimensions. Heroes will rise, worlds will collide, and the Infinito Universe will never be the same.",
-    youtubeId: "27VGbZNOSjo",
-    bgImage: s2,
-  },
-];
+// Hero section - single video
+const heroVideo = {
+  id: 1,
+  title: "MULTIVERSE UNLEASHED | INFINITO SAGA",
+  description:
+    "An ancient force awakens across dimensions. Heroes will rise, worlds will collide, and the Infinito Universe will never be the same.",
+  youtubeId: "27VGbZNOSjo",
+};
+
+// Second video section data
+const secondVideo = {
+  id: 2,
+  title: "INFINITO COMICS - A NEW SAGA",
+  description:
+    "Step into India's premier original character universe. Experience breathtaking animation, rich lore, and epic superhero action.",
+  youtubeId: "jImhvA9uNVU",
+};
 
 const videoCardsData = [
   { id: 1, title: "Watch Trailer", img: trailer1, youtubeId: "jImhvA9uNVU" },
@@ -154,70 +151,48 @@ const VideoRowSection = ({ genreTitle, onPlayVideo }) => {
 };
 
 const AnimationPage = () => {
-  const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
   const [selectedVideoModal, setSelectedVideoModal] = useState(null);
   const [recIndex, setRecIndex] = useState(0);
   const [franchiseIndex, setFranchiseIndex] = useState(0);
-  const [btsIndex, setBtsIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [activePage, setActivePage] = useState(1);
-
-  // Auto-play hero slider every 7 seconds
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentHeroIndex((prev) => (prev + 1) % heroSlides.length);
-    }, 7000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const activeHero = heroSlides[currentHeroIndex];
 
   return (
     <div className="w-full min-h-screen bg-black text-white font-sans overflow-x-hidden selection:bg-[#E50914] selection:text-white">
       {/* ─── SECTION 1: HERO BANNER ──────────────────────────────────────── */}
       <section className="relative w-full h-[75vh] min-h-[500px] max-h-[750px] bg-black flex items-end justify-start overflow-hidden">
-        {heroSlides.map((slide, idx) => (
-          <div
-            key={slide.id}
-            className={`absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
-              idx === currentHeroIndex ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
-            }`}
-            style={{ backgroundImage: `url(${slide.bgImage})` }}
-          >
-            {/* Background YouTube Autoplay Video */}
-            {idx === currentHeroIndex && (
-              <iframe
-                src={`https://www.youtube-nocookie.com/embed/${slide.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${slide.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1`}
-                title={slide.title}
-                className="w-full h-full object-cover scale-125 pointer-events-none opacity-80"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/75 to-transparent pointer-events-none" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 pointer-events-none" />
-          </div>
-        ))}
-
+        <div className="absolute inset-0 w-full h-full">
+          {/* Background YouTube Autoplay Video - Clear and Full Opacity */}
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/${heroVideo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${heroVideo.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1`}
+            title={heroVideo.title}
+            className="w-full h-full object-cover scale-125 pointer-events-none"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          />
+          {/* Light gradient for text readability only */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+        </div>
 
         {/* Slide Info Overlay */}
         <div className="relative z-30 max-w-6xl w-full mx-auto px-4 sm:px-8 md:px-12 pb-10 sm:pb-14 space-y-4">
           <div className="max-w-md space-y-3">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-white drop-shadow-md leading-none transition-all duration-500">
-              {activeHero.title}
+              {heroVideo.title}
             </h1>
             <p className="text-[11px] sm:text-xs text-gray-300 leading-relaxed font-dmsans max-w-xs drop-shadow transition-all duration-500">
-              {activeHero.description}
+              {heroVideo.description}
             </p>
 
             <div className="flex items-center gap-3 pt-2">
               <button
-                onClick={() => setSelectedVideoModal(activeHero.youtubeId)}
+                onClick={() => setSelectedVideoModal(heroVideo.youtubeId)}
                 className="px-5 py-2 bg-[#E50914] text-white text-[11px] sm:text-xs font-bold tracking-widest uppercase hover:bg-red-700 transition-all duration-300 shadow-md"
               >
                 PLAY VIDEO
               </button>
               <a
-                href={`https://www.youtube.com/watch?v=${activeHero.youtubeId}`}
+                href={`https://www.youtube.com/watch?v=${heroVideo.youtubeId}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-4 py-2 bg-black/60 border border-white/70 text-white text-[11px] sm:text-xs font-bold tracking-widest uppercase hover:bg-white hover:text-black transition-all duration-300"
@@ -225,21 +200,6 @@ const AnimationPage = () => {
                 WATCH ON YOUTUBE
               </a>
             </div>
-          </div>
-
-          <div className="flex gap-1.5 justify-center pt-8">
-            {heroSlides.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentHeroIndex(idx)}
-                aria-label={`Slide ${idx + 1}`}
-                className={`h-[3px] transition-all duration-300 ${
-                  idx === currentHeroIndex
-                    ? "w-6 bg-[#E50914]"
-                    : "w-4 bg-white/70 hover:bg-white"
-                }`}
-              />
-            ))}
           </div>
         </div>
       </section>
@@ -537,72 +497,47 @@ const AnimationPage = () => {
         </div>
       </section>
 
-      {/* ─── SECTION 7: GET BEHIND THE SCENES (WHITE BG) ───────────────────── */}
-      <section className="w-full bg-white text-black pb-12 sm:pb-16 px-4 sm:px-8 md:px-12 border-t border-gray-100 pt-8">
-        <div className="max-w-6xl mx-auto space-y-8">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg sm:text-xl font-extrabold uppercase tracking-wide text-black font-dmsans">
-              Get Behind the Scenes
-            </h2>
+      {/* ─── SECTION 6.5: SECOND VIDEO BANNER ──────────────────────────────── */}
+      <section className="relative w-full h-[75vh] min-h-[500px] max-h-[750px] bg-black flex items-end justify-start overflow-hidden">
+        <div className="absolute inset-0 w-full h-full">
+          {/* Background YouTube Autoplay Video - Clear and Full Opacity */}
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/${secondVideo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${secondVideo.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1`}
+            title={secondVideo.title}
+            className="w-full h-full object-cover scale-125 pointer-events-none"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          />
+          {/* Light gradient for text readability only */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+        </div>
 
-            <Link
-              to="/animation"
-              className="text-[#E50914] text-xs sm:text-sm font-bold uppercase tracking-wider hover:underline"
-            >
-              VIEW ALL &gt;
-            </Link>
-          </div>
+        {/* Video Info Overlay */}
+        <div className="relative z-30 max-w-6xl w-full mx-auto px-4 sm:px-8 md:px-12 pb-10 sm:pb-14 space-y-4">
+          <div className="max-w-md space-y-3">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-white drop-shadow-md leading-none transition-all duration-500">
+              {secondVideo.title}
+            </h1>
+            <p className="text-[11px] sm:text-xs text-gray-300 leading-relaxed font-dmsans max-w-xs drop-shadow transition-all duration-500">
+              {secondVideo.description}
+            </p>
 
-          <div className="relative flex items-center gap-2 sm:gap-4">
-            <button
-              onClick={() => setBtsIndex((prev) => Math.max(0, prev - 1))}
-              className="hidden sm:flex p-2.5 border border-gray-300 text-black hover:border-black hover:bg-gray-50 transition-all flex-shrink-0"
-              aria-label="Previous"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 w-full">
-              {videoCardsData.map((video) => (
-                <div key={video.id} className="group cursor-pointer space-y-2.5">
-                  <div className="relative w-full aspect-video bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
-                    <img
-                      src={video.img}
-                      alt={video.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
-
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <PlayCircle className="w-10 h-10 sm:w-12 sm:h-12 text-white stroke-[1.5] group-hover:scale-110 transition-transform duration-300 drop-shadow-md" />
-                    </div>
-                  </div>
-
-                  <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-black group-hover:text-[#E50914] transition-colors font-dmsans">
-                    {video.title}
-                  </p>
-                </div>
-              ))}
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={() => setSelectedVideoModal(secondVideo.youtubeId)}
+                className="px-5 py-2 bg-[#E50914] text-white text-[11px] sm:text-xs font-bold tracking-widest uppercase hover:bg-red-700 transition-all duration-300 shadow-md"
+              >
+                PLAY VIDEO
+              </button>
+              <a
+                href={`https://www.youtube.com/watch?v=${secondVideo.youtubeId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-black/60 border border-white/70 text-white text-[11px] sm:text-xs font-bold tracking-widest uppercase hover:bg-white hover:text-black transition-all duration-300"
+              >
+                WATCH ON YOUTUBE
+              </a>
             </div>
-
-            <button
-              onClick={() => setBtsIndex((prev) => Math.min(3, prev + 1))}
-              className="hidden sm:flex p-2.5 border border-gray-300 text-black hover:border-black hover:bg-gray-50 transition-all flex-shrink-0"
-              aria-label="Next"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-
-          <div className="flex gap-1.5 justify-center pt-2">
-            {videoCardsData.map((_, idx) => (
-              <div
-                key={idx}
-                className={`h-1 transition-all duration-300 ${
-                  idx === btsIndex ? "w-6 bg-[#E50914]" : "w-4 bg-gray-300"
-                }`}
-              />
-            ))}
           </div>
         </div>
       </section>
