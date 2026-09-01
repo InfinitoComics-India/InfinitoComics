@@ -1,16 +1,16 @@
 import nodemailer from "nodemailer"
 import config from "../config/server-config.js"
-const port = Number(config.SMTP_PORT) || 465;
+
 const transporter = nodemailer.createTransport({
   host: config.SMTP_SERVER,
-  port,
-  secure: port === 465,   // true for 465 (SSL), false for 587 (STARTTLS)
+  port: 587,
+  secure: false,  // STARTTLS
   auth: {
     user: config.EMAIL_ID,
     pass: config.EMAIL_PASS
   },
   tls: {
-    rejectUnauthorized: false  // avoids self-signed cert errors in dev
+    rejectUnauthorized: false
   }
 });
 
