@@ -4,6 +4,7 @@ import { PlayCircle, ChevronLeft, ChevronRight, Search, Plus, ChevronDown } from
 import JoinUltimate from "../Home/JoinUltimate";
 import { fetchComics } from "../../services/ComicService.js";
 import { getAll as fetchCharacters } from "../../services/CharacterServices.js";
+import { getAllTimeline } from "../../services/timelineService.js";
 
 // Image Assets
 import rivalImg from "../../../assets/Images/rival.png";
@@ -18,12 +19,7 @@ import trailer4 from "../../../assets/Images/Ultimate/trailer4.png";
 
 import upcomingEvent from "../../../assets/Images/upcomingEvent.png";
 
-const timelineCardsData = [
-  { id: 1, title: "RELEASE TIMELINE", year: "2022", img: upcomingEvent },
-  { id: 2, title: "RELEASE TIMELINE", year: "2025", img: upcomingEvent },
-  { id: 3, title: "RELEASE TIMELINE", year: "2025", img: upcomingEvent },
-  { id: 4, title: "RELEASE TIMELINE", year: "2025", img: upcomingEvent },
-];
+// Remove static timeline data - will fetch from API dynamically
 
 // Hero section - single video
 const heroVideo = {
@@ -153,6 +149,10 @@ const AnimationPage = () => {
   const [characters, setCharacters] = useState([]);
   const [isLoadingCharacters, setIsLoadingCharacters] = useState(true);
 
+  // Timeline data state
+  const [timelineEvents, setTimelineEvents] = useState([]);
+  const [isLoadingTimeline, setIsLoadingTimeline] = useState(true);
+
   // Ref for character slider
   const characterSliderRef = React.useRef(null);
 
@@ -184,6 +184,25 @@ const AnimationPage = () => {
         setCharacters([]);
       })
       .finally(() => setIsLoadingCharacters(false));
+  }, []);
+
+  // Fetch timeline events on component mount
+  useEffect(() => {
+    getAllTimeline()
+      .then((data) => {
+        const events = Array.isArray(data) ? data : [];
+        // Filter for animation-related events if needed, or show all
+        const animationEvents = events.filter(event => 
+          event.category && event.category.toLowerCase().includes('animation')
+        );
+        // If no animation-specific events, show all events
+        setTimelineEvents(animationEvents.length > 0 ? animationEvents : events);
+      })
+      .catch((error) => {
+        console.error("Error fetching timeline:", error);
+        setTimelineEvents([]);
+      })
+      .finally(() => setIsLoadingTimeline(false));
   }, []);
 
   // Filter comics based on search query
@@ -451,43 +470,106 @@ const AnimationPage = () => {
           <div className="bg-white text-black p-6 sm:p-8 md:p-10 w-full rounded-none shadow-2xl relative z-10 space-y-6">
             <div className="flex items-center justify-between border-b border-gray-200 pb-3">
               <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-black">
-                RELEASE TIMELINE
+                RELEASE TIMELINE ({timelineEvents.length})
               </h2>
 
               <Link
-                to="/animation"
+                to="/about#timeline"
                 className="text-[#E50914] text-xs font-bold uppercase tracking-wider hover:underline"
               >
                 VIEW ALL &gt;
               </Link>
             </div>
 
-            {/* 4 Timeline Video Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-              {timelineCardsData.map((card) => (
-                <div key={card.id} className="group cursor-pointer space-y-1.5">
-                  <div className="relative w-full aspect-[16/9] bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
-                    <img
-                      src={card.img}
-                      alt={card.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+            {/* Dynamic Timeline Event Cards */}
+            {isLoadingTimeline ? (
+              // Loading shimmer
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="animate-pulse space-y-2">
+                    <div className="w-full aspect-[16/9] bg-gray-200" />
+                    <div className="h-3 bg-gray-200 rounded w-4/5" />
+                    <div className="h-2 bg-gray-200 rounded w-3/5" />
                   </div>
+                ))}
+              </div>
+            ) : timelineEvents.length === 0 ? (
+              // No events
+              <div className="text-center py-8">
+                <p className="text-gray-500 text-sm">No upcoming releases at this time.</p>
+              </div>
+            ) : (
+              // Display timeline events
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+                {timelineEvents.slice(0, 4).map((event) => {
+                  // Parse event date
+                  const eventDate = new Date(event.eventDate);
+                  const year = eventDate.getFullYear();
+                  const month = eventDate.toLocaleDateString('en-US', { month: 'short' });
+                  const day = eventDate.getDate();
+                  
+                  // Calculate days until release
+                  const today = new Date();
+                  const daysUntil = Math.ceil((eventDate - today) / (1000 * 60 * 60 * 24));
+                  const isPast = daysUntil < 0;
+                  const isComingSoon = daysUntil > 0 && daysUntil <= 90;
 
-                  <div>
-                    <p className="text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-black group-hover:text-[#E50914] transition-colors font-dmsans">
-                      {card.title}
-                    </p>
-                    <p className="text-[10px] sm:text-xs text-gray-500 font-dmsans">
-                      {card.year}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  return (
+                    <div key={event._id} className="group cursor-pointer space-y-2">
+                      <div className="relative w-full aspect-[16/9] bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
+                        <img
+                          src={event.imageUrl || upcomingEvent}
+                          alt={event.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        
+                        {/* Status Badge */}
+                        {isComingSoon && !isPast && (
+                          <div className="absolute top-2 left-2 bg-[#E50914] text-white text-[8px] font-bold px-2 py-1 uppercase tracking-wider">
+                            Coming Soon
+                          </div>
+                        )}
+                        
+                        {isPast && (
+                          <div className="absolute top-2 left-2 bg-gray-700 text-white text-[8px] font-bold px-2 py-1 uppercase tracking-wider">
+                            Released
+                          </div>
+                        )}
+
+                        {/* Category Badge */}
+                        {event.category && (
+                          <div className="absolute top-2 right-2 bg-black/70 text-white text-[8px] font-bold px-2 py-1 uppercase tracking-wider">
+                            {event.category}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-black group-hover:text-[#E50914] transition-colors font-dmsans line-clamp-2">
+                          {event.title}
+                        </p>
+                        
+                        {/* Date Display */}
+                        <p className="text-[10px] sm:text-xs text-gray-500 font-dmsans">
+                          {month} {day}, {year}
+                        </p>
+                        
+                        {/* Countdown or Status */}
+                        {!isPast && daysUntil > 0 && (
+                          <p className="text-[9px] text-[#E50914] font-bold">
+                            In {daysUntil} {daysUntil === 1 ? 'day' : 'days'}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </section>
+
 
       {/* ─── SECTION 6: OUR FRANCHISES (WHITE BG) ──────────────────────────── */}
       <section className="w-full bg-white text-black py-12 sm:py-16 px-4 sm:px-8 md:px-12">
