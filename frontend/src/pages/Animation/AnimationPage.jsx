@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { PlayCircle, ChevronLeft, ChevronRight, Search, Plus, ChevronDown } from "lucide-react";
 import JoinUltimate from "../Home/JoinUltimate";
+import { fetchComics } from "../../services/ComicService.js";
+import { getAll as fetchCharacters } from "../../services/CharacterServices.js";
 
 // Image Assets
 import rivalImg from "../../../assets/Images/rival.png";
@@ -62,16 +64,7 @@ const franchiseCardsData = [
   { id: 5, title: "Wolverine (2025) #6", img: kalariPoster },
 ];
 
-const browseComicsData = [
-  { id: 1, title: "Wolverine (2025) #6", author: "Stan Lee", img: poisonPoster },
-  { id: 2, title: "Wolverine (2025) #6", author: "Stan Lee", img: rizalPoster },
-  { id: 3, title: "Wolverine (2025) #6", author: "Stan Lee", img: poisonPoster },
-  { id: 4, title: "Wolverine (2025) #6", author: "Stan Lee", img: rizalPoster },
-  { id: 5, title: "Wolverine (2025) #6", author: "Stan Lee", img: poisonPoster },
-  { id: 6, title: "Wolverine (2025) #6", author: "Stan Lee", img: rizalPoster },
-  { id: 7, title: "Wolverine (2025) #6", author: "Stan Lee", img: poisonPoster },
-  { id: 8, title: "Wolverine (2025) #6", author: "Stan Lee", img: rizalPoster },
-];
+// Remove browseComicsData - we'll fetch it dynamically
 
 // Helper Component for a Video Row Section
 const VideoRowSection = ({ genreTitle, onPlayVideo }) => {
@@ -151,11 +144,57 @@ const VideoRowSection = ({ genreTitle, onPlayVideo }) => {
 };
 
 const AnimationPage = () => {
+  const navigate = useNavigate();
   const [selectedVideoModal, setSelectedVideoModal] = useState(null);
   const [recIndex, setRecIndex] = useState(0);
   const [franchiseIndex, setFranchiseIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [activePage, setActivePage] = useState(1);
+  
+  // Comics data state
+  const [allComics, setAllComics] = useState([]);
+  const [filteredComics, setFilteredComics] = useState([]);
+  const [isLoadingComics, setIsLoadingComics] = useState(true);
+
+  // Fetch comics on component mount
+  useEffect(() => {
+    fetchComics()
+      .then((data) => {
+        const comics = Array.isArray(data) ? data : [];
+        setAllComics(comics);
+        setFilteredComics(comics);
+      })
+      .catch((error) => {
+        console.error("Error fetching comics:", error);
+        setAllComics([]);
+        setFilteredComics([]);
+      })
+      .finally(() => setIsLoadingComics(false));
+  }, []);
+
+  // Filter comics based on search query
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredComics(allComics);
+    } else {
+      const query = searchQuery.toLowerCase();
+      const filtered = allComics.filter((comic) => {
+        const title = (comic.title || "").toLowerCase();
+        const authors = Array.isArray(comic.authors) 
+          ? comic.authors.join(" ").toLowerCase() 
+          : (comic.authors || "").toLowerCase();
+        return title.includes(query) || authors.includes(query);
+      });
+      setFilteredComics(filtered);
+      setActivePage(1); // Reset to first page when searching
+    }
+  }, [searchQuery, allComics]);
+
+  // Pagination
+  const comicsPerPage = 8;
+  const totalPages = Math.ceil(filteredComics.length / comicsPerPage);
+  const startIndex = (activePage - 1) * comicsPerPage;
+  const paginatedComics = filteredComics.slice(startIndex, startIndex + comicsPerPage);
 
   return (
     <div className="w-full min-h-screen bg-black text-white font-sans overflow-x-hidden selection:bg-[#E50914] selection:text-white">
@@ -164,7 +203,7 @@ const AnimationPage = () => {
         <div className="absolute inset-0 w-full h-full">
           {/* Background YouTube Autoplay Video - Clear and Full Opacity */}
           <iframe
-            src={`https://www.youtube-nocookie.com/embed/${heroVideo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${heroVideo.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1`}
+            src={`https://www.youtube-nocookie.com/embed/${heroVideo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${heroVideo.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1&vq=hd1080`}
             title={heroVideo.title}
             className="w-full h-full object-cover scale-125 pointer-events-none"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -502,7 +541,7 @@ const AnimationPage = () => {
         <div className="absolute inset-0 w-full h-full">
           {/* Background YouTube Autoplay Video - Clear and Full Opacity */}
           <iframe
-            src={`https://www.youtube-nocookie.com/embed/${secondVideo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${secondVideo.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1`}
+            src={`https://www.youtube-nocookie.com/embed/${secondVideo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${secondVideo.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1&vq=hd1080`}
             title={secondVideo.title}
             className="w-full h-full object-cover scale-125 pointer-events-none"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -548,7 +587,7 @@ const AnimationPage = () => {
           {/* Title Row + Sort Dropdown */}
           <div className="flex items-center justify-between">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-black">
-              BROWSE COMICS (128)
+              BROWSE COMICS ({filteredComics.length})
             </h2>
 
             {/* A to Z Sort Dropdown Box */}
@@ -594,57 +633,113 @@ const AnimationPage = () => {
 
             {/* Right Cards Grid */}
             <div className="flex-1 w-full space-y-8">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
-                {browseComicsData.map((comic) => (
-                  <div key={comic.id} className="group cursor-pointer space-y-1.5">
-                    <div className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
-                      <img
-                        src={comic.img}
-                        alt={comic.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
+              {isLoadingComics ? (
+                // Loading shimmer
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+                  {[...Array(8)].map((_, i) => (
+                    <div key={i} className="animate-pulse space-y-2">
+                      <div className="w-full aspect-[3/4] bg-gray-200" />
+                      <div className="h-3 bg-gray-200 rounded w-4/5" />
+                      <div className="h-2 bg-gray-200 rounded w-3/5" />
                     </div>
-                    <p className="text-xs font-bold text-gray-900 group-hover:text-[#E50914] transition-colors font-dmsans">
-                      {comic.title}
-                    </p>
-                    <p className="text-[11px] text-gray-500 font-dmsans">
-                      {comic.author}
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Pagination Row */}
-              <div className="flex items-center justify-between pt-6 border-t border-gray-100">
-                <div className="flex items-center gap-1.5">
-                  <button className="p-2 border border-gray-300 text-gray-600 hover:border-black transition">
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button className="px-3 py-1 bg-[#E50914] text-white text-xs font-bold">
-                    1
-                  </button>
-                  <button className="px-3 py-1 border border-gray-300 text-gray-700 text-xs font-bold hover:border-black">
-                    2
-                  </button>
-                  <button className="px-3 py-1 border border-gray-300 text-gray-700 text-xs font-bold hover:border-black">
-                    3
-                  </button>
-                  <span className="px-2 text-xs text-gray-400">...</span>
-                  <button className="px-3 py-1 border border-gray-300 text-gray-700 text-xs font-bold hover:border-black">
-                    8
-                  </button>
-                  <button className="p-2 border border-gray-300 text-gray-600 hover:border-black transition">
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
+                  ))}
                 </div>
+              ) : filteredComics.length === 0 ? (
+                // No results
+                <div className="text-center py-12">
+                  <p className="text-gray-500 text-sm">No comics found matching your search.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+                    {paginatedComics.map((comic) => (
+                      <div 
+                        key={comic._id} 
+                        onClick={() => navigate(`/comicChap/${comic._id}/chapters`)}
+                        className="group cursor-pointer space-y-1.5"
+                      >
+                        <div className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
+                          <img
+                            src={comic.coverImg}
+                            alt={comic.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        </div>
+                        <p className="text-xs font-bold text-gray-900 group-hover:text-[#E50914] transition-colors font-dmsans line-clamp-2">
+                          {comic.title}
+                        </p>
+                        <p className="text-[11px] text-gray-500 font-dmsans truncate">
+                          {Array.isArray(comic.authors) ? comic.authors.join(", ") : comic.authors || "Unknown Author"}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
 
-                <Link
-                  to="/animation"
-                  className="text-[#E50914] text-xs font-bold uppercase tracking-wider hover:underline"
-                >
-                  VIEW ALL &gt;
-                </Link>
-              </div>
+                  {/* Pagination Row */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between pt-6 border-t border-gray-100">
+                      <div className="flex items-center gap-1.5">
+                        <button 
+                          onClick={() => setActivePage(prev => Math.max(1, prev - 1))}
+                          disabled={activePage === 1}
+                          className="p-2 border border-gray-300 text-gray-600 hover:border-black transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        
+                        {/* Page numbers */}
+                        {[...Array(Math.min(totalPages, 3))].map((_, i) => {
+                          const pageNum = i + 1;
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => setActivePage(pageNum)}
+                              className={`px-3 py-1 text-xs font-bold ${
+                                activePage === pageNum
+                                  ? "bg-[#E50914] text-white"
+                                  : "border border-gray-300 text-gray-700 hover:border-black"
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+                        
+                        {totalPages > 3 && (
+                          <>
+                            <span className="px-2 text-xs text-gray-400">...</span>
+                            <button
+                              onClick={() => setActivePage(totalPages)}
+                              className={`px-3 py-1 text-xs font-bold ${
+                                activePage === totalPages
+                                  ? "bg-[#E50914] text-white"
+                                  : "border border-gray-300 text-gray-700 hover:border-black"
+                              }`}
+                            >
+                              {totalPages}
+                            </button>
+                          </>
+                        )}
+                        
+                        <button 
+                          onClick={() => setActivePage(prev => Math.min(totalPages, prev + 1))}
+                          disabled={activePage === totalPages}
+                          className="p-2 border border-gray-300 text-gray-600 hover:border-black transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <Link
+                        to="/comics"
+                        className="text-[#E50914] text-xs font-bold uppercase tracking-wider hover:underline"
+                      >
+                        VIEW ALL &gt;
+                      </Link>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>
