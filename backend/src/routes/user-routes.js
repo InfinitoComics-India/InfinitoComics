@@ -44,6 +44,8 @@ router.post("/upload", upload.single('image'), Usercontroller.uploadimage);
 router.post('/verifyemail', Usercontroller.verifyemail);
 
 router.post("/forget-password", Usercontroller.forgetPasswordFunc); 
-router.post("/forget-password/:id/:token", verifyResetToken, Usercontroller.forgetPasswordEmail); 
+router.post("/forget-password/:id/:token", verifyResetToken, Usercontroller.forgetPasswordEmail);
+router.post("/verify-otp", Usercontroller.verifyOtp);
+router.post("/reset-password-otp", Usercontroller.resetPassword);
 
 export default router;
