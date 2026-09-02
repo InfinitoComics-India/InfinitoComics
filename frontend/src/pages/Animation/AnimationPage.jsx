@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { PlayCircle, ChevronLeft, ChevronRight, Search, Plus, ChevronDown } from "lucide-react";
 import JoinUltimate from "../Home/JoinUltimate";
+import { fetchComics } from "../../services/ComicService.js";
+import { getAll as fetchCharacters } from "../../services/CharacterServices.js";
+import { getAllTimeline } from "../../services/timelineService.js";
 
 // Image Assets
-import s1 from "../../../assets/Images/s1.jpg";
-import s2 from "../../../assets/Images/s2.png";
 import rivalImg from "../../../assets/Images/rival.png";
 import bgtop from "../../../assets/Images/spotlighttopbg.png";
 import bgbottom from "../../../assets/Images/spotlightbottombg.png";
@@ -16,64 +17,42 @@ import trailer2 from "../../../assets/Images/Ultimate/trailer2.png";
 import trailer3 from "../../../assets/Images/Ultimate/trailer3.png";
 import trailer4 from "../../../assets/Images/Ultimate/trailer4.png";
 
-// Character Poster Images from public directory
-const rizalPoster = "/rizal.png";
-const poisonPoster = "/poison.png";
-const kalariPoster = "/kalari.png";
-const battleBeastPoster = "/battle-beast.png";
-
-const heroSlides = [
-  {
-    id: 1,
-    title: "INFINITO COMICS - A NEW SAGA",
-    description:
-      "Step into India's premier original character universe. Experience breathtaking animation, rich lore, and epic superhero action.",
-    youtubeId: "jImhvA9uNVU",
-    bgImage: s1,
-  },
-  {
-    id: 2,
-    title: "MULTIVERSE UNLEASHED | INFINITO SAGA",
-    description:
-      "An ancient force awakens across dimensions. Heroes will rise, worlds will collide, and the Infinito Universe will never be the same.",
-    youtubeId: "27VGbZNOSjo",
-    bgImage: s2,
-  },
-];
-
-const videoCardsData = [
-  { id: 1, title: "Watch Trailer", img: trailer1, youtubeId: "jImhvA9uNVU" },
-  { id: 2, title: "Watch Trailer", img: trailer2, youtubeId: "27VGbZNOSjo" },
-  { id: 3, title: "Watch Trailer", img: trailer3, youtubeId: "jImhvA9uNVU" },
-  { id: 4, title: "Watch Trailer", img: trailer4, youtubeId: "27VGbZNOSjo" },
-];
-
 import upcomingEvent from "../../../assets/Images/upcomingEvent.png";
 
-const timelineCardsData = [
-  { id: 1, title: "RELEASE TIMELINE", year: "2022", img: upcomingEvent },
-  { id: 2, title: "RELEASE TIMELINE", year: "2025", img: upcomingEvent },
-  { id: 3, title: "RELEASE TIMELINE", year: "2025", img: upcomingEvent },
-  { id: 4, title: "RELEASE TIMELINE", year: "2025", img: upcomingEvent },
-];
+// Remove static timeline data - will fetch from API dynamically
 
-const franchiseCardsData = [
-  { id: 1, title: "Wolverine (2025) #6", img: rizalPoster },
-  { id: 2, title: "Wolverine (2025) #6", img: rizalPoster },
-  { id: 3, title: "Wolverine (2025) #6", img: poisonPoster },
-  { id: 4, title: "Wolverine (2025) #6", img: poisonPoster },
-  { id: 5, title: "Wolverine (2025) #6", img: kalariPoster },
-];
+// Hero section - single video
+const heroVideo = {
+  id: 1,
+  title: "MULTIVERSE UNLEASHED | INFINITO SAGA",
+  description:
+    "An ancient force awakens across dimensions. Heroes will rise, worlds will collide, and the Infinito Universe will never be the same.",
+  youtubeId: "27VGbZNOSjo",
+};
 
-const browseComicsData = [
-  { id: 1, title: "Wolverine (2025) #6", author: "Stan Lee", img: poisonPoster },
-  { id: 2, title: "Wolverine (2025) #6", author: "Stan Lee", img: rizalPoster },
-  { id: 3, title: "Wolverine (2025) #6", author: "Stan Lee", img: poisonPoster },
-  { id: 4, title: "Wolverine (2025) #6", author: "Stan Lee", img: rizalPoster },
-  { id: 5, title: "Wolverine (2025) #6", author: "Stan Lee", img: poisonPoster },
-  { id: 6, title: "Wolverine (2025) #6", author: "Stan Lee", img: rizalPoster },
-  { id: 7, title: "Wolverine (2025) #6", author: "Stan Lee", img: poisonPoster },
-  { id: 8, title: "Wolverine (2025) #6", author: "Stan Lee", img: rizalPoster },
+// Second video section data
+const secondVideo = {
+  id: 2,
+  title: "INFINITO COMICS - A NEW SAGA",
+  description:
+    "Step into India's premier original character universe. Experience breathtaking animation, rich lore, and epic superhero action.",
+  youtubeId: "jImhvA9uNVU",
+};
+
+// Video cards with actual YouTube thumbnails
+const videoCardsData = [
+  { 
+    id: 1, 
+    title: "MULTIVERSE UNLEASHED", 
+    youtubeId: "27VGbZNOSjo",
+    thumbnail: `https://img.youtube.com/vi/27VGbZNOSjo/maxresdefault.jpg`
+  },
+  { 
+    id: 2, 
+    title: "INFINITO COMICS", 
+    youtubeId: "jImhvA9uNVU",
+    thumbnail: `https://img.youtube.com/vi/jImhvA9uNVU/maxresdefault.jpg`
+  },
 ];
 
 // Helper Component for a Video Row Section
@@ -154,70 +133,149 @@ const VideoRowSection = ({ genreTitle, onPlayVideo }) => {
 };
 
 const AnimationPage = () => {
-  const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
+  const navigate = useNavigate();
   const [selectedVideoModal, setSelectedVideoModal] = useState(null);
   const [recIndex, setRecIndex] = useState(0);
   const [franchiseIndex, setFranchiseIndex] = useState(0);
-  const [btsIndex, setBtsIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [activePage, setActivePage] = useState(1);
+  
+  // Comics data state
+  const [allComics, setAllComics] = useState([]);
+  const [filteredComics, setFilteredComics] = useState([]);
+  const [isLoadingComics, setIsLoadingComics] = useState(true);
 
-  // Auto-play hero slider every 7 seconds
+  // Characters data state
+  const [characters, setCharacters] = useState([]);
+  const [isLoadingCharacters, setIsLoadingCharacters] = useState(true);
+
+  // Timeline data state
+  const [timelineEvents, setTimelineEvents] = useState([]);
+  const [isLoadingTimeline, setIsLoadingTimeline] = useState(true);
+
+  // Ref for character slider
+  const characterSliderRef = React.useRef(null);
+
+  // Fetch comics on component mount
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentHeroIndex((prev) => (prev + 1) % heroSlides.length);
-    }, 7000);
-    return () => clearInterval(timer);
+    fetchComics()
+      .then((data) => {
+        const comics = Array.isArray(data) ? data : [];
+        setAllComics(comics);
+        setFilteredComics(comics);
+      })
+      .catch((error) => {
+        console.error("Error fetching comics:", error);
+        setAllComics([]);
+        setFilteredComics([]);
+      })
+      .finally(() => setIsLoadingComics(false));
   }, []);
 
-  const activeHero = heroSlides[currentHeroIndex];
+  // Fetch characters on component mount
+  useEffect(() => {
+    fetchCharacters()
+      .then((data) => {
+        const chars = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+        setCharacters(chars);
+      })
+      .catch((error) => {
+        console.error("Error fetching characters:", error);
+        setCharacters([]);
+      })
+      .finally(() => setIsLoadingCharacters(false));
+  }, []);
+
+  // Fetch timeline events on component mount
+  useEffect(() => {
+    getAllTimeline()
+      .then((data) => {
+        const events = Array.isArray(data) ? data : [];
+        // Filter for animation-related events if needed, or show all
+        const animationEvents = events.filter(event => 
+          event.category && event.category.toLowerCase().includes('animation')
+        );
+        // If no animation-specific events, show all events
+        setTimelineEvents(animationEvents.length > 0 ? animationEvents : events);
+      })
+      .catch((error) => {
+        console.error("Error fetching timeline:", error);
+        setTimelineEvents([]);
+      })
+      .finally(() => setIsLoadingTimeline(false));
+  }, []);
+
+  // Filter comics based on search query
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredComics(allComics);
+    } else {
+      const query = searchQuery.toLowerCase();
+      const filtered = allComics.filter((comic) => {
+        const title = (comic.title || "").toLowerCase();
+        const authors = Array.isArray(comic.authors) 
+          ? comic.authors.join(" ").toLowerCase() 
+          : (comic.authors || "").toLowerCase();
+        return title.includes(query) || authors.includes(query);
+      });
+      setFilteredComics(filtered);
+      setActivePage(1); // Reset to first page when searching
+    }
+  }, [searchQuery, allComics]);
+
+  // Pagination
+  const comicsPerPage = 8;
+  const totalPages = Math.ceil(filteredComics.length / comicsPerPage);
+  const startIndex = (activePage - 1) * comicsPerPage;
+  const paginatedComics = filteredComics.slice(startIndex, startIndex + comicsPerPage);
+
+  // Character slider scroll function
+  const scrollCharacters = (direction) => {
+    if (characterSliderRef.current) {
+      const scrollAmount = 200; // Adjust scroll distance
+      characterSliderRef.current.scrollBy({
+        left: direction * scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   return (
     <div className="w-full min-h-screen bg-black text-white font-sans overflow-x-hidden selection:bg-[#E50914] selection:text-white">
       {/* ─── SECTION 1: HERO BANNER ──────────────────────────────────────── */}
       <section className="relative w-full h-[75vh] min-h-[500px] max-h-[750px] bg-black flex items-end justify-start overflow-hidden">
-        {heroSlides.map((slide, idx) => (
-          <div
-            key={slide.id}
-            className={`absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
-              idx === currentHeroIndex ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
-            }`}
-            style={{ backgroundImage: `url(${slide.bgImage})` }}
-          >
-            {/* Background YouTube Autoplay Video */}
-            {idx === currentHeroIndex && (
-              <iframe
-                src={`https://www.youtube-nocookie.com/embed/${slide.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${slide.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1`}
-                title={slide.title}
-                className="w-full h-full object-cover scale-125 pointer-events-none opacity-80"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/75 to-transparent pointer-events-none" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 pointer-events-none" />
-          </div>
-        ))}
-
+        <div className="absolute inset-0 w-full h-full">
+          {/* Background YouTube Autoplay Video - Clear and Full Opacity */}
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/${heroVideo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${heroVideo.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1&vq=hd1080`}
+            title={heroVideo.title}
+            className="w-full h-full object-cover scale-125 pointer-events-none"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          />
+          {/* Light gradient for text readability only */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+        </div>
 
         {/* Slide Info Overlay */}
         <div className="relative z-30 max-w-6xl w-full mx-auto px-4 sm:px-8 md:px-12 pb-10 sm:pb-14 space-y-4">
           <div className="max-w-md space-y-3">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-white drop-shadow-md leading-none transition-all duration-500">
-              {activeHero.title}
+              {heroVideo.title}
             </h1>
             <p className="text-[11px] sm:text-xs text-gray-300 leading-relaxed font-dmsans max-w-xs drop-shadow transition-all duration-500">
-              {activeHero.description}
+              {heroVideo.description}
             </p>
 
             <div className="flex items-center gap-3 pt-2">
               <button
-                onClick={() => setSelectedVideoModal(activeHero.youtubeId)}
+                onClick={() => setSelectedVideoModal(heroVideo.youtubeId)}
                 className="px-5 py-2 bg-[#E50914] text-white text-[11px] sm:text-xs font-bold tracking-widest uppercase hover:bg-red-700 transition-all duration-300 shadow-md"
               >
                 PLAY VIDEO
               </button>
               <a
-                href={`https://www.youtube.com/watch?v=${activeHero.youtubeId}`}
+                href={`https://www.youtube.com/watch?v=${heroVideo.youtubeId}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-4 py-2 bg-black/60 border border-white/70 text-white text-[11px] sm:text-xs font-bold tracking-widest uppercase hover:bg-white hover:text-black transition-all duration-300"
@@ -225,21 +283,6 @@ const AnimationPage = () => {
                 WATCH ON YOUTUBE
               </a>
             </div>
-          </div>
-
-          <div className="flex gap-1.5 justify-center pt-8">
-            {heroSlides.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentHeroIndex(idx)}
-                aria-label={`Slide ${idx + 1}`}
-                className={`h-[3px] transition-all duration-300 ${
-                  idx === currentHeroIndex
-                    ? "w-6 bg-[#E50914]"
-                    : "w-4 bg-white/70 hover:bg-white"
-                }`}
-              />
-            ))}
           </div>
         </div>
       </section>
@@ -260,55 +303,49 @@ const AnimationPage = () => {
             </Link>
           </div>
 
-          <div className="relative flex items-center gap-2 sm:gap-4">
-            <button
-              onClick={() => setRecIndex((prev) => Math.max(0, prev - 1))}
-              className="hidden sm:flex p-2.5 border border-gray-300 text-black hover:border-black hover:bg-gray-50 transition-all flex-shrink-0"
-              aria-label="Previous"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
+          {/* Simple grid - no slider needed for 2 videos */}
+          <div className={`grid ${videoCardsData.length <= 4 ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2 md:grid-cols-4'} gap-4 sm:gap-6 w-full`}>
+            {videoCardsData.map((video) => (
+              <div 
+                key={video.id} 
+                className="group cursor-pointer space-y-2.5"
+              >
+                <div className="relative w-full aspect-video bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
+                  <img
+                    src={video.thumbnail}
+                    alt={video.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 w-full">
-              {videoCardsData.map((video) => (
-                <div key={video.id} className="group cursor-pointer space-y-2.5">
-                  <div className="relative w-full aspect-video bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
-                    <img
-                      src={video.img}
-                      alt={video.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
-
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <PlayCircle className="w-10 h-10 sm:w-12 sm:h-12 text-white stroke-[1.5] group-hover:scale-110 transition-transform duration-300 drop-shadow-md" />
-                    </div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <button
+                      onClick={() => setSelectedVideoModal(video.youtubeId)}
+                      className="w-12 h-12 sm:w-14 sm:h-14 bg-[#E50914] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg"
+                    >
+                      <PlayCircle className="w-8 h-8 sm:w-10 sm:h-10 text-white stroke-[1.5]" />
+                    </button>
                   </div>
 
-                  <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-black group-hover:text-[#E50914] transition-colors font-dmsans">
-                    {video.title}
-                  </p>
+                  {/* Small "Open on YouTube" button */}
+                  <a
+                    href={`https://www.youtube.com/watch?v=${video.youtubeId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute bottom-2 right-2 bg-black/80 hover:bg-[#E50914] text-white text-[9px] sm:text-[10px] font-bold px-2 py-1 uppercase tracking-wider transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1"
+                  >
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    </svg>
+                    YT
+                  </a>
                 </div>
-              ))}
-            </div>
 
-            <button
-              onClick={() => setRecIndex((prev) => Math.min(3, prev + 1))}
-              className="hidden sm:flex p-2.5 border border-gray-300 text-black hover:border-black hover:bg-gray-50 transition-all flex-shrink-0"
-              aria-label="Next"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-
-          <div className="flex gap-1.5 justify-center pt-2">
-            {videoCardsData.map((_, idx) => (
-              <div
-                key={idx}
-                className={`h-1 transition-all duration-300 ${
-                  idx === recIndex ? "w-6 bg-[#E50914]" : "w-4 bg-gray-300"
-                }`}
-              />
+                <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-black group-hover:text-[#E50914] transition-colors font-dmsans">
+                  {video.title}
+                </p>
+              </div>
             ))}
           </div>
         </div>
@@ -371,7 +408,7 @@ const AnimationPage = () => {
       </section>
 
       {/* ─── SECTION 4: EXPLORE OUR CREATIONS (GENRE 1, GENRE 2, GENRE 3) ──── */}
-      <section className="w-full bg-white text-black py-12 sm:py-16 px-4 sm:px-8 md:px-12">
+      {/* <section className="w-full bg-white text-black py-12 sm:py-16 px-4 sm:px-8 md:px-12">
         <div className="max-w-6xl mx-auto space-y-10">
           <div className="flex items-center justify-between border-b border-gray-200 pb-4">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-black">
@@ -390,7 +427,7 @@ const AnimationPage = () => {
           <VideoRowSection genreTitle="Genre 2" />
           <VideoRowSection genreTitle="Genre 3" />
         </div>
-      </section>
+      </section> */}
 
       {/* ─── SECTION 5: RELEASE TIMELINE (DARK BG WITH RED CAMERA GRAPHIC) ─── */}
       <section className="relative w-full bg-[#171717] text-white py-10 sm:py-14 px-4 sm:px-8 md:px-12 overflow-hidden">
@@ -433,43 +470,106 @@ const AnimationPage = () => {
           <div className="bg-white text-black p-6 sm:p-8 md:p-10 w-full rounded-none shadow-2xl relative z-10 space-y-6">
             <div className="flex items-center justify-between border-b border-gray-200 pb-3">
               <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-black">
-                RELEASE TIMELINE
+                RELEASE TIMELINE ({timelineEvents.length})
               </h2>
 
               <Link
-                to="/animation"
+                to="/about#timeline"
                 className="text-[#E50914] text-xs font-bold uppercase tracking-wider hover:underline"
               >
                 VIEW ALL &gt;
               </Link>
             </div>
 
-            {/* 4 Timeline Video Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-              {timelineCardsData.map((card) => (
-                <div key={card.id} className="group cursor-pointer space-y-1.5">
-                  <div className="relative w-full aspect-[16/9] bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
-                    <img
-                      src={card.img}
-                      alt={card.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+            {/* Dynamic Timeline Event Cards */}
+            {isLoadingTimeline ? (
+              // Loading shimmer
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="animate-pulse space-y-2">
+                    <div className="w-full aspect-[16/9] bg-gray-200" />
+                    <div className="h-3 bg-gray-200 rounded w-4/5" />
+                    <div className="h-2 bg-gray-200 rounded w-3/5" />
                   </div>
+                ))}
+              </div>
+            ) : timelineEvents.length === 0 ? (
+              // No events
+              <div className="text-center py-8">
+                <p className="text-gray-500 text-sm">No upcoming releases at this time.</p>
+              </div>
+            ) : (
+              // Display timeline events
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+                {timelineEvents.slice(0, 4).map((event) => {
+                  // Parse event date
+                  const eventDate = new Date(event.eventDate);
+                  const year = eventDate.getFullYear();
+                  const month = eventDate.toLocaleDateString('en-US', { month: 'short' });
+                  const day = eventDate.getDate();
+                  
+                  // Calculate days until release
+                  const today = new Date();
+                  const daysUntil = Math.ceil((eventDate - today) / (1000 * 60 * 60 * 24));
+                  const isPast = daysUntil < 0;
+                  const isComingSoon = daysUntil > 0 && daysUntil <= 90;
 
-                  <div>
-                    <p className="text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-black group-hover:text-[#E50914] transition-colors font-dmsans">
-                      {card.title}
-                    </p>
-                    <p className="text-[10px] sm:text-xs text-gray-500 font-dmsans">
-                      {card.year}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  return (
+                    <div key={event._id} className="group cursor-pointer space-y-2">
+                      <div className="relative w-full aspect-[16/9] bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
+                        <img
+                          src={event.imageUrl || upcomingEvent}
+                          alt={event.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        
+                        {/* Status Badge */}
+                        {isComingSoon && !isPast && (
+                          <div className="absolute top-2 left-2 bg-[#E50914] text-white text-[8px] font-bold px-2 py-1 uppercase tracking-wider">
+                            Coming Soon
+                          </div>
+                        )}
+                        
+                        {isPast && (
+                          <div className="absolute top-2 left-2 bg-gray-700 text-white text-[8px] font-bold px-2 py-1 uppercase tracking-wider">
+                            Released
+                          </div>
+                        )}
+
+                        {/* Category Badge */}
+                        {event.category && (
+                          <div className="absolute top-2 right-2 bg-black/70 text-white text-[8px] font-bold px-2 py-1 uppercase tracking-wider">
+                            {event.category}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-black group-hover:text-[#E50914] transition-colors font-dmsans line-clamp-2">
+                          {event.title}
+                        </p>
+                        
+                        {/* Date Display */}
+                        <p className="text-[10px] sm:text-xs text-gray-500 font-dmsans">
+                          {month} {day}, {year}
+                        </p>
+                        
+                        {/* Countdown or Status */}
+                        {!isPast && daysUntil > 0 && (
+                          <p className="text-[9px] text-[#E50914] font-bold">
+                            In {daysUntil} {daysUntil === 1 ? 'day' : 'days'}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </section>
+
 
       {/* ─── SECTION 6: OUR FRANCHISES (WHITE BG) ──────────────────────────── */}
       <section className="w-full bg-white text-black py-12 sm:py-16 px-4 sm:px-8 md:px-12">
@@ -480,7 +580,7 @@ const AnimationPage = () => {
             </h2>
 
             <Link
-              to="/animation"
+              to="/characters"
               className="text-[#E50914] text-xs sm:text-sm font-bold uppercase tracking-wider hover:underline"
             >
               VIEW ALL &gt;
@@ -488,121 +588,120 @@ const AnimationPage = () => {
           </div>
 
           <div className="relative flex items-center gap-2 sm:gap-4">
-            <button
-              onClick={() => setFranchiseIndex((prev) => Math.max(0, prev - 1))}
-              className="hidden sm:flex p-2.5 border border-gray-300 text-black hover:border-black hover:bg-gray-50 transition-all flex-shrink-0"
-              aria-label="Previous"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
+            {/* Left Arrow - show if there are characters */}
+            {!isLoadingCharacters && characters.length > 5 && (
+              <button
+                onClick={() => scrollCharacters(-1)}
+                className="hidden sm:flex p-2.5 border border-gray-300 text-black hover:border-black hover:bg-gray-50 transition-all flex-shrink-0"
+                aria-label="Previous"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+            )}
 
-            {/* 5 Vertical Franchise Poster Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 sm:gap-5 w-full">
-              {franchiseCardsData.map((card) => (
-                <div key={card.id} className="group cursor-pointer space-y-2">
-                  <div className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
-                    <img
-                      src={card.img}
-                      alt={card.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+            {/* Character Cards Container */}
+            <div className="w-full overflow-hidden">
+              <div 
+                ref={characterSliderRef}
+                className="flex overflow-x-auto gap-4 sm:gap-5 no-scrollbar scroll-smooth pb-2"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                {isLoadingCharacters ? (
+                  // Loading shimmer
+                  [...Array(5)].map((_, i) => (
+                    <div key={i} className="flex-shrink-0 animate-pulse" style={{ width: '155px' }}>
+                      <div className="w-full aspect-[3/4] bg-gray-200" />
+                      <div className="h-3 bg-gray-200 rounded mt-2 w-4/5" />
+                    </div>
+                  ))
+                ) : characters.length === 0 ? (
+                  // No characters
+                  <div className="w-full text-center py-8">
+                    <p className="text-gray-500 text-sm">No characters available</p>
                   </div>
+                ) : (
+                  // Display all characters with horizontal scroll
+                  characters.map((character) => (
+                    <div 
+                      key={character._id} 
+                      onClick={() => navigate(`/characters/${character._id}`)}
+                      className="flex-shrink-0 group cursor-pointer space-y-2"
+                      style={{ width: '155px' }}
+                    >
+                      <div className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
+                        <img
+                          src={character.images?.[0] || character.coverImg || "https://via.placeholder.com/300x400"}
+                          alt={character.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      </div>
 
-                  <p className="text-xs font-bold text-gray-900 group-hover:text-[#E50914] transition-colors font-dmsans">
-                    {card.title}
-                  </p>
-                </div>
-              ))}
+                      <p className="text-xs font-bold text-gray-900 group-hover:text-[#E50914] transition-colors font-dmsans line-clamp-1">
+                        {character.name}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
 
-            <button
-              onClick={() => setFranchiseIndex((prev) => Math.min(4, prev + 1))}
-              className="hidden sm:flex p-2.5 border border-gray-300 text-black hover:border-black hover:bg-gray-50 transition-all flex-shrink-0"
-              aria-label="Next"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
+            {/* Right Arrow - show if there are characters */}
+            {!isLoadingCharacters && characters.length > 5 && (
+              <button
+                onClick={() => scrollCharacters(1)}
+                className="hidden sm:flex p-2.5 border border-gray-300 text-black hover:border-black hover:bg-gray-50 transition-all flex-shrink-0"
+                aria-label="Next"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            )}
           </div>
 
-          <div className="flex gap-1.5 justify-center pt-2">
-            {franchiseCardsData.map((_, idx) => (
-              <div
-                key={idx}
-                className={`h-1 transition-all duration-300 ${
-                  idx === franchiseIndex ? "w-6 bg-[#E50914]" : "w-4 bg-gray-300"
-                }`}
-              />
-            ))}
-          </div>
+          {/* Pagination dots removed - using continuous scroll now */}
         </div>
       </section>
 
-      {/* ─── SECTION 7: GET BEHIND THE SCENES (WHITE BG) ───────────────────── */}
-      <section className="w-full bg-white text-black pb-12 sm:pb-16 px-4 sm:px-8 md:px-12 border-t border-gray-100 pt-8">
-        <div className="max-w-6xl mx-auto space-y-8">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg sm:text-xl font-extrabold uppercase tracking-wide text-black font-dmsans">
-              Get Behind the Scenes
-            </h2>
+      {/* ─── SECTION 6.5: SECOND VIDEO BANNER ──────────────────────────────── */}
+      <section className="relative w-full h-[75vh] min-h-[500px] max-h-[750px] bg-black flex items-end justify-start overflow-hidden">
+        <div className="absolute inset-0 w-full h-full">
+          {/* Background YouTube Autoplay Video - Clear and Full Opacity */}
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/${secondVideo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${secondVideo.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1&vq=hd1080`}
+            title={secondVideo.title}
+            className="w-full h-full object-cover scale-125 pointer-events-none"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          />
+          {/* Light gradient for text readability only */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+        </div>
 
-            <Link
-              to="/animation"
-              className="text-[#E50914] text-xs sm:text-sm font-bold uppercase tracking-wider hover:underline"
-            >
-              VIEW ALL &gt;
-            </Link>
-          </div>
+        {/* Video Info Overlay */}
+        <div className="relative z-30 max-w-6xl w-full mx-auto px-4 sm:px-8 md:px-12 pb-10 sm:pb-14 space-y-4">
+          <div className="max-w-md space-y-3">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-white drop-shadow-md leading-none transition-all duration-500">
+              {secondVideo.title}
+            </h1>
+            <p className="text-[11px] sm:text-xs text-gray-300 leading-relaxed font-dmsans max-w-xs drop-shadow transition-all duration-500">
+              {secondVideo.description}
+            </p>
 
-          <div className="relative flex items-center gap-2 sm:gap-4">
-            <button
-              onClick={() => setBtsIndex((prev) => Math.max(0, prev - 1))}
-              className="hidden sm:flex p-2.5 border border-gray-300 text-black hover:border-black hover:bg-gray-50 transition-all flex-shrink-0"
-              aria-label="Previous"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 w-full">
-              {videoCardsData.map((video) => (
-                <div key={video.id} className="group cursor-pointer space-y-2.5">
-                  <div className="relative w-full aspect-video bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
-                    <img
-                      src={video.img}
-                      alt={video.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
-
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <PlayCircle className="w-10 h-10 sm:w-12 sm:h-12 text-white stroke-[1.5] group-hover:scale-110 transition-transform duration-300 drop-shadow-md" />
-                    </div>
-                  </div>
-
-                  <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-black group-hover:text-[#E50914] transition-colors font-dmsans">
-                    {video.title}
-                  </p>
-                </div>
-              ))}
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={() => setSelectedVideoModal(secondVideo.youtubeId)}
+                className="px-5 py-2 bg-[#E50914] text-white text-[11px] sm:text-xs font-bold tracking-widest uppercase hover:bg-red-700 transition-all duration-300 shadow-md"
+              >
+                PLAY VIDEO
+              </button>
+              <a
+                href={`https://www.youtube.com/watch?v=${secondVideo.youtubeId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-black/60 border border-white/70 text-white text-[11px] sm:text-xs font-bold tracking-widest uppercase hover:bg-white hover:text-black transition-all duration-300"
+              >
+                WATCH ON YOUTUBE
+              </a>
             </div>
-
-            <button
-              onClick={() => setBtsIndex((prev) => Math.min(3, prev + 1))}
-              className="hidden sm:flex p-2.5 border border-gray-300 text-black hover:border-black hover:bg-gray-50 transition-all flex-shrink-0"
-              aria-label="Next"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-
-          <div className="flex gap-1.5 justify-center pt-2">
-            {videoCardsData.map((_, idx) => (
-              <div
-                key={idx}
-                className={`h-1 transition-all duration-300 ${
-                  idx === btsIndex ? "w-6 bg-[#E50914]" : "w-4 bg-gray-300"
-                }`}
-              />
-            ))}
           </div>
         </div>
       </section>
@@ -613,7 +712,7 @@ const AnimationPage = () => {
           {/* Title Row + Sort Dropdown */}
           <div className="flex items-center justify-between">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-black">
-              BROWSE COMICS (128)
+              BROWSE COMICS ({filteredComics.length})
             </h2>
 
             {/* A to Z Sort Dropdown Box */}
@@ -659,57 +758,113 @@ const AnimationPage = () => {
 
             {/* Right Cards Grid */}
             <div className="flex-1 w-full space-y-8">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
-                {browseComicsData.map((comic) => (
-                  <div key={comic.id} className="group cursor-pointer space-y-1.5">
-                    <div className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
-                      <img
-                        src={comic.img}
-                        alt={comic.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
+              {isLoadingComics ? (
+                // Loading shimmer
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+                  {[...Array(8)].map((_, i) => (
+                    <div key={i} className="animate-pulse space-y-2">
+                      <div className="w-full aspect-[3/4] bg-gray-200" />
+                      <div className="h-3 bg-gray-200 rounded w-4/5" />
+                      <div className="h-2 bg-gray-200 rounded w-3/5" />
                     </div>
-                    <p className="text-xs font-bold text-gray-900 group-hover:text-[#E50914] transition-colors font-dmsans">
-                      {comic.title}
-                    </p>
-                    <p className="text-[11px] text-gray-500 font-dmsans">
-                      {comic.author}
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Pagination Row */}
-              <div className="flex items-center justify-between pt-6 border-t border-gray-100">
-                <div className="flex items-center gap-1.5">
-                  <button className="p-2 border border-gray-300 text-gray-600 hover:border-black transition">
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button className="px-3 py-1 bg-[#E50914] text-white text-xs font-bold">
-                    1
-                  </button>
-                  <button className="px-3 py-1 border border-gray-300 text-gray-700 text-xs font-bold hover:border-black">
-                    2
-                  </button>
-                  <button className="px-3 py-1 border border-gray-300 text-gray-700 text-xs font-bold hover:border-black">
-                    3
-                  </button>
-                  <span className="px-2 text-xs text-gray-400">...</span>
-                  <button className="px-3 py-1 border border-gray-300 text-gray-700 text-xs font-bold hover:border-black">
-                    8
-                  </button>
-                  <button className="p-2 border border-gray-300 text-gray-600 hover:border-black transition">
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
+                  ))}
                 </div>
+              ) : filteredComics.length === 0 ? (
+                // No results
+                <div className="text-center py-12">
+                  <p className="text-gray-500 text-sm">No comics found matching your search.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+                    {paginatedComics.map((comic) => (
+                      <div 
+                        key={comic._id} 
+                        onClick={() => navigate(`/comicChap/${comic._id}/chapters`)}
+                        className="group cursor-pointer space-y-1.5"
+                      >
+                        <div className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
+                          <img
+                            src={comic.coverImg}
+                            alt={comic.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        </div>
+                        <p className="text-xs font-bold text-gray-900 group-hover:text-[#E50914] transition-colors font-dmsans line-clamp-2">
+                          {comic.title}
+                        </p>
+                        <p className="text-[11px] text-gray-500 font-dmsans truncate">
+                          {Array.isArray(comic.authors) ? comic.authors.join(", ") : comic.authors || "Unknown Author"}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
 
-                <Link
-                  to="/animation"
-                  className="text-[#E50914] text-xs font-bold uppercase tracking-wider hover:underline"
-                >
-                  VIEW ALL &gt;
-                </Link>
-              </div>
+                  {/* Pagination Row */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between pt-6 border-t border-gray-100">
+                      <div className="flex items-center gap-1.5">
+                        <button 
+                          onClick={() => setActivePage(prev => Math.max(1, prev - 1))}
+                          disabled={activePage === 1}
+                          className="p-2 border border-gray-300 text-gray-600 hover:border-black transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        
+                        {/* Page numbers */}
+                        {[...Array(Math.min(totalPages, 3))].map((_, i) => {
+                          const pageNum = i + 1;
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => setActivePage(pageNum)}
+                              className={`px-3 py-1 text-xs font-bold ${
+                                activePage === pageNum
+                                  ? "bg-[#E50914] text-white"
+                                  : "border border-gray-300 text-gray-700 hover:border-black"
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+                        
+                        {totalPages > 3 && (
+                          <>
+                            <span className="px-2 text-xs text-gray-400">...</span>
+                            <button
+                              onClick={() => setActivePage(totalPages)}
+                              className={`px-3 py-1 text-xs font-bold ${
+                                activePage === totalPages
+                                  ? "bg-[#E50914] text-white"
+                                  : "border border-gray-300 text-gray-700 hover:border-black"
+                              }`}
+                            >
+                              {totalPages}
+                            </button>
+                          </>
+                        )}
+                        
+                        <button 
+                          onClick={() => setActivePage(prev => Math.min(totalPages, prev + 1))}
+                          disabled={activePage === totalPages}
+                          className="p-2 border border-gray-300 text-gray-600 hover:border-black transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <Link
+                        to="/comics"
+                        className="text-[#E50914] text-xs font-bold uppercase tracking-wider hover:underline"
+                      >
+                        VIEW ALL &gt;
+                      </Link>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>
