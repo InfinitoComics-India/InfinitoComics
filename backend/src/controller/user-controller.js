@@ -149,10 +149,10 @@ const forgetPasswordFunc = async(req, res) => {
     try {
         const {email} = req.body;
         if(email) {
-            const user = await userservice.forgetPassword(email);
+            await userservice.forgotPassword(email);
             return res.status(200).json({
-                data: user,
-                success: true
+                success: true,
+                message: "OTP sent to your email"
             })
         }
         else{
