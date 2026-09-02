@@ -9,11 +9,18 @@ export const sendEmail = async (to, subject, text) => {
     return;
   }
   try {
+    // Convert plain text to clean HTML
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#333;">
+        ${text.split('\n').map(line => line.trim() === '' ? '<br/>' : `<p style="margin:0 0 12px;text-align:left;">${line}</p>`).join('')}
+      </div>
+    `;
     await resend.emails.send({
       from: 'Infinito Comics <tech@infinitohq.com>',
       to,
       subject,
       text,
+      html,
     });
     console.log('✅ Email sent to:', to);
   } catch (error) {

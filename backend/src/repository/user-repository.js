@@ -31,20 +31,7 @@ class UserRepository extends CrudRepository {
             sendEmail(
                 newUser.email,
                 'Email Verification - Action Required',
-                `Hi ${newUser.name},
-
-                Thank you for registering with us!
-
-                Please use the verification code below to verify your email address. This helps us ensure the security of your account.
-
-                Verification Code: ${verificationcode}
-
-                Note: This code is valid for only 10 minutes.
-
-                If you did not initiate this request, please ignore this email.
-
-                Best regards,  
-                Infinito Comics`
+                `Hi Infinito Member,\n\nThank you for registering with Infinito Comics!\n\nTo verify your email address and ensure the security of your account, please use the verification code below:\n\nVerification Code: ${verificationcode}\n\nPlease note that this code is valid for 10 minutes only.\n\nIf you did not initiate this registration or verification request, please ignore this email.\n\nBest regards,\nInfinito Comics`
             );
             return newUser;
         } catch (error) {
