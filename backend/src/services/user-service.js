@@ -4,7 +4,7 @@ import config from "../config/server-config.js";
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 import { uploadToS3 } from "../utils/aws.js";
-import { sendForgotPasswordEmail } from "../utils/sendEmail.js";
+import { sendForgotPasswordEmail, sendEmail } from "../utils/sendEmail.js";
 class UserService {
   constructor() {
     this.userRepository = new UserRepository();
@@ -101,7 +101,6 @@ class UserService {
         user.verificationCodeExpiresAt = expiresAt;
         await user.save();
 
-        const { sendEmail } = await import('../utils/sendEmail.js');
         sendEmail(
           user.email,
           'Password Reset OTP - Infinito Comics',
