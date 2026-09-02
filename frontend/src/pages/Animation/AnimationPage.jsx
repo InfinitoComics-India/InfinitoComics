@@ -418,7 +418,97 @@ const AnimationPage = () => {
         </div>
       </section> */}
 
-      {/* ─── SECTION 5: RELEASE TIMELINE (DARK BG WITH RED CAMERA GRAPHIC) ─── */}
+      {/* ─── SECTION 5: OUR FRANCHISES (WHITE BG) ──────────────────────────── */}
+      <section className="w-full bg-white text-black py-12 sm:py-16 px-4 sm:px-8 md:px-12">
+        <div className="max-w-6xl mx-auto space-y-8">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-black">
+              OUR FRANCHISES
+            </h2>
+
+            <Link
+              to="/characters"
+              className="text-[#E50914] text-xs sm:text-sm font-bold uppercase tracking-wider hover:underline"
+            >
+              VIEW ALL &gt;
+            </Link>
+          </div>
+
+          <div className="relative flex items-center gap-2 sm:gap-4">
+            {/* Left Arrow - show if there are characters */}
+            {!isLoadingCharacters && characters.length > 5 && (
+              <button
+                onClick={() => scrollCharacters(-1)}
+                className="hidden sm:flex p-2.5 border border-gray-300 text-black hover:border-black hover:bg-gray-50 transition-all flex-shrink-0"
+                aria-label="Previous"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+            )}
+
+            {/* Character Cards Container */}
+            <div className="w-full overflow-hidden">
+              <div 
+                ref={characterSliderRef}
+                className="flex overflow-x-auto gap-4 sm:gap-5 no-scrollbar scroll-smooth pb-2"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                {isLoadingCharacters ? (
+                  // Loading shimmer
+                  [...Array(5)].map((_, i) => (
+                    <div key={i} className="flex-shrink-0 animate-pulse" style={{ width: '155px' }}>
+                      <div className="w-full aspect-[3/4] bg-gray-200" />
+                      <div className="h-3 bg-gray-200 rounded mt-2 w-4/5" />
+                    </div>
+                  ))
+                ) : characters.length === 0 ? (
+                  // No characters
+                  <div className="w-full text-center py-8">
+                    <p className="text-gray-500 text-sm">No characters available</p>
+                  </div>
+                ) : (
+                  // Display all characters with horizontal scroll
+                  characters.map((character) => (
+                    <div 
+                      key={character._id} 
+                      onClick={() => navigate(`/characters/${character._id}`)}
+                      className="flex-shrink-0 group cursor-pointer space-y-2"
+                      style={{ width: '155px' }}
+                    >
+                      <div className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
+                        <img
+                          src={character.images?.[0] || character.coverImg || "https://via.placeholder.com/300x400"}
+                          alt={character.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      </div>
+
+                      <p className="text-xs font-bold text-gray-900 group-hover:text-[#E50914] transition-colors font-dmsans line-clamp-1">
+                        {character.name}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Right Arrow - show if there are characters */}
+            {!isLoadingCharacters && characters.length > 5 && (
+              <button
+                onClick={() => scrollCharacters(1)}
+                className="hidden sm:flex p-2.5 border border-gray-300 text-black hover:border-black hover:bg-gray-50 transition-all flex-shrink-0"
+                aria-label="Next"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+
+          {/* Pagination dots removed - using continuous scroll now */}
+        </div>
+      </section>
+
+      {/* ─── SECTION 6: RELEASE TIMELINE (DARK BG WITH RED CAMERA GRAPHIC) ─── */}
       <section className="relative w-full bg-[#171717] text-white py-10 sm:py-14 px-4 sm:px-8 md:px-12 overflow-hidden">
         {/* Top Dash Indicators */}
         <div className="flex gap-1.5 justify-center pb-8">
@@ -556,97 +646,6 @@ const AnimationPage = () => {
               </div>
             )}
           </div>
-        </div>
-      </section>
-
-
-      {/* ─── SECTION 6: OUR FRANCHISES (WHITE BG) ──────────────────────────── */}
-      <section className="w-full bg-white text-black py-12 sm:py-16 px-4 sm:px-8 md:px-12">
-        <div className="max-w-6xl mx-auto space-y-8">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-black">
-              OUR FRANCHISES
-            </h2>
-
-            <Link
-              to="/characters"
-              className="text-[#E50914] text-xs sm:text-sm font-bold uppercase tracking-wider hover:underline"
-            >
-              VIEW ALL &gt;
-            </Link>
-          </div>
-
-          <div className="relative flex items-center gap-2 sm:gap-4">
-            {/* Left Arrow - show if there are characters */}
-            {!isLoadingCharacters && characters.length > 5 && (
-              <button
-                onClick={() => scrollCharacters(-1)}
-                className="hidden sm:flex p-2.5 border border-gray-300 text-black hover:border-black hover:bg-gray-50 transition-all flex-shrink-0"
-                aria-label="Previous"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-            )}
-
-            {/* Character Cards Container */}
-            <div className="w-full overflow-hidden">
-              <div 
-                ref={characterSliderRef}
-                className="flex overflow-x-auto gap-4 sm:gap-5 no-scrollbar scroll-smooth pb-2"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-              >
-                {isLoadingCharacters ? (
-                  // Loading shimmer
-                  [...Array(5)].map((_, i) => (
-                    <div key={i} className="flex-shrink-0 animate-pulse" style={{ width: '155px' }}>
-                      <div className="w-full aspect-[3/4] bg-gray-200" />
-                      <div className="h-3 bg-gray-200 rounded mt-2 w-4/5" />
-                    </div>
-                  ))
-                ) : characters.length === 0 ? (
-                  // No characters
-                  <div className="w-full text-center py-8">
-                    <p className="text-gray-500 text-sm">No characters available</p>
-                  </div>
-                ) : (
-                  // Display all characters with horizontal scroll
-                  characters.map((character) => (
-                    <div 
-                      key={character._id} 
-                      onClick={() => navigate(`/characters/${character._id}`)}
-                      className="flex-shrink-0 group cursor-pointer space-y-2"
-                      style={{ width: '155px' }}
-                    >
-                      <div className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
-                        <img
-                          src={character.images?.[0] || character.coverImg || "https://via.placeholder.com/300x400"}
-                          alt={character.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                      </div>
-
-                      <p className="text-xs font-bold text-gray-900 group-hover:text-[#E50914] transition-colors font-dmsans line-clamp-1">
-                        {character.name}
-                      </p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Right Arrow - show if there are characters */}
-            {!isLoadingCharacters && characters.length > 5 && (
-              <button
-                onClick={() => scrollCharacters(1)}
-                className="hidden sm:flex p-2.5 border border-gray-300 text-black hover:border-black hover:bg-gray-50 transition-all flex-shrink-0"
-                aria-label="Next"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            )}
-          </div>
-
-          {/* Pagination dots removed - using continuous scroll now */}
         </div>
       </section>
 
