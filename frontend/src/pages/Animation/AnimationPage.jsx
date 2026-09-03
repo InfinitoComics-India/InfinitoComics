@@ -155,6 +155,10 @@ const AnimationPage = () => {
 
   // Ref for character slider
   const characterSliderRef = React.useRef(null);
+  
+  // Ref for second video lazy loading
+  const secondVideoRef = React.useRef(null);
+  const [isSecondVideoVisible, setIsSecondVideoVisible] = React.useState(false);
 
   // Fetch comics on component mount
   useEffect(() => {
@@ -174,16 +178,51 @@ const AnimationPage = () => {
 
   // Fetch characters on component mount
   useEffect(() => {
+    console.log("=== FETCHING CHARACTERS ===");
+    console.log("API URL:", `${import.meta.env.VITE_BASE_URL || 'https://infinitocomics-68cr.onrender.com'}/character/getAll`);
+    
     fetchCharacters()
       .then((data) => {
-        const chars = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+        console.log("=== RAW API RESPONSE ===");
+        console.log("Full response:", JSON.stringify(data, null, 2));
+        console.log("Response type:", typeof data);
+        console.log("Is array?", Array.isArray(data));
+        console.log("Has data property?", data?.data);
+        console.log("data.data is array?", Array.isArray(data?.data));
+        
+        // Try multiple formats
+        let chars = [];
+        if (Array.isArray(data?.data)) {
+          chars = data.data;
+          console.log("✓ Using data.data format");
+        } else if (Array.isArray(data)) {
+          chars = data;
+          console.log("✓ Using direct array format");
+        } else if (data?.characters && Array.isArray(data.characters)) {
+          chars = data.characters;
+          console.log("✓ Using data.characters format");
+        }
+        
+        console.log("=== PROCESSED CHARACTERS ===");
+        console.log("Characters array:", chars);
+        console.log("Total count:", chars.length);
+        if (chars.length > 0) {
+          console.log("First character:", chars[0]);
+        }
+        
         setCharacters(chars);
       })
       .catch((error) => {
-        console.error("Error fetching characters:", error);
+        console.error("=== ERROR FETCHING CHARACTERS ===");
+        console.error("Error details:", error);
+        console.error("Error message:", error.message);
+        console.error("Error response:", error.response?.data);
         setCharacters([]);
       })
-      .finally(() => setIsLoadingCharacters(false));
+      .finally(() => {
+        console.log("=== CHARACTERS LOADING COMPLETE ===");
+        setIsLoadingCharacters(false);
+      });
   }, []);
 
   // Fetch timeline events on component mount
@@ -204,6 +243,32 @@ const AnimationPage = () => {
       })
       .finally(() => setIsLoadingTimeline(false));
   }, []);
+
+  // Lazy load second video when it comes into view
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !isSecondVideoVisible) {
+            setIsSecondVideoVisible(true);
+            observer.disconnect(); // Stop observing once loaded
+          }
+        });
+      },
+      {
+        rootMargin: '200px', // Load 200px before it comes into view
+        threshold: 0.1
+      }
+    );
+
+    if (secondVideoRef.current) {
+      observer.observe(secondVideoRef.current);
+    }
+
+    return () => {
+      if (observer) observer.disconnect();
+    };
+  }, [isSecondVideoVisible]);
 
   // Filter comics based on search query
   useEffect(() => {
@@ -352,15 +417,22 @@ const AnimationPage = () => {
       </section>
 
       {/* ─── SECTION 3: SECOND FULL-SCREEN VIDEO BANNER (REPLACES SPOTLIGHT) ─────────── */}
-      <section className="relative w-full h-screen bg-black flex items-end justify-start overflow-hidden">
+      <section ref={secondVideoRef} className="relative w-full h-screen bg-black flex items-end justify-start overflow-hidden">
         <div className="absolute inset-0 w-full h-full">
-          {/* Background YouTube Autoplay Video - Clear and Full Opacity */}
-          <iframe
-            src={`https://www.youtube-nocookie.com/embed/${secondVideo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${secondVideo.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1&vq=hd1080`}
-            title={secondVideo.title}
-            className="w-full h-full object-cover scale-125 pointer-events-none"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          />
+          {/* Background YouTube Autoplay Video - Lazy Loaded */}
+          {isSecondVideoVisible ? (
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${secondVideo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${secondVideo.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1&vq=hd1080`}
+              title={secondVideo.title}
+              className="w-full h-full object-cover scale-125 pointer-events-none"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            />
+          ) : (
+            // Placeholder while video loads
+            <div className="w-full h-full bg-gray-900 flex items-center justify-center">
+              <div className="animate-pulse text-white text-sm">Loading video...</div>
+            </div>
+          )}
           {/* Light gradient for text readability only */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent pointer-events-none" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
@@ -463,28 +535,29 @@ const AnimationPage = () => {
                   ))
                 ) : characters.length === 0 ? (
                   // No characters
-                  <div className="w-full text-center py-8">
+                  <div className="w-full text-center py-8 space-y-2">
                     <p className="text-gray-500 text-sm">No characters available</p>
+                    <p className="text-gray-400 text-xs">Check console (F12) for API response details</p>
                   </div>
                 ) : (
                   // Display all characters with horizontal scroll
                   characters.map((character) => (
                     <div 
                       key={character._id} 
-                      onClick={() => navigate(`/characters/${character._id}`)}
+                      onClick={() => navigate("/characters/biography", { state: character._id })}
                       className="flex-shrink-0 group cursor-pointer space-y-2"
                       style={{ width: '155px' }}
                     >
                       <div className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
                         <img
-                          src={character.images?.[0] || character.coverImg || "https://via.placeholder.com/300x400"}
-                          alt={character.name}
+                          src={character.mainImageUrl || character.mainLandscapeImageUrl || "https://via.placeholder.com/300x400"}
+                          alt={character.knownAs || character.originalName}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       </div>
 
                       <p className="text-xs font-bold text-gray-900 group-hover:text-[#E50914] transition-colors font-dmsans line-clamp-1">
-                        {character.name}
+                        {character.knownAs || character.originalName}
                       </p>
                     </div>
                   ))
