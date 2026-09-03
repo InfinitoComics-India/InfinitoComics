@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import { FaGoogle, FaApple } from 'react-icons/fa';
 import { MdOutlinePassword } from 'react-icons/md';
@@ -21,8 +21,13 @@ const lbl = {
 
 const Checkout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
-  const [step, setStep] = useState(0);
+
+  // If user is already logged in and came from GET FULL ACCESS, skip to address step
+  const user = localStorage.getItem('user');
+  const skipToPayment = location.state?.skipToPayment;
+  const [step, setStep] = useState(user && skipToPayment ? 1 : 0);
   const [showPass, setShowPass] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ name: '', email: '', password: '', username: '', dob: '' });

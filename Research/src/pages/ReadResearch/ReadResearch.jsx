@@ -82,7 +82,16 @@ const ReadResearch = () => {
       ))}
 
       <button
-        onClick={() => navigate('/checkout')}
+        onClick={() => {
+          const user = localStorage.getItem('user');
+          if (user) {
+            // Already logged in — go straight to payment (step 2)
+            navigate('/checkout', { state: { skipToPayment: true } });
+          } else {
+            // Not logged in — go to login step first
+            navigate('/checkout');
+          }
+        }}
         style={{
           width: '100%', marginTop: '1rem',
           border: '2px solid #111', background: 'transparent', color: '#111',
