@@ -1,4 +1,4 @@
-name: Build and Deploy Frontend to Hostinger
+﻿name: Build and Deploy Frontend to Hostinger
 
 on:
   push:
@@ -45,4 +45,4 @@ jobs:
           port: 21
           protocol: ftp
           security: loose
-          dangerous-clean-slate: true
+
