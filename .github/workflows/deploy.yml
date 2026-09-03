@@ -1,12 +1,14 @@
-name: Build and Deploy to Hostinger
+name: Build and Deploy Frontend to Hostinger
 
 on:
   push:
     branches:
-      - main # Change this to your main branch name (e.g. master/main)
+      - main
+    paths:
+      - 'frontend/**'  # Only trigger when frontend folder changes
 
 jobs:
-  build-and-deploy:
+  build-and-deploy-frontend:
     runs-on: ubuntu-latest
 
     steps:
@@ -31,25 +33,7 @@ jobs:
           npm install
           npm run build
 
-      # Step 4: Install dependencies and Build Research
-      - name: Install and Build Research
-        run: |
-          cd Research
-          echo "VITE_FRONTEND_URL=https://infinitohq.com" > .env
-          echo "VITE_BACKEND_URL=https://infinitocomics-68cr.onrender.com" >> .env
-          echo "VITE_FRONTEND_BASE_URL=https://infinitohq.com" >> .env
-          npm install
-          npm run build
-
-      # Step 5: Install dependencies and Build Admin
-      - name: Install and Build Admin
-        run: |
-          cd Admin
-          echo "VITE_BASE_URL=https://infinitocomics-68cr.onrender.com" > .env
-          npm install
-          NODE_OPTIONS=--max-old-space-size=4096 npm run build
-
-      # Step 6: Deploy frontend dist to Hostinger
+      # Step 4: Deploy frontend dist to Hostinger
       - name: Deploy Frontend via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
@@ -62,42 +46,3 @@ jobs:
           protocol: ftp
           security: loose
           dangerous-clean-slate: true
-
-      # Step 7: Deploy Research dist to /public_html/research/
-      - name: Deploy Research via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./Research/dist/
-          server-dir: /public_html/research/
-          port: 21
-          protocol: ftp
-          security: loose
-
-      # Step 8: Deploy Admin dist to /public_html/admin/
-      - name: Deploy Admin via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./Admin/dist/
-          server-dir: /public_html/admin/
-          port: 21
-          protocol: ftp
-          security: loose
-
-      # Step 9: Deploy SupportUs dist to /public_html/supportus/
-      - name: Deploy SupportUs via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./frontend/dist/
-          server-dir: /public_html/supportus/
-          port: 21
-          protocol: ftp
-          security: loose
