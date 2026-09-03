@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import './App.css';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { addUser } from './redux/userSlice'; 
+import { addUser, removeUser } from './redux/userSlice'; 
 import { FRONTEND_BASE_URL } from './utils/constants.js';
 
 import Body from './components/Body';
@@ -37,6 +37,12 @@ useEffect(() => {
           dispatch(addUser(userData));
           localStorage.setItem("user", event.data.user);
         } catch {}
+      } else {
+        // No user on main site — clear research session too
+        localStorage.removeItem("user");
+        localStorage.removeItem("authtoken");
+        localStorage.removeItem("token");
+        dispatch(removeUser());
       }
       if (event.data.token) {
         localStorage.setItem("authtoken", event.data.token);

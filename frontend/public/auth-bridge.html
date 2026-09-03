@@ -3,10 +3,11 @@
 <head><title>Auth Bridge</title></head>
 <body>
 <script>
-  // This page runs on infinitohq.com and reads its localStorage
-  // then sends it to whoever embedded this iframe
+  // Read current auth state from infinitohq.com localStorage
   const user = localStorage.getItem('user');
   const token = localStorage.getItem('authtoken');
+
+  // Send to whoever embedded this iframe
   window.parent.postMessage({
     type: 'auth-bridge',
     user: user,
