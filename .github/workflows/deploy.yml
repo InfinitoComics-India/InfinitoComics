@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'frontend/**'  # Only trigger when frontend folder changes
 
 jobs:
   build-and-deploy-frontend:
