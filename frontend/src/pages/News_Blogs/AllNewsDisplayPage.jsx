@@ -48,21 +48,28 @@ const AllNewsPage = () => {
           currentBlogs.map((blog) => (
             <Link to={`/news/${blog._id}`} key={blog._id} className="block w-full mb-6">
               <div className="flex flex-col md:flex-row items-start gap-4 bg-gray-100 p-2 shadow-sm hover:shadow-md transition-shadow duration-300">
-                {blog.news?.[0]?.imageUrl && (
+                {(blog.coverImage || blog.news?.[0]?.imageUrl) && (
                   <img
-                    src={blog.news[0].imageUrl}
+                    src={blog.coverImage || blog.news[0].imageUrl}
                     alt={blog.title}
                     className="w-full md:w-64 h-48 md:h-40 object-cover"
                   />
                 )}
                 <div className="flex-1">
                   <h2 className="text-xl font-bold text-[#DD1215] mb-2">{blog.title}</h2>
-                  <p className="text-gray-700 text-[0.8rem]">{blog.subject}</p>
+                  <p className="text-gray-700 text-[0.8rem]">
+                    {blog.subject ? blog.subject.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ') : ''}
+                  </p>
                   <p className="text-gray-500 text-xs mt-2">
                     {new Date(blog.createdAt).toLocaleDateString("en-US", {
                       year: "numeric",
                       month: "long",
                       day: "numeric"
+                    })}
+                    {" at "}
+                    {new Date(blog.createdAt).toLocaleTimeString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit"
                     })}
                   </p>
                 </div>

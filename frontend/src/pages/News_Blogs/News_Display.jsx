@@ -2,8 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaRegUserCircle } from 'react-icons/fa';
 import { getBlogsById } from '../../services/userServices';
-import Trending from '../../constants/Trending';
-import { IoStarSharp } from "react-icons/io5";
 
 const NewsDetails = () => {
   const { id } = useParams();
@@ -46,62 +44,68 @@ const NewsDetails = () => {
           className="text-xl md:text-xl text-[#111111] mb-4"
           style={{ fontFamily: 'DM Sans', fontWeight: '500' }}
         >
-          {selectedNews.subject}
+          {selectedNews.subject ? selectedNews.subject.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ') : ''}
         </p>
 
         <div className="flex items-center gap-2 pt-3 mb-6 text-sm text-gray-700">
           <FaRegUserCircle className="text-2xl" />
           <p className="text-base md:text-md font-semibold">
-            By <span>{selectedNews.authorName}</span>&nbsp;&nbsp;-&nbsp;&nbsp;
+            By <span>{selectedNews.authorName || 'Admin'}</span>&nbsp;&nbsp;•&nbsp;&nbsp;
             {new Date(selectedNews.createdAt).toLocaleDateString('en-US', {
               year: 'numeric',
               month: 'long',
               day: 'numeric'
             })}
+            &nbsp;at&nbsp;
+            {new Date(selectedNews.createdAt).toLocaleTimeString('en-US', {
+              hour: '2-digit',
+              minute: '2-digit'
+            })}
           </p>
         </div>
 
-        <div className="flex flex-col lg:flex-row pt-6">
-          {/* Left content */}
-          <div className="flex-1 w-full lg:w-4/7 lg:pr-10">
-            {Array.isArray(selectedNews.news) && selectedNews.news.map((item, idx) => (
-              <div key={idx} className="mb-8">
-                {item.imageUrl && (
-                  <img
-                    src={item.imageUrl}
-                    alt="news"
-                    className="w-full lg:h-[24rem] mb-4 object-cover"
-                  />
-                )}
-                <p
-                  className="text-md sm:text-lg lg:text-md leading-relaxed mb-6 text-[#111111]"
-                  style={{ fontFamily: 'DM Sans', fontWeight: '500' }}
-                >
-                  {item.story}
-                </p>
-              </div>
-            ))}
+        {/* Cover image at top if present */}
+        {selectedNews.coverImage && (
+          <div className="mb-6">
+            <img
+              src={selectedNews.coverImage}
+              alt={selectedNews.title}
+              className="w-full max-h-[30rem] object-cover rounded-xl shadow-sm"
+            />
           </div>
+        )}
 
-          {/* Right sidebar */}
-          <div className="scrollbar-hide hidden lg:block w-full lg:w-2/7 border-t-6 border-red-600 bg-[#3C3C3C] p-4 max-h-[1600px] overflow-y-auto scrollbar-hide">
-            <h1 className="text-white font-black text-xl text-center mb-6 flex justify-start items-center gap-1">
-              <IoStarSharp className='text-yellow-300' /> TRENDING NEWS
-            </h1>
-            {Trending.map((item, index) => (
-              <div key={index} className="mb-4">
-                <img
-                  src={item.image}
-                  alt="Trending news"
-                  className="w-full h-[8rem] mb-1 object-cover"
-                />
-                <p className="text-[#C6C6C6] text-[0.7rem] tracking-wide uppercase leading-snug whitespace-pre-wrap">
-                  {item.title}
-                </p>
-              </div>
-            ))}
+        <div className="pt-4">
+          {/* Main content */}
+          <div className="w-full">
+            {selectedNews.content ? (
+              <div
+                className="prose prose-lg max-w-none text-md sm:text-lg leading-relaxed mb-8 text-[#111111] [&_table]:border-collapse [&_table]:w-full [&_table]:my-4 [&_td]:border [&_td]:border-gray-300 [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-gray-300 [&_th]:px-3 [&_th]:py-2 [&_th]:bg-gray-100 [&_th]:font-semibold [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:my-4 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-4 [&_blockquote]:border-red-500 [&_blockquote]:pl-4 [&_blockquote]:italic [&_pre]:bg-gray-900 [&_pre]:text-white [&_pre]:p-4 [&_pre]:rounded-lg"
+                style={{ fontFamily: 'DM Sans' }}
+                dangerouslySetInnerHTML={{ __html: selectedNews.content }}
+              />
+            ) : (
+              Array.isArray(selectedNews.news) &&
+              selectedNews.news.map((item, idx) => (
+                <div key={idx} className="mb-8">
+                  {item.imageUrl && (
+                    <img
+                      src={item.imageUrl}
+                      alt="news"
+                      className="w-full lg:h-[24rem] mb-4 object-cover"
+                    />
+                  )}
+                  {item.story && (
+                    <div
+                      className="text-md sm:text-lg lg:text-md leading-relaxed mb-6 text-[#111111] prose max-w-none [&_table]:border-collapse [&_table]:w-full [&_table]:my-4 [&_td]:border [&_td]:border-gray-300 [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-gray-300 [&_th]:px-3 [&_th]:py-2 [&_th]:bg-gray-100 [&_th]:font-semibold [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:my-4 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                      style={{ fontFamily: 'DM Sans', fontWeight: '500' }}
+                      dangerouslySetInnerHTML={{ __html: item.story }}
+                    />
+                  )}
+                </div>
+              ))
+            )}
           </div>
-
         </div>
       </div>
     </div>
