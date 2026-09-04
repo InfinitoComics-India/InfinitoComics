@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
@@ -101,6 +101,11 @@ const RichEditor = ({ value, onChange, placeholder = "Start typing…" }) => {
     },
   });
 
+  useEffect(() => {
+    if (editor && value !== undefined && value !== editor.getHTML()) {
+      editor.commands.setContent(value || "");
+    }
+  }, [value, editor]);
   // Insert image from file picker
   const insertImageFromFile = useCallback(async () => {
     const input = document.createElement("input");

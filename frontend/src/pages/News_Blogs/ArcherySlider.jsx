@@ -6,7 +6,6 @@ import { Link } from "react-router-dom";
 const ArcherySlider = () => {
   const [blogs, setBlogs] = useState([]);
   const [startIndex, setStartIndex] = useState(0);
-  const [sliding, setSliding] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(4);
 
   useEffect(() => {
@@ -31,43 +30,35 @@ const ArcherySlider = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const nextSlide = () => {
-    setSliding(true);
-    setTimeout(() => {
-      if (startIndex + itemsPerPage < blogs.length) {
-        setStartIndex(startIndex + itemsPerPage);
-      } else {
-        setStartIndex(0);
-      }
-      setSliding(false);
-    }, 300);
+  const prevSlide = () => {
+    setStartIndex((prev) =>
+      prev - itemsPerPage >= 0
+        ? prev - itemsPerPage
+        : Math.max(0, Math.floor((blogs.length - 1) / itemsPerPage) * itemsPerPage)
+    );
   };
 
-  const prevSlide = () => {
-    setSliding(true);
-    setTimeout(() => {
-      if (startIndex - itemsPerPage >= 0) {
-        setStartIndex(startIndex - itemsPerPage);
-      } else {
-        const lastPageIndex =
-          Math.floor((blogs.length - 1) / itemsPerPage) * itemsPerPage;
-        setStartIndex(lastPageIndex);
-      }
-      setSliding(false);
-    }, 300);
+  const nextSlide = () => {
+    setStartIndex((prev) =>
+      prev + itemsPerPage < blogs.length ? prev + itemsPerPage : 0
+    );
   };
+
+  if (blogs.length === 0) {
+    return null;
+  }
 
   return (
-    <div className=" py-6 w-11/12 lg:w-2/3 mx-auto">
+    <div className="py-6 w-11/12 lg:w-2/3 mx-auto">
       <div className="max-w-[1150px] mx-auto">
         <div className="relative">
           {/* left button  */}
           <button
             onClick={prevSlide}
-            className="absolute -left-5 lg:-left-16 top-[48%] md:top-[26%] lg:top-1/3 transform -translate-y-1/2 bg-white border p-2 z-20 shadow-md hover:cursor-pointer"
-            disabled={sliding}
+            className="absolute -left-5 lg:-left-12 top-1/2 transform -translate-y-1/2 bg-white border border-gray-300 p-2 z-20 shadow-md rounded hover:bg-gray-100 cursor-pointer text-black"
+            aria-label="Previous slide"
           >
-            <ChevronLeft />
+            <ChevronLeft size={20} />
           </button>
 
           {/* cards box  */}
@@ -76,21 +67,19 @@ const ArcherySlider = () => {
               itemsPerPage === 1
                 ? "grid-cols-1"
                 : "grid-cols-1 sm:grid-cols-4"
-            } gap-2 md:gap-3 ${
-              sliding
-                ? "opacity-0 transform translate-x-[-10px]"
-                : "opacity-100 transform translate-x-0"
-            }`}
+            } gap-2 md:gap-3`}
           >
             {blogs.slice(startIndex, startIndex + itemsPerPage).map((item, index) => (
-              <Link to={`/news/${item._id}`} key={index} className="text-start ">
+              <Link to={`/news/${item._id}`} key={index} className="text-start group">
                 <img
-                  src={item.news?.[0]?.imageUrl}
+                  src={item.coverImage || item.news?.[0]?.imageUrl || ''}
                   alt={item.title}
-                  className="w-full h-[240px] md:h-[140px] object-cover mb-1"
+                  className="w-full h-[240px] md:h-[140px] object-cover mb-1 group-hover:opacity-90 transition-opacity"
                 />
-                <h3 className="text-red-600 font-bold uppercase text-sm">{item.title}</h3>
-                <p className="text-xs text-gray-600">{item.subject}</p>
+                <h3 className="text-red-600 font-bold uppercase text-sm group-hover:underline line-clamp-1">{item.title}</h3>
+                <p className="text-xs text-gray-600 line-clamp-2">
+                  {item.subject ? item.subject.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ') : ''}
+                </p>
               </Link>
             ))}
           </div>
@@ -98,27 +87,31 @@ const ArcherySlider = () => {
           {/* right button  */}
           <button
             onClick={nextSlide}
-            className="absolute -right-5 lg:-right-16 top-[48%] md:top-[26%] lg:top-1/3 transform -translate-y-1/2 bg-white border p-2 z-20 shadow-md hover:cursor-pointer"
-            disabled={sliding}
+            className="absolute -right-5 lg:-right-12 top-1/2 transform -translate-y-1/2 bg-white border border-gray-300 p-2 z-20 shadow-md rounded hover:bg-gray-100 cursor-pointer text-black"
+            aria-label="Next slide"
           >
-            <ChevronRight />
+            <ChevronRight size={20} />
           </button>
         </div>
 
-        <div className="flex justify-center mt-1 gap-2">
-          {Array.from({
-            length: Math.ceil(blogs.length / itemsPerPage),
-          }).map((_, index) => (
-            <div
-              key={index}
-              className={`w-5 h-2 rounded-full transition-all duration-300 ${
-                index === Math.floor(startIndex / itemsPerPage)
-                  ? "bg-red-600"
-                  : "bg-gray-300 border border-black"
-              }`}
-            ></div>
-          ))}
-        </div>
+        {blogs.length > itemsPerPage && (
+          <div className="flex justify-center mt-3 gap-2">
+            {Array.from({
+              length: Math.ceil(blogs.length / itemsPerPage),
+            }).map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setStartIndex(index * itemsPerPage)}
+                aria-label={`Go to slide ${index + 1}`}
+                className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                  index === Math.floor(startIndex / itemsPerPage)
+                    ? "w-6 bg-red-600"
+                    : "w-2 bg-gray-300 border border-black hover:bg-gray-400"
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

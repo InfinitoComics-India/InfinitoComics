@@ -4,15 +4,33 @@ const blogservice = new BlogService();
 // Create a new blog
 const createBlog = async (req, res) => {
    try {
-    const { title, subject, authorName , category, news, status } = req.body;
+    const { title, coverImage, content, category, published, subject, authorName, news, status } = req.body;
+
+    const isPublished = published !== undefined 
+      ? (published === true || published === 'true') 
+      : (status === 'published');
+
+    let finalCoverImage = coverImage || '';
+    if (!finalCoverImage && req.files && req.files.length > 0) {
+      finalCoverImage = req.files[0].path || req.files[0].location || '';
+    }
+    if (!finalCoverImage && news && news.length > 0) {
+      finalCoverImage = news[0].imageUrl || '';
+    }
+
+    const cleanSubject = (subject ? subject.replace(/<[^>]*>/g, '') : (content ? content.replace(/<[^>]*>/g, '').substring(0, 160) : '')).replace(/&nbsp;/g, ' ').trim();
 
     const blogData = await blogservice.create({
       title,
-      subject,
-      authorName,
-      category,
-      news ,
-      status
+      coverImage: finalCoverImage,
+      content: content || (news ? news.map(n => n.story).join('\n\n') : ''),
+      category: category || 'Comics',
+      published: isPublished,
+      status: isPublished ? 'published' : 'draft',
+      subject: cleanSubject,
+      authorName: authorName || 'Admin',
+      news: news || (finalCoverImage || content ? [{ imageUrl: finalCoverImage, story: content }] : []),
+      createdAt: new Date()
     });
 
     return res.status(201).json({
@@ -71,16 +89,34 @@ const getBlogById = async (req, res) => {
 // Update blog by ID
 const updateBlog = async (req, res) => {
   try {
-    const { title, subject, authorName, category, news, status } = req.body;
+    const { title, coverImage, content, category, published, subject, authorName, news, status } = req.body;
 
-    const updatedBlog = await blogservice.update(req.params.id,{
-      title,
-      subject,
-      authorName,
-      category,
-      news,
-      status,
-    });
+    const updatePayload = {};
+    if (title !== undefined) updatePayload.title = title;
+    if (coverImage !== undefined) {
+      updatePayload.coverImage = coverImage;
+    } else if (req.files && req.files.length > 0) {
+      updatePayload.coverImage = req.files[0].path || req.files[0].location || '';
+    }
+    if (content !== undefined) updatePayload.content = content;
+    if (category !== undefined) updatePayload.category = category;
+    if (published !== undefined) {
+      const isPub = published === true || published === 'true';
+      updatePayload.published = isPub;
+      updatePayload.status = isPub ? 'published' : 'draft';
+    } else if (status !== undefined) {
+      updatePayload.status = status;
+      updatePayload.published = status === 'published';
+    }
+    if (subject !== undefined) {
+      updatePayload.subject = subject.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+    } else if (content !== undefined) {
+      updatePayload.subject = content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').substring(0, 160).trim();
+    }
+    if (authorName !== undefined) updatePayload.authorName = authorName;
+    if (news !== undefined) updatePayload.news = news;
+
+    const updatedBlog = await blogservice.update(req.params.id, updatePayload);
     return res.status(200).json({
       success: true,
       message: "Blog updated successfully",

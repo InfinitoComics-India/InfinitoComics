@@ -8,7 +8,9 @@ class BlogRepository extends CrudRepository {
 
     async getLatest(limit = 5) {
         try {
-            return await Blog.find({}).sort({ createdAt: -1 }).limit(limit);
+            return await Blog.find({ status: { $ne: 'draft' }, published: { $ne: false } })
+                .sort({ createdAt: -1, _id: -1 })
+                .limit(limit);
         } catch (error) {
             throw error;
         }

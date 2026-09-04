@@ -15,7 +15,19 @@ export const latestBlog = async () => {
     params: { limit: 1 }
   });
   return response?.data?.blogs?.[0];
-}
+};
+
+export const getLatestBlogs = async (limit = 5) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/blog/latestblog`, {
+      params: { limit }
+    });
+    return response?.data?.blogs || [];
+  } catch (error) {
+    console.error("Failed to fetch latest blogs:", error);
+    return [];
+  }
+};
 
 export const getFoundationBlogs = async () => {
   const res = await axios.get(BASE_URL+'/blog/foundation-blogs'); 

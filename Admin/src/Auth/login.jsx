@@ -40,11 +40,17 @@ const LoginPage = () => {
     try {
       setIsSubmitting(true);
       const response = await login(data);
-      const token = response?.data?.data?.token;
-      const admin = response?.data?.data?.admin;
+      const token = response?.data?.token || response?.data?.data?.token || response?.token;
+      const admin = response?.data?.admin || response?.data?.data?.admin || response?.admin;
+
+      if (!token) {
+        throw new Error("No authentication token returned from server.");
+      }
 
       localStorage.setItem("authToken", token);
-      localStorage.setItem("Admin", JSON.stringify(admin));
+      if (admin) {
+        localStorage.setItem("Admin", JSON.stringify(admin));
+      }
 
       setShowSuccess(true);
       await new Promise((resolve) => setTimeout(resolve, 1500));
