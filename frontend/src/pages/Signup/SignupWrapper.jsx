@@ -5,6 +5,8 @@ import Bullet from '../../../assets/Images/Bullet.png';
 import Riza from '../../../assets/Images/Riza Jose.png';
 import SignupStep1 from './SignupStep1';
 import SignupStep2 from './SignupStep2';
+import SignupStep3 from './SignupStep3';
+import SignupStep4 from './SignupStep4';
 import SignupStep5 from './SignupStep5';
 
 const SignupWrapper = () => {
@@ -13,22 +15,7 @@ const SignupWrapper = () => {
   const initialStep = parseInt(queryParams.get('step')) || 1;
 
   const [step, setStep] = useState(initialStep);
-
-  const nextStep = () => {
-    if (step === 1) {
-      setStep(2);
-    } else if (step === 2) {
-      setStep(5); // Skip steps 3 and 4, go directly to 5
-    }
-  };
-
-  const prevStep = () => {
-    if (step === 5) {
-      setStep(2); // Go back from 5 to 2
-    } else if (step === 2) {
-      setStep(1);
-    }
-  };
+  const [characterColors, setCharacterColors] = useState(null);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -43,6 +30,10 @@ const SignupWrapper = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  // Step navigation
+  // 1 → 2 → 3 → 4 → 5
+  const goToStep = (s) => setStep(s);
+
   const renderStep = () => {
     switch (step) {
       case 1:
@@ -50,7 +41,7 @@ const SignupWrapper = () => {
           <SignupStep1
             formData={formData}
             handleChange={handleChange}
-            onNext={nextStep}
+            onNext={() => goToStep(2)}
           />
         );
       case 2:
@@ -58,12 +49,35 @@ const SignupWrapper = () => {
           <SignupStep2
             formData={formData}
             handleChange={handleChange}
-            onNext={nextStep}
-            onBack={prevStep}
+            onNext={() => goToStep(3)}
+            onBack={() => goToStep(1)}
+          />
+        );
+      case 3:
+        return (
+          <SignupStep3
+            onBack={() => goToStep(2)}
+            onNext={() => goToStep(5)}        // Randomise / Continue → skip to completion
+            onCustomise={() => goToStep(4)}   // Customise → go to part selector
+          />
+        );
+      case 4:
+        return (
+          <SignupStep4
+            onBack={() => goToStep(3)}
+            onConfirm={(colors) => {
+              setCharacterColors(colors);
+              goToStep(5);
+            }}
           />
         );
       case 5:
-        return <SignupStep5 onBack={prevStep} />;
+        return (
+          <SignupStep5
+            onBack={() => goToStep(3)}
+            characterColors={characterColors}
+          />
+        );
       default:
         return null;
     }
@@ -71,7 +85,7 @@ const SignupWrapper = () => {
 
   return (
     <div className="w-full h-screen relative overflow-hidden font-sans">
-      {/* Background Section */}
+      {/* Background */}
       <div className="absolute inset-0 z-0 flex flex-col">
         <div className="h-[70%] w-full relative">
           <div
@@ -82,7 +96,7 @@ const SignupWrapper = () => {
             className="absolute inset-0"
             style={{
               background: 'linear-gradient(to bottom, #310303, #000000)',
-              opacity: 0.7
+              opacity: 0.7,
             }}
           />
         </div>
@@ -92,7 +106,7 @@ const SignupWrapper = () => {
         />
       </div>
 
-      {/* Characters (only visible for steps 1 and 2) */}
+      {/* Characters — visible for steps 1, 2, 3, 4 */}
       {step < 5 && (
         <>
           <img

@@ -1,84 +1,148 @@
-import React from 'react';
+import React, { useState } from 'react';
 import LoginLogo from '../../../assets/Images/LoginLogo.png';
 import Avatar from '../../../assets/Images/Signup/Avatar.png';
-import Shuffle from '../../../assets/Images/Signup/Shuffle.png';
-import Pencil from '../../../assets/Images/Signup/Pencil.png';
-import { ArrowLeft } from 'lucide-react';
+import { Shuffle, ChevronLeft, ChevronRight } from 'lucide-react';
 
-const SignupStep4 = ({ onNext, onBack }) => {
-  console.log("step4")
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onNext();
+// Character part options — colors to simulate different parts
+const PARTS = {
+  head:    { label: 'Head',       colors: ['#C8729A', '#8B4B8B', '#E86D3F', '#3F7FE8', '#4BA858', '#E8D23F'] },
+  body:    { label: 'Body',       colors: ['#C8729A', '#3F7FE8', '#8B4B8B', '#E86D3F', '#4BA858', '#E8D23F'] },
+  weapon:  { label: 'Weapon',     colors: ['#888', '#C8729A', '#E86D3F', '#3F7FE8', '#4BA858', '#8B4B8B'] },
+  legs:    { label: 'Legs',       colors: ['#C8729A', '#8B4B8B', '#3F7FE8', '#E86D3F', '#E8D23F', '#4BA858'] },
+  accessory: { label: 'Accessory', colors: ['#888', '#C8729A', '#E86D3F', '#3F7FE8', '#4BA858', '#8B4B8B'] },
+};
+
+const PartSelector = ({ label, index, total, onPrev, onNext, color }) => (
+  <div className="flex items-center gap-2">
+    <button onClick={onPrev} className="w-6 h-6 flex items-center justify-center border border-gray-300 hover:bg-gray-100 rounded">
+      <ChevronLeft size={14} />
+    </button>
+    <div className="w-12 h-12 rounded" style={{ backgroundColor: color }} />
+    <button onClick={onNext} className="w-6 h-6 flex items-center justify-center border border-gray-300 hover:bg-gray-100 rounded">
+      <ChevronRight size={14} />
+    </button>
+  </div>
+);
+
+const SignupStep4 = ({ onBack, onConfirm }) => {
+  const [selected, setSelected] = useState({
+    head: 0,
+    body: 0,
+    weapon: 0,
+    legs: 0,
+    accessory: 0,
+  });
+
+  const cycle = (part, dir) => {
+    const total = PARTS[part].colors.length;
+    setSelected(prev => ({
+      ...prev,
+      [part]: (prev[part] + dir + total) % total,
+    }));
+  };
+
+  const randomise = () => {
+    const rand = {};
+    Object.keys(PARTS).forEach(part => {
+      rand[part] = Math.floor(Math.random() * PARTS[part].colors.length);
+    });
+    setSelected(rand);
+  };
+
+  const characterColors = {
+    head: PARTS.head.colors[selected.head],
+    body: PARTS.body.colors[selected.body],
+    weapon: PARTS.weapon.colors[selected.weapon],
+    legs: PARTS.legs.colors[selected.legs],
+    accessory: PARTS.accessory.colors[selected.accessory],
   };
 
   return (
-    <div className="relative w-[540px] h-[670px] bg-white bg-opacity-95 px-24 py-10 rounded shadow-md font-sans">
-      {/* Back Button */}
-      <div
-        className="absolute top-5 left-5 p-2 rounded-full cursor-pointer bg-red-100 text-red-700 hover:text-red-600 hover:bg-red-200 transition-all duration-200"
-        onClick={onBack}
-      >
-        <ArrowLeft size={20} />
+    <div className="w-[540px] bg-white bg-opacity-95 px-10 py-8 rounded shadow-md font-sans relative">
+      {/* Logo */}
+      <div className="flex flex-col items-center gap-2 mb-4">
+        <img src={LoginLogo} alt="Infinito" className="w-[160px]" />
+        <h2 className="text-lg font-semibold text-center text-[#1f1f1f]">Create something uniquely you!</h2>
+
+        {/* Step indicator */}
+        <div className="flex items-center justify-center gap-2 mt-1">
+          <div className="w-20 h-1 bg-red-600" />
+          <div className="w-6 h-6 flex items-center justify-center border-2 border-red-600 text-red-600 text-sm font-bold">1</div>
+          <div className="w-20 h-1 bg-red-600" />
+          <div className="w-6 h-6 flex items-center justify-center border-2 border-red-600 text-red-600 text-sm font-semibold">2</div>
+        </div>
       </div>
 
-      <div className="flex flex-col items-center gap-4">
-        <img src={LoginLogo} alt="Logo" className="w-[200px] m-4" />
-        <div className="flex flex-col items-start justify-between mt-[-20px] h-21">
-          <h2 className="text-2xl font-semibold text-left text-[#1f1f1f]">
-            Create Something Uniquely You!
-          </h2>
-          <p className="text-sm text-left text-gray-600">
-            Complete your profile to enjoy this community to the fullest. It only takes{' '}
-            <span className="text-red-600 font-semibold">2</span> steps!
-          </p>
+      {/* Main layout */}
+      <div className="flex gap-6 items-start justify-center">
+        {/* Left — part selectors (head, body, weapon, legs) */}
+        <div className="flex flex-col gap-3 pt-4">
+          {['head', 'body', 'weapon', 'legs'].map(part => (
+            <PartSelector
+              key={part}
+              label={PARTS[part].label}
+              index={selected[part]}
+              total={PARTS[part].colors.length}
+              color={PARTS[part].colors[selected[part]]}
+              onPrev={() => cycle(part, -1)}
+              onNext={() => cycle(part, 1)}
+            />
+          ))}
         </div>
 
-        {/* Step Indicator */}
-        <div className="flex items-center justify-center gap-2">
-          <div className="w-34 h-1 bg-red-600" />
-          <div className="w-6 h-6 flex items-center justify-center border-2 border-red-600 text-red-600 text-sm font-bold">
-            1
-          </div>
-          <div className="w-34 h-1 bg-red-600" />
-          <div className="w-6 h-6 flex items-center justify-center border-2 border-red-600 text-red-600 text-sm font-semibold">
-            2
+        {/* Centre — character preview */}
+        <div className="flex flex-col items-center justify-center">
+          <div className="relative w-28 h-44">
+            {/* Simple block character using colors */}
+            {/* Head */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-12 rounded-sm" style={{ backgroundColor: characterColors.head }} />
+            {/* Body */}
+            <div className="absolute top-12 left-1/2 -translate-x-1/2 w-10 h-14 rounded-sm" style={{ backgroundColor: characterColors.body }} />
+            {/* Weapon */}
+            <div className="absolute top-14 left-0 w-3 h-10 rounded-sm" style={{ backgroundColor: characterColors.weapon }} />
+            {/* Legs */}
+            <div className="absolute top-24 left-1/2 -translate-x-1/2 flex gap-1">
+              <div className="w-4 h-10 rounded-sm" style={{ backgroundColor: characterColors.legs }} />
+              <div className="w-4 h-10 rounded-sm" style={{ backgroundColor: characterColors.legs }} />
+            </div>
           </div>
         </div>
 
-        {/* Form */}
-        <form className="w-full flex flex-col items-center gap-7 mt-2" onSubmit={handleSubmit}>
-          {/* Avatar Image */}
-          <img src={Avatar} alt="Avatar" className="h-[200px] object-contain" />
+        {/* Right — accessory selector */}
+        <div className="flex flex-col gap-3 pt-16 justify-center">
+          <PartSelector
+            key="accessory"
+            label="Accessory"
+            index={selected.accessory}
+            total={PARTS.accessory.colors.length}
+            color={PARTS.accessory.colors[selected.accessory]}
+            onPrev={() => cycle('accessory', -1)}
+            onNext={() => cycle('accessory', 1)}
+          />
+        </div>
+      </div>
 
-          {/* Randomise & Customise Buttons */}
-          <div className="flex gap-4">
-            <button
-              type="button"
-              className="flex w-[150px] h-10 items-center gap-2 pl-6 border-2 border-[#DD1215] text-[#DD1215] text-[12px] px-2 py-2 font-semibold hover:bg-red-50 transition"
-            >
-              <img src={Shuffle} alt="Shuffle" className="w-4 h-4" />
-              RANDOMISE
-            </button>
-            <button
-              type="button"
-              className="flex w-[150px] h-10 items-center gap-2 pl-6 border-2 border-[#DD1215] text-[#DD1215] text-[12px] px-4 py-2 font-semibold hover:bg-red-50 transition"
-            >
-              <img src={Pencil} alt="Customise" className="w-4 h-4" />
-              CUSTOMISE
-            </button>
-          </div>
-
-          {/* Continue Button */}
-          <div className="flex items-center justify-center">
-            <button
-              type="submit"
-              className="w-[100px] bg-red-600 text-white py-2 hover:bg-red-700 transition uppercase text-[10px] tracking-widest"
-            >
-              Continue &gt;
-            </button>
-          </div>
-        </form>
+      {/* Footer */}
+      <div className="flex items-center justify-between mt-6">
+        <button
+          onClick={randomise}
+          className="flex items-center gap-2 border-2 border-[#DD1215] text-[#DD1215] px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-red-50 transition"
+        >
+          <Shuffle size={14} />
+          Randomise
+        </button>
+        <button
+          onClick={onBack}
+          className="text-xs font-bold uppercase tracking-widest text-gray-600 hover:underline"
+        >
+          Back
+        </button>
+        <button
+          onClick={() => onConfirm(characterColors)}
+          className="flex items-center gap-2 bg-[#DD1215] text-white px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-red-700 transition"
+        >
+          <span>✓</span> Confirm My Character
+        </button>
       </div>
     </div>
   );
