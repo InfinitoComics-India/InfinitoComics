@@ -113,7 +113,6 @@ const SignupStep2 = ({ formData, handleChange, onNext, onBack }) => {
       toast.success('Successfully signed up!');
       setTimeout(() => {
         onNext(); // Go to character creation (step 3)
-        navigate('/verifyEmail');
       }, 2000);
       
     } catch (err) {
