@@ -112,12 +112,12 @@ const SignupWrapper = () => {
           <img
             src={Bullet}
             alt="Bullet"
-            className="absolute left-12 bottom-0 h-[85vh] z-20 object-contain pointer-events-none hidden lg:block"
+            className="absolute left-[5%] bottom-0 h-[80vh] z-20 object-contain pointer-events-none hidden lg:block"
           />
           <img
             src={Riza}
             alt="Riza"
-            className="absolute right-12 bottom-0 h-[85vh] z-20 object-contain pointer-events-none hidden lg:block"
+            className="absolute right-[5%] bottom-0 h-[80vh] z-20 object-contain pointer-events-none hidden lg:block"
           />
         </>
       )}
