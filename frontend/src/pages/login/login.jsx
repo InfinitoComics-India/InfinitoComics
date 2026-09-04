@@ -72,8 +72,8 @@ const Login = () => {
       </div>
 
       {/* Characters */}
-      {/* <img src={Bullet} alt="Bullet" className="absolute left-56 bottom-8 h-[700px] z-50 object-contain pointer-events-none" />
-      <img src={Riza} alt="Riza" className="absolute right-48 bottom-8 h-[700px] z-50 object-contain pointer-events-none" /> */}
+      <img src={Bullet} alt="Bullet" className="absolute left-12 bottom-0 h-[85vh] z-20 object-contain pointer-events-none hidden lg:block" />
+      <img src={Riza} alt="Riza" className="absolute right-12 bottom-0 h-[85vh] z-20 object-contain pointer-events-none hidden lg:block" />
 
       {/* Central Card */}
       <div className="absolute inset-0 z-30 flex items-center justify-center">
