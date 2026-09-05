@@ -143,6 +143,11 @@ const Hero = ({ onApply }) => (
       >
         Apply for Internship
       </button>
+      <div className="mt-4">
+        <Link to="/careers" className="text-blue-300 underline text-sm sm:text-base hover:text-white transition-colors">
+          Looking for full time?
+        </Link>
+      </div>
     </div>
   </div>
 );
