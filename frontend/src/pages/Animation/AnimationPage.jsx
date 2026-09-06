@@ -142,19 +142,37 @@ const AnimationPage = () => {
   const [sortOrder, setSortOrder] = useState("a-z"); // "a-z" or "z-a"
   const [openFilter, setOpenFilter] = useState(null); // Track which filter accordion is open
   
-  // Characters data state
+  // Characters data state (for Browse Characters section)
   const [characters, setCharacters] = useState([]);
   const [filteredCharacters, setFilteredCharacters] = useState([]);
   const [isLoadingCharacters, setIsLoadingCharacters] = useState(true);
+
+  // Comics data state (for Our Franchises section)
+  const [franchiseComics, setFranchiseComics] = useState([]);
+  const [isLoadingFranchiseComics, setIsLoadingFranchiseComics] = useState(true);
 
   // Timeline data state
   const [timelineEvents, setTimelineEvents] = useState([]);
   const [isLoadingTimeline, setIsLoadingTimeline] = useState(true);
 
-  // Ref for character slider
-  const characterSliderRef = React.useRef(null);
+  // Ref for franchise comics slider
+  const franchiseSliderRef = React.useRef(null);
 
-  // Fetch characters on component mount
+  // Fetch comics for Our Franchises section
+  useEffect(() => {
+    fetchComics()
+      .then((data) => {
+        const comics = Array.isArray(data) ? data : [];
+        setFranchiseComics(comics);
+      })
+      .catch((error) => {
+        console.error("Error fetching franchise comics:", error);
+        setFranchiseComics([]);
+      })
+      .finally(() => setIsLoadingFranchiseComics(false));
+  }, []);
+
+  // Fetch characters for Browse Characters section
   useEffect(() => {
     fetchCharacters()
       .then((data) => {
@@ -290,11 +308,11 @@ const AnimationPage = () => {
   // Check if any filters are active
   const hasActiveFilters = selectedGender || selectedSpecies || selectedOrigin || selectedPower || searchQuery;
 
-  // Character slider scroll function
-  const scrollCharacters = (direction) => {
-    if (characterSliderRef.current) {
-      const scrollAmount = 200; // Adjust scroll distance
-      characterSliderRef.current.scrollBy({
+  // Franchise comics slider scroll function
+  const scrollFranchise = (direction) => {
+    if (franchiseSliderRef.current) {
+      const scrollAmount = 200;
+      franchiseSliderRef.current.scrollBy({
         left: direction * scrollAmount,
         behavior: 'smooth'
       });
@@ -482,10 +500,10 @@ const AnimationPage = () => {
           </div>
 
           <div className="relative flex items-center gap-2 sm:gap-4">
-            {/* Left Arrow - show if there are characters */}
-            {!isLoadingCharacters && characters.length > 5 && (
+            {/* Left Arrow - show if there are multiple comics */}
+            {!isLoadingFranchiseComics && franchiseComics.length > 5 && (
               <button
-                onClick={() => scrollCharacters(-1)}
+                onClick={() => scrollFranchise(-1)}
                 className="hidden sm:flex p-2.5 border border-gray-300 text-black hover:border-black hover:bg-gray-50 transition-all flex-shrink-0"
                 aria-label="Previous"
               >
@@ -493,14 +511,14 @@ const AnimationPage = () => {
               </button>
             )}
 
-            {/* Character Cards Container */}
+            {/* Comics Cards Container */}
             <div className="w-full overflow-hidden">
               <div 
-                ref={characterSliderRef}
+                ref={franchiseSliderRef}
                 className="flex overflow-x-auto gap-4 sm:gap-5 no-scrollbar scroll-smooth pb-2"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
-                {isLoadingCharacters ? (
+                {isLoadingFranchiseComics ? (
                   // Loading shimmer
                   [...Array(5)].map((_, i) => (
                     <div key={i} className="flex-shrink-0 animate-pulse" style={{ width: '155px' }}>
@@ -508,30 +526,30 @@ const AnimationPage = () => {
                       <div className="h-3 bg-gray-200 rounded mt-2 w-4/5" />
                     </div>
                   ))
-                ) : characters.length === 0 ? (
-                  // No characters
+                ) : franchiseComics.length === 0 ? (
+                  // No comics
                   <div className="w-full text-center py-8">
-                    <p className="text-gray-500 text-sm">No characters available</p>
+                    <p className="text-gray-500 text-sm">No comics available</p>
                   </div>
                 ) : (
-                  // Display all characters with horizontal scroll
-                  characters.map((character) => (
+                  // Display all comics with horizontal scroll
+                  franchiseComics.map((comic) => (
                     <div 
-                      key={character._id} 
-                      onClick={() => navigate(`/characters/${character._id}`)}
+                      key={comic._id} 
+                      onClick={() => navigate(`/comicChap/${comic._id}/chapters`)}
                       className="flex-shrink-0 group cursor-pointer space-y-2"
                       style={{ width: '155px' }}
                     >
                       <div className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
                         <img
-                          src={character.images?.[0] || character.coverImg || "https://via.placeholder.com/300x400"}
-                          alt={character.name}
+                          src={comic.coverImg || "https://via.placeholder.com/300x400"}
+                          alt={comic.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       </div>
 
                       <p className="text-xs font-bold text-gray-900 group-hover:text-[#E50914] transition-colors font-dmsans line-clamp-1">
-                        {character.name}
+                        {comic.title}
                       </p>
                     </div>
                   ))
@@ -539,10 +557,10 @@ const AnimationPage = () => {
               </div>
             </div>
 
-            {/* Right Arrow - show if there are characters */}
-            {!isLoadingCharacters && characters.length > 5 && (
+            {/* Right Arrow - show if there are multiple comics */}
+            {!isLoadingFranchiseComics && franchiseComics.length > 5 && (
               <button
-                onClick={() => scrollCharacters(1)}
+                onClick={() => scrollFranchise(1)}
                 className="hidden sm:flex p-2.5 border border-gray-300 text-black hover:border-black hover:bg-gray-50 transition-all flex-shrink-0"
                 aria-label="Next"
               >
