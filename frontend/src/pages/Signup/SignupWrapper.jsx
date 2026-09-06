@@ -113,13 +113,13 @@ const SignupWrapper = () => {
             src={Bullet}
             alt="Bullet"
             className="absolute bottom-0 h-[80vh] z-40 object-contain pointer-events-none hidden lg:block"
-            style={{ left: 'calc(50% - 540px)' }}
+            style={{ left: 'calc(50% - 620px)' }}
           />
           <img
             src={Riza}
             alt="Riza"
             className="absolute bottom-0 h-[80vh] z-40 object-contain pointer-events-none hidden lg:block"
-            style={{ right: 'calc(50% - 540px)' }}
+            style={{ right: 'calc(50% - 620px)' }}
           />
         </>
       )}

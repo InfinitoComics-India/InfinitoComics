@@ -143,6 +143,11 @@ const Hero = ({ onApply }) => (
       >
         Apply for Internship
       </button>
+      <div className="mt-4">
+        <Link to="/careers" className="text-blue-300 underline text-sm sm:text-base hover:text-white transition-colors">
+          Looking for full time?
+        </Link>
+      </div>
     </div>
   </div>
 );
@@ -432,7 +437,7 @@ const OurValues = () => (
       <h2 className="text-2xl md:text-3xl font-bold text-center mb-14">Our Values</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 sm:gap-x-16 gap-y-10 sm:gap-y-14 max-w-3xl mx-auto">
         {VALUES.map((v) => (
-          <div key={v.label} className="flex flex-col items-start gap-4">
+          <div key={v.label} className="flex flex-col items-center gap-4 text-center">
             {VALUE_ICONS[v.label]}
             <span className="font-bold text-gray-900 text-sm">{v.label}</span>
           </div>
