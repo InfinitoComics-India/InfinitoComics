@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { PlayCircle, ChevronLeft, ChevronRight, Search, Plus, ChevronDown } from "lucide-react";
+import { PlayCircle, ChevronLeft, ChevronRight, Search, ChevronDown } from "lucide-react";
 import JoinUltimate from "../Home/JoinUltimate";
 import { fetchComics } from "../../services/ComicService.js";
 import { getAll as fetchCharacters } from "../../services/CharacterServices.js";
@@ -65,12 +65,6 @@ const VideoRowSection = ({ genreTitle, onPlayVideo }) => {
         <h3 className="text-base sm:text-lg font-extrabold uppercase tracking-wide text-black font-dmsans">
           {genreTitle}
         </h3>
-        <Link
-          to="/animation"
-          className="text-[#E50914] text-xs font-bold uppercase tracking-wider hover:underline"
-        >
-          VIEW ALL &gt;
-        </Link>
       </div>
 
       <div className="relative flex items-center gap-2 sm:gap-4">
@@ -140,13 +134,17 @@ const AnimationPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activePage, setActivePage] = useState(1);
   
-  // Comics data state
-  const [allComics, setAllComics] = useState([]);
-  const [filteredComics, setFilteredComics] = useState([]);
-  const [isLoadingComics, setIsLoadingComics] = useState(true);
-
+  // Filter states
+  const [selectedGender, setSelectedGender] = useState("");
+  const [selectedSpecies, setSelectedSpecies] = useState("");
+  const [selectedOrigin, setSelectedOrigin] = useState("");
+  const [selectedPower, setSelectedPower] = useState("");
+  const [sortOrder, setSortOrder] = useState("a-z"); // "a-z" or "z-a"
+  const [openFilter, setOpenFilter] = useState(null); // Track which filter accordion is open
+  
   // Characters data state
   const [characters, setCharacters] = useState([]);
+  const [filteredCharacters, setFilteredCharacters] = useState([]);
   const [isLoadingCharacters, setIsLoadingCharacters] = useState(true);
 
   // Timeline data state
@@ -156,32 +154,18 @@ const AnimationPage = () => {
   // Ref for character slider
   const characterSliderRef = React.useRef(null);
 
-  // Fetch comics on component mount
-  useEffect(() => {
-    fetchComics()
-      .then((data) => {
-        const comics = Array.isArray(data) ? data : [];
-        setAllComics(comics);
-        setFilteredComics(comics);
-      })
-      .catch((error) => {
-        console.error("Error fetching comics:", error);
-        setAllComics([]);
-        setFilteredComics([]);
-      })
-      .finally(() => setIsLoadingComics(false));
-  }, []);
-
   // Fetch characters on component mount
   useEffect(() => {
     fetchCharacters()
       .then((data) => {
         const chars = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
         setCharacters(chars);
+        setFilteredCharacters(chars);
       })
       .catch((error) => {
         console.error("Error fetching characters:", error);
         setCharacters([]);
+        setFilteredCharacters([]);
       })
       .finally(() => setIsLoadingCharacters(false));
   }, []);
@@ -205,29 +189,106 @@ const AnimationPage = () => {
       .finally(() => setIsLoadingTimeline(false));
   }, []);
 
-  // Filter comics based on search query
+  // Filter characters based on search query and filters
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredComics(allComics);
-    } else {
+    let result = [...characters];
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      const filtered = allComics.filter((comic) => {
-        const title = (comic.title || "").toLowerCase();
-        const authors = Array.isArray(comic.authors) 
-          ? comic.authors.join(" ").toLowerCase() 
-          : (comic.authors || "").toLowerCase();
-        return title.includes(query) || authors.includes(query);
+      result = result.filter((character) => {
+        const knownAs = (character.knownAs || "").toLowerCase();
+        const originalName = (character.originalName || "").toLowerCase();
+        const placeOfOrigin = (character.placeOfOrigin || "").toLowerCase();
+        const species = (character.species || "").toLowerCase();
+        const powers = Array.isArray(character.powers)
+          ? character.powers.join(" ").toLowerCase()
+          : "";
+        return (
+          knownAs.includes(query) ||
+          originalName.includes(query) ||
+          placeOfOrigin.includes(query) ||
+          species.includes(query) ||
+          powers.includes(query)
+        );
       });
-      setFilteredComics(filtered);
-      setActivePage(1); // Reset to first page when searching
     }
-  }, [searchQuery, allComics]);
+    
+    // Apply gender filter
+    if (selectedGender) {
+      result = result.filter(char => 
+        (char.gender || "").toLowerCase() === selectedGender.toLowerCase()
+      );
+    }
+    
+    // Apply species filter
+    if (selectedSpecies) {
+      result = result.filter(char => 
+        (char.species || "").toLowerCase() === selectedSpecies.toLowerCase()
+      );
+    }
+    
+    // Apply place of origin filter
+    if (selectedOrigin) {
+      result = result.filter(char => 
+        (char.placeOfOrigin || "").toLowerCase() === selectedOrigin.toLowerCase()
+      );
+    }
+    
+    // Apply power filter
+    if (selectedPower) {
+      result = result.filter(char => 
+        Array.isArray(char.powers) && 
+        char.powers.some(power => power.toLowerCase().includes(selectedPower.toLowerCase()))
+      );
+    }
+    
+    // Apply sorting
+    result.sort((a, b) => {
+      const nameA = (a.knownAs || a.originalName || "").toLowerCase();
+      const nameB = (b.knownAs || b.originalName || "").toLowerCase();
+      if (sortOrder === "a-z") {
+        return nameA.localeCompare(nameB);
+      } else {
+        return nameB.localeCompare(nameA);
+      }
+    });
+    
+    setFilteredCharacters(result);
+    setActivePage(1); // Reset to first page when filters change
+  }, [searchQuery, characters, selectedGender, selectedSpecies, selectedOrigin, selectedPower, sortOrder]);
 
   // Pagination
-  const comicsPerPage = 8;
-  const totalPages = Math.ceil(filteredComics.length / comicsPerPage);
-  const startIndex = (activePage - 1) * comicsPerPage;
-  const paginatedComics = filteredComics.slice(startIndex, startIndex + comicsPerPage);
+  const charactersPerPage = 8;
+  const totalPages = Math.ceil(filteredCharacters.length / charactersPerPage);
+  const startIndex = (activePage - 1) * charactersPerPage;
+  const paginatedCharacters = filteredCharacters.slice(startIndex, startIndex + charactersPerPage);
+
+  // Extract unique filter options from all characters
+  const uniqueGenders = [...new Set(characters.map(c => c.gender).filter(Boolean))];
+  const uniqueSpecies = [...new Set(characters.map(c => c.species).filter(Boolean))];
+  const uniqueOrigins = [...new Set(characters.map(c => c.placeOfOrigin).filter(Boolean))];
+  const uniquePowers = [...new Set(
+    characters.flatMap(c => Array.isArray(c.powers) ? c.powers : []).filter(Boolean)
+  )];
+
+  // Toggle filter accordion
+  const toggleFilter = (filterName) => {
+    setOpenFilter(openFilter === filterName ? null : filterName);
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSelectedGender("");
+    setSelectedSpecies("");
+    setSelectedOrigin("");
+    setSelectedPower("");
+    setSearchQuery("");
+    setSortOrder("a-z");
+  };
+
+  // Check if any filters are active
+  const hasActiveFilters = selectedGender || selectedSpecies || selectedOrigin || selectedPower || searchQuery;
 
   // Character slider scroll function
   const scrollCharacters = (direction) => {
@@ -294,13 +355,6 @@ const AnimationPage = () => {
             <h2 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-black">
               POPULAR NOW / RECOMMENDED FOR YOU
             </h2>
-
-            <Link
-              to="/animation"
-              className="text-[#E50914] text-xs sm:text-sm font-bold uppercase tracking-wider hover:underline flex items-center gap-1"
-            >
-              VIEW MORE &gt;
-            </Link>
           </div>
 
           {/* Simple grid - no slider needed for 2 videos */}
@@ -425,13 +479,6 @@ const AnimationPage = () => {
             <h2 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-black">
               OUR FRANCHISES
             </h2>
-
-            <Link
-              to="/characters"
-              className="text-[#E50914] text-xs sm:text-sm font-bold uppercase tracking-wider hover:underline"
-            >
-              VIEW ALL &gt;
-            </Link>
           </div>
 
           <div className="relative flex items-center gap-2 sm:gap-4">
@@ -551,13 +598,6 @@ const AnimationPage = () => {
               <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-black">
                 RELEASE TIMELINE ({timelineEvents.length})
               </h2>
-
-              <Link
-                to="/about#timeline"
-                className="text-[#E50914] text-xs font-bold uppercase tracking-wider hover:underline"
-              >
-                VIEW ALL &gt;
-              </Link>
             </div>
 
             {/* Dynamic Timeline Event Cards */}
@@ -649,23 +689,30 @@ const AnimationPage = () => {
         </div>
       </section>
 
-      {/* ─── SECTION 8: BROWSE COMICS [128] (WHITE BG FILTER GRID) ─────────── */}
+      {/* ─── SECTION 8: BROWSE CHARACTERS (WHITE BG FILTER GRID) ──────────── */}
       <section className="w-full bg-white text-black py-12 sm:py-16 px-4 sm:px-8 md:px-12 border-t border-gray-200">
         <div className="max-w-6xl mx-auto space-y-8">
           {/* Title Row + Sort Dropdown */}
           <div className="flex items-center justify-between">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-black">
-              BROWSE COMICS ({filteredComics.length})
+              BROWSE CHARACTERS ({filteredCharacters.length})
             </h2>
 
-            {/* A to Z Sort Dropdown Box */}
-            <div className="flex items-center border border-gray-300 px-3 py-1.5 text-xs font-bold text-gray-700 hover:border-black cursor-pointer bg-white space-x-2">
-              <span>A to Z</span>
-              <ChevronDown className="w-4 h-4 text-gray-500" />
+            {/* Sort Dropdown */}
+            <div className="relative">
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                className="flex items-center border border-gray-300 px-3 py-1.5 text-xs font-bold text-gray-700 hover:border-black cursor-pointer bg-white appearance-none pr-8"
+              >
+                <option value="a-z">A to Z</option>
+                <option value="z-a">Z to A</option>
+              </select>
+              <ChevronDown className="w-4 h-4 text-gray-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           </div>
 
-          {/* Two-Column Grid: Filter Sidebar + Comics Cards Grid */}
+          {/* Two-Column Grid: Filter Sidebar + Character Cards Grid */}
           <div className="flex flex-col md:flex-row gap-8 items-start">
             {/* Left Filter Sidebar */}
             <div className="w-full md:w-64 space-y-4 flex-shrink-0">
@@ -673,7 +720,7 @@ const AnimationPage = () => {
               <div className="flex items-center border border-gray-300 bg-white">
                 <input
                   type="text"
-                  placeholder="What are you looking for?"
+                  placeholder="Search characters..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none font-dmsans"
@@ -683,25 +730,155 @@ const AnimationPage = () => {
                 </button>
               </div>
 
+              {/* Clear Filters Button */}
+              {hasActiveFilters && (
+                <button
+                  onClick={clearAllFilters}
+                  className="w-full py-2 text-xs font-bold text-[#E50914] border border-[#E50914] hover:bg-[#E50914] hover:text-white transition-colors"
+                >
+                  CLEAR ALL FILTERS
+                </button>
+              )}
+
               {/* Accordion Filter Options */}
               <div className="border border-gray-200 divide-y divide-gray-200 bg-white">
-                {["CHARACTERS", "SERIES", "TYPE", "IMPRINTS", "DATE RANGES"].map((filter) => (
+                {/* Gender Filter */}
+                <div className="overflow-hidden">
                   <div
-                    key={filter}
+                    onClick={() => toggleFilter("GENDER")}
                     className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 transition"
                   >
                     <span className="text-xs font-bold uppercase tracking-wider text-gray-800 font-dmsans">
-                      {filter}
+                      GENDER {selectedGender && `(${selectedGender})`}
                     </span>
-                    <Plus className="w-4 h-4 text-gray-500" />
+                    <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${openFilter === "GENDER" ? "rotate-180" : ""}`} />
                   </div>
-                ))}
+                  {openFilter === "GENDER" && (
+                    <div className="px-3 pb-3 space-y-2">
+                      {uniqueGenders.length > 0 ? (
+                        uniqueGenders.map(gender => (
+                          <label key={gender} className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="gender"
+                              checked={selectedGender === gender}
+                              onChange={() => setSelectedGender(selectedGender === gender ? "" : gender)}
+                              className="w-3 h-3 text-[#E50914] focus:ring-[#E50914]"
+                            />
+                            <span className="text-xs text-gray-700">{gender}</span>
+                          </label>
+                        ))
+                      ) : (
+                        <p className="text-xs text-gray-500">No options available</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Species Filter */}
+                <div className="overflow-hidden">
+                  <div
+                    onClick={() => toggleFilter("SPECIES")}
+                    className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 transition"
+                  >
+                    <span className="text-xs font-bold uppercase tracking-wider text-gray-800 font-dmsans">
+                      SPECIES {selectedSpecies && `(${selectedSpecies})`}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${openFilter === "SPECIES" ? "rotate-180" : ""}`} />
+                  </div>
+                  {openFilter === "SPECIES" && (
+                    <div className="px-3 pb-3 space-y-2">
+                      {uniqueSpecies.length > 0 ? (
+                        uniqueSpecies.map(species => (
+                          <label key={species} className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="species"
+                              checked={selectedSpecies === species}
+                              onChange={() => setSelectedSpecies(selectedSpecies === species ? "" : species)}
+                              className="w-3 h-3 text-[#E50914] focus:ring-[#E50914]"
+                            />
+                            <span className="text-xs text-gray-700">{species}</span>
+                          </label>
+                        ))
+                      ) : (
+                        <p className="text-xs text-gray-500">No options available</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Place of Origin Filter */}
+                <div className="overflow-hidden">
+                  <div
+                    onClick={() => toggleFilter("PLACE OF ORIGIN")}
+                    className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 transition"
+                  >
+                    <span className="text-xs font-bold uppercase tracking-wider text-gray-800 font-dmsans">
+                      PLACE OF ORIGIN {selectedOrigin && `(${selectedOrigin})`}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${openFilter === "PLACE OF ORIGIN" ? "rotate-180" : ""}`} />
+                  </div>
+                  {openFilter === "PLACE OF ORIGIN" && (
+                    <div className="px-3 pb-3 space-y-2 max-h-48 overflow-y-auto">
+                      {uniqueOrigins.length > 0 ? (
+                        uniqueOrigins.map(origin => (
+                          <label key={origin} className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="origin"
+                              checked={selectedOrigin === origin}
+                              onChange={() => setSelectedOrigin(selectedOrigin === origin ? "" : origin)}
+                              className="w-3 h-3 text-[#E50914] focus:ring-[#E50914]"
+                            />
+                            <span className="text-xs text-gray-700">{origin}</span>
+                          </label>
+                        ))
+                      ) : (
+                        <p className="text-xs text-gray-500">No options available</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Powers Filter */}
+                <div className="overflow-hidden">
+                  <div
+                    onClick={() => toggleFilter("POWERS")}
+                    className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 transition"
+                  >
+                    <span className="text-xs font-bold uppercase tracking-wider text-gray-800 font-dmsans">
+                      POWERS {selectedPower && `(${selectedPower})`}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${openFilter === "POWERS" ? "rotate-180" : ""}`} />
+                  </div>
+                  {openFilter === "POWERS" && (
+                    <div className="px-3 pb-3 space-y-2 max-h-48 overflow-y-auto">
+                      {uniquePowers.length > 0 ? (
+                        uniquePowers.map(power => (
+                          <label key={power} className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="power"
+                              checked={selectedPower === power}
+                              onChange={() => setSelectedPower(selectedPower === power ? "" : power)}
+                              className="w-3 h-3 text-[#E50914] focus:ring-[#E50914]"
+                            />
+                            <span className="text-xs text-gray-700">{power}</span>
+                          </label>
+                        ))
+                      ) : (
+                        <p className="text-xs text-gray-500">No options available</p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Right Cards Grid */}
             <div className="flex-1 w-full space-y-8">
-              {isLoadingComics ? (
+              {isLoadingCharacters ? (
                 // Loading shimmer
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
                   {[...Array(8)].map((_, i) => (
@@ -712,32 +889,32 @@ const AnimationPage = () => {
                     </div>
                   ))}
                 </div>
-              ) : filteredComics.length === 0 ? (
+              ) : filteredCharacters.length === 0 ? (
                 // No results
                 <div className="text-center py-12">
-                  <p className="text-gray-500 text-sm">No comics found matching your search.</p>
+                  <p className="text-gray-500 text-sm">No characters found matching your search.</p>
                 </div>
               ) : (
                 <>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
-                    {paginatedComics.map((comic) => (
+                    {paginatedCharacters.map((character) => (
                       <div 
-                        key={comic._id} 
-                        onClick={() => navigate(`/comicChap/${comic._id}/chapters`)}
+                        key={character._id} 
+                        onClick={() => navigate("/characters/biography", { state: character._id })}
                         className="group cursor-pointer space-y-1.5"
                       >
                         <div className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
                           <img
-                            src={comic.coverImg}
-                            alt={comic.title}
+                            src={character.mainImageUrl || character.mainLandscapeImageUrl || "https://via.placeholder.com/300x400"}
+                            alt={character.knownAs || character.originalName}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
                         </div>
                         <p className="text-xs font-bold text-gray-900 group-hover:text-[#E50914] transition-colors font-dmsans line-clamp-2">
-                          {comic.title}
+                          {character.knownAs || character.originalName}
                         </p>
                         <p className="text-[11px] text-gray-500 font-dmsans truncate">
-                          {Array.isArray(comic.authors) ? comic.authors.join(", ") : comic.authors || "Unknown Author"}
+                          {character.placeOfOrigin || character.species || ""}
                         </p>
                       </div>
                     ))}
@@ -797,13 +974,6 @@ const AnimationPage = () => {
                           <ChevronRight className="w-4 h-4" />
                         </button>
                       </div>
-
-                      <Link
-                        to="/comics"
-                        className="text-[#E50914] text-xs font-bold uppercase tracking-wider hover:underline"
-                      >
-                        VIEW ALL &gt;
-                      </Link>
                     </div>
                   )}
                 </>
