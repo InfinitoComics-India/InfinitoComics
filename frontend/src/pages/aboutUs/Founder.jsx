@@ -38,7 +38,7 @@ const FounderSection = () => {
 
             {/* Paragraph */}
             <p className="text-gray-800 text-xs sm:text-sm md:text-base leading-relaxed tracking-wide font-dmsans">
-              Ar. Rajan Sharma is a visionary architect and entrepreneur holding a B.Arch from NIT Raipur and EMBA from IIM Udaipur. Combining design thinking with strategic business management, he leads 70+ creators building India’s premier original character universe. As Founder &amp; Creative Head of Infinito Comics (a unit of Miraya Corporation), he oversees creative direction, character development, comic publishing, smart audio eyewear innovation, and strategic growth across 70+ team members.
+              Ar. Rajan Sharma is a visionary architect and entrepreneur holding a B.Arch from NIT Raipur and did summer program in management from IIM Udaipur. Combining design thinking with strategic business management, he leads 70+ creators building India's premier original character universe. As Founder & Creative Head of Infinito Comics, he oversees creative direction, character development, business execution and overall operation of Infinito comics, and strategic growth across business and creative domains.
             </p>
 
             {/* Icons and Read More */}
