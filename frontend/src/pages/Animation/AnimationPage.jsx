@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { PlayCircle, ChevronLeft, ChevronRight, Search, ChevronDown } from "lucide-react";
+import { PlayCircle, ChevronLeft, ChevronRight, Search, ChevronDown, Volume2, VolumeX } from "lucide-react";
 import JoinUltimate from "../Home/JoinUltimate";
 import { fetchComics } from "../../services/ComicService.js";
 import { getAll as fetchCharacters } from "../../services/CharacterServices.js";
@@ -160,7 +160,36 @@ const AnimationPage = () => {
   const secondVideoRef = React.useRef(null);
   const [isSecondVideoVisible, setIsSecondVideoVisible] = React.useState(false);
 
+<<<<<<< Updated upstream
   // Fetch comics for Our Franchises section
+=======
+  // Mute state for hero videos
+  const [isHeroMuted, setIsHeroMuted] = useState(true);
+  const [isSecondVideoMuted, setIsSecondVideoMuted] = useState(true);
+  const heroIframeRef = useRef(null);
+  const secondIframeRef = useRef(null);
+
+  // Function to toggle mute using YouTube postMessage API
+  const toggleHeroMute = () => {
+    if (heroIframeRef.current) {
+      const iframe = heroIframeRef.current;
+      const message = isHeroMuted ? '{"event":"command","func":"unMute","args":""}' : '{"event":"command","func":"mute","args":""}';
+      iframe.contentWindow.postMessage(message, '*');
+      setIsHeroMuted(!isHeroMuted);
+    }
+  };
+
+  const toggleSecondVideoMute = () => {
+    if (secondIframeRef.current) {
+      const iframe = secondIframeRef.current;
+      const message = isSecondVideoMuted ? '{"event":"command","func":"unMute","args":""}' : '{"event":"command","func":"mute","args":""}';
+      iframe.contentWindow.postMessage(message, '*');
+      setIsSecondVideoMuted(!isSecondVideoMuted);
+    }
+  };
+
+  // Fetch comics on component mount
+>>>>>>> Stashed changes
   useEffect(() => {
     fetchComics()
       .then((data) => {
@@ -337,15 +366,25 @@ const AnimationPage = () => {
         <div className="absolute inset-0 w-full h-full">
           {/* Background YouTube Autoplay Video - Clear and Full Opacity */}
           <iframe
-            src={`https://www.youtube-nocookie.com/embed/${heroVideo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${heroVideo.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1&vq=hd1080`}
+            ref={heroIframeRef}
+            src={`https://www.youtube-nocookie.com/embed/${heroVideo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${heroVideo.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1&vq=hd1080&modestbranding=1&disablekb=1`}
             title={heroVideo.title}
-            className="w-full h-full object-cover scale-125 pointer-events-none"
+            className="w-full h-full object-cover scale-150 pointer-events-none"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           />
           {/* Light gradient for text readability only */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent pointer-events-none" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
         </div>
+
+        {/* Mute/Unmute Button - Bottom Right */}
+        <button
+          onClick={toggleHeroMute}
+          className="absolute bottom-6 right-6 z-40 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full transition-all duration-300 border border-white/30"
+          aria-label={isHeroMuted ? "Unmute" : "Mute"}
+        >
+          {isHeroMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+        </button>
 
         {/* Slide Info Overlay */}
         <div className="relative z-30 max-w-6xl w-full mx-auto px-4 sm:px-8 md:px-12 pb-10 sm:pb-14 space-y-4">
@@ -437,6 +476,7 @@ const AnimationPage = () => {
       {/* ─── SECTION 3: SECOND FULL-SCREEN VIDEO BANNER (REPLACES SPOTLIGHT) ─────────── */}
       <section className="relative w-full h-screen bg-black flex items-end justify-start overflow-hidden">
         <div className="absolute inset-0 w-full h-full">
+<<<<<<< Updated upstream
           {/* Background YouTube Autoplay Video - Clear and Full Opacity */}
           <iframe
             src={`https://www.youtube-nocookie.com/embed/${secondVideo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${secondVideo.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1&vq=hd1080`}
@@ -444,10 +484,38 @@ const AnimationPage = () => {
             className="w-full h-full object-cover scale-125 pointer-events-none"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           />
+=======
+          {/* Background YouTube Autoplay Video - Lazy Loaded */}
+          {isSecondVideoVisible ? (
+            <iframe
+              ref={secondIframeRef}
+              src={`https://www.youtube-nocookie.com/embed/${secondVideo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${secondVideo.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1&vq=hd1080&modestbranding=1&disablekb=1`}
+              title={secondVideo.title}
+              className="w-full h-full object-cover scale-150 pointer-events-none"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            />
+          ) : (
+            // Placeholder while video loads
+            <div className="w-full h-full bg-gray-900 flex items-center justify-center">
+              <div className="animate-pulse text-white text-sm">Loading video...</div>
+            </div>
+          )}
+>>>>>>> Stashed changes
           {/* Light gradient for text readability only */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent pointer-events-none" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
         </div>
+
+        {/* Mute/Unmute Button - Bottom Right */}
+        {isSecondVideoVisible && (
+          <button
+            onClick={toggleSecondVideoMute}
+            className="absolute bottom-6 right-6 z-40 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full transition-all duration-300 border border-white/30"
+            aria-label={isSecondVideoMuted ? "Unmute" : "Mute"}
+          >
+            {isSecondVideoMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+          </button>
+        )}
 
         {/* Video Info Overlay */}
         <div className="relative z-30 max-w-6xl w-full mx-auto px-4 sm:px-8 md:px-12 pb-10 sm:pb-14 space-y-4">
