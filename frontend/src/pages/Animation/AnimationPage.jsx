@@ -661,7 +661,7 @@ const AnimationPage = () => {
         <div className="max-w-6xl mx-auto space-y-8">
           <div className="flex items-center justify-between">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] text-black">
-              OUR FRANCHISES
+              OUR COMICS
             </h2>
           </div>
 
