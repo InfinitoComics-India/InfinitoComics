@@ -4,28 +4,21 @@ import overlayImage from "../../../assets/Images/Ultimate/OverlayImage.png";
 import leftOverlayImage from "../../../assets/Images/Ultimate/leftoverlay.png";
 import rightOverlayImage from "../../../assets/Images/Ultimate/rightoverlay.png";
 import universetext from "../../../assets/Images/Ultimate/universeText.png";
-
-// YouTube video for background
-const heroVideo = {
-  id: 1,
-  title: "INFINITO ULTIMATE",
-  youtubeId: "27VGbZNOSjo", // Same video as Animation page
-};
+import heroBackground from "../../../assets/Images/Ultimate/ultimateCarousel.jpg";
 
 const Home = () => {
   return (
     <div className="w-full text-white">
 
-      {/* Desktop View - Full Screen Video Background */}
+      {/* Desktop View - Full Screen Image Background */}
       <div className="relative w-full h-screen overflow-hidden hidden md:block">
 
-        {/* Background YouTube Autoplay Video */}
+        {/* Background Image */}
         <div className="absolute inset-0 w-full h-full">
-          <iframe
-            src={`https://www.youtube-nocookie.com/embed/${heroVideo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${heroVideo.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1&vq=hd1080`}
-            title={heroVideo.title}
-            className="w-full h-full object-cover scale-125 pointer-events-none"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          <img
+            src={heroBackground}
+            alt="Infinito Ultimate"
+            className="w-full h-full object-cover"
           />
         </div>
 
@@ -63,16 +56,15 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Mobile View - Full Screen Video Background */}
+      {/* Mobile View - Full Screen Image Background */}
       <div className="block md:hidden w-full">
         <div className="relative w-full h-screen overflow-hidden">
-          {/* Background YouTube Autoplay Video */}
+          {/* Background Image */}
           <div className="absolute inset-0 w-full h-full">
-            <iframe
-              src={`https://www.youtube-nocookie.com/embed/${heroVideo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${heroVideo.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1&vq=hd1080`}
-              title={heroVideo.title}
-              className="w-full h-full object-cover scale-125 pointer-events-none"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            <img
+              src={heroBackground}
+              alt="Infinito Ultimate"
+              className="w-full h-full object-cover"
             />
           </div>
           

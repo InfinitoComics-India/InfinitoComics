@@ -39,7 +39,7 @@ const InfinitoUltimateKit = () => {
   };
 
   return (
-    <div className="flex flex-col w-full max-w-[350px] border-2 border-gray-300 bg-white">
+    <div className="flex flex-col w-full max-w-[420px] border-2 border-gray-300 bg-white">
       {/* Header */}
       <div className="bg-white p-6 border-b-2 border-gray-300">
         <h3 className="text-[#DD1215] text-lg font-bold mb-2 uppercase">
@@ -74,7 +74,7 @@ const InfinitoUltimateKit = () => {
             <select
               value={selectedComic || ""}
               onChange={(e) => setSelectedComic(e.target.value)}
-              className="ml-8 w-full text-xs border border-gray-300 px-2 py-1.5 rounded focus:outline-none focus:border-[#DD1215]"
+              className="ml-8 w-[calc(100%-2rem)] text-sm border border-gray-300 px-3 py-2 rounded focus:outline-none focus:border-[#DD1215]"
             >
               {comics.map((comic) => (
                 <option key={comic._id} value={comic._id}>
