@@ -205,7 +205,13 @@ const RichEditor = ({ value, onChange, placeholder = "Start typing…" }) => {
       {/* ── Editor area ── */}
       <EditorContent
         editor={editor}
-        className="min-h-[160px] px-4 py-3 prose prose-sm max-w-none focus:outline-none text-gray-800 [&_table]:border-collapse [&_table]:w-full [&_td]:border [&_td]:border-gray-400 [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-gray-400 [&_th]:px-3 [&_th]:py-2 [&_th]:bg-gray-100 [&_th]:font-semibold"
+        className="min-h-[160px] px-4 py-3 prose prose-sm max-w-none focus:outline-none text-gray-800
+          [&_table]:border-collapse [&_table]:w-full
+          [&_td]:border [&_td]:border-gray-400 [&_td]:px-3 [&_td]:py-2
+          [&_th]:border [&_th]:border-gray-400 [&_th]:px-3 [&_th]:py-2 [&_th]:bg-gray-100 [&_th]:font-semibold
+          [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-2
+          [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-2
+          [&_li]:my-0.5"
       />
 
       {/* Paste hint */}
