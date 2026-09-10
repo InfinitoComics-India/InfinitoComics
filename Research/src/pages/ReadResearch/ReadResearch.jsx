@@ -63,7 +63,7 @@ const ReadResearch = () => {
           if (typeof a === 'string') return a;
           const name = a?.name || '';
           const affiliation = a?.affiliation || '';
-          return affiliation ? `${name} (${affiliation})` : name;
+          return affiliation ? `${name} - ${affiliation}` : name;
         })
         .join(', ')
     : paper.authors || '';
