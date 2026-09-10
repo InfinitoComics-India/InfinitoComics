@@ -44,7 +44,7 @@ const RichEditor = ({ value, onChange, placeholder = "Start typing…" }) => {
     extensions: [
       StarterKit,
       Underline,
-      TextAlign.configure({ types: ["heading", "paragraph"] }),
+      TextAlign.configure({ types: ["heading", "paragraph", "blockquote"] }),
       Placeholder.configure({ placeholder }),
       Image.configure({ inline: false, allowBase64: true }),
       Table.configure({ resizable: true }),
@@ -168,6 +168,7 @@ const RichEditor = ({ value, onChange, placeholder = "Start typing…" }) => {
         <ToolBtn onClick={() => editor.chain().focus().setTextAlign("left").run()} active={editor.isActive({ textAlign: "left" })} title="Align left">≡L</ToolBtn>
         <ToolBtn onClick={() => editor.chain().focus().setTextAlign("center").run()} active={editor.isActive({ textAlign: "center" })} title="Align center">≡C</ToolBtn>
         <ToolBtn onClick={() => editor.chain().focus().setTextAlign("right").run()} active={editor.isActive({ textAlign: "right" })} title="Align right">≡R</ToolBtn>
+        <ToolBtn onClick={() => editor.chain().focus().setTextAlign("justify").run()} active={editor.isActive({ textAlign: "justify" })} title="Justify">≡J</ToolBtn>
 
         <span className="w-px bg-gray-300 mx-1" />
 

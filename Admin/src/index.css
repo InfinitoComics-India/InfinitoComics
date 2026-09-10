@@ -44,3 +44,37 @@
 .ProseMirror li > ol {
   margin: 0.2rem 0;
 }
+
+/* ── Tiptap blockquote & code block styles ─────────────────────── */
+.ProseMirror blockquote {
+  border-left: 4px solid #d1d5db;
+  padding-left: 1rem;
+  margin: 0.75rem 0;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.ProseMirror pre {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  padding: 1rem;
+  border-radius: 6px;
+  margin: 0.75rem 0;
+  overflow-x: auto;
+}
+
+.ProseMirror code {
+  background: #f3f4f6;
+  color: #dc2626;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+}
+
+/* justify alignment */
+.ProseMirror [style*="text-align: justify"] {
+  text-align: justify;
+}
