@@ -10,6 +10,23 @@ const calculateReadTime = (text) => {
   return `${minutes} min read`;
 };
 
+const calculateNetScore = (blog) => {
+  if (blog.score !== undefined && blog.score !== null) return blog.score;
+  return (blog.likes || 0) - (blog.dislikes || 0);
+};
+
+const sortBlogsByRanking = (list) => {
+  return list
+    .filter((b) => b.published !== false && b.status !== "draft")
+    .sort((a, b) => {
+      const scoreDiff = calculateNetScore(b) - calculateNetScore(a);
+      if (scoreDiff !== 0) return scoreDiff;
+      const likesDiff = (b.likes || 0) - (a.likes || 0);
+      if (likesDiff !== 0) return likesDiff;
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    });
+};
+
 const ReadersFavorites = () => {
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,21 +36,17 @@ const ReadersFavorites = () => {
       try {
         const data = await getTopLovedBlogs(4);
         if (Array.isArray(data) && data.length > 0) {
-          const published = data.filter(
-            (b) => b.published !== false && b.status !== "draft"
-          );
-          if (published.length > 0) {
-            setBlogs(published);
+          const ranked = sortBlogsByRanking(data);
+          if (ranked.length > 0) {
+            setBlogs(ranked.slice(0, 4));
             return;
           }
         }
 
-        // Fallback: fetch all blogs and sort by likes/createdAt
+        // Fallback: fetch all blogs and sort by net score (likes minus dislikes)
         const all = await getAllBlogs();
         if (Array.isArray(all) && all.length > 0) {
-          const sorted = all
-            .filter((b) => b.published !== false && b.status !== "draft")
-            .sort((a, b) => (b.likes || 0) - (a.likes || 0) || new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+          const sorted = sortBlogsByRanking(all);
           setBlogs(sorted.slice(0, 4));
         }
       } catch (err) {
@@ -41,9 +54,7 @@ const ReadersFavorites = () => {
         try {
           const all = await getAllBlogs();
           if (Array.isArray(all) && all.length > 0) {
-            const sorted = all
-              .filter((b) => b.published !== false && b.status !== "draft")
-              .sort((a, b) => (b.likes || 0) - (a.likes || 0));
+            const sorted = sortBlogsByRanking(all);
             setBlogs(sorted.slice(0, 4));
           }
         } catch (fallbackErr) {
@@ -109,10 +120,18 @@ const ReadersFavorites = () => {
                   <span>#1 Fan Favorite</span>
                 </div>
 
-                {/* Love Count Badge */}
-                <div className="absolute bottom-4 left-4 inline-flex items-center gap-1.5 px-3 py-1 bg-white/95 backdrop-blur-sm text-red-600 rounded-full text-xs font-black shadow-sm">
-                  <Heart size={14} className="fill-red-600" />
-                  <span>{primaryBlog.likes || 0} Loves</span>
+                {/* Love & Hate Count Badge */}
+                <div className="absolute bottom-4 left-4 inline-flex items-center gap-2 px-3 py-1 bg-white/95 backdrop-blur-sm text-red-600 rounded-full text-xs font-black shadow-sm">
+                  <span className="flex items-center gap-1">
+                    <Heart size={14} className="fill-red-600" />
+                    <span>{primaryBlog.likes || 0} Loves</span>
+                  </span>
+                  {(primaryBlog.dislikes || 0) > 0 && (
+                    <span className="text-gray-500 font-bold border-l border-gray-200 pl-2 flex items-center gap-1 text-[11px]">
+                      <span>-{primaryBlog.dislikes}</span>
+                      <span>💔</span>
+                    </span>
+                  )}
                 </div>
 
                 <div className="absolute bottom-4 right-4 text-white/90 text-xs font-medium flex items-center gap-1">
@@ -174,9 +193,16 @@ const ReadersFavorites = () => {
                   <div className="absolute top-2 left-2 bg-black/75 backdrop-blur-sm text-white text-[10px] font-black px-2 py-0.5 rounded-full">
                     #{rank}
                   </div>
-                  <div className="absolute bottom-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 bg-white/95 text-red-600 rounded-full text-[10px] font-black">
-                    <Heart size={11} className="fill-red-600" />
-                    <span>{blog.likes || 0}</span>
+                  <div className="absolute bottom-2 left-2 inline-flex items-center gap-1.5 px-2 py-0.5 bg-white/95 text-red-600 rounded-full text-[10px] font-black">
+                    <span className="flex items-center gap-1">
+                      <Heart size={11} className="fill-red-600" />
+                      <span>{blog.likes || 0}</span>
+                    </span>
+                    {(blog.dislikes || 0) > 0 && (
+                      <span className="text-gray-500 font-bold border-l border-gray-200 pl-1">
+                        -{blog.dislikes} 💔
+                      </span>
+                    )}
                   </div>
                 </Link>
 
