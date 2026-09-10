@@ -126,6 +126,113 @@ const VideoRowSection = ({ genreTitle, onPlayVideo }) => {
   );
 };
 
+// Loads the YouTube IFrame API a single time, shared by every player on the page.
+let youTubeApiPromise = null;
+const loadYouTubeApi = () => {
+  if (youTubeApiPromise) return youTubeApiPromise;
+
+  youTubeApiPromise = new Promise((resolve) => {
+    if (window.YT && window.YT.Player) {
+      resolve(window.YT);
+      return;
+    }
+
+    const previousCallback = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      if (typeof previousCallback === "function") previousCallback();
+      resolve(window.YT);
+    };
+
+    if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+      const script = document.createElement("script");
+      script.src = "https://www.youtube.com/iframe_api";
+      document.head.appendChild(script);
+    }
+  });
+
+  return youTubeApiPromise;
+};
+
+// Drives a muted, looping background video. The player is reported as ready only
+// once playback is genuinely underway and YouTube's start-up control overlay has
+// had time to fade, so those buttons are never visible to the user.
+const useYouTubeBackground = (youtubeId) => {
+  const hostRef = useRef(null);
+  const playerRef = useRef(null);
+  const revealTimerRef = useRef(null);
+  const [isReady, setIsReady] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    loadYouTubeApi().then((YT) => {
+      if (cancelled || !hostRef.current) return;
+
+      // The API swaps this node out for an iframe, so it must be a node React
+      // does not manage - otherwise React errors when unmounting.
+      const mountNode = document.createElement("div");
+      hostRef.current.appendChild(mountNode);
+
+      playerRef.current = new YT.Player(mountNode, {
+        videoId: youtubeId,
+        width: "100%",
+        height: "100%",
+        playerVars: {
+          autoplay: 1,
+          mute: 1,
+          loop: 1,
+          playlist: youtubeId,
+          controls: 0,
+          disablekb: 1,
+          fs: 0,
+          iv_load_policy: 3,
+          modestbranding: 1,
+          playsinline: 1,
+          rel: 0,
+        },
+        events: {
+          onReady: (event) => {
+            event.target.mute();
+            event.target.playVideo();
+          },
+          onStateChange: (event) => {
+            if (event.data !== YT.PlayerState.PLAYING || revealTimerRef.current) return;
+            revealTimerRef.current = setTimeout(() => {
+              if (!cancelled) setIsReady(true);
+            }, 1200);
+          },
+        },
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      clearTimeout(revealTimerRef.current);
+      if (playerRef.current && typeof playerRef.current.destroy === "function") {
+        playerRef.current.destroy();
+      }
+      playerRef.current = null;
+      if (hostRef.current) hostRef.current.innerHTML = "";
+    };
+  }, [youtubeId]);
+
+  const toggleMute = () => {
+    const player = playerRef.current;
+    if (!player || typeof player.unMute !== "function") return;
+
+    if (isMuted) {
+      player.unMute();
+      player.setVolume(100);
+    } else {
+      player.mute();
+    }
+    setIsMuted(!isMuted);
+  };
+
+  return { hostRef, isReady, isMuted, toggleMute };
+};
+
 const AnimationPage = () => {
   const navigate = useNavigate();
   const [selectedVideoModal, setSelectedVideoModal] = useState(null);
@@ -160,30 +267,21 @@ const AnimationPage = () => {
   const secondVideoRef = React.useRef(null);
   const [isSecondVideoVisible, setIsSecondVideoVisible] = React.useState(false);
 
-  // Mute state for hero videos
-  const [isHeroMuted, setIsHeroMuted] = useState(true);
-  const [isSecondVideoMuted, setIsSecondVideoMuted] = useState(true);
-  const heroIframeRef = useRef(null);
-  const secondIframeRef = useRef(null);
+  // Background hero videos: revealed only after playback starts, so YouTube's
+  // initial play/pause/skip overlay is never on screen.
+  const {
+    hostRef: heroHostRef,
+    isReady: isHeroReady,
+    isMuted: isHeroMuted,
+    toggleMute: toggleHeroMute,
+  } = useYouTubeBackground(heroVideo.youtubeId);
 
-  // Function to toggle mute using YouTube postMessage API
-  const toggleHeroMute = () => {
-    if (heroIframeRef.current) {
-      const iframe = heroIframeRef.current;
-      const message = isHeroMuted ? '{"event":"command","func":"unMute","args":""}' : '{"event":"command","func":"mute","args":""}';
-      iframe.contentWindow.postMessage(message, '*');
-      setIsHeroMuted(!isHeroMuted);
-    }
-  };
-
-  const toggleSecondVideoMute = () => {
-    if (secondIframeRef.current) {
-      const iframe = secondIframeRef.current;
-      const message = isSecondVideoMuted ? '{"event":"command","func":"unMute","args":""}' : '{"event":"command","func":"mute","args":""}';
-      iframe.contentWindow.postMessage(message, '*');
-      setIsSecondVideoMuted(!isSecondVideoMuted);
-    }
-  };
+  const {
+    hostRef: secondHostRef,
+    isReady: isSecondReady,
+    isMuted: isSecondVideoMuted,
+    toggleMute: toggleSecondVideoMute,
+  } = useYouTubeBackground(secondVideo.youtubeId);
 
   // Fetch comics on component mount
   useEffect(() => {
@@ -359,14 +457,20 @@ const AnimationPage = () => {
     <div className="w-full min-h-screen bg-black text-white font-sans overflow-x-hidden selection:bg-[#E50914] selection:text-white">
       {/* ─── SECTION 1: HERO BANNER ──────────────────────────────────────── */}
       <section className="relative w-full h-screen bg-black flex items-end justify-start overflow-hidden">
-        <div className="absolute inset-0 w-full h-full">
-          {/* Background YouTube Autoplay Video - Clear and Full Opacity */}
-          <iframe
-            ref={heroIframeRef}
-            src={`https://www.youtube-nocookie.com/embed/${heroVideo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${heroVideo.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1&vq=hd1080&modestbranding=1&disablekb=1`}
-            title={heroVideo.title}
-            className="w-full h-full object-cover scale-150 pointer-events-none"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        <div className="absolute inset-0 w-full h-full overflow-hidden">
+          {/* Static thumbnail shown while YouTube's control overlay flashes */}
+          <img
+            src={`https://img.youtube.com/vi/${heroVideo.youtubeId}/maxresdefault.jpg`}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Background YouTube video - revealed once playback is actually running */}
+          <div
+            ref={heroHostRef}
+            className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[128%] h-[128%] pointer-events-none transition-opacity duration-700 [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:block ${
+              isHeroReady ? "opacity-100" : "opacity-0"
+            }`}
           />
           {/* Light gradient for text readability only */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent pointer-events-none" />
@@ -471,14 +575,20 @@ const AnimationPage = () => {
 
       {/* ─── SECTION 3: SECOND FULL-SCREEN VIDEO BANNER (REPLACES SPOTLIGHT) ─────────── */}
       <section className="relative w-full h-screen bg-black flex items-end justify-start overflow-hidden">
-        <div className="absolute inset-0 w-full h-full">
-          {/* Background YouTube Autoplay Video */}
-          <iframe
-            ref={secondIframeRef}
-            src={`https://www.youtube-nocookie.com/embed/${secondVideo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${secondVideo.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1&vq=hd1080&modestbranding=1&disablekb=1`}
-            title={secondVideo.title}
-            className="w-full h-full object-cover scale-150 pointer-events-none"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        <div className="absolute inset-0 w-full h-full overflow-hidden">
+          {/* Static thumbnail shown while YouTube's control overlay flashes */}
+          <img
+            src={`https://img.youtube.com/vi/${secondVideo.youtubeId}/maxresdefault.jpg`}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Background YouTube video - revealed once playback is actually running */}
+          <div
+            ref={secondHostRef}
+            className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[128%] h-[128%] pointer-events-none transition-opacity duration-700 [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:block ${
+              isSecondReady ? "opacity-100" : "opacity-0"
+            }`}
           />
           {/* Light gradient for text readability only */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent pointer-events-none" />
