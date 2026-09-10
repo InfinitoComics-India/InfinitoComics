@@ -49,7 +49,7 @@ const Footer = () => {
                 {" "}
                 <span className="">BLOGS & NEWS</span>
               </Link>
-              <Link to="/careers"><span>CAREER</span></Link>
+              <Link to="/aboutUS"><span>ABOUT US</span></Link>
               <Link to="/internships"><span>INTERNSHIP</span></Link>
               <Link to="/comics">
                 <span>COMICS</span>
@@ -126,7 +126,7 @@ const Footer = () => {
           <div className="mt-8 grid grid-cols-2 gap-y-4 px-5 pr-2 gap-x-12 text-sm font-medium text-left">
             <Link to="/news">BLOGS & NEWS</Link>
             <Link to={FOUNDATION_BASE_URL}><span className="font">FOUNDATION</span></Link> 
-            <Link to="/careers">CAREER</Link>
+            <Link to="/aboutUS">ABOUT US</Link>
              <Link to="/internships">INTERNSHIP</Link>
              <a href={`${RESEARCH_BASE_URL}/research`}> <span>RESEARCH</span></a>
             <Link to="/support-us">SUPPORT US</Link>
