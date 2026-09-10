@@ -172,10 +172,22 @@ const NewsDetails = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-50 text-red-600 rounded-full text-xs font-bold">
-              <Heart size={14} className="fill-red-600" />
+            <button
+              type="button"
+              onClick={() => handleReaction('love')}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer shadow-sm ${
+                userReaction === 'love'
+                  ? 'bg-[#DD1215] text-white shadow-red-200 shadow-md scale-105'
+                  : 'bg-red-50 text-[#DD1215] hover:bg-red-100 hover:scale-105 border border-red-200'
+              }`}
+              title={userReaction === 'love' ? 'You loved this story! Click to remove' : 'Click to Love this story'}
+            >
+              <Heart
+                size={14}
+                className={userReaction === 'love' ? 'fill-white stroke-white' : 'fill-[#DD1215] stroke-[#DD1215]'}
+              />
               <span>{likes} {likes === 1 ? 'Love' : 'Loves'}</span>
-            </span>
+            </button>
           </div>
         </div>
 
