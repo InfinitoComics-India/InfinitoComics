@@ -55,6 +55,19 @@ const ReadResearch = () => {
     ? paper.authors.map(a => typeof a === 'string' ? a : (a?.name || '')).filter(Boolean).join(', ')
     : paper.authors || '';
 
+  // Build rich author display: "Name (Affiliation), Name (Affiliation)"
+  const authorDisplay = Array.isArray(paper.authors)
+    ? paper.authors
+        .filter(a => typeof a === 'object' ? a?.name : a)
+        .map(a => {
+          if (typeof a === 'string') return a;
+          const name = a?.name || '';
+          const affiliation = a?.affiliation || '';
+          return affiliation ? `${name} (${affiliation})` : name;
+        })
+        .join(', ')
+    : paper.authors || '';
+
   const formatDate = (d) => {
     if (!d) return 'N/A';
     return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -166,9 +179,9 @@ const ReadResearch = () => {
               {paper.title}
             </h1>
 
-            {authorNames && (
+            {authorDisplay && (
               <p style={{ fontSize: '1rem', color: '#555', marginBottom: '1.2rem' }}>
-                {authorNames}
+                {authorDisplay}
               </p>
             )}
 

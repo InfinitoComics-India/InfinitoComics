@@ -355,7 +355,7 @@ const PaperCreate = () => {
           <div className="space-y-4">
             {form.authors.map((author, i) => (
               <div key={i} className="bg-gray-50 border rounded-md p-4 shadow-sm">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                     <input
@@ -364,15 +364,6 @@ const PaperCreate = () => {
                       onChange={(e) => handleAuthorChange(i, "name", e.target.value)}
                       className="w-full border px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
                       required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input
-                      type="email"
-                      value={author.email}
-                      onChange={(e) => handleAuthorChange(i, "email", e.target.value)}
-                      className="w-full border px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
                   </div>
                   <div>
