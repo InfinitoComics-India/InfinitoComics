@@ -71,11 +71,13 @@ class BlogRepository extends CrudRepository {
 
             blog.likes = blog.likedBy.length;
             blog.dislikes = blog.dislikedBy.length;
+            blog.score = blog.likes - blog.dislikes;
             await blog.save();
 
             return {
                 likes: blog.likes,
                 dislikes: blog.dislikes,
+                score: blog.score,
                 userReaction,
             };
         } catch (error) {
@@ -85,9 +87,34 @@ class BlogRepository extends CrudRepository {
 
     async getTopLoved(limit = 4) {
         try {
-            return await Blog.find({ status: { $ne: 'draft' }, published: { $ne: false } })
-                .sort({ likes: -1, createdAt: -1 })
-                .limit(limit);
+            return await Blog.aggregate([
+                {
+                    $match: {
+                        status: { $ne: 'draft' },
+                        published: { $ne: false }
+                    }
+                },
+                {
+                    $addFields: {
+                        score: {
+                            $subtract: [
+                                { $ifNull: ["$likes", 0] },
+                                { $ifNull: ["$dislikes", 0] }
+                            ]
+                        }
+                    }
+                },
+                {
+                    $sort: {
+                        score: -1,
+                        likes: -1,
+                        createdAt: -1
+                    }
+                },
+                {
+                    $limit: limit
+                }
+            ]);
         } catch (error) {
             throw error;
         }

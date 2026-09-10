@@ -60,6 +60,10 @@ const BlogSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    score: {
+      type: Number,
+      default: 0,
+    },
     likedBy: [{
       type: String,
     }],
