@@ -79,7 +79,7 @@ const BrowsePapers = ({ allPapers, isLoading }) => {
 
   return (
     <div style={{ background: '#f3f4f6' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 3rem 4rem' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 clamp(1rem, 4vw, 3rem) 4rem' }}>
 
         {/* Search Bar */}
         {isLoading ? <PaperSearchBarShimmer /> : (
@@ -99,7 +99,7 @@ const BrowsePapers = ({ allPapers, isLoading }) => {
             }}>
               BROWSE OUR PAPERS
             </h2>
-            <div style={{ display: 'flex', gap: '2.5rem', flexWrap: 'wrap', borderBottom: '1px solid #ddd', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', borderBottom: '1px solid #ddd', marginBottom: '1.5rem', overflowX: 'auto' }}>
               {CATEGORIES.map((cat) => (
                 <button key={cat.key} onClick={() => setSelectedCategory(cat.key)} style={{
                   background: 'none', border: 'none',
