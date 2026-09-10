@@ -49,6 +49,31 @@ export const getAllBlogs = async () => {
   return res.data.data; 
 };
 
+export const reactToBlog = async (id, reaction, visitorId) => {
+  try {
+    const res = await axios.post(`${BASE_URL}/blog/${id}/react`, {
+      reaction,
+      visitorId,
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Failed to react to blog:", error);
+    throw error;
+  }
+};
+
+export const getTopLovedBlogs = async (limit = 4) => {
+  try {
+    const res = await axios.get(`${BASE_URL}/blog/top-loved`, {
+      params: { limit },
+    });
+    return res.data?.blogs || [];
+  } catch (error) {
+    console.error("Failed to fetch top loved blogs:", error);
+    return [];
+  }
+};
+
 export const forgetPasswordFunc = async (email) => {
   try {
     const res = await axios.post(`${BASE_URL}/api/forget-password`, {email});

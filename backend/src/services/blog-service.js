@@ -66,6 +66,14 @@ async getTopBlogsByCategory(category, limit) {
 async getBlogsById(id) {
   return await this.blogRepository.getBlogById(id);
 }
+
+async reactToBlog(id, reaction, visitorId) {
+  return await this.blogRepository.reactToBlog(id, reaction, visitorId);
+}
+
+async getTopLoved(limit) {
+  return await this.blogRepository.getTopLoved(limit);
+}
 }
 
 export default BlogService;

@@ -18,6 +18,11 @@ router.delete('/deleteblog/:id',adminauthenticate, blogController.deleteBlog); /
 
 router.get('/latestblog', blogController.getLatestBlogs);
 
+router.get('/top-loved', blogController.getTopLovedBlogs);
+
+router.post('/:id/react', blogController.reactToBlog);
+router.post('/react/:id', blogController.reactToBlog);
+
 router.get('/foundation-blogs', blogController.getFoundationBlogs);
 
 router.get('/ic-blogs', blogController.getICBlogs);

@@ -179,7 +179,53 @@ const getICBlogs = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: "Error fetching IC blogs" });
   }
-}
+};
+
+const reactToBlog = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reaction, visitorId } = req.body;
+
+    if (!reaction || !['love', 'like', 'hate', 'dislike'].includes(reaction)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid reaction. Must be 'love' or 'hate'.",
+      });
+    }
+
+    const effectiveVisitorId = visitorId || req.user?._id?.toString() || req.ip || "anon";
+
+    const result = await blogservice.reactToBlog(id, reaction, effectiveVisitorId);
+    return res.status(200).json({
+      success: true,
+      message: "Reaction recorded",
+      data: result,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+const getTopLovedBlogs = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 4;
+    const blogs = await blogservice.getTopLoved(limit);
+    return res.status(200).json({
+      success: true,
+      message: "Fetched top loved blogs",
+      blogs,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 export default {
   createBlog,
   getAllBlogs,
@@ -188,5 +234,7 @@ export default {
   deleteBlog,
   getLatestBlogs,
   getFoundationBlogs,
-  getICBlogs
+  getICBlogs,
+  reactToBlog,
+  getTopLovedBlogs,
 };
