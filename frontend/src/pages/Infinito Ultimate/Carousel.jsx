@@ -1,35 +1,33 @@
-import React, { useState } from 'react';
-import slide1 from "../../../assets/Images/Ultimate/ultimateCarousel.jpg";
+import React from 'react';
 import belowImage from "../../../assets/Images/Ultimate/Botton.png";
 import overlayImage from "../../../assets/Images/Ultimate/OverlayImage.png";
 import leftOverlayImage from "../../../assets/Images/Ultimate/leftoverlay.png";
 import rightOverlayImage from "../../../assets/Images/Ultimate/rightoverlay.png";
 import universetext from "../../../assets/Images/Ultimate/universeText.png";
 
-
-const images = [
-  { id: 1, url: slide1 },
-  { id: 2, url: slide1 },
-  { id: 3, url: slide1 },
-  { id: 4, url: slide1 },
-  { id: 5, url: slide1 },
-];
+// YouTube video for background
+const heroVideo = {
+  id: 1,
+  title: "INFINITO ULTIMATE",
+  youtubeId: "27VGbZNOSjo", // Same video as Animation page
+};
 
 const Home = () => {
-  const [current, setCurrent] = useState(0);
-
   return (
     <div className="w-full text-white">
 
-      {/* Desktop View (Untouched) */}
-      <div className="relative w-full h-[80vh] overflow-hidden hidden md:block">
+      {/* Desktop View - Video Background */}
+      <div className="relative w-full h-screen overflow-hidden hidden md:block">
 
-        {/* Background Image */}
-        <img
-          src={images[current].url}
-          alt={`Slide ${current + 1}`}
-          className="w-full h-full object-cover object-top"
-        />
+        {/* Background YouTube Autoplay Video */}
+        <div className="absolute inset-0 w-full h-full">
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/${heroVideo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${heroVideo.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1&vq=hd1080`}
+            title={heroVideo.title}
+            className="w-full h-full object-cover scale-125 pointer-events-none"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          />
+        </div>
 
         {/* Main Overlay */}
         <img
@@ -65,17 +63,20 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Mobile View (60% Image + 40% Black Text) */}
+      {/* Mobile View - Video Background */}
       <div className="block md:hidden w-full">
 
-        {/* 60% Image with Shadow */}
-        <div className="relative w-full h-[45vh]  overflow-hidden">
-          <img
-            src={images[current].url}
-            alt={`Slide ${current + 1}`}
-            className="w-full h-full object-cover object-top "
-          />
-          <div className="absolute bottom-0 w-full mt-5 h-45 mb-[-20px] bg-gradient-to-t from-black/90 to-transparent z-20" />
+        {/* Full height Video with Shadow */}
+        <div className="relative w-full h-screen overflow-hidden">
+          <div className="absolute inset-0 w-full h-full">
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${heroVideo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${heroVideo.youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1&vq=hd1080`}
+              title={heroVideo.title}
+              className="w-full h-full object-cover scale-125 pointer-events-none"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            />
+          </div>
+          <div className="absolute bottom-0 w-full h-32 bg-gradient-to-t from-black/90 to-transparent z-20" />
         </div>
 
         {/* 40% Text Section */}
