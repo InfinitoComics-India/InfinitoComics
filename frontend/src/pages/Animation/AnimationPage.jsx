@@ -24,7 +24,7 @@ import upcomingEvent from "../../../assets/Images/upcomingEvent.png";
 // Hero section - single video
 const heroVideo = {
   id: 1,
-  title: "MULTIVERSE UNLEASHED | INFINITO SAGA",
+  title: "MULTIVERSE UNLEASHED | INFINITO MAGMAVERSE",
   description:
     "An ancient force awakens across dimensions. Heroes will rise, worlds will collide, and the Infinito Universe will never be the same.",
   youtubeId: "27VGbZNOSjo",
