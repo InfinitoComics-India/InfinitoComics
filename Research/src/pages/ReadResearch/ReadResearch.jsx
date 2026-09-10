@@ -51,22 +51,18 @@ const ReadResearch = () => {
     <div style={{ padding: '4rem', textAlign: 'center', color: 'red' }}>Research paper not found.</div>
   );
 
-  const authorNames = Array.isArray(paper.authors)
-    ? paper.authors.map(a => typeof a === 'string' ? a : (a?.name || '')).filter(Boolean).join(', ')
-    : paper.authors || '';
-
-  // Build rich author display: "Name (Affiliation), Name (Affiliation)"
-  const authorDisplay = Array.isArray(paper.authors)
+  // Build author lines: each author on its own line as "Name - Affiliation"
+  const authorLines = Array.isArray(paper.authors)
     ? paper.authors
-        .filter(a => typeof a === 'object' ? a?.name : a)
+        .filter(a => typeof a === 'object' ? a?.name?.trim() : a?.trim())
         .map(a => {
-          if (typeof a === 'string') return a;
-          const name = a?.name || '';
-          const affiliation = a?.affiliation || '';
+          if (typeof a === 'string') return a.trim();
+          const name = (a?.name || '').trim();
+          const affiliation = (a?.affiliation || '').trim();
           return affiliation ? `${name} - ${affiliation}` : name;
         })
-        .join(', ')
-    : paper.authors || '';
+        .filter(Boolean)
+    : (paper.authors ? [paper.authors] : []);
 
   const formatDate = (d) => {
     if (!d) return 'N/A';
@@ -179,10 +175,12 @@ const ReadResearch = () => {
               {paper.title}
             </h1>
 
-            {authorDisplay && (
-              <p style={{ fontSize: '1rem', color: '#555', marginBottom: '1.2rem' }}>
-                {authorDisplay}
-              </p>
+            {authorLines.length > 0 && (
+              <div style={{ fontSize: '0.92rem', color: '#555', marginBottom: '1.2rem', lineHeight: 1.7 }}>
+                {authorLines.map((line, i) => (
+                  <div key={i}>{line}</div>
+                ))}
+              </div>
             )}
 
             <div style={{ display: 'flex', gap: '2rem', borderTop: '1px solid #eee', borderBottom: '1px solid #eee', padding: '0.8rem 0', marginBottom: '1.8rem' }}>
