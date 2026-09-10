@@ -4,6 +4,7 @@ import Usercontroller from "../controller/user-controller.js";
 import { submitErrorReport , getAllErrorReports} from "../controller/error-report-controller.js";
 import { submitFeedback, getAllFeedbacks } from "../controller/feedback-controller.js";
 import {authenticate} from "../middleware/auth.js";
+import {adminauthenticate} from "../middleware/adminauth.js";
 import upload from "../middleware/multer.js";
 import { verifyResetToken } from "../middleware/verifyResettoken.js";
 // Create (Register)
@@ -17,8 +18,8 @@ router.get('/getById', Usercontroller.getById);
 // Update (user by ID)
 router.put('/update', Usercontroller.updateUser);
 
-// Delete (user by ID)
-router.delete('/delete', Usercontroller.deleteUser);
+// Delete (user by ID) — admin only
+router.delete('/delete', adminauthenticate, Usercontroller.deleteUser);
 
 // Login (auth)
 router.post('/login', Usercontroller.login);

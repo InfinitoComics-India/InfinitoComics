@@ -1,18 +1,50 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaRegUserCircle } from 'react-icons/fa';
-import { getBlogsById } from '../../services/userServices';
+import { Heart, ThumbsDown } from 'lucide-react';
+import { getBlogsById, reactToBlog } from '../../services/userServices';
+
+const getVisitorId = () => {
+  let vid = localStorage.getItem('infinito_visitor_id');
+  if (!vid) {
+    vid = 'visitor_' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+    localStorage.setItem('infinito_visitor_id', vid);
+  }
+  return vid;
+};
 
 const NewsDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [selectedNews, setSelectedNews] = useState(null);
+  const [likes, setLikes] = useState(0);
+  const [dislikes, setDislikes] = useState(0);
+  const [userReaction, setUserReaction] = useState(null);
+  const [isReacting, setIsReacting] = useState(false);
 
   useEffect(() => {
     const fetchBlog = async () => {
       try {
         const blog = await getBlogsById(id);
-        setSelectedNews(blog && blog.data ? blog.data : null);
+        const blogData = blog && blog.data ? blog.data : null;
+        setSelectedNews(blogData);
+        if (blogData) {
+          const cachedReaction = localStorage.getItem(`blog_reaction_${id}`);
+          const cachedLikesDelta = parseInt(localStorage.getItem(`blog_likes_delta_${id}`) || '0');
+          const cachedDislikesDelta = parseInt(localStorage.getItem(`blog_dislikes_delta_${id}`) || '0');
+
+          setLikes(Math.max(0, (blogData.likes || 0) + cachedLikesDelta));
+          setDislikes(Math.max(0, (blogData.dislikes || 0) + cachedDislikesDelta));
+
+          const vid = getVisitorId();
+          if (Array.isArray(blogData.likedBy) && blogData.likedBy.includes(vid)) {
+            setUserReaction('love');
+          } else if (Array.isArray(blogData.dislikedBy) && blogData.dislikedBy.includes(vid)) {
+            setUserReaction('hate');
+          } else if (cachedReaction) {
+            setUserReaction(cachedReaction);
+          }
+        }
       } catch (error) {
         console.error("Failed to fetch blog:", error.message);
       }
@@ -20,6 +52,80 @@ const NewsDetails = () => {
 
     fetchBlog();
   }, [id]);
+
+  const handleReaction = async (type) => {
+    if (isReacting) return;
+    setIsReacting(true);
+
+    const prevReaction = userReaction;
+    const prevLikes = likes;
+    const prevDislikes = dislikes;
+
+    let nextReaction = null;
+    let nextLikes = likes;
+    let nextDislikes = dislikes;
+
+    if (type === 'love') {
+      if (prevReaction === 'love') {
+        nextReaction = null;
+        nextLikes = Math.max(0, nextLikes - 1);
+      } else {
+        nextReaction = 'love';
+        nextLikes = nextLikes + 1;
+        if (prevReaction === 'hate') {
+          nextDislikes = Math.max(0, nextDislikes - 1);
+        }
+      }
+    } else if (type === 'hate') {
+      if (prevReaction === 'hate') {
+        nextReaction = null;
+        nextDislikes = Math.max(0, nextDislikes - 1);
+      } else {
+        nextReaction = 'hate';
+        nextDislikes = nextDislikes + 1;
+        if (prevReaction === 'love') {
+          nextLikes = Math.max(0, nextLikes - 1);
+        }
+      }
+    }
+
+    setUserReaction(nextReaction);
+    setLikes(nextLikes);
+    setDislikes(nextDislikes);
+
+    if (nextReaction) {
+      localStorage.setItem(`blog_reaction_${id}`, nextReaction);
+    } else {
+      localStorage.removeItem(`blog_reaction_${id}`);
+    }
+
+    const baseLikes = selectedNews?.likes || 0;
+    const baseDislikes = selectedNews?.dislikes || 0;
+    localStorage.setItem(`blog_likes_delta_${id}`, String(nextLikes - baseLikes));
+    localStorage.setItem(`blog_dislikes_delta_${id}`, String(nextDislikes - baseDislikes));
+
+    try {
+      const vid = getVisitorId();
+      const res = await reactToBlog(id, type, vid);
+      if (res?.data) {
+        setLikes(res.data.likes);
+        setDislikes(res.data.dislikes);
+        setUserReaction(res.data.userReaction);
+        if (res.data.userReaction) {
+          localStorage.setItem(`blog_reaction_${id}`, res.data.userReaction);
+        } else {
+          localStorage.removeItem(`blog_reaction_${id}`);
+        }
+        localStorage.removeItem(`blog_likes_delta_${id}`);
+        localStorage.removeItem(`blog_dislikes_delta_${id}`);
+      }
+    } catch (err) {
+      // Backend route pending deployment to Render - keep the optimistic local vote active
+      console.warn('Backend reaction sync pending deployment:', err.message);
+    } finally {
+      setIsReacting(false);
+    }
+  };
 
   if (!selectedNews) return <div className="text-center mt-10">Loading...</div>;
 
@@ -30,7 +136,7 @@ const NewsDetails = () => {
           onClick={() => navigate(-1)}
           className="text-sm hover:underline mb-8 tracking-widest font-semibold cursor-pointer"
         >
-          ← BACK TO BLOGS & NEWS
+          ← BACK TO BLOGS &amp; NEWS
         </button>
 
         <h1
@@ -47,21 +153,42 @@ const NewsDetails = () => {
           {selectedNews.subject ? selectedNews.subject.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ') : ''}
         </p>
 
-        <div className="flex items-center gap-2 pt-3 mb-6 text-sm text-gray-700">
-          <FaRegUserCircle className="text-2xl" />
-          <p className="text-base md:text-md font-semibold">
-            By <span>{selectedNews.authorName || 'Admin'}</span>&nbsp;&nbsp;•&nbsp;&nbsp;
-            {new Date(selectedNews.createdAt).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            })}
-            &nbsp;at&nbsp;
-            {new Date(selectedNews.createdAt).toLocaleTimeString('en-US', {
-              hour: '2-digit',
-              minute: '2-digit'
-            })}
-          </p>
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 mb-6 text-sm text-gray-700 border-b border-gray-100 pb-4">
+          <div className="flex items-center gap-2">
+            <FaRegUserCircle className="text-2xl" />
+            <p className="text-base md:text-md font-semibold">
+              By <span>{selectedNews.authorName || 'Admin'}</span>&nbsp;&nbsp;•&nbsp;&nbsp;
+              {new Date(selectedNews.createdAt).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
+              &nbsp;at&nbsp;
+              {new Date(selectedNews.createdAt).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleReaction('love')}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer shadow-sm ${
+                userReaction === 'love'
+                  ? 'bg-[#DD1215] text-white shadow-red-200 shadow-md scale-105'
+                  : 'bg-red-50 text-[#DD1215] hover:bg-red-100 hover:scale-105 border border-red-200'
+              }`}
+              title={userReaction === 'love' ? 'You loved this story! Click to remove' : 'Click to Love this story'}
+            >
+              <Heart
+                size={14}
+                className={userReaction === 'love' ? 'fill-white stroke-white' : 'fill-[#DD1215] stroke-[#DD1215]'}
+              />
+              <span>{likes} {likes === 1 ? 'Love' : 'Loves'}</span>
+            </button>
+          </div>
         </div>
 
         {/* Cover image at top if present */}
@@ -105,6 +232,68 @@ const NewsDetails = () => {
                 </div>
               ))
             )}
+          </div>
+
+          {/* Reader Reaction Section */}
+          <div className="my-10 p-6 sm:p-8 bg-neutral-50 rounded-2xl border border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-sm">
+            <div>
+              <h3 className="text-lg sm:text-xl font-black uppercase tracking-wide text-gray-900 mb-1 font-['DM_Sans']">
+                Did you enjoy this story?
+              </h3>
+              <p className="text-gray-500 text-xs sm:text-sm">
+                Leave your reaction to help rank our community's favorite stories!
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
+              {/* Love Button */}
+              <button
+                onClick={() => handleReaction('love')}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-sm transition-all duration-300 cursor-pointer shadow-sm ${
+                  userReaction === 'love'
+                    ? 'bg-[#DD1215] text-white shadow-red-200 shadow-md scale-105'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:border-red-500 hover:text-[#DD1215]'
+                }`}
+                aria-label="Love this story"
+              >
+                <Heart
+                  size={18}
+                  className={userReaction === 'love' ? 'fill-white stroke-white' : 'fill-none stroke-current'}
+                />
+                <span>Love It</span>
+                <span
+                  className={`ml-1 px-2 py-0.5 rounded-full text-xs font-extrabold ${
+                    userReaction === 'love' ? 'bg-red-800 text-white' : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {likes}
+                </span>
+              </button>
+
+              {/* Hate Button */}
+              <button
+                onClick={() => handleReaction('hate')}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-sm transition-all duration-300 cursor-pointer shadow-sm ${
+                  userReaction === 'hate'
+                    ? 'bg-neutral-900 text-white shadow-md scale-105'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:border-neutral-500 hover:text-black'
+                }`}
+                aria-label="Hate this story"
+              >
+                <ThumbsDown
+                  size={18}
+                  className={userReaction === 'hate' ? 'fill-white stroke-white' : 'fill-none stroke-current'}
+                />
+                <span>Hate It</span>
+                <span
+                  className={`ml-1 px-2 py-0.5 rounded-full text-xs font-extrabold ${
+                    userReaction === 'hate' ? 'bg-neutral-700 text-white' : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {dislikes}
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

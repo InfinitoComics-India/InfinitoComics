@@ -11,13 +11,15 @@ export const fetchUser = async () => {
 
 export const handleDeleteUser = async (userID) => {
        try {
+        const token = localStorage.getItem("authToken");
         const response = await axios.delete(
-        BACKEND_URL +  `/api/delete?id=${userID}`
+        BACKEND_URL +  `/api/delete?id=${userID}`,
+        { headers: { Authorization: `Bearer ${token}` } }
         );
 
         console.log(response.data.message); 
         return response?.data?.message;
       } catch (error) {
-        console.error("Delete failed:", error.response.data.message);
+        console.error("Delete failed:", error.response?.data?.message);
       }
 }

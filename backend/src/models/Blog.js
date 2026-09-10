@@ -52,6 +52,24 @@ const BlogSchema = new mongoose.Schema(
       enum: ["draft", "published"],
       default: "published",
     },
+    likes: {
+      type: Number,
+      default: 0,
+    },
+    dislikes: {
+      type: Number,
+      default: 0,
+    },
+    score: {
+      type: Number,
+      default: 0,
+    },
+    likedBy: [{
+      type: String,
+    }],
+    dislikedBy: [{
+      type: String,
+    }],
   },
   {
     timestamps: true,
