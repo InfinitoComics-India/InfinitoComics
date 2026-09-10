@@ -85,7 +85,7 @@ const VideoRowSection = ({ genreTitle, onPlayVideo }) => {
             >
               <div className="relative w-full aspect-video bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
                 <img
-                  src={video.img}
+                  src={video.thumbnail}
                   alt={video.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
@@ -181,33 +181,16 @@ const AnimationPage = () => {
     
     fetchCharacters()
       .then((data) => {
-        console.log("=== RAW API RESPONSE ===");
-        console.log("Full response:", JSON.stringify(data, null, 2));
-        console.log("Response type:", typeof data);
-        console.log("Is array?", Array.isArray(data));
-        console.log("Has data property?", data?.data);
-        console.log("data.data is array?", Array.isArray(data?.data));
-        
-        // Try multiple formats
+        // Handle the possible response shapes from the API
         let chars = [];
         if (Array.isArray(data?.data)) {
           chars = data.data;
-          console.log("✓ Using data.data format");
         } else if (Array.isArray(data)) {
           chars = data;
-          console.log("✓ Using direct array format");
-        } else if (data?.characters && Array.isArray(data.characters)) {
+        } else if (Array.isArray(data?.characters)) {
           chars = data.characters;
-          console.log("✓ Using data.characters format");
         }
-        
-        console.log("=== PROCESSED CHARACTERS ===");
-        console.log("Characters array:", chars);
-        console.log("Total count:", chars.length);
-        if (chars.length > 0) {
-          console.log("First character:", chars[0]);
-        }
-        
+
         setCharacters(chars);
         setFilteredCharacters(chars);
       })
@@ -612,8 +595,8 @@ const AnimationPage = () => {
                     >
                       <div className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
                         <img
-                          src={character.images?.[0] || character.coverImg || "https://via.placeholder.com/300x400"}
-                          alt={character.name}
+                          src={comic.coverImg || "https://via.placeholder.com/300x400"}
+                          alt={comic.title || "Comic"}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       </div>
@@ -659,7 +642,7 @@ const AnimationPage = () => {
 
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-start relative">
           {/* Left Red Movie Camera / Projector Graphic */}
-          <div className="relative flex-shrink-0 z-20 flex items-center -mr-2 md:-mr-6 hidden sm:flex">
+          <div className="relative flex-shrink-0 z-20 items-center -mr-2 md:-mr-6 hidden sm:flex">
             <svg
               viewBox="0 0 260 320"
               className="w-48 sm:w-60 md:w-72 h-auto text-[#C8232B] fill-current drop-shadow-xl"
