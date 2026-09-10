@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import LoginBackground from '../../../assets/Images/LoginBackground.jpg';
 import Bullet from '../../../assets/Images/Bullet.png';
 import Riza from '../../../assets/Images/Riza Jose.png';
@@ -11,8 +11,14 @@ import SignupStep5 from './SignupStep5';
 
 const SignupWrapper = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
   const initialStep = parseInt(queryParams.get('step')) || 1;
+
+  // Track whether the user entered the wrapper mid-flow (e.g. from /verifyEmail).
+  // If they landed directly on step 3, "back" from step 3 should return to /verifyEmail
+  // rather than dropping them to step 2 (profile form they already completed).
+  const enteredAtStep = initialStep;
 
   const [step, setStep] = useState(initialStep);
   const [characterColors, setCharacterColors] = useState(null);
@@ -30,8 +36,6 @@ const SignupWrapper = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Step navigation
-  // 1 → 2 → 3 → 4 → 5
   const goToStep = (s) => setStep(s);
 
   const renderStep = () => {
@@ -56,9 +60,11 @@ const SignupWrapper = () => {
       case 3:
         return (
           <SignupStep3
-            onBack={() => goToStep(2)}
-            onNext={() => goToStep(5)}        // Randomise / Continue → skip to completion
-            onCustomise={() => goToStep(4)}   // Customise → go to part selector
+            // If the user arrived here from email verification (enteredAtStep === 3),
+            // back goes to /verifyEmail; otherwise back goes to step 2.
+            onBack={() => enteredAtStep >= 3 ? navigate('/verifyEmail') : goToStep(2)}
+            onNext={() => goToStep(5)}        // Randomise / Continue → completion
+            onCustomise={() => goToStep(4)}   // Customise → part selector
           />
         );
       case 4:

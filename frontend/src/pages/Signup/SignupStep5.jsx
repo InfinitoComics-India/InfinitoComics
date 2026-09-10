@@ -80,13 +80,13 @@ const SignupStep5 = ({ onBack, characterColors }) => {
         </div>
       </div>
 
-      {/* Go to Home / Verify Email button */}
+      {/* Go to Home button */}
       <div className="flex justify-center mt-6">
         <button
-          onClick={() => navigate('/verifyEmail')}
+          onClick={() => navigate('/')}
           className="bg-[#DD1215] text-white px-6 py-2 text-xs font-bold uppercase tracking-widest hover:bg-red-700 transition"
         >
-          Continue to Verify Email →
+          Start Exploring →
         </button>
       </div>
     </div>
