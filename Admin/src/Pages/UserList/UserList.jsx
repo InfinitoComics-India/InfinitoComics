@@ -1,8 +1,9 @@
 // 📁 src/components/UserList.jsx
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Trash2, Search, Filter, X, User as UserIcon } from "lucide-react";
+import { Trash2, Search, Filter, X, User as UserIcon, Download } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
+import * as XLSX from "xlsx";
 import {
   container,
   item,
@@ -64,6 +65,46 @@ function UserList() {
     setCurrentPage(1);
   };
 
+  // Export all currently filtered users to Excel
+  const exportToExcel = () => {
+    if (filtered.length === 0) {
+      toast.error("No users to export.");
+      return;
+    }
+
+    const rows = filtered.map((u, index) => ({
+      "S.No":         index + 1,
+      "Username":     u.username || "—",
+      "Full Name":    u.name     || "—",
+      "Email":        u.email    || "—",
+      "Date of Birth":u.dob ? new Date(u.dob).toLocaleDateString("en-IN") : "—",
+      "Membership":   u.membershipType || u.membershipPlan || "Non-Premium",
+      "Email Verified": u.isverified ? "Yes" : "No",
+      "Joined On":    u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-IN") : "—",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+
+    // Set column widths
+    worksheet["!cols"] = [
+      { wch: 6 },   // S.No
+      { wch: 22 },  // Username
+      { wch: 22 },  // Full Name
+      { wch: 30 },  // Email
+      { wch: 16 },  // DOB
+      { wch: 16 },  // Membership
+      { wch: 16 },  // Email Verified
+      { wch: 16 },  // Joined On
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Users");
+
+    const today = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(workbook, `Infinito_Users_${today}.xlsx`);
+    toast.success(`Exported ${filtered.length} users to Excel.`);
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-4">
         <Toaster position="top-center" /> 
@@ -103,6 +144,21 @@ function UserList() {
             <option value="Non-Premium">Non-Premium</option>
           </select>
         </div>
+
+        {/* Export button */}
+        <button
+          onClick={exportToExcel}
+          title={`Export ${filtered.length} user(s) to Excel`}
+          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold text-sm shadow hover:bg-green-700 active:scale-95 transition whitespace-nowrap"
+        >
+          <Download size={16} />
+          Export Excel
+          {filtered.length > 0 && (
+            <span className="ml-1 bg-white text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">
+              {filtered.length}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Filter Chips */}
