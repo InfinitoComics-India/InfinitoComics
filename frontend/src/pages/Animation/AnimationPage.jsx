@@ -579,17 +579,17 @@ const AnimationPage = () => {
                       <div className="h-3 bg-gray-200 rounded mt-2 w-4/5" />
                     </div>
                   ))
-                ) : characters.length === 0 ? (
-                  // No characters
+                ) : franchiseComics.length === 0 ? (
+                  // No comics
                   <div className="w-full text-center py-8">
-                    <p className="text-gray-500 text-sm">No characters available</p>
+                    <p className="text-gray-500 text-sm">No comics available</p>
                   </div>
                 ) : (
                   // Display all comics with horizontal scroll
                   franchiseComics.map((comic) => (
                     <div 
-                      key={character._id} 
-                      onClick={() => navigate(`/characters/${character._id}`)}
+                      key={comic._id} 
+                      onClick={() => navigate(`/comicChap/${comic._id}/chapters`)}
                       className="flex-shrink-0 group cursor-pointer space-y-2"
                       style={{ width: '155px' }}
                     >
@@ -602,7 +602,7 @@ const AnimationPage = () => {
                       </div>
 
                       <p className="text-xs font-bold text-gray-900 group-hover:text-[#E50914] transition-colors font-dmsans line-clamp-1">
-                        {character.name}
+                        {comic.title}
                       </p>
                     </div>
                   ))
