@@ -198,6 +198,7 @@ const ReadResearch = () => {
               <div style={{ marginBottom: '1.8rem' }}>
                 <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#111', marginBottom: '0.6rem' }}>Abstract</h2>
                 <div style={{ fontSize: '0.9rem', color: '#333', lineHeight: 1.75, textAlign: 'justify' }}
+                  className="paper-content"
                   dangerouslySetInnerHTML={{ __html: paper.abstract }} />
               </div>
             )}
@@ -216,6 +217,7 @@ const ReadResearch = () => {
                 <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#111', marginBottom: '0.6rem' }}>Introduction</h2>
                 <div style={{ position: 'relative', overflow: 'hidden', maxHeight: isUnlocked ? 'none' : '200px' }}>
                   <div style={{ fontSize: '0.9rem', color: '#333', lineHeight: 1.75, textAlign: 'justify' }}
+                    className="paper-content"
                     dangerouslySetInnerHTML={{ __html: paper.introduction }} />
                   {!isUnlocked && (
                     <div style={{
@@ -244,6 +246,7 @@ const ReadResearch = () => {
                     {label}
                   </h2>
                   <div style={{ fontSize: '0.9rem', color: '#333', lineHeight: 1.75, textAlign: 'justify' }}
+                    className="paper-content"
                     dangerouslySetInnerHTML={{ __html: paper[key] }} />
                 </div>
               ) : null

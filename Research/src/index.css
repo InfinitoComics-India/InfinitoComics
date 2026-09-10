@@ -6,3 +6,87 @@
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
 }
+
+/* ── Rich HTML content from Tiptap editor ─────────────────────── */
+.paper-content p {
+  margin-bottom: 0.85em;
+}
+.paper-content p:last-child {
+  margin-bottom: 0;
+}
+.paper-content br + br {
+  display: block;
+  content: '';
+  margin-top: 0.85em;
+}
+.paper-content strong, .paper-content b {
+  font-weight: 700;
+}
+.paper-content em, .paper-content i {
+  font-style: italic;
+}
+.paper-content u {
+  text-decoration: underline;
+}
+.paper-content s {
+  text-decoration: line-through;
+}
+.paper-content h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin: 1.2em 0 0.5em;
+  color: #111;
+}
+.paper-content h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 1em 0 0.4em;
+  color: #111;
+}
+.paper-content h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0.9em 0 0.4em;
+  color: #111;
+}
+.paper-content ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin: 0.6em 0;
+}
+.paper-content ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin: 0.6em 0;
+}
+.paper-content li {
+  margin-bottom: 0.3em;
+}
+.paper-content blockquote {
+  border-left: 4px solid #d1d5db;
+  padding-left: 1rem;
+  margin: 0.8em 0;
+  color: #666;
+  font-style: italic;
+}
+.paper-content pre {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  padding: 1rem;
+  border-radius: 6px;
+  margin: 0.8em 0;
+  overflow-x: auto;
+}
+.paper-content code {
+  background: #f3f4f6;
+  color: #dc2626;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+}
+.paper-content [style*="text-align: center"] { text-align: center; }
+.paper-content [style*="text-align: right"]  { text-align: right; }
+.paper-content [style*="text-align: justify"]{ text-align: justify; }
