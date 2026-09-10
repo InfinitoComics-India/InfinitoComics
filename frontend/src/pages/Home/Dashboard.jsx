@@ -5,6 +5,7 @@ import { useDispatch } from "react-redux";
 import { removeUser } from "../../redux/userSlice.js";
 import { FaLeaf, FaArrowRight } from "react-icons/fa";
 import { BASE_URL } from "../../utils/constants.js";
+import { X, ShieldAlert } from "lucide-react";
 
 // Import images from local assets
 import comicImg from "../../../assets/Images/captainMarvel.png";
@@ -36,6 +37,7 @@ const MyAccountPage = () => {
     username: "",
     email: ""
   });
+  const [showDeleteInfo, setShowDeleteInfo] = useState(false);
 
   useEffect(() => {
     // Get user data from localStorage when component mounts
@@ -211,12 +213,74 @@ const MyAccountPage = () => {
                 <FaArrowRight className="ml-2 text-xs group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
-            <button className="text-xs tracking-widest text-gray-500 hover:text-red-600 transition font-bold uppercase ml-8">
-              DELETE MY ACCOUNT
-            </button>
+            <button
+                onClick={() => setShowDeleteInfo(true)}
+                className="text-xs tracking-widest text-gray-500 hover:text-red-600 transition font-bold uppercase ml-8"
+              >
+                DELETE MY ACCOUNT
+              </button>
           </div>
         </div>
       </div>
+
+      {/* Delete Account Info Modal */}
+      {showDeleteInfo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-8 relative">
+            {/* Close */}
+            <button
+              onClick={() => setShowDeleteInfo(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition"
+              aria-label="Close"
+            >
+              <X size={20} />
+            </button>
+
+            {/* Icon + Title */}
+            <div className="flex flex-col items-center text-center gap-3 mb-5">
+              <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
+                <ShieldAlert size={28} className="text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 uppercase tracking-widest">
+                Account Deletion
+              </h3>
+            </div>
+
+            {/* Message */}
+            <p className="text-sm text-gray-600 text-center leading-relaxed mb-2">
+              Account deletion can only be performed by an{" "}
+              <span className="font-semibold text-gray-900">Infinito administrator</span>.
+            </p>
+            <p className="text-sm text-gray-500 text-center leading-relaxed mb-6">
+              To request the removal of your account and all associated data,
+              please reach out to our support team at{" "}
+              <a
+                href="mailto:support@infinitohq.com"
+                className="text-red-600 font-semibold hover:underline"
+              >
+                support@infinitohq.com
+              </a>
+              .
+            </p>
+
+            {/* Actions */}
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => setShowDeleteInfo(false)}
+                className="px-6 py-2 border border-gray-300 text-gray-700 text-xs font-bold uppercase tracking-widest hover:bg-gray-100 transition rounded-none"
+              >
+                Close
+              </button>
+              <a
+                href="mailto:support@infinitohq.com?subject=Account%20Deletion%20Request"
+                className="px-6 py-2 bg-red-600 text-white text-xs font-bold uppercase tracking-widest hover:bg-red-700 transition rounded-none flex items-center gap-2"
+              >
+                Email Support <FaArrowRight size={11} />
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
