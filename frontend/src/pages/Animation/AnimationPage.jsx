@@ -155,8 +155,10 @@ const AnimationPage = () => {
   const [timelineEvents, setTimelineEvents] = useState([]);
   const [isLoadingTimeline, setIsLoadingTimeline] = useState(true);
 
-  // Ref for character slider
-  const characterSliderRef = React.useRef(null);
+  // Refs for sliders and lazy loading
+  const franchiseSliderRef = React.useRef(null);
+  const secondVideoRef = React.useRef(null);
+  const [isSecondVideoVisible, setIsSecondVideoVisible] = React.useState(false);
 
   // Fetch comics on component mount
   useEffect(() => {
