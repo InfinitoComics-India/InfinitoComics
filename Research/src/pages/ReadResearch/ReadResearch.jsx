@@ -8,14 +8,12 @@ const ReadResearch = () => {
   const navigate = useNavigate();
   const [isUnlocked, setIsUnlocked] = useState(false);
 
-  // Check subscription from localStorage
   useEffect(() => {
     const subscribed = localStorage.getItem('researchSubscribed') === 'true';
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (subscribed || user?.researchSubscribed) {
-      setIsUnlocked(true);
-    }
+    if (subscribed || user?.researchSubscribed) setIsUnlocked(true);
   }, []);
+
   const [paper, setPaper] = useState(null);
   const [allPapers, setAllPapers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,11 +42,11 @@ const ReadResearch = () => {
   }, [id]);
 
   if (loading) return (
-    <div style={{ padding: '4rem', textAlign: 'center', color: '#888' }}>Loading...</div>
+    <div className="py-16 text-center text-gray-400 text-base">Loading...</div>
   );
 
   if (!paper) return (
-    <div style={{ padding: '4rem', textAlign: 'center', color: 'red' }}>Research paper not found.</div>
+    <div className="py-16 text-center text-red-500 text-base">Research paper not found.</div>
   );
 
   // Build author lines: each author on its own line as "Name - Affiliation"
@@ -70,13 +68,10 @@ const ReadResearch = () => {
   };
 
   const MembershipCard = () => (
-    <div style={{ border: '1px solid #eee', padding: '1.8rem', background: '#fff' }}>
-      <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#DD1215', lineHeight: 1.2, marginBottom: '1rem' }}>
-        Research Membership
-      </h2>
-      <p style={{ fontSize: '2rem', fontWeight: 800, color: '#111', marginBottom: '0.2rem' }}>₹49</p>
-      <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111', marginBottom: '1.2rem' }}>Membership Benefits</p>
-
+    <div className="border border-gray-200 p-6 bg-white">
+      <h2 className="text-2xl font-black text-[#DD1215] leading-tight mb-4">Research Membership</h2>
+      <p className="text-3xl font-extrabold text-gray-900 mb-1">₹49</p>
+      <p className="text-sm font-bold text-gray-900 mb-4">Membership Benefits</p>
       {[
         { title: 'UNLIMITED READING >', desc: 'Explore All Our Research, Insights, And Findings' },
         { title: 'DOWNLOAD PDFs >', desc: 'Access Offline Copies Anytime, Anywhere' },
@@ -84,62 +79,39 @@ const ReadResearch = () => {
         { title: 'EARLY ACCESS >', desc: 'Be The First To Explore New Studies And Innovations' },
         { title: 'EXCLUSIVE UPDATES >', desc: 'Stay Informed With The Latest Breakthroughs In AI, AR/VR, And Future Tech' },
       ].map((item, i) => (
-        <div key={i} style={{ marginBottom: '1rem' }}>
-          <p style={{ fontSize: '0.72rem', fontWeight: 700, color: '#DD1215', letterSpacing: '0.05em', marginBottom: '2px' }}>{item.title}</p>
-          <p style={{ fontSize: '0.78rem', color: '#444', lineHeight: 1.5 }}>{item.desc}</p>
+        <div key={i} className="mb-4">
+          <p className="text-[0.72rem] font-bold text-[#DD1215] tracking-wide mb-0.5">{item.title}</p>
+          <p className="text-[0.78rem] text-gray-600 leading-relaxed">{item.desc}</p>
         </div>
       ))}
-
       <button
         onClick={() => {
           const user = localStorage.getItem('user');
-          if (user) {
-            // Already logged in — go straight to payment (step 2)
-            navigate('/checkout', { state: { skipToPayment: true } });
-          } else {
-            // Not logged in — go to login step first
-            navigate('/checkout');
-          }
+          navigate('/checkout', user ? { state: { skipToPayment: true } } : undefined);
         }}
-        style={{
-          width: '100%', marginTop: '1rem',
-          border: '2px solid #111', background: 'transparent', color: '#111',
-          fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.08em',
-          textTransform: 'uppercase', padding: '0.7rem 1rem', cursor: 'pointer',
-          transition: 'background 0.2s, color 0.2s',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background = '#000'; e.currentTarget.style.color = '#fff'; }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#111'; }}
+        className="w-full mt-4 border-2 border-gray-900 bg-transparent text-gray-900 text-xs font-bold tracking-widest uppercase py-3 px-4 cursor-pointer transition-colors hover:bg-black hover:text-white"
       >
-        GET FULL ACCESS &rsaquo;
+        GET FULL ACCESS ›
       </button>
     </div>
   );
 
   return (
-    <div style={{ background: '#fff', minHeight: '100vh' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 clamp(1rem, 4vw, 3rem)' }}>
+    <div className="bg-white min-h-screen">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10">
 
-        {/* Back to Home */}
-        <div style={{ padding: '1.2rem 0', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {/* Top bar */}
+        <div className="py-4 border-b border-gray-100 flex justify-between items-center">
           <button
             onClick={() => navigate('/')}
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: '0.82rem', color: '#333', display: 'flex', alignItems: 'center', gap: '6px',
-            }}
+            className="text-xs text-gray-600 hover:text-black transition flex items-center gap-1.5"
           >
             ← BACK TO HOME
           </button>
           {/* Mobile membership toggle */}
           <button
-            className="md:hidden"
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            style={{
-              background: '#DD1215', color: '#fff', border: 'none',
-              fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.06em',
-              padding: '0.5rem 1rem', cursor: 'pointer',
-            }}
+            className="md:hidden bg-[#DD1215] text-white text-xs font-bold tracking-wide px-4 py-2"
           >
             {sidebarOpen ? 'HIDE MEMBERSHIP' : 'VIEW MEMBERSHIP ₹49'}
           </button>
@@ -147,138 +119,128 @@ const ReadResearch = () => {
 
         {/* Mobile membership panel */}
         {sidebarOpen && (
-          <div className="md:hidden" style={{ marginTop: '1rem', marginBottom: '1rem' }}>
+          <div className="md:hidden mt-4 mb-4">
             <MembershipCard />
           </div>
         )}
 
-        {/* Main layout — stacks on mobile */}
-        <div style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '3rem',
-          alignItems: 'flex-start',
-          padding: '2.5rem 0 4rem',
-        }}>
+        {/* Main layout */}
+        <div className="flex flex-col md:flex-row gap-10 py-8 pb-16 items-start">
 
           {/* ── LEFT: Paper content ── */}
-          <div style={{ flex: '1 1 280px', minWidth: 0 }}>
+          <div className="flex-1 min-w-0">
 
-            <p style={{ fontSize: '0.9rem', color: '#555', marginBottom: '0.5rem' }}>
-              <span style={{ color: '#DD1215', fontStyle: 'italic', fontWeight: 600 }}>
+            {/* Journal + date */}
+            <p className="text-sm text-gray-500 mb-2">
+              <span className="text-[#DD1215] italic font-semibold">
                 {paper.journalName || 'Journal'}
               </span>
               {' '}| {formatDate(paper.publicationDate || paper.datePublished)}
             </p>
 
-            <h1 style={{ fontSize: 'clamp(1.3rem, 3vw, 1.8rem)', fontWeight: 800, color: '#111', lineHeight: 1.25, marginBottom: '0.6rem' }}>
+            {/* Title */}
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight mb-3">
               {paper.title}
             </h1>
 
+            {/* Authors */}
             {authorLines.length > 0 && (
-              <div style={{ fontSize: '0.92rem', color: '#555', marginBottom: '1.2rem', lineHeight: 1.7 }}>
+              <div className="text-sm text-gray-500 mb-5 leading-7">
                 {authorLines.map((line, i) => (
                   <div key={i}>{line}</div>
                 ))}
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '2rem', borderTop: '1px solid #eee', borderBottom: '1px solid #eee', padding: '0.8rem 0', marginBottom: '1.8rem' }}>
+            {/* Views */}
+            <div className="flex gap-8 border-t border-b border-gray-100 py-3 mb-7">
               <div>
-                <span style={{ fontSize: '2.2rem', fontWeight: 900, color: '#DD1215', borderLeft: '4px solid #eee', paddingLeft: '0.6rem' }}>
+                <span className="text-4xl font-black text-[#DD1215] border-l-4 border-gray-200 pl-2">
                   {paper.views || 0}
                 </span>
-                <p style={{ fontSize: '0.75rem', color: '#888', marginTop: '2px' }}>Views</p>
+                <p className="text-xs text-gray-400 mt-0.5">Views</p>
               </div>
             </div>
 
+            {/* Abstract */}
             {paper.abstract && (
-              <div style={{ marginBottom: '1.8rem' }}>
-                <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#111', marginBottom: '0.6rem' }}>Abstract</h2>
-                <div style={{ fontSize: '0.9rem', color: '#333', lineHeight: 1.75, textAlign: 'justify' }}
-                  className="paper-content"
+              <div className="mb-7">
+                <h2 className="text-lg font-bold text-gray-900 mb-2">Abstract</h2>
+                <div className="text-sm text-gray-700 leading-7 text-justify paper-content"
                   dangerouslySetInnerHTML={{ __html: paper.abstract }} />
               </div>
             )}
 
+            {/* Keywords */}
             {paper.keywords?.length > 0 && (
-              <div style={{ marginBottom: '1.8rem' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#111', marginBottom: '0.4rem' }}>Keywords:</h3>
-                <p style={{ fontSize: '0.88rem', color: '#444', lineHeight: 1.7 }}>
+              <div className="mb-7">
+                <h3 className="text-base font-bold text-gray-900 mb-1">Keywords:</h3>
+                <p className="text-sm text-gray-600 leading-7">
                   {paper.keywords.map(k => typeof k === 'string' ? k : (k?.word || '')).filter(Boolean).join(', ')}
                 </p>
               </div>
             )}
 
+            {/* Introduction */}
             {paper.introduction && (
-              <div style={{ marginBottom: '1.8rem' }}>
-                <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#111', marginBottom: '0.6rem' }}>Introduction</h2>
-                <div style={{ position: 'relative', overflow: 'hidden', maxHeight: isUnlocked ? 'none' : '200px' }}>
-                  <div style={{ fontSize: '0.9rem', color: '#333', lineHeight: 1.75, textAlign: 'justify' }}
-                    className="paper-content"
+              <div className="mb-7">
+                <h2 className="text-lg font-bold text-gray-900 mb-2">Introduction</h2>
+                <div className={`relative overflow-hidden ${!isUnlocked ? 'max-h-52' : ''}`}>
+                  <div className="text-sm text-gray-700 leading-7 text-justify paper-content"
                     dangerouslySetInnerHTML={{ __html: paper.introduction }} />
                   {!isUnlocked && (
-                    <div style={{
-                      position: 'absolute', bottom: 0, left: 0, right: 0, height: '80px',
-                      background: 'linear-gradient(to top, #fff, transparent)',
-                    }} />
+                    <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white to-transparent" />
                   )}
                 </div>
               </div>
             )}
 
+            {/* Gated sections */}
             {isUnlocked && [
-              { key: 'literatureStudy',   label: 'Literature Study/Review' },
-              { key: 'researchGap',       label: 'Research Gap & Related Works' },
-              { key: 'objectives',        label: 'Objectives' },
-              { key: 'methodology',       label: 'Methodology' },
-              { key: 'surveyDataAnalysis',label: 'Survey/Data Analysis' },
-              { key: 'experiments',       label: 'Experiments' },
-              { key: 'experimentResults', label: 'Experiment Results' },
-              { key: 'discussion',        label: 'Discussion' },
-              { key: 'conclusion',        label: 'Conclusion' },
-            ].map(({ key, label }) => (
-              paper[key] ? (
-                <div key={key} style={{ marginBottom: '1.8rem' }}>
-                  <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#111', marginBottom: '0.6rem' }}>
-                    {label}
-                  </h2>
-                  <div style={{ fontSize: '0.9rem', color: '#333', lineHeight: 1.75, textAlign: 'justify' }}
-                    className="paper-content"
-                    dangerouslySetInnerHTML={{ __html: paper[key] }} />
-                </div>
-              ) : null
-            ))}
+              { key: 'literatureStudy',    label: 'Literature Study/Review' },
+              { key: 'researchGap',        label: 'Research Gap & Related Works' },
+              { key: 'objectives',         label: 'Objectives' },
+              { key: 'methodology',        label: 'Methodology' },
+              { key: 'surveyDataAnalysis', label: 'Survey/Data Analysis' },
+              { key: 'experiments',        label: 'Experiments' },
+              { key: 'experimentResults',  label: 'Experiment Results' },
+              { key: 'discussion',         label: 'Discussion' },
+              { key: 'conclusion',         label: 'Conclusion' },
+            ].map(({ key, label }) => paper[key] ? (
+              <div key={key} className="mb-7">
+                <h2 className="text-lg font-bold text-gray-900 mb-2">{label}</h2>
+                <div className="text-sm text-gray-700 leading-7 text-justify paper-content"
+                  dangerouslySetInnerHTML={{ __html: paper[key] }} />
+              </div>
+            ) : null)}
 
+            {/* Get full access CTA */}
             {!isUnlocked && (
-              <div style={{ textAlign: 'center', margin: '1.5rem 0 2rem' }}>
+              <div className="text-center my-6">
                 <button
                   onClick={() => navigate('/checkout')}
-                  style={{
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.1em',
-                    textTransform: 'uppercase', color: '#111',
-                  }}
+                  className="text-xs font-bold tracking-widest uppercase text-gray-900 border-none bg-transparent cursor-pointer hover:text-[#DD1215] transition"
                 >
                   GET FULL ACCESS &gt;
                 </button>
               </div>
             )}
 
+            {/* References */}
             {paper.references?.length > 0 && (
-              <div style={{ marginTop: '2rem', marginBottom: '2.5rem' }}>
-                <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#111', marginBottom: '1rem' }}>References</h2>
-                <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+              <div className="mt-8 mb-10">
+                <h2 className="text-lg font-bold text-gray-900 mb-4">References</h2>
+                <ol className="list-none p-0 m-0 flex flex-col gap-4">
                   {paper.references.map((ref, i) => {
-                    const text = typeof ref === 'string' ? ref : `${ref.text || ''}`;
+                    const text = typeof ref === 'string' ? ref : (ref.text || '');
                     const doi = typeof ref === 'object' && ref.doi ? ref.doi : null;
                     return (
-                      <li key={i} style={{ fontSize: '0.85rem', color: '#333', lineHeight: 1.7, textAlign: 'justify' }}>
+                      <li key={i} className="text-sm text-gray-700 leading-7 text-justify">
                         {i + 1}. {text}
                         {doi && (
                           <><br />
                             <a href={`https://doi.org/${doi}`} target="_blank" rel="noopener noreferrer"
-                              style={{ color: '#DD1215', textDecoration: 'underline' }}>
+                              className="text-[#DD1215] underline">
                               doi:{doi}
                             </a>
                           </>
@@ -290,29 +252,31 @@ const ReadResearch = () => {
               </div>
             )}
 
-            {/* Read More Like These — 1 col on mobile, 2 col on md+ */}
+            {/* Read More Like These */}
             {allPapers.length > 0 && (
-              <div style={{ marginTop: '2.5rem', paddingTop: '2rem', borderTop: '1px solid #eee' }}>
-                <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#111', marginBottom: '1.5rem' }}>Read More Like These</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="mt-10 pt-8 border-t border-gray-100">
+                <h2 className="text-lg font-bold text-gray-900 mb-6">Read More Like These</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   {allPapers.map(p => (
                     <div
                       key={p._id}
                       onClick={() => navigate(`/readresearch/${p._id}`)}
-                      style={{ border: '1px solid #eee', padding: '1.2rem', cursor: 'pointer', background: '#fff' }}
+                      className="border border-gray-200 p-5 cursor-pointer bg-white hover:shadow-md transition-shadow"
                     >
-                      <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#111', marginBottom: '0.3rem' }}>{p.title}</h3>
-                      <p style={{ fontSize: '0.78rem', color: '#DD1215', marginBottom: '0.2rem' }}>{p.journalName || 'Journal Name'}</p>
-                      <p style={{ fontSize: '0.78rem', color: '#555', marginBottom: '0.8rem' }}>
-                        {Array.isArray(p.authors) ? p.authors.map(a => typeof a === 'string' ? a : a?.name).filter(Boolean).join(', ') : p.authors}
+                      <h3 className="text-base font-bold text-gray-900 mb-1 leading-snug">{p.title}</h3>
+                      <p className="text-xs text-[#DD1215] mb-1">{p.journalName || 'Journal Name'}</p>
+                      <p className="text-xs text-gray-500 mb-3">
+                        {Array.isArray(p.authors)
+                          ? p.authors.map(a => typeof a === 'string' ? a : a?.name).filter(Boolean).join(', ')
+                          : p.authors}
                       </p>
-                      <div style={{ borderLeft: '3px solid #ccc', paddingLeft: '0.6rem', fontSize: '0.78rem', color: '#444', lineHeight: 1.6, marginBottom: '0.8rem', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      <div className="border-l-4 border-gray-200 pl-3 text-xs text-gray-600 leading-relaxed mb-3 line-clamp-3">
                         {p.abstract}
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                        <span style={{ fontSize: '0.75rem', color: '#888' }}>{formatDate(p.publicationDate || p.datePublished)}</span>
-                        <button style={{ border: '2px solid #111', background: 'transparent', fontSize: '0.7rem', fontWeight: 700, padding: '0.4rem 1rem', cursor: 'pointer' }}>
-                          VIEW PAPER &rsaquo;
+                      <div className="flex justify-between items-center flex-wrap gap-2">
+                        <span className="text-xs text-gray-400">{formatDate(p.publicationDate || p.datePublished)}</span>
+                        <button className="border-2 border-gray-900 bg-transparent text-xs font-bold px-4 py-1.5 cursor-pointer hover:bg-black hover:text-white transition">
+                          VIEW PAPER ›
                         </button>
                       </div>
                     </div>
@@ -322,8 +286,8 @@ const ReadResearch = () => {
             )}
           </div>
 
-          {/* ── RIGHT: Membership card — desktop only (sticky) ── */}
-          <div className="hidden md:block" style={{ flexShrink: 0, width: '280px', position: 'sticky', top: '2rem' }}>
+          {/* ── RIGHT: Membership sidebar — desktop only ── */}
+          <div className="hidden md:block flex-shrink-0 w-72 sticky top-8">
             <MembershipCard />
           </div>
 
