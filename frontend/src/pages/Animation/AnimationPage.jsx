@@ -85,7 +85,7 @@ const VideoRowSection = ({ genreTitle, onPlayVideo }) => {
             >
               <div className="relative w-full aspect-video bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
                 <img
-                  src={video.img}
+                  src={video.thumbnail}
                   alt={video.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
@@ -178,7 +178,20 @@ const AnimationPage = () => {
   useEffect(() => {
     fetchCharacters()
       .then((data) => {
+<<<<<<< Updated upstream
         const chars = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+=======
+        // Handle the possible response shapes from the API
+        let chars = [];
+        if (Array.isArray(data?.data)) {
+          chars = data.data;
+        } else if (Array.isArray(data)) {
+          chars = data;
+        } else if (Array.isArray(data?.characters)) {
+          chars = data.characters;
+        }
+
+>>>>>>> Stashed changes
         setCharacters(chars);
         setFilteredCharacters(chars);
       })
@@ -545,7 +558,11 @@ const AnimationPage = () => {
                       <div className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
                         <img
                           src={comic.coverImg || "https://via.placeholder.com/300x400"}
+<<<<<<< Updated upstream
                           alt={comic.title}
+=======
+                          alt={comic.title || "Comic"}
+>>>>>>> Stashed changes
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       </div>
@@ -591,7 +608,7 @@ const AnimationPage = () => {
 
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-start relative">
           {/* Left Red Movie Camera / Projector Graphic */}
-          <div className="relative flex-shrink-0 z-20 flex items-center -mr-2 md:-mr-6 hidden sm:flex">
+          <div className="relative flex-shrink-0 z-20 items-center -mr-2 md:-mr-6 hidden sm:flex">
             <svg
               viewBox="0 0 260 320"
               className="w-48 sm:w-60 md:w-72 h-auto text-[#C8232B] fill-current drop-shadow-xl"
