@@ -178,9 +178,6 @@ const AnimationPage = () => {
   useEffect(() => {
     fetchCharacters()
       .then((data) => {
-<<<<<<< Updated upstream
-        const chars = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
-=======
         // Handle the possible response shapes from the API
         let chars = [];
         if (Array.isArray(data?.data)) {
@@ -191,7 +188,6 @@ const AnimationPage = () => {
           chars = data.characters;
         }
 
->>>>>>> Stashed changes
         setCharacters(chars);
         setFilteredCharacters(chars);
       })
@@ -558,11 +554,7 @@ const AnimationPage = () => {
                       <div className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
                         <img
                           src={comic.coverImg || "https://via.placeholder.com/300x400"}
-<<<<<<< Updated upstream
-                          alt={comic.title}
-=======
                           alt={comic.title || "Comic"}
->>>>>>> Stashed changes
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       </div>
