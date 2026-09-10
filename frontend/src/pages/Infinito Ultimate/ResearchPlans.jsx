@@ -1,237 +1,123 @@
-import React, { useState } from "react";
-import Slider from "react-slick";
-import "./Research.css";
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
-import {
-  Gift,
-  Leaf,
-  LeafyGreen,
-  Flower,
-  TreeDeciduous,
-  CircleCheck,
-} from "lucide-react";
+import React from "react";
+import { Check, X } from "lucide-react";
 
 const ResearchPlans = () => {
-  const [researchAddons, setResearchAddons] = useState([true, true, true, true, true]);
-
-  const toggleResearchAddon = (index) => {
-    const updated = [...researchAddons];
-    updated[index] = !updated[index];
-    setResearchAddons(updated);
-  };
-
   const plans = [
     {
-      icon: <Gift size={80} color="currentColor" />,
-      price: 1900,
-      originalPrice: "₹2199 + ₹49",
-      title: "INFINITO ULTIMATE KIT",
+      title: "Monthly",
+      price: "₹129",
       features: [
-        "Comics of your choice",
-        "Surprise superhero toy",
-        "Infinito T-shirt",
-        "Superhero Stickers",
-        "Digital wall paintings",
+        { name: "Unlimited Comics", included: true },
+        { name: "Premium Content", included: true },
+        { name: "Animated Series", included: true },
+        { name: "Free Online Games", included: true },
+        { name: "Ad-Supported", included: false },
       ],
-      badge: "Special Offer",
-      textColor: "text-white",
-      borderColor: "border-black",
-      bgColor: "bg-black",
+      buttonText: "GET STARTED",
+      popular: false,
     },
     {
-      icon: <Leaf size={80} color="white" />,
-      price: 49,
-      title: "FREE",
-      features: ["Limited Comics", "Ad-Supported"],
-      badge: "Starter",
-      textColor: "text-white",
-      borderColor: "border-black",
-      bgColor: "bg-gray-900",
+      title: "Half Year",
+      price: "₹599",
+      features: [
+        { name: "Unlimited Comics", included: true },
+        { name: "Premium Content", included: true },
+        { name: "Animated Series", included: true },
+        { name: "Free Online Games", included: true },
+        { name: "Ad-Supported", included: false },
+      ],
+      buttonText: "CHOOSE HALF YEAR",
+      popular: false,
     },
     {
-      icon: <LeafyGreen size={80} color="white" />,
-      price: 129,
-      title: "MONTHLY",
+      title: "Annual",
+      price: "₹999",
       features: [
-        "Unlimited Comics",
-        "Premium Content",
-        "Animated Series",
-        "Free Online Games",
-        "Ad-Supported",
+        { name: "Unlimited Comics", included: true },
+        { name: "Premium Content", included: true },
+        { name: "Animated Series", included: true },
+        { name: "Free Online Games", included: true },
+        { name: "No Ads", included: true },
+        { name: "Exclusive Releases", included: true },
+        { name: "VIP Event Access", included: true },
       ],
-      badge: "Value Plan",
-      textColor: "text-white",
-      borderColor: "border-black",
-      bgColor: "bg-gray-900",
-    },
-    {
-      icon: <Flower size={80} color="white" />,
-      price: 599,
-      title: "HALF YEAR",
-      features: [
-        "Unlimited Comics",
-        "Premium Content",
-        "Animated Series",
-        "Free Online Games",
-        "Ad-Supported",
-      ],
-      badge: "Recommended",
-      textColor: "text-white",
-      borderColor: "border-black",
-      bgColor: "bg-gray-900",
-    },
-    {
-      icon: <TreeDeciduous size={80} color="white" />,
-      price: 999,
-      title: "ANNUAL",
-      features: [
-        "Unlimited Comics",
-        "Premium Content",
-        "Animated Series",
-        "Free Online Games",
-        "Exclusive Releases",
-        "No Ads",
-        "VIP Event Access",
-      ],
-      badge: "Best Offer",
-      textColor: "text-white",
-      borderColor: "border-black",
-      bgColor: "bg-gray-900",
+      buttonText: "GO ANNUAL",
+      popular: true,
     },
   ];
 
-  const renderCard = (plan, index) => {
-    const hasResearch = researchAddons[index];
-    const finalPrice = plan.price + (hasResearch ? 50 : 0);
+  return (
+    <div className="w-full bg-white py-16 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h2 className="text-3xl sm:text-4xl font-bold text-black mb-2">
+            Choose Your Plan
+          </h2>
+          <p className="text-gray-600 text-sm sm:text-base">
+            Flexible Options for every comic fan
+          </p>
+        </div>
 
-    return (
-      <div key={index} className="flex flex-col card-shine w-full max-w-[300px] min-h-[640px]">
-        <div
-          className={`${plan.bgColor} ${plan.textColor} ${plan.borderColor} flex flex-col flex-grow p-6 rounded-t-2xl`}
-          style={{ clipPath: "polygon(0 0, 100% 0, 100% 97%, 0 100%)" }}
-        >
-          <div className="flex flex-col items-center">
-            {plan.icon}
-            <div className="p-5 text-2xl font-bold">
-              ₹{finalPrice}
-              {plan.originalPrice && (
-                <span className="ml-2 line-through text-sm text-gray-400">
-                  {plan.originalPrice}
-                </span>
-              )}
-            </div>
-            <p className="text-2xl font-semibold border-b border-t text-center">
-              {plan.title}
-            </p>
-          </div>
-
-          <div className="flex flex-col flex-grow justify-between mt-5">
-            <div className="space-y-3 mb-4">
-              {plan.features.map((feature, idx) => (
-                <div key={idx} className="flex gap-2">
-                  <CircleCheck
-                    size={24}
-                    color={
-                      feature.includes("Ad") ||
-                      feature.includes("Exclusive") ||
-                      feature.includes("No Ads")
-                        ? "gray"
-                        : "red"
-                    }
-                  />
-                  <span>{feature}</span>
-                </div>
-              ))}
-              {hasResearch && (
-                <div className="flex gap-2">
-                  <CircleCheck size={24} color="red" />
-                  <span>Research Papers</span>
+        {/* Pricing Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
+          {plans.map((plan, index) => (
+            <div
+              key={index}
+              className="relative bg-white border-2 border-gray-300 rounded-none flex flex-col"
+            >
+              {/* Most Popular Badge */}
+              {plan.popular && (
+                <div className="absolute -top-4 right-4 bg-[#DD1215] text-white px-4 py-1 text-xs font-bold uppercase">
+                  MOST POPULAR
                 </div>
               )}
-            </div>
 
-            <div className="flex justify-center">
-              <div className="flex items-center gap-2 mt-4">
-                <input
-                  type="checkbox"
-                  id={`research-${index}`}
-                  checked={researchAddons[index]}
-                  onChange={() => toggleResearchAddon(index)}
-                  className="accent-red-600 w-5 h-5 rounded"
-                />
-                <label
-                  htmlFor={`research-${index}`}
-                  className="text-sm text-white select-none"
-                >
-                  Include Research Papers (+₹50)
-                </label>
+              {/* Card Content */}
+              <div className="p-6 sm:p-8 flex flex-col flex-grow">
+                {/* Plan Title */}
+                <h3 className="text-2xl font-bold text-black mb-4">
+                  {plan.title}
+                </h3>
+
+                {/* Price */}
+                <div className="mb-6">
+                  <span className="text-4xl sm:text-5xl font-bold text-black">
+                    {plan.price}
+                  </span>
+                </div>
+
+                {/* Features List */}
+                <div className="space-y-3 mb-6 flex-grow">
+                  {plan.features.map((feature, idx) => (
+                    <div key={idx} className="flex items-start gap-3">
+                      <div className="flex-shrink-0 mt-0.5">
+                        {feature.included ? (
+                          <div className="w-5 h-5 rounded-full border-2 border-[#DD1215] flex items-center justify-center">
+                            <Check size={14} color="#DD1215" strokeWidth={3} />
+                          </div>
+                        ) : (
+                          <div className="w-5 h-5 rounded-full border-2 border-gray-400 flex items-center justify-center">
+                            <X size={14} color="#999" strokeWidth={3} />
+                          </div>
+                        )}
+                      </div>
+                      <span className={`text-sm ${feature.included ? 'text-black' : 'text-gray-500'}`}>
+                        {feature.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* CTA Button */}
+                <button className="w-full bg-[#DD1215] hover:bg-red-700 text-white font-bold py-3 px-6 transition-colors duration-300 text-sm uppercase tracking-wide">
+                  {plan.buttonText}
+                </button>
               </div>
             </div>
-          </div>
-        </div>
-
-        <div
-          className="w-full h-14 text-white bg-red-500 flex justify-center items-center text-center font-bold rounded-b-2xl"
-          style={{
-            clipPath: "polygon(0 30%, 100% 0, 100% 100%, 0 100%)",
-          }}
-        >
-          {plan.badge}
-        </div>
-      </div>
-    );
-  };
-
-  const responsiveSliderSettings = {
-    dots: true,
-    infinite: false,
-    speed: 500,
-    slidesToShow: 1,
-    slidesToScroll: 1,
-    arrows: false,
-    centerMode: true,
-    centerPadding: "20px",
-    responsive: [
-      {
-        breakpoint: 1024,
-        settings: {
-          slidesToShow: 2,
-          centerMode: false,
-          centerPadding: "0px",
-        },
-      },
-      {
-        breakpoint: 640,
-        settings: {
-          slidesToShow: 1,
-          centerMode: true,
-          centerPadding: "20px",
-        },
-      },
-    ],
-  };
-
-  return (
-    <div className="w-full mt-5 p-4 lg:p-16">
-      {/* Mobile & Tablet View Carousel */}
-      <div className="block lg:hidden">
-        <Slider {...responsiveSliderSettings}>
-          {plans.map((plan, index) => (
-            <div key={index} className="px-2">
-              <div className="mx-auto h-[640px]">{renderCard(plan, index)}</div>
-            </div>
           ))}
-        </Slider>
+        </div>
       </div>
-
-      {/* Desktop View: Scrollable Row */}
-<div className="hidden lg:flex justify-center">
-  <div className="flex gap-6 overflow-x-auto">
-    {plans.map((plan, index) => renderCard(plan, index))}
-  </div>
-</div>
-
     </div>
   );
 };
