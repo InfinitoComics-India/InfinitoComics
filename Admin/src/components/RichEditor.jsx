@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
@@ -11,7 +11,11 @@ import { Table, TableRow, TableHeader, TableCell } from "@tiptap/extension-table
 const ToolBtn = ({ onClick, active, title, children }) => (
   <button
     type="button"
-    onMouseDown={(e) => { e.preventDefault(); onClick(); }}
+    onMouseDown={(e) => {
+      e.preventDefault();   // keep editor focus
+      e.stopPropagation();  // prevent any parent handlers
+      onClick();
+    }}
     title={title}
     className={`px-2 py-1 rounded text-sm border transition ${
       active
@@ -34,6 +38,8 @@ const fileToBase64 = (file) =>
 
 // ── Main component ────────────────────────────────────────────────
 const RichEditor = ({ value, onChange, placeholder = "Start typing…" }) => {
+  const [, forceUpdate] = useState(0);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -47,7 +53,12 @@ const RichEditor = ({ value, onChange, placeholder = "Start typing…" }) => {
       TableCell,
     ],
     content: value || "",
-    onUpdate: ({ editor }) => onChange(editor.getHTML()),
+    onUpdate: ({ editor }) => {
+      onChange(editor.getHTML());
+      forceUpdate(n => n + 1); // re-render toolbar active states
+    },
+    onSelectionUpdate: () => forceUpdate(n => n + 1), // re-render on cursor move
+    onTransaction: () => forceUpdate(n => n + 1),     // re-render on any mark change
 
     // ── Clipboard paste handler ────────────────────────────────
     editorProps: {
