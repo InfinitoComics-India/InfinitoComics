@@ -110,9 +110,9 @@ const SignupStep2 = ({ formData, handleChange, onNext, onBack }) => {
       setIsSubmitting(true);
       const data = await signUpUser(formData);
       dispatch(addUser(data.data));
-      toast.success('Successfully signed up!');
+      toast.success('Successfully signed up! Please verify your email.');
       setTimeout(() => {
-        onNext(); // Go to character creation (step 3)
+        navigate('/verifyEmail'); // Go to email verification
       }, 2000);
       
     } catch (err) {
