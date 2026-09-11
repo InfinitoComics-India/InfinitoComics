@@ -9,13 +9,17 @@ import { BACKEND_URL } from "../../Utils/constant";
 import RichEditor from "../../components/RichEditor";
 
 const CATEGORIES = [
+  "Infinito Originals",
+  "News",
   "Anime",
   "Comics",
   "Characters",
   "Movies & Series",
-  "News",
+  "Games",
   "Reviews",
   "Industry",
+  "Technology",
+  "Research"
 ];
 
 const EMPTY_FORM = {
