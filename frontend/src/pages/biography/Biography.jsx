@@ -26,7 +26,7 @@ export default function Biography({ character }) {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen py-8 px-2">
+    <div className="bg-gray-50 min-h-screen py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <h1 className="tracking-widest font-bold text-xl md:text-2xl mb-8 text-center md:text-left">
           BIOGRAPHY
