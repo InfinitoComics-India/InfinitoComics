@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ChipField = ({ fieldName, label, inputState, setInputState, watch, setValue, errors }) => {
+const ChipField = ({ fieldName, label, inputState, setInputState, watch, setValue, errors, placeholder }) => {
   // Function to add a value to an array field
   const addToArray = () => {
     if (inputState.trim() !== '') {
@@ -47,7 +47,12 @@ const ChipField = ({ fieldName, label, inputState, setInputState, watch, setValu
             }
           }}
           className="flex-grow p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
-          placeholder={`Add a new ${label.toLowerCase().slice(0, -1)}...`}
+          placeholder={
+            placeholder ||
+            (label.endsWith('s')
+              ? `Add a new ${label.toLowerCase().slice(0, -1)}...`
+              : `Add a new ${label.toLowerCase()}...`)
+          }
         />
         <button
           type="button"

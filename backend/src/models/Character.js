@@ -62,25 +62,29 @@ const CharacterSchema = new mongoose.Schema({
   description: {
     type: String
   },
-  creator :[{
-    type : mongoose.Schema.Types.ObjectId,
-    ref: 'Artist'
+  universe: {
+    type: String,
+    default: ""
+  },
+  groupAffiliations: {
+    type: String,
+    default: ""
+  },
+  creator: [{
+    type: String
   }],
-  group : {
+  group: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Group'
   },
-  family:[{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Character'
+  family: [{
+    type: String
   }],
-  friends:[{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Character'
+  friends: [{
+    type: String
   }],
-  enemies:[{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Character'
+  enemies: [{
+    type: String
   }],
   comicsAppearedIn: [{
     type: mongoose.Schema.Types.ObjectId,

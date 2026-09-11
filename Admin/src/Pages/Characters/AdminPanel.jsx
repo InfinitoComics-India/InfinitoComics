@@ -55,6 +55,12 @@ const AdminPanel = ({
       birthDate: "",
       character: [],
       placeOfOrigin: "",
+      universe: "",
+      groupAffiliations: "",
+      family: [],
+      friends: [],
+      enemies: [],
+      creator: [],
       interest: [],
       weapon: [],
       capability: [],
@@ -87,6 +93,10 @@ const AdminPanel = ({
   const [weaponInput, setWeaponInput] = useState("");
   const [capabilityInput, setCapabilityInput] = useState("");
   const [limitationInput, setLimitationInput] = useState("");
+  const [familyInput, setFamilyInput] = useState("");
+  const [friendsInput, setFriendsInput] = useState("");
+  const [enemiesInput, setEnemiesInput] = useState("");
+  const [creatorInput, setCreatorInput] = useState("");
 
   // State for existing images (when editing)
   const [existingMainImage, setExistingMainImage] = useState(null);
@@ -266,6 +276,18 @@ const AdminPanel = ({
       options: ["Male", "Female", "Other"],
       validation: { required: "Gender is required" },
     },
+    {
+      name: "universe",
+      label: "Universe",
+      type: "text",
+      validation: {},
+    }, // not required
+    {
+      name: "groupAffiliations",
+      label: "Group Affiliations",
+      type: "text",
+      validation: {},
+    }, // not required
   ];
 
   return (
@@ -601,6 +623,53 @@ const AdminPanel = ({
           watch={watch}
           setValue={setValue}
           errors={errors}
+        />
+
+        {/* Relationships & Lore Fields */}
+        <div className="col-span-1 md:col-span-2 border-t border-gray-700 pt-4 mt-2">
+          <h3 className="text-base font-semibold text-gray-200">Relationships & Creators</h3>
+          <p className="text-xs text-gray-400">Optional character lore shown on the Biography page</p>
+        </div>
+
+        <ChipField
+          fieldName="family"
+          label="Family"
+          inputState={familyInput}
+          setInputState={setFamilyInput}
+          watch={watch}
+          setValue={setValue}
+          errors={errors}
+          placeholder="Add a family member..."
+        />
+        <ChipField
+          fieldName="friends"
+          label="Friends"
+          inputState={friendsInput}
+          setInputState={setFriendsInput}
+          watch={watch}
+          setValue={setValue}
+          errors={errors}
+          placeholder="Add a friend..."
+        />
+        <ChipField
+          fieldName="enemies"
+          label="Enemies"
+          inputState={enemiesInput}
+          setInputState={setEnemiesInput}
+          watch={watch}
+          setValue={setValue}
+          errors={errors}
+          placeholder="Add an enemy..."
+        />
+        <ChipField
+          fieldName="creator"
+          label="Creator"
+          inputState={creatorInput}
+          setInputState={setCreatorInput}
+          watch={watch}
+          setValue={setValue}
+          errors={errors}
+          placeholder="Add a creator name..."
         />
 
         {/* Text Area Fields */}
