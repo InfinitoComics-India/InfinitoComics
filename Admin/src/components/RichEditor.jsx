@@ -16,10 +16,14 @@ const ToolBtn = ({ onClick, active, title, children }) => (
       e.stopPropagation();  // prevent any parent handlers
       onClick();
     }}
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }}
     title={title}
-    className={`px-2 py-1 rounded text-sm border transition ${
+    className={`px-2.5 py-1 rounded text-sm font-semibold border transition select-none ${
       active
-        ? "bg-blue-600 text-white border-blue-600"
+        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
         : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
     }`}
   >
@@ -113,7 +117,9 @@ const RichEditor = ({ value, onChange, placeholder = "Start typing…" }) => {
   });
 
   useEffect(() => {
-    if (editor && value !== undefined && value !== editor.getHTML()) {
+    if (!editor) return;
+    const currentHTML = editor.getHTML();
+    if (value !== undefined && value !== currentHTML && !editor.isFocused) {
       editor.commands.setContent(value || "");
     }
   }, [value, editor]);
