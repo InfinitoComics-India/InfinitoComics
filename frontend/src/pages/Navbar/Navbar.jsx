@@ -29,7 +29,7 @@ const Header = () => {
     <div className="text-white font-sans">
       {/* ── Top promo bar ── */}
       <div className="border-b bg-[#202020] border-gray-600 text-sm py-4 flex flex-col md:flex-row items-center">
-        <div className="w-full max-w-[1200px] mx-auto px-12 flex justify-between items-center">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           {/* Promo Text */}
           <div className="mb-2 md:mb-0 text-center">
             Use code <strong>INFINT10</strong> to get 10% off on our shop!
@@ -58,7 +58,7 @@ const Header = () => {
 
       {/* ── Main bar: Login | Logo | Search ── */}
       <div className="bg-[#202020] py-1">
-        <div className="w-full max-w-[1200px] mx-auto px-12 flex items-center justify-between gap-4">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
           {/* Mobile hamburger */}
           <div className="md:hidden">
             <button onClick={() => setMenuOpen(!menuOpen)}>
@@ -112,7 +112,7 @@ const Header = () => {
 
       {/* ── Bottom nav (desktop) ── */}
       <div className="hidden md:block bg-[#171717] text-sm text-gray-300 py-3">
-        <div className="w-full max-w-[1200px] mx-auto px-12">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ul className="flex flex-wrap justify-center gap-4 items-center">
             <li>
               <Link

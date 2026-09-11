@@ -7,7 +7,7 @@ export default function CharacterDetail({ character }) {
   const storyLineText = character?.storyLine?.text || "N/A";
 
   return (
-    <div className="min-h-screen bg-white px-4 py-8">
+    <div className="min-h-screen bg-white px-4 sm:px-6 lg:px-8 py-8">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-8">
         {/* Left: Outfit */}
         <div className="md:w-1/2 flex flex-col items-center">
