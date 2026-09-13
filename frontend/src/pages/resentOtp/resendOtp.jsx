@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { verifyEmail } from "../../services/userServices";
+import { verifyEmail, resendVerificationEmail } from "../../services/userServices";
 import { useSelector } from "react-redux";
 import LoginLogo from "../../../assets/Images/LoginLogo.png";
 import LoginBackground from "../../../assets/Images/LoginBackground.jpg";
@@ -90,12 +90,21 @@ const OTPVerification = () => {
     }
   };
 
-  const handleResend = () => {
-    setTimeLeft(30);
-    setOtp(["", "", "", "", "", ""]);
-    setActiveInput(0);
-    setError("");
-    toast.success("A new code has been sent to your email.");
+  const handleResend = async () => {
+    if (!user?.email) {
+      toast.error("Could not find your email. Please go back and sign up again.");
+      return;
+    }
+    try {
+      await resendVerificationEmail(user.email);
+      setTimeLeft(30);
+      setOtp(["", "", "", "", "", ""]);
+      setActiveInput(0);
+      setError("");
+      toast.success("A new verification code has been sent to your email.");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to resend code. Try again.");
+    }
   };
 
   // Mask the email for display: e.g. "ab***@gmail.com"

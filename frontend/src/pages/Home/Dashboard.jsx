@@ -11,8 +11,10 @@ import { X, ShieldAlert } from "lucide-react";
 import comicImg from "../../../assets/Images/captainMarvel.png";
 import Avatar from "../../../assets/Images/Signup/Avatar.png";
 
-const ToggleRow = ({ label }) => {
-  const [enabled, setEnabled] = useState(true); // Default: ON
+import { updateUser } from "../../services/userServices.js";
+import { addUser } from "../../redux/userSlice.js";
+
+const ToggleRow = ({ label, enabled, onChange }) => {
   return (
     <div className="flex items-center justify-between pl-2 pr-4 py-2 border-b">
       <span className="font-medium text-sm">{label}</span>
@@ -21,7 +23,7 @@ const ToggleRow = ({ label }) => {
           type="checkbox"
           className="sr-only peer"
           checked={enabled}
-          onChange={() => setEnabled(!enabled)}
+          onChange={onChange}
         />
         <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-red-400 peer peer-checked:bg-red-600 transition-colors"></div>
         <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white border border-gray-300 transition-transform peer-checked:translate-x-5"></div>
@@ -33,22 +35,40 @@ const ToggleRow = ({ label }) => {
 const MyAccountPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [userData, setUserData] = useState({
-    username: "",
-    email: ""
-  });
+  const [userData, setUserData] = useState({ username: "", email: "", _id: "" });
   const [showDeleteInfo, setShowDeleteInfo] = useState(false);
+  const [newsLetter, setNewsLetter] = useState(true);
+  const [savingNewsletter, setSavingNewsletter] = useState(false);
 
   useEffect(() => {
-    // Get user data from localStorage when component mounts
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     if (user) {
       setUserData({
-        username: user.username || "russian_loki",
-        email: user.email || "user@example.com"
+        username: user.username || "",
+        email: user.email || "",
+        _id: user._id || "",
       });
+      setNewsLetter(user.newsLetter !== undefined ? user.newsLetter : true);
     }
   }, []);
+
+  const handleNewsletterToggle = async () => {
+    const newValue = !newsLetter;
+    setNewsLetter(newValue);
+    if (!userData._id) return;
+    try {
+      setSavingNewsletter(true);
+      const res = await updateUser(userData._id, { newsLetter: newValue });
+      // Update Redux + localStorage with new user data
+      const updated = { ...JSON.parse(localStorage.getItem("user") || "{}"), newsLetter: newValue };
+      dispatch(addUser(updated));
+    } catch (err) {
+      // Revert on failure
+      setNewsLetter(!newValue);
+    } finally {
+      setSavingNewsletter(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -173,14 +193,11 @@ const MyAccountPage = () => {
           <div className="mb-10">
             <div className="text-lg font-semibold mb-4">Account Settings</div>
             <div className="flex flex-col gap-4">
-              {[
-                {
-                  label: "Subscriptions related mails",
-                  stateKey: "subscriptions"
-                }
-              ].map(({ label, stateKey }) => (
-                <ToggleRow key={stateKey} label={label} />
-              ))}
+              <ToggleRow
+                label={savingNewsletter ? "Subscriptions related mails (saving…)" : "Subscriptions related mails"}
+                enabled={newsLetter}
+                onChange={handleNewsletterToggle}
+              />
             </div>
           </div>
 

@@ -178,7 +178,19 @@ const forgetPasswordEmail = async (req, res) =>  {
   }
 }
 
+const resendVerification = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email is required", success: false });
+    await userservice.resendVerification(email);
+    res.status(200).json({ message: "Verification code resent", success: true });
+  } catch (error) {
+    res.status(400).json({ message: error.message, success: false });
+  }
+};
+
 const Usercontroller = {
+  resendVerification,
   signup,
   login,
   logout,
