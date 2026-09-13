@@ -109,7 +109,7 @@ const SignupStep2 = ({ formData, handleChange, onNext, onBack }) => {
     try {
       setIsSubmitting(true);
       const data = await signUpUser(formData);
-      dispatch(addUser(data.data));
+      dispatch(addUser({ ...data.data, isLoggedIn: true }));
       toast.success('Successfully signed up! Please verify your email.');
       setTimeout(() => {
         navigate('/verifyEmail'); // Go to email verification
