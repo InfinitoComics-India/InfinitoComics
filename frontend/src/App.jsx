@@ -44,6 +44,8 @@ import TermsOfUse from './pages/Policy/TermsofUse.jsx';
 import ComicChap from './components/Comics/ComicChap.jsx'
 import ChildrensPrivacyPolicy from './pages/Policy/Children.jsx';
 import ProtectedRoute from './components/protectedRoutes.jsx';
+import TrackOrders from './pages/Orders/TrackOrders';
+import OrderHistory from './pages/Orders/OrderHistory';
 
 function App() {
   useEffect(() => {
@@ -134,6 +136,8 @@ function App() {
               <Route path="/children-privacy-policy" element={<ChildrensPrivacyPolicy />} />
               <Route path="/anti-harassment" element={<AntiHarassmentPolicy />} />
               <Route path="/ErrorReport" element={<ProtectedRoute><ErrorPage /></ProtectedRoute>} />
+              <Route path="/orders/track" element={<ProtectedRoute><TrackOrders /></ProtectedRoute>} />
+              <Route path="/orders/history" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
               <Route path="/animation" element={<AnimationPage />} />
               <Route path="/shop" element={<Community />} />
               <Route path="*" element={<NotFound />} />
