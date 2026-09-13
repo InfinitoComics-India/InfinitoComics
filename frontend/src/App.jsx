@@ -43,6 +43,7 @@ import RefundPolicy from './pages/Policy/Refund.jsx';
 import TermsOfUse from './pages/Policy/TermsofUse.jsx';
 import ComicChap from './components/Comics/ComicChap.jsx'
 import ChildrensPrivacyPolicy from './pages/Policy/Children.jsx';
+import AntiHarassmentPolicy from './pages/Policy/AntiHarassment.jsx';
 import ProtectedRoute from './components/protectedRoutes.jsx';
 import TrackOrders from './pages/Orders/TrackOrders';
 import OrderHistory from './pages/Orders/OrderHistory';
