@@ -5,8 +5,9 @@ import { Navigate } from 'react-router-dom';
 const ProtectedRoute = ({ children, requireSubscription = false }) => {
   const user = useSelector((state) => state.user);
 
-  if (!user?.isLoggedIn) return <Navigate to="/login" replace />;
-  if (requireSubscription && !user?.isSubscribed) return <Navigate to="/loggedin" replace />;
+  // user is null when not logged in, object when logged in
+  if (!user) return <Navigate to="/login" replace />;
+  if (requireSubscription && !user?.hasInfinitoUltimate) return <Navigate to="/ultimate" replace />;
 
   return children;
 };
