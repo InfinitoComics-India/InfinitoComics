@@ -120,7 +120,6 @@ const CreateBlog = () => {
   // ── Fixed Cover Image Constraints ──────────────────────────────
   const COVER_WIDTH = 1200;
   const COVER_HEIGHT = 600;
-  const MAX_IMAGE_SIZE_MB = 3;
 
   // Helper: auto-center crop and fit any image to exact 1200x600 px
   const fitImageTo1200x600 = (source) => {
@@ -169,17 +168,6 @@ const CreateBlog = () => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       toast.error("Please select a valid image file (JPG, PNG, WebP)");
-      return;
-    }
-
-    if (file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
-      toast.error(
-        `File size must be less than ${MAX_IMAGE_SIZE_MB}MB (current: ${(
-          file.size /
-          (1024 * 1024)
-        ).toFixed(2)}MB)`
-      );
-      if (imageFileInputRef.current) imageFileInputRef.current.value = "";
       return;
     }
 
@@ -522,9 +510,6 @@ const CreateBlog = () => {
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
                   Fixed Size: 1200 × 600 px
                 </span>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
-                  Max: 3MB
-                </span>
                 <span className="text-xs text-gray-400">
                   2:1 landscape banner (auto-crops &amp; fits on upload)
                 </span>
@@ -562,7 +547,7 @@ const CreateBlog = () => {
                       Click to upload cover image (1200 × 600 px)
                     </span>
                     <span className="text-xs text-gray-400">
-                      Allowed: 1200x600 px, Max weight: 3MB (PNG, JPG, WebP)
+                      Allowed: 1200x600 px (PNG, JPG, WebP)
                     </span>
                   </div>
 
