@@ -117,31 +117,137 @@ const CreateBlog = () => {
     }
   };
 
+  // ── Fixed Cover Image Constraints ──────────────────────────────
+  const COVER_WIDTH = 1200;
+  const COVER_HEIGHT = 600;
+  const MAX_IMAGE_SIZE_MB = 3;
+
+  // Helper: auto-center crop and fit any image to exact 1200x600 px
+  const fitImageTo1200x600 = (source) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = COVER_WIDTH;
+        canvas.height = COVER_HEIGHT;
+        const ctx = canvas.getContext("2d");
+
+        // Calculate center crop dimensions to achieve exact 2:1 (1200x600)
+        const targetRatio = COVER_WIDTH / COVER_HEIGHT;
+        const srcRatio = img.width / img.height;
+        let sWidth, sHeight, sX, sY;
+
+        if (srcRatio > targetRatio) {
+          sHeight = img.height;
+          sWidth = img.height * targetRatio;
+          sX = (img.width - sWidth) / 2;
+          sY = 0;
+        } else {
+          sWidth = img.width;
+          sHeight = img.width / targetRatio;
+          sX = 0;
+          sY = (img.height - sHeight) / 2;
+        }
+
+        ctx.drawImage(img, sX, sY, sWidth, sHeight, 0, 0, COVER_WIDTH, COVER_HEIGHT);
+        resolve(canvas.toDataURL("image/jpeg", 0.92));
+      };
+      img.onerror = () => reject(new Error("Failed to process image"));
+      img.src = source;
+    });
+  };
+
   // ── Form handlers ──────────────────────────────────────────────
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleImageFileChange = (e) => {
+  const handleImageFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      toast.error("Please select a valid image file");
+      toast.error("Please select a valid image file (JPG, PNG, WebP)");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setForm((prev) => ({ ...prev, coverImage: reader.result }));
-    };
-    reader.readAsDataURL(file);
+    if (file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
+      toast.error(
+        `File size must be less than ${MAX_IMAGE_SIZE_MB}MB (current: ${(
+          file.size /
+          (1024 * 1024)
+        ).toFixed(2)}MB)`
+      );
+      if (imageFileInputRef.current) imageFileInputRef.current.value = "";
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    try {
+      const img = new Image();
+      img.src = objectUrl;
+      await new Promise((res, rej) => {
+        img.onload = res;
+        img.onerror = rej;
+      });
+
+      if (img.width === COVER_WIDTH && img.height === COVER_HEIGHT) {
+        // Already exact required dimensions
+        const reader = new FileReader();
+        reader.onload = () => {
+          setForm((prev) => ({ ...prev, coverImage: reader.result }));
+          toast.success("Cover image (1200×600 px) uploaded successfully!");
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // Auto center-crop and scale to required 1200x600 px
+        const fittedBase64 = await fitImageTo1200x600(objectUrl);
+        setForm((prev) => ({ ...prev, coverImage: fittedBase64 }));
+        toast.success(
+          `Image auto-fitted to required 1200×600 px (Original: ${img.width}×${img.height} px)`
+        );
+      }
+    } catch (err) {
+      console.error("Image processing error:", err);
+      toast.error("Failed to process image file");
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
   };
 
-  const handleApplyImageUrl = () => {
-    if (!imageUrlInput.trim()) return;
-    setForm((prev) => ({ ...prev, coverImage: imageUrlInput.trim() }));
-    setImageUrlInput("");
+  const handleApplyImageUrl = async () => {
+    const url = imageUrlInput.trim();
+    if (!url) return;
+
+    try {
+      const img = new Image();
+      img.src = url;
+      await new Promise((res, rej) => {
+        img.onload = res;
+        img.onerror = rej;
+      });
+
+      if (img.width === COVER_WIDTH && img.height === COVER_HEIGHT) {
+        setForm((prev) => ({ ...prev, coverImage: url }));
+        setImageUrlInput("");
+        toast.success("Cover image (1200×600 px) applied!");
+      } else {
+        try {
+          const fitted = await fitImageTo1200x600(url);
+          setForm((prev) => ({ ...prev, coverImage: fitted }));
+          setImageUrlInput("");
+          toast.success(`Image fitted to required 1200×600 px!`);
+        } catch {
+          // If external URL prevents canvas read due to CORS, apply URL directly
+          setForm((prev) => ({ ...prev, coverImage: url }));
+          setImageUrlInput("");
+          toast.success("Cover image URL applied!");
+        }
+      }
+    } catch {
+      toast.error("Could not load image from URL. Please check the link.");
+    }
   };
 
   const removeCoverImage = () => {
@@ -408,16 +514,32 @@ const CreateBlog = () => {
             {/* Cover Image */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Cover Image <span className="text-gray-400 font-normal text-xs">(optional, displayed at top of blog)</span>
+                Cover Image <span className="text-gray-400 font-normal text-xs">(displayed at top of blog and in cards)</span>
               </label>
 
+              {/* Fixed Size Guideline Badge */}
+              <div className="flex flex-wrap items-center gap-2 mb-2.5">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                  Fixed Size: 1200 × 600 px
+                </span>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                  Max: 3MB
+                </span>
+                <span className="text-xs text-gray-400">
+                  2:1 landscape banner (auto-crops &amp; fits on upload)
+                </span>
+              </div>
+
               {form.coverImage ? (
-                <div className="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50 max-h-72 flex items-center justify-center mb-3">
+                <div className="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50 aspect-[2/1] w-full max-w-xl flex items-center justify-center mb-3 shadow-xs">
                   <img
                     src={form.coverImage}
-                    alt="Cover Preview"
-                    className="max-h-72 w-full object-cover rounded-xl"
+                    alt="Cover Preview (1200x600)"
+                    className="w-full h-full object-cover rounded-xl"
                   />
+                  <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-xs text-white text-[11px] font-bold px-2 py-0.5 rounded">
+                    1200 × 600 px
+                  </div>
                   <button
                     type="button"
                     onClick={removeCoverImage}
@@ -437,9 +559,11 @@ const CreateBlog = () => {
                       <MdCloudUpload size={28} />
                     </div>
                     <span className="font-semibold text-gray-700 text-sm">
-                      Click to upload cover image
+                      Click to upload cover image (1200 × 600 px)
                     </span>
-                    <span className="text-xs text-gray-400">PNG, JPG, WebP supported</span>
+                    <span className="text-xs text-gray-400">
+                      Allowed: 1200x600 px, Max weight: 3MB (PNG, JPG, WebP)
+                    </span>
                   </div>
 
                   <input
