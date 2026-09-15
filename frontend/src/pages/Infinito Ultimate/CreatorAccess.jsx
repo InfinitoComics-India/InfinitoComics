@@ -47,16 +47,16 @@ const CreatorAccess = () => {
             </h2>
           </div>
 
-          {/* Cards Container - Desktop flex-wrap centered, Mobile horizontal scroll */}
-          <div className="flex md:flex-wrap md:justify-center gap-[1rem] overflow-x-auto md:overflow-visible px-4 md:px-0 pb-4 no-scrollbar">
+          {/* Cards Container - 2 videos side by side taking full width */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 px-4 md:px-8 max-w-6xl mx-auto">
 
             {trailers.map((trailer) => (
               <div 
                 key={trailer.id} 
-                className="w-[15rem] md:w-[18.625rem] flex-shrink-0 cursor-pointer group"
+                className="cursor-pointer group"
                 onClick={() => setSelectedVideo(trailer.youtubeId)}
               >
-                <div className="relative w-full h-[8.75rem] md:h-[10rem] overflow-hidden rounded">
+                <div className="relative w-full aspect-video overflow-hidden rounded-lg">
                   <img
                     src={trailer.thumbnail}
                     alt={trailer.title}
@@ -64,11 +64,11 @@ const CreatorAccess = () => {
                   />
                   <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors" />
                   <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                    <PlayCircle className="w-12 h-12 md:w-14 md:h-14 text-white opacity-90 group-hover:scale-110 transition-transform duration-300" />
+                    <PlayCircle className="w-16 h-16 md:w-20 md:h-20 text-white opacity-90 group-hover:scale-110 transition-transform duration-300" />
                   </div>
                 </div>
-                <p className="mt-[0.5rem] text-sm text-center group-hover:text-[#DD1215] transition-colors">
-                  Watch Trailer
+                <p className="mt-3 text-base md:text-lg text-center font-medium group-hover:text-[#DD1215] transition-colors">
+                  {trailer.title}
                 </p>
               </div>
             ))}
