@@ -18,7 +18,10 @@ const Home = () => {
           className="w-full h-auto object-cover"
         />
         
-        {/* Overlay for text readability */}
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-black/40" />
+        
+        {/* Gradient overlay for bottom text */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
         
         {/* Text Content Overlay */}
