@@ -12,11 +12,11 @@ const MerchHeroSection = () => {
       </div>
 
       {/* Main Black Section */}
-      <div className="relative w-full bg-[#121212] min-h-[527px] bg-[radial-gradient(#2a2a2a_1px,transparent_1px)] [background-size:24px_24px] overflow-hidden">
-        <div className="w-full max-w-7xl mx-auto px-8 md:px-16 h-full flex items-center justify-between relative z-10 py-16">
+      <div className="relative w-full bg-[#121212] min-h-[527px] bg-[radial-gradient(#2a2a2a_1px,transparent_1px)] [background-size:24px_24px]">
+        <div className="w-full max-w-7xl mx-auto px-8 md:px-16 h-full flex items-end justify-between relative z-10 py-8 pb-0 gap-8">
 
           {/* Left content */}
-          <div className="text-white max-w-lg">
+          <div className="text-white max-w-lg pb-16">
             <p className="text-xl leading-relaxed font-medium">
               Step into the Infinito Universe with exclusive gear crafted for fans who know every panel, plot twist, and power move.
             </p>
@@ -29,14 +29,14 @@ const MerchHeroSection = () => {
           </div>
 
           {/* Right image */}
-          <div className="relative hidden md:block">
+          <div className="relative hidden md:flex items-end justify-end flex-1">
             <img
               src={heroImage}
               alt="Hero Tee"
-              className="h-[600px] w-auto object-contain absolute bottom-[-120px] right-0"
+              className="h-[520px] w-auto object-contain object-bottom"
             />
             {/* Color swatches */}
-            <div className="absolute top-0 right-[-70px] space-y-4 z-30">
+            <div className="absolute top-8 right-[-20px] space-y-4 z-30">
               <div className="w-[53px] h-[53px] border-[10px] border-white" style={{ backgroundColor: '#e3f172' }}></div>
               <div className="w-[53px] h-[53px] border-[5px] border-white" style={{ backgroundColor: '#a0a7f1' }}></div>
               <div className="w-[53px] h-[53px] border-[5px] border-white" style={{ backgroundColor: '#d5a26c' }}></div>
