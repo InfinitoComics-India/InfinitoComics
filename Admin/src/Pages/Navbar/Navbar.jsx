@@ -1,114 +1,158 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import URLs from '../../Utils/utils.js';
-import { LogOut } from "lucide-react";
-import { Button, message, Popconfirm } from "antd";
+import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight } from "lucide-react";
+import { message, Popconfirm } from "antd";
 import { getRoles } from '../../Utils/auth.js';
 
-// All nav items with their route and which roles can see them
 const NAV_ITEMS = [
-  { label: "HOME",            to: "/",                  roles: ["superadmin", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin"] },
-  { label: "COMICS",          to: "/comic",             roles: ["superadmin", "comics_admin"] },
-  { label: "CHARACTERS",      to: "/characters",        roles: ["superadmin", "character_admin"] },
-  { label: "RESEARCH",        to: "/research",          roles: ["superadmin", "research_admin"] },
-  { label: "BLOGS",           to: "/createblog",        roles: ["superadmin", "blog_admin"] },
-  { label: "FAQS",            to: "/createfaq",         roles: ["superadmin", "blog_admin"] },
-  { label: "TIMELINE",        to: "/timeline",          roles: ["superadmin", "blog_admin"] },
-  { label: "CAREER",          to: "/career",            roles: ["superadmin", "career_admin"] },
-  { label: "USERS",           to: "/users",             roles: ["superadmin"] },
-  { label: "ADMIN MGMT",      to: "/admin-management",  roles: ["superadmin"] },
+  { label: "Home",            to: "/",                  icon: Home,         roles: ["superadmin","comics_admin","character_admin","research_admin","blog_admin","career_admin"] },
+  { label: "Comics",          to: "/comic",             icon: BookOpen,     roles: ["superadmin","comics_admin"] },
+  { label: "Characters",      to: "/characters",        icon: User,         roles: ["superadmin","character_admin"] },
+  { label: "Research",        to: "/research",          icon: FlaskConical, roles: ["superadmin","research_admin"] },
+  { label: "Blogs",           to: "/createblog",        icon: FileText,     roles: ["superadmin","blog_admin"] },
+  { label: "FAQs",            to: "/createfaq",         icon: HelpCircle,   roles: ["superadmin","blog_admin"] },
+  { label: "Timeline",        to: "/timeline",          icon: Clock,        roles: ["superadmin","blog_admin"] },
+  { label: "Career",          to: "/career",            icon: Briefcase,    roles: ["superadmin","career_admin"] },
+  { label: "Users",           to: "/users",             icon: Users,        roles: ["superadmin"] },
+  { label: "Admin Mgmt",      to: "/admin-management",  icon: ShieldCheck,  roles: ["superadmin"] },
 ];
 
 const Navbar = () => {
-  const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
   const token = localStorage.getItem("authToken");
   const roles = getRoles();
 
-  const toggleMenu = () => setMobileMenuOpen(!isMobileMenuOpen);
+  const visibleItems = NAV_ITEMS.filter(item =>
+    roles.some(r => item.roles.includes(r))
+  );
 
-  const confirm = () => {
+  const handleLogout = () => {
     localStorage.clear();
     message.success("Logged out successfully");
     window.location.href = "/admin";
   };
 
-  // Filter nav items — show if any of the admin's roles is in the item's roles list
-  const visibleItems = NAV_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
+  const isActive = (to) => {
+    if (to === "/") return location.pathname === "/admin" || location.pathname === "/admin/";
+    return location.pathname.startsWith(`/admin${to}`);
+  };
 
-  const NavLinks = ({ onClick }) => (
-    <>
-      {visibleItems.map(({ label, to }) => (
-        <Link
-          key={to}
-          to={to}
-          onClick={onClick}
-          className="text-white hover:text-red-500 transition duration-200 px-3 py-2"
+  const SidebarContent = ({ onNavClick }) => (
+    <div className="flex flex-col h-full">
+      {/* Logo + collapse button */}
+      <div className={`flex items-center ${collapsed ? "justify-center" : "justify-between"} px-4 py-4 border-b border-gray-700`}>
+        {!collapsed && (
+          <Link to="/" onClick={onNavClick}>
+            <img src={URLs.Logo_url} alt="Infinito" className="h-10 w-auto object-contain bg-white rounded p-1" />
+          </Link>
+        )}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="hidden md:flex items-center justify-center w-8 h-8 rounded hover:bg-gray-700 text-gray-400 hover:text-white transition"
         >
-          {label}
-        </Link>
-      ))}
+          {collapsed ? <ChevronRight size={18} /> : <Menu size={18} />}
+        </button>
+      </div>
 
-      {token ? (
-        <Popconfirm
-          title="Log Out"
-          description="Are you sure you want to log out?"
-          onConfirm={confirm}
-          onCancel={() => {}}
-          okText="Yes"
-          cancelText="No"
-        >
-          <LogOut size={28} color="white" className="hover:cursor-pointer" />
-        </Popconfirm>
-      ) : (
-        <Link
-          to="/login"
-          onClick={onClick}
-          className="text-white hover:text-red-500 transition duration-200 px-3 py-2"
-        >
-          Login
-        </Link>
-      )}
-    </>
+      {/* Nav items */}
+      <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
+        {visibleItems.map(({ label, to, icon: Icon }) => (
+          <Link
+            key={to}
+            to={to}
+            onClick={onNavClick}
+            title={collapsed ? label : ""}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group
+              ${isActive(to)
+                ? "bg-[#DD1215] text-white"
+                : "text-gray-300 hover:bg-gray-700 hover:text-white"
+              }
+              ${collapsed ? "justify-center" : ""}
+            `}
+          >
+            <Icon size={20} className="shrink-0" />
+            {!collapsed && <span>{label}</span>}
+          </Link>
+        ))}
+      </nav>
+
+      {/* Logout */}
+      <div className={`px-2 py-4 border-t border-gray-700`}>
+        {token ? (
+          <Popconfirm
+            title="Log Out"
+            description="Are you sure you want to log out?"
+            onConfirm={handleLogout}
+            okText="Yes"
+            cancelText="No"
+            placement="topLeft"
+          >
+            <button
+              title={collapsed ? "Logout" : ""}
+              className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-red-600 hover:text-white transition-all
+                ${collapsed ? "justify-center" : ""}
+              `}
+            >
+              <LogOut size={20} className="shrink-0" />
+              {!collapsed && <span>Logout</span>}
+            </button>
+          </Popconfirm>
+        ) : (
+          <Link
+            to="/login"
+            onClick={onNavClick}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-all
+              ${collapsed ? "justify-center" : ""}
+            `}
+          >
+            <LogOut size={20} className="shrink-0" />
+            {!collapsed && <span>Login</span>}
+          </Link>
+        )}
+      </div>
+    </div>
   );
 
   return (
-    <nav className="fixed top-0 w-full z-50 bg-gray-900 shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
-        {/* Logo */}
-        <Link to="/" className="inline-block px-2 py-1 rounded-lg">
-          <img
-            src={URLs.Logo_url}
-            alt="Infinito Logo"
-            className="h-12 w-auto object-contain bg-white rounded p-1"
-          />
+    <>
+      {/* ── Desktop Sidebar ── */}
+      <aside
+        className={`hidden md:flex flex-col fixed top-0 left-0 h-screen bg-gray-900 z-50 transition-all duration-300 shadow-xl
+          ${collapsed ? "w-16" : "w-60"}
+        `}
+      >
+        <SidebarContent />
+      </aside>
+
+      {/* ── Mobile Top Bar ── */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-gray-900 px-4 py-3 flex items-center justify-between shadow-lg">
+        <Link to="/">
+          <img src={URLs.Logo_url} alt="Infinito" className="h-10 w-auto object-contain bg-white rounded p-1" />
         </Link>
-
-        {/* Desktop nav */}
-        <div className="hidden md:flex items-center space-x-1 uppercase font-semibold text-sm flex-wrap">
-          <NavLinks />
-        </div>
-
-        {/* Mobile hamburger */}
-        <div className="md:hidden">
-          <button onClick={toggleMenu} aria-label="Toggle menu" className="focus:outline-none">
-            <div className="w-6 h-6 flex flex-col justify-between space-y-1">
-              <span className="block h-0.5 w-full bg-white" />
-              <span className="block h-0.5 w-full bg-white" />
-              <span className="block h-0.5 w-full bg-white" />
-            </div>
-          </button>
-        </div>
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="text-white"
+          aria-label="Toggle menu"
+        >
+          {mobileOpen ? <X size={26} /> : <Menu size={26} />}
+        </button>
       </div>
 
-      {/* Mobile menu */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden bg-gray-800 bg-opacity-95 backdrop-blur-lg absolute w-full left-0 top-full py-4 shadow-lg">
-          <div className="flex flex-col space-y-4 px-6 uppercase font-semibold text-sm">
-            <NavLinks onClick={toggleMenu} />
+      {/* ── Mobile Drawer ── */}
+      {mobileOpen && (
+        <div className="md:hidden fixed inset-0 z-40 flex">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
+          {/* Drawer */}
+          <div className="relative w-64 bg-gray-900 h-full shadow-2xl flex flex-col pt-16">
+            <SidebarContent onNavClick={() => setMobileOpen(false)} />
           </div>
         </div>
       )}
-    </nav>
+    </>
   );
 };
 
