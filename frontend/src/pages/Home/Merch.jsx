@@ -11,12 +11,15 @@ const MerchHeroSection = () => {
         </h2>
       </div>
 
-      {/* Main Black Section */}
-      <div className="relative w-full bg-[#121212] min-h-[527px] bg-[radial-gradient(#2a2a2a_1px,transparent_1px)] [background-size:24px_24px]">
-        <div className="w-full max-w-7xl mx-auto px-8 md:px-16 h-full flex items-end justify-between relative z-10 py-8 pb-0 gap-8">
+      {/* Main Black Section — model overflows above via negative margin */}
+      <div className="relative w-full bg-[#121212] bg-[radial-gradient(#2a2a2a_1px,transparent_1px)] [background-size:24px_24px]"
+           style={{ minHeight: '420px', paddingBottom: '56px' }}>
+
+        <div className="w-full max-w-7xl mx-auto px-8 md:px-16 flex items-end justify-between relative z-10 pt-8 gap-8"
+             style={{ minHeight: '420px' }}>
 
           {/* Left content */}
-          <div className="text-white max-w-lg pb-16">
+          <div className="text-white max-w-lg pb-16 self-center">
             <p className="text-xl leading-relaxed font-medium">
               Step into the Infinito Universe with exclusive gear crafted for fans who know every panel, plot twist, and power move.
             </p>
@@ -28,23 +31,26 @@ const MerchHeroSection = () => {
             </button>
           </div>
 
-          {/* Right image */}
-          <div className="relative hidden md:flex items-end justify-end flex-1">
+          {/* Right: model overflows upward out of black section */}
+          <div className="hidden md:flex items-end justify-end self-end relative flex-shrink-0">
+            {/* Model image — negative margin pulls it above the black section */}
             <img
               src={heroImage}
               alt="Hero Tee"
-              className="h-[520px] w-auto object-contain object-bottom"
+              className="w-auto object-contain object-bottom"
+              style={{ height: '560px', marginTop: '-140px' }}
             />
-            {/* Color swatches */}
-            <div className="absolute top-8 right-[-20px] space-y-4 z-30">
-              <div className="w-[53px] h-[53px] border-[10px] border-white" style={{ backgroundColor: '#e3f172' }}></div>
-              <div className="w-[53px] h-[53px] border-[5px] border-white" style={{ backgroundColor: '#a0a7f1' }}></div>
-              <div className="w-[53px] h-[53px] border-[5px] border-white" style={{ backgroundColor: '#d5a26c' }}></div>
+            {/* Color swatches beside model */}
+            <div className="flex flex-col gap-4 ml-4 mb-16 self-center">
+              <div className="w-12 h-12 border-[8px] border-white" style={{ backgroundColor: '#e3f172' }} />
+              <div className="w-12 h-12 border-[4px] border-white" style={{ backgroundColor: '#a0a7f1' }} />
+              <div className="w-12 h-12 border-[4px] border-white" style={{ backgroundColor: '#d5a26c' }} />
             </div>
           </div>
+
         </div>
 
-        {/* Bottom text bar */}
+        {/* Bottom bar */}
         <div className="absolute bottom-0 left-0 w-full bg-white text-black flex items-center justify-center h-14 text-lg font-bold tracking-widest z-20">
           tees • hoodies • art prints • collectibles
         </div>
