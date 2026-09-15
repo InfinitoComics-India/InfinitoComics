@@ -11,11 +11,15 @@ const MerchHeroSection = () => {
         </h2>
       </div>
 
-      {/* Main Black Section */}
-      <div className="relative w-full bg-[#121212] min-h-[527px] bg-[radial-gradient(#2a2a2a_1px,transparent_1px)] [background-size:24px_24px] overflow-hidden">
-        <div className="w-full max-w-7xl mx-auto px-8 md:px-16 h-full flex items-center justify-between relative z-10 py-16">
+      {/* Main Black Section — fixed height so bottom bar stays inside */}
+      <div
+        className="relative w-full bg-[#121212] bg-[radial-gradient(#2a2a2a_1px,transparent_1px)] [background-size:24px_24px]"
+        style={{ height: '420px' }}
+      >
+        {/* Content row */}
+        <div className="w-full max-w-7xl mx-auto px-8 md:px-16 h-full flex items-center justify-between relative z-10 pb-14">
 
-          {/* Left content */}
+          {/* Left text */}
           <div className="text-white max-w-lg">
             <p className="text-xl leading-relaxed font-medium">
               Step into the Infinito Universe with exclusive gear crafted for fans who know every panel, plot twist, and power move.
@@ -28,23 +32,24 @@ const MerchHeroSection = () => {
             </button>
           </div>
 
-          {/* Right image */}
-          <div className="relative hidden md:block">
+          {/* Right: model overflows upward out of black section */}
+          <div className="hidden md:flex items-end self-end relative flex-shrink-0">
             <img
               src={heroImage}
               alt="Hero Tee"
-              className="h-[600px] w-auto object-contain absolute bottom-[-120px] right-0"
+              className="w-auto object-contain object-bottom"
+              style={{ height: '540px', marginBottom: '56px', marginTop: '-180px' }}
             />
             {/* Color swatches */}
-            <div className="absolute top-0 right-[-70px] space-y-4 z-30">
-              <div className="w-[53px] h-[53px] border-[10px] border-white" style={{ backgroundColor: '#e3f172' }}></div>
-              <div className="w-[53px] h-[53px] border-[5px] border-white" style={{ backgroundColor: '#a0a7f1' }}></div>
-              <div className="w-[53px] h-[53px] border-[5px] border-white" style={{ backgroundColor: '#d5a26c' }}></div>
+            <div className="flex flex-col gap-4 ml-4 mb-20 self-center">
+              <div className="w-12 h-12 border-[8px] border-white" style={{ backgroundColor: '#e3f172' }} />
+              <div className="w-12 h-12 border-[4px] border-white" style={{ backgroundColor: '#a0a7f1' }} />
+              <div className="w-12 h-12 border-[4px] border-white" style={{ backgroundColor: '#d5a26c' }} />
             </div>
           </div>
         </div>
 
-        {/* Bottom text bar */}
+        {/* Bottom bar — always sticks to bottom of black section */}
         <div className="absolute bottom-0 left-0 w-full bg-white text-black flex items-center justify-center h-14 text-lg font-bold tracking-widest z-20">
           tees • hoodies • art prints • collectibles
         </div>
