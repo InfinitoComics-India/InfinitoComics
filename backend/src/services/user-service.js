@@ -165,6 +165,8 @@ class UserService {
         throw error;
       }
     }
+
+    async forgotPassword(email) {
       try {
         const user = await this.userRepository.findByEmail(email);
         if(!user){
