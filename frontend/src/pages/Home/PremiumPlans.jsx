@@ -87,7 +87,7 @@ const PremiumPlans = () => {
     }
   };
 
-  // Plan data
+  // Plan data — only Ultimate Kit
   const plans = [
     {
       icon: <Gift size={80} color="currentColor" />,
@@ -105,66 +105,6 @@ const PremiumPlans = () => {
       textColor: "text-white",
       borderColor: "border-black",
       bgColor: "bg-black",
-    },
-    {
-      icon: <Leaf size={80} color="white" />,
-      price: "FREE",
-      title: "FREE",
-      features: ["Limited Comics", "Ad-Supported"],
-      badge: "FREE",
-      textColor: "text-white",
-      borderColor: "border-black",
-      bgColor: "bg-gray-900",
-    },
-    {
-      icon: <LeafyGreen size={80} color="white" />,
-      price: 129,
-      title: "MONTHLY",
-      features: [
-        "Unlimited Comics",
-        "Premium Content",
-        "Animated Series",
-        "Free Online Games",
-        "Ad-Supported",
-      ],
-      badge: "Monthly",
-      textColor: "text-white",
-      borderColor: "border-black",
-      bgColor: "bg-gray-900",
-    },
-    {
-      icon: <Flower size={80} color="white" />,
-      price: 599,
-      title: "HALF YEAR",
-      features: [
-        "Unlimited Comics",
-        "Premium Content",
-        "Animated Series",
-        "Free Online Games",
-        "Ad-Supported",
-      ],
-      badge: "HalfYear",
-      textColor: "text-white",
-      borderColor: "border-black",
-      bgColor: "bg-gray-900",
-    },
-    {
-      icon: <TreeDeciduous size={80} color="white" />,
-      price: 999,
-      title: "ANNUAL",
-      features: [
-        "Unlimited Comics",
-        "Premium Content",
-        "Animated Series",
-        "Free Online Games",
-        "Exclusive Releases",
-        "No Ads",
-        "VIP Event Access",
-      ],
-      badge: "Annual",
-      textColor: "text-white",
-      borderColor: "border-black",
-      bgColor: "bg-gray-900",
     },
   ];
 
@@ -267,23 +207,37 @@ const PremiumPlans = () => {
     ],
   };
 
-return  loading ? <PremiumPlansShimmer/>:  (
+return loading ? <PremiumPlansShimmer/> : (
     <div className="w-full mt-5 p-4 lg:p-16">
-      {isMobile ? (
-        // Mobile & tablet → slider
-        <Slider {...sliderSettings} className="!overflow-visible">
-          {plans.map((plan, index) => (
-            <div key={index} className="px-3">
-              {renderCard(plan, index)}
-            </div>
-          ))}
-        </Slider>
-      ) : (
-        // Desktop → show all in one row
-        <div className="flex justify-center gap-6 flex-wrap">
-          {plans.map((plan, index) => renderCard(plan, index))}
+
+      {/* Single Ultimate Kit card — centered */}
+      <div className="flex justify-center">
+        {renderCard(plans[0], 0)}
+      </div>
+
+      {/* Everything is free for First year! section */}
+      <div className="mt-12 w-full bg-[#DD1215] py-10 px-6 flex flex-col items-center justify-center text-center rounded-2xl">
+        <div className="flex items-center gap-3 mb-3">
+          <span className="text-4xl">🎉</span>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white uppercase tracking-wider">
+            Everything is Free
+          </h2>
+          <span className="text-4xl">🎉</span>
         </div>
-      )}
+        <p className="text-white text-xl sm:text-2xl font-bold tracking-widest uppercase">
+          for the First Year!
+        </p>
+        <p className="text-red-100 text-sm sm:text-base mt-3 max-w-xl">
+          Sign up today and get unlimited access to all comics, characters, animated series, and more — absolutely free for your entire first year.
+        </p>
+        <button
+          onClick={() => window.location.href = '/signup'}
+          className="mt-6 bg-white text-[#DD1215] font-black text-sm uppercase tracking-widest px-8 py-3 hover:bg-gray-100 transition"
+        >
+          GET STARTED FREE →
+        </button>
+      </div>
+
     </div>
   );
 };
