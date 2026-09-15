@@ -9,8 +9,8 @@ import upload from "../middleware/multer.js";
 import { verifyResetToken } from "../middleware/verifyResettoken.js";
 // Create (Register)
 router.post('/signup', Usercontroller.signup)
-// Read (All users)
-router.get('/getall', Usercontroller.getAll);
+// Read (All users) — admin only
+router.get('/getall', adminauthenticate, Usercontroller.getAll);
 
 // Read (Single user by ID)
 router.get('/getById', Usercontroller.getById);
@@ -43,6 +43,8 @@ router.post("/upload", upload.single('image'), Usercontroller.uploadimage);
 
 // verify (email) by sending otp
 router.post('/verifyemail', Usercontroller.verifyemail);
+// Resend verification email OTP
+router.post('/resend-verification', Usercontroller.resendVerification);
 
 router.post("/forget-password", Usercontroller.forgetPasswordFunc); 
 router.post("/forget-password/:id/:token", verifyResetToken, Usercontroller.forgetPasswordEmail);

@@ -107,6 +107,16 @@ export const signUpUser = async (formData) => {
   return response.data;
 };
 
+export const resendVerificationEmail = async (email) => {
+  const response = await axios.post(BASE_URL + '/api/resend-verification', { email });
+  return response.data;
+};
+
+export const updateUser = async (id, data) => {
+  const response = await axios.put(BASE_URL + `/api/update?id=${id}`, data);
+  return response.data;
+};
+
 export const verifyEmail = async (code) => {
   const response = await axios.post(BASE_URL + "/api/verifyemail", {
     code 

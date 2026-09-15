@@ -3,11 +3,30 @@ import React from "react";
 export default function Biography({ character }) {
   if (!character) return null; // No data yet
 
-  const safeValue = (value) => value || "N/A";
-  const safeArray = (arr) => (arr && arr.length > 0 ? arr : ["N/A"]);
+  const safeValue = (value) => {
+    if (!value) return "N/A";
+    if (Array.isArray(value)) {
+      const filtered = value.filter(Boolean);
+      return filtered.length > 0 ? filtered.join(", ") : "N/A";
+    }
+    return String(value).trim() || "N/A";
+  };
+
+  const safeArray = (arr) => {
+    if (!arr) return ["N/A"];
+    if (Array.isArray(arr)) {
+      const filtered = arr.filter(Boolean);
+      return filtered.length > 0 ? filtered : ["N/A"];
+    }
+    if (typeof arr === "string") {
+      const trimmed = arr.trim();
+      return trimmed ? trimmed.split(",").map((s) => s.trim()).filter(Boolean) : ["N/A"];
+    }
+    return ["N/A"];
+  };
 
   return (
-    <div className="bg-gray-50 min-h-screen py-8 px-2">
+    <div className="bg-gray-50 min-h-screen py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <h1 className="tracking-widest font-bold text-xl md:text-2xl mb-8 text-center md:text-left">
           BIOGRAPHY

@@ -20,52 +20,50 @@ export default function PowersCarousel({ character }) {
   }, [active, powers.length]);
 
   return (
-    <div className="relative w-full bg-[#181717] overflow-hidden py-4">
-      <div className="relative w-full max-w-6xl mx-auto overflow-hidden">
-        {/* Rectangular fixed frame */}
-        <div className="relative w-full overflow-hidden" style={{ aspectRatio: "18 / 8" }}>
-          {/* Sliding track showing one image at a time */}
-          <div
-            className="flex w-full h-full transition-transform duration-700 ease-in-out"
-            style={{ transform: `translateX(-${active * 100}%)` }}
-          >
-            {powers.map((src, i) => (
-              <div key={i} className="w-full h-full shrink-0">
-                <img
-                  src={src}
-                  alt={`Power ${i + 1}`}
-                  className="w-full h-full object-fill" // fills the rectangle completely
-                  draggable="false"
-                />
-              </div>
-            ))}
-          </div>
+    <div className="relative w-full overflow-hidden">
+      {/* Full-width responsive frame */}
+      <div className="relative w-full overflow-hidden aspect-[16/9] md:aspect-[1920/900] min-h-[300px]">
+        {/* Sliding track showing one image at a time */}
+        <div
+          className="flex w-full h-full transition-transform duration-700 ease-in-out"
+          style={{ transform: `translateX(-${active * 100}%)` }}
+        >
+          {powers.map((src, i) => (
+            <div key={i} className="w-full h-full shrink-0">
+              <img
+                src={src}
+                alt={`Power ${i + 1}`}
+                className="w-full h-full object-cover object-center"
+                draggable="false"
+              />
+            </div>
+          ))}
+        </div>
 
-          {/* Buttons overlay */}
-          <div
-            className="
-              absolute 
-              bottom-[5%] 
-              left-1/2 
-              -translate-x-1/2 
-              flex gap-6 flex-wrap justify-center
-              z-10
-            "
-          >
-            {["POWER 1", "POWER 2"].map((label, i) => (
-              <button
-                key={i}
-                onClick={() => setActive(i)}
-                className={`px-3 py-1 text-sm md:text-base font-semibold transition-colors ${
-                  active === i
-                    ? "text-[#a18afc] border-b-2 border-[#a18afc]"
-                    : "text-white/70 border-b-2 border-white/20"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+        {/* Buttons overlay */}
+        <div
+          className="
+            absolute 
+            bottom-6 md:bottom-8 
+            left-1/2 
+            -translate-x-1/2 
+            flex gap-6 flex-wrap justify-center
+            z-10
+          "
+        >
+          {["POWER 1", "POWER 2"].map((label, i) => (
+            <button
+              key={i}
+              onClick={() => setActive(i)}
+              className={`px-3 py-1 text-sm md:text-base font-semibold tracking-wider transition-colors cursor-pointer ${
+                active === i
+                  ? "text-[#a18afc] border-b-2 border-[#a18afc]"
+                  : "text-white/70 border-b-2 border-white/20 hover:text-white"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
     </div>

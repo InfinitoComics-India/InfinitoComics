@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import InfinitoLogo from '../../../assets/Images/LoginLogo.png';
 import ComicImg from '../../../assets/Images/Signup/ComicImg.png';
 import CharacterImg from '../../../assets/Images/Signup/CharacterImg.png';
 import CommunityImg from '../../../assets/Images/Signup/CommunityImg.png';
 import GamesImg from '../../../assets/Images/Signup/GamesImg.png';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { updateUser } from '../../services/userServices.js';
+import { addUser } from '../../redux/userSlice.js';
 
 const TILE_LABELS = ['COMICS', 'CHARACTERS', 'COMMUNITY', 'GAMES'];
 const TILE_ROUTES = ['/comics', '/characters', '/community', '/games'];
@@ -34,7 +36,26 @@ const CharacterPreview = ({ colors }) => {
 
 const SignupStep5 = ({ onBack, characterColors }) => {
   const user = useSelector((store) => store.user);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  // Save character colors to backend as soon as we land on step 5
+  useEffect(() => {
+    const save = async () => {
+      const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+      if (!storedUser?._id || !characterColors) return;
+      try {
+        await updateUser(storedUser._id, { characterColors });
+        // Persist into Redux + localStorage
+        const updated = { ...storedUser, characterColors };
+        dispatch(addUser(updated));
+      } catch (err) {
+        // Non-critical — silently ignore
+        console.warn("Could not save character colors:", err.message);
+      }
+    };
+    save();
+  }, [characterColors]);
 
   return (
     <div className="w-[540px] bg-white bg-opacity-95 px-8 py-8 rounded shadow-md font-sans relative">

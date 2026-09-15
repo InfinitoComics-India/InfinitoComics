@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
@@ -11,11 +11,19 @@ import { Table, TableRow, TableHeader, TableCell } from "@tiptap/extension-table
 const ToolBtn = ({ onClick, active, title, children }) => (
   <button
     type="button"
-    onMouseDown={(e) => { e.preventDefault(); onClick(); }}
+    onMouseDown={(e) => {
+      e.preventDefault();   // keep editor focus
+      e.stopPropagation();  // prevent any parent handlers
+      onClick();
+    }}
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }}
     title={title}
-    className={`px-2 py-1 rounded text-sm border transition ${
+    className={`px-2.5 py-1 rounded text-sm font-semibold border transition select-none ${
       active
-        ? "bg-blue-600 text-white border-blue-600"
+        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
         : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
     }`}
   >
@@ -34,11 +42,13 @@ const fileToBase64 = (file) =>
 
 // ── Main component ────────────────────────────────────────────────
 const RichEditor = ({ value, onChange, placeholder = "Start typing…" }) => {
+  const [, forceUpdate] = useState(0);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
       Underline,
-      TextAlign.configure({ types: ["heading", "paragraph"] }),
+      TextAlign.configure({ types: ["heading", "paragraph", "blockquote"] }),
       Placeholder.configure({ placeholder }),
       Image.configure({ inline: false, allowBase64: true }),
       Table.configure({ resizable: true }),
@@ -47,7 +57,12 @@ const RichEditor = ({ value, onChange, placeholder = "Start typing…" }) => {
       TableCell,
     ],
     content: value || "",
-    onUpdate: ({ editor }) => onChange(editor.getHTML()),
+    onUpdate: ({ editor }) => {
+      onChange(editor.getHTML());
+      forceUpdate(n => n + 1); // re-render toolbar active states
+    },
+    onSelectionUpdate: () => forceUpdate(n => n + 1), // re-render on cursor move
+    onTransaction: () => forceUpdate(n => n + 1),     // re-render on any mark change
 
     // ── Clipboard paste handler ────────────────────────────────
     editorProps: {
@@ -102,7 +117,9 @@ const RichEditor = ({ value, onChange, placeholder = "Start typing…" }) => {
   });
 
   useEffect(() => {
-    if (editor && value !== undefined && value !== editor.getHTML()) {
+    if (!editor) return;
+    const currentHTML = editor.getHTML();
+    if (value !== undefined && value !== currentHTML && !editor.isFocused) {
       editor.commands.setContent(value || "");
     }
   }, [value, editor]);
@@ -157,6 +174,7 @@ const RichEditor = ({ value, onChange, placeholder = "Start typing…" }) => {
         <ToolBtn onClick={() => editor.chain().focus().setTextAlign("left").run()} active={editor.isActive({ textAlign: "left" })} title="Align left">≡L</ToolBtn>
         <ToolBtn onClick={() => editor.chain().focus().setTextAlign("center").run()} active={editor.isActive({ textAlign: "center" })} title="Align center">≡C</ToolBtn>
         <ToolBtn onClick={() => editor.chain().focus().setTextAlign("right").run()} active={editor.isActive({ textAlign: "right" })} title="Align right">≡R</ToolBtn>
+        <ToolBtn onClick={() => editor.chain().focus().setTextAlign("justify").run()} active={editor.isActive({ textAlign: "justify" })} title="Justify">≡J</ToolBtn>
 
         <span className="w-px bg-gray-300 mx-1" />
 

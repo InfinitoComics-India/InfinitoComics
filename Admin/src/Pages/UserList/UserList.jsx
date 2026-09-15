@@ -105,6 +105,46 @@ function UserList() {
     toast.success(`Exported ${filtered.length} users to Excel.`);
   };
 
+  // Export all currently filtered users to CSV
+  const exportToCSV = () => {
+    if (filtered.length === 0) {
+      toast.error("No users to export.");
+      return;
+    }
+
+    const headers = ["S.No", "Username", "Full Name", "Email", "Date of Birth", "Membership", "Email Verified", "Joined On"];
+
+    const escape = (val) => {
+      const str = String(val ?? "—");
+      // Wrap in quotes if contains comma, quote, or newline
+      return str.includes(",") || str.includes('"') || str.includes("\n")
+        ? `"${str.replace(/"/g, '""')}"`
+        : str;
+    };
+
+    const rows = filtered.map((u, i) => [
+      i + 1,
+      u.username || "—",
+      u.name     || "—",
+      u.email    || "—",
+      u.dob ? new Date(u.dob).toLocaleDateString("en-IN") : "—",
+      u.membershipType || u.membershipPlan || "Non-Premium",
+      u.isverified ? "Yes" : "No",
+      u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-IN") : "—",
+    ].map(escape).join(","));
+
+    const csvContent = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const today = new Date().toISOString().slice(0, 10);
+    link.href = url;
+    link.download = `Infinito_Users_${today}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${filtered.length} users to CSV.`);
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-4">
         <Toaster position="top-center" /> 
@@ -155,6 +195,21 @@ function UserList() {
           Export Excel
           {filtered.length > 0 && (
             <span className="ml-1 bg-white text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">
+              {filtered.length}
+            </span>
+          )}
+        </button>
+
+        {/* Export CSV button */}
+        <button
+          onClick={exportToCSV}
+          title={`Export ${filtered.length} user(s) to CSV`}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold text-sm shadow hover:bg-blue-700 active:scale-95 transition whitespace-nowrap"
+        >
+          <Download size={16} />
+          Export CSV
+          {filtered.length > 0 && (
+            <span className="ml-1 bg-white text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full">
               {filtered.length}
             </span>
           )}

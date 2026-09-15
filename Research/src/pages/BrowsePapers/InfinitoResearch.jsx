@@ -58,12 +58,13 @@ const InfinitoCarousel = ({ researchPaper, isLoading }) => {
           margin: "0 auto",
           padding: "0 clamp(1rem, 4vw, 3rem)",
           display: "flex",
+          flexWrap: "wrap",
           alignItems: "flex-start",
           position: "relative",
         }}>
 
           {/* LEFT: text — full width on mobile, 53% on desktop */}
-          <div className="w-full md:w-[53%]" style={{ padding: "2rem clamp(0px,2vw,2rem) 2.5rem 0", flexShrink: 0 }}>
+          <div className="w-full md:w-[53%]" style={{ padding: "2rem clamp(0px,2vw,2rem) 2rem 0", flexShrink: 0 }}>
 
             {/* INFINITO RESEARCH heading */}
             <div style={{ display: "flex", alignItems: "center", marginBottom: "1.3rem", flexWrap: "wrap", gap: "4px" }}>
@@ -102,30 +103,25 @@ const InfinitoCarousel = ({ researchPaper, isLoading }) => {
             </div>
           </div>
 
-          {/* RIGHT: white card — full width below on mobile, 47% beside on desktop */}
-          {/* On desktop: pulled up via negative marginTop to overlap into gray spacer */}
-          <div
-            className="w-full md:w-[47%]"
-            style={{ flexShrink: 0, paddingLeft: "clamp(0px, 1.5vw, 1.5rem)" }}
-          >
-            {/* Negative margin only on md+ via inline style override via a wrapper */}
-            <div className="md:-mt-[70px] md:-mb-8 mb-0">
+          {/* RIGHT: white card */}
+          <div className="w-full md:w-[47%]" style={{ flexShrink: 0, paddingLeft: "clamp(0px, 1.5vw, 1.5rem)", paddingBottom: "2rem" }}>
+            <div className="md:-mt-[70px]">
               <div style={{
                 background: "#fff",
                 boxShadow: "0 4px 28px rgba(0,0,0,0.15)",
                 padding: "1.5rem clamp(1rem, 2.5vw, 2.2rem)",
               }}>
-                <h2 style={{ fontWeight: 800, fontSize: "clamp(1.1rem, 2.5vw, 1.6rem)", color: "#111", lineHeight: 1.2, marginBottom: "0.5rem" }}>
+                <h2 style={{ fontWeight: 800, fontSize: "clamp(1rem, 2.5vw, 1.6rem)", color: "#111", lineHeight: 1.2, marginBottom: "0.5rem" }}>
                   {paper.title}
                 </h2>
-                <p style={{ fontSize: "0.95rem", color: "#aaa", marginBottom: "1rem", fontWeight: 400 }}>
+                <p style={{ fontSize: "0.9rem", color: "#aaa", marginBottom: "1rem", fontWeight: 400 }}>
                   {getSubtitle()}
                 </p>
                 <div style={{
                   borderLeft: "3px solid #d0d0d0", paddingLeft: "0.9rem",
                   fontSize: "0.85rem", color: "#555", lineHeight: 1.75, marginBottom: "1.6rem",
                   textAlign: "justify",
-                  display: "-webkit-box", WebkitLineClamp: 7, WebkitBoxOrient: "vertical", overflow: "hidden",
+                  display: "-webkit-box", WebkitLineClamp: 5, WebkitBoxOrient: "vertical", overflow: "hidden",
                 }}
                   dangerouslySetInnerHTML={{
                     __html: (paper.abstract || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()

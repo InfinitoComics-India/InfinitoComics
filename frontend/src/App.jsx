@@ -44,6 +44,9 @@ import TermsOfUse from './pages/Policy/TermsofUse.jsx';
 import ComicChap from './components/Comics/ComicChap.jsx'
 import ChildrensPrivacyPolicy from './pages/Policy/Children.jsx';
 import AntiHarassmentPolicy from './pages/Policy/AntiHarassment.jsx';
+import ProtectedRoute from './components/protectedRoutes.jsx';
+import TrackOrders from './pages/Orders/TrackOrders';
+import OrderHistory from './pages/Orders/OrderHistory';
 
 function App() {
   useEffect(() => {
@@ -107,8 +110,9 @@ function App() {
               <Route path="/reset-password/:id/:token" element={<ResetPassword />} />
               <Route path="/verifyEmail" element={<OTPVerification />} />
               <Route path="/createAvatar" element={<SignupStep3 />} />
-              <Route path="/Dashboard" element={<DashboardPage />} />
-              <Route path="/Feedback" element={<FeedbackForm />} />
+              <Route path="/Dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+              <Route path="/Feedback" element={<ProtectedRoute><FeedbackForm /></ProtectedRoute>} />
               <Route path="/aboutUS" element={<AboutUs />} />
               <Route path="/founder-profile" element={<FounderProfile />} />
               <Route path="/characters" element={<Characters />} />
@@ -126,13 +130,15 @@ function App() {
               <Route path="/comicChap/:comicId/chapters" element={<ComicChap />} />
               <Route path="/comicChap/:comicId/chapters/pdfView" element={<ComicChap />} />
               <Route path="/games" element={<Games />} />
-              <Route path="/cart" element={<Cart />} />
+              <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/refund-policy" element={<RefundPolicy />} />
               <Route path="/terms-of-use" element={<TermsOfUse />} />
               <Route path="/children-privacy-policy" element={<ChildrensPrivacyPolicy />} />
               <Route path="/anti-harassment" element={<AntiHarassmentPolicy />} />
-              <Route path="/ErrorReport" element={<ErrorPage />} />
+              <Route path="/ErrorReport" element={<ProtectedRoute><ErrorPage /></ProtectedRoute>} />
+              <Route path="/orders/track" element={<ProtectedRoute><TrackOrders /></ProtectedRoute>} />
+              <Route path="/orders/history" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
               <Route path="/animation" element={<AnimationPage />} />
               <Route path="/shop" element={<Community />} />
               <Route path="*" element={<NotFound />} />

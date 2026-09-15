@@ -141,7 +141,30 @@ class UserService {
       }
     }
 
-    async forgetPassword(email) {
+    async resendVerification(email) {
+      try {
+        const user = await this.userRepository.findByEmail(email);
+        if (!user) throw new Error("User not found");
+        if (user.isverified) throw new Error("Email is already verified");
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+        user.verificationcode = otp;
+        user.verificationCodeExpiresAt = expiresAt;
+        await user.save();
+
+        const { sendEmail } = await import("../utils/sendEmail.js");
+        sendEmail(
+          user.email,
+          'Email Verification - Action Required',
+          `Hi Infinito Member,\n\nHere is your new verification code:\n\nVerification Code: ${otp}\n\nThis code is valid for 10 minutes only.\n\nBest regards,\nInfinito Comics`
+        );
+        return true;
+      } catch (error) {
+        throw error;
+      }
+    }
       try {
         const user = await this.userRepository.findByEmail(email);
         if(!user){

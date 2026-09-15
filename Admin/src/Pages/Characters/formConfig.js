@@ -10,6 +10,8 @@ export const formFields = [
   { name: 'hair', label: 'Hair', type: 'text', validation: {} }, // not required
   { name: 'gender', label: 'Gender', type: 'select', options: ['Male', 'Female', 'Other'], validation: { required: 'Gender is required' } },
   { name: 'placeOfOrigin', label: 'Place of Origin', type: 'text', validation: { required: 'Place of Origin is required' } },
+  { name: 'universe', label: 'Universe', type: 'text', validation: {} }, // not required
+  { name: 'groupAffiliations', label: 'Group Affiliations', type: 'text', validation: {} }, // not required
 ];
 
 // Helper function to clean character data

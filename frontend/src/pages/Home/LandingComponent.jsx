@@ -1,6 +1,6 @@
 // Home.jsx
 import React, { useState, useEffect } from "react";
-import slide1 from "../../../assets/Images/landing .png";
+import slide1 from "../../../assets/Images/banner.png";
 import belowImage from "../../../assets/Images/Botton.png";
 import LandingShimmer from "../../shimmer/landingPageShimmer/landingShimmer";
 

@@ -11,21 +11,21 @@ const items = [
   {
     id: 1,
     title: 'Studio Ghibli Graphicx',
-    price: 'â‚¹599.00',
+    price: '₹599.00',
     image: tshirtImage,
     tag: 'NEW RELEASES',
   },
   {
     id: 2,
     title: 'Studio Ghibli Graphicx',
-    price: 'â‚¹599.00',
+    price: '₹599.00',
     image: tshirtImage,
     tag: 'TSHIRTS',
   },
   {
     id: 3,
     title: 'Studio Ghibli Graphicx',
-    price: 'â‚¹599.00',
+    price: '₹599.00',
     image: tshirtImage,
     tag: 'COLLECTIBLES',
   },
@@ -111,7 +111,7 @@ const renderCard = (item) => (
     Exclusive Merch
   </p>
   <h2 className="text-xl sm:text-2xl md:text-4xl font-bold tracking-widest uppercase leading-tight">
-    Collectorâ€™s Paradise
+    Collector's Paradise
   </h2>
 </div>
 
@@ -126,9 +126,9 @@ const renderCard = (item) => (
         </div>
 
         {/* Desktop View Grid */}
-        <div className="hidden md:flex justify-center gap-35 flex-wrap">
+        <div className="hidden md:grid md:grid-cols-3 gap-8">
           {items.map((item) => (
-            <div key={item.id} className="w-[350px]">{renderCard(item)}</div>
+            <div key={item.id}>{renderCard(item)}</div>
           ))}
         </div>
       </div>

@@ -32,8 +32,10 @@ const Login = () => {
       setError('');
       const data = await loginUser(email, password);
       localStorage.setItem('authtoken', data.token.token);
-      localStorage.setItem('user', JSON.stringify(data.token.user));
-      dispatch(addUser(data.token.user));
+      // Store user with explicit isLoggedIn flag so ProtectedRoute works
+      const userObj = { ...data.token.user, isLoggedIn: true };
+      localStorage.setItem('user', JSON.stringify(userObj));
+      dispatch(addUser(userObj));
       // Broadcast user update to research subdomain
       const RESEARCH_URL = import.meta.env.VITE_RESEARCH_BASE_URL || 'https://research.infinitohq.com';
       window.postMessage({ type: "user-data", payload: JSON.stringify(data.token.user) }, '*');

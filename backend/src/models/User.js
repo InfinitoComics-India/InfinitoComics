@@ -54,6 +54,10 @@ const UserSchema = new mongoose.Schema({
     type: String,
     enum: ["", "Monthly", "HalfYear", "Annual"],
     default: ""
+  },
+  characterColors: {
+    type: Object,
+    default: null
   }
 }, {timestamps: true});
 
