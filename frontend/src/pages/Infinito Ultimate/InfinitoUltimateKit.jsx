@@ -1,27 +1,34 @@
 import React, { useState, useEffect } from "react";
 import { CircleCheck } from "lucide-react";
-import { fetchComics } from "../../services/ComicService.js";
+import { getAll as fetchCharacters } from "../../services/CharacterServices.js";
 
 const InfinitoUltimateKit = () => {
-  const [comics, setComics] = useState([]);
-  const [isLoadingComics, setIsLoadingComics] = useState(true);
-  const [selectedComic, setSelectedComic] = useState(null);
+  const [characters, setCharacters] = useState([]);
+  const [isLoadingCharacters, setIsLoadingCharacters] = useState(true);
+  const [selectedCharacter, setSelectedCharacter] = useState(null);
 
-  // Fetch comics from API
+  // Fetch characters from API
   useEffect(() => {
-    fetchComics()
+    fetchCharacters()
       .then((data) => {
-        const comicsData = Array.isArray(data) ? data : [];
-        setComics(comicsData);
-        if (comicsData.length > 0) {
-          setSelectedComic(comicsData[0]._id); // Select first comic by default
+        let chars = [];
+        if (data?.data && Array.isArray(data.data)) {
+          chars = data.data;
+        } else if (Array.isArray(data)) {
+          chars = data;
+        } else if (Array.isArray(data?.characters)) {
+          chars = data.characters;
+        }
+        setCharacters(chars);
+        if (chars.length > 0) {
+          setSelectedCharacter(chars[0]._id);
         }
       })
       .catch((error) => {
-        console.error("Error fetching comics for kit:", error);
-        setComics([]);
+        console.error("Error fetching characters for kit:", error);
+        setCharacters([]);
       })
-      .finally(() => setIsLoadingComics(false));
+      .finally(() => setIsLoadingCharacters(false));
   }, []);
 
   const plan = {
@@ -57,7 +64,7 @@ const InfinitoUltimateKit = () => {
 
       {/* Features */}
       <div className="p-6 space-y-3 flex-grow">
-        {/* Comic Selection Dropdown */}
+        {/* Character Selection Dropdown */}
         <div className="mb-4">
           <div className="flex items-start gap-3 mb-2">
             <div className="flex-shrink-0 mt-0.5">
@@ -65,25 +72,25 @@ const InfinitoUltimateKit = () => {
                 <CircleCheck size={14} color="#DD1215" strokeWidth={3} />
               </div>
             </div>
-            <span className="text-sm text-black font-medium">Comic of your choice</span>
+            <span className="text-sm text-black font-medium">Character of your choice</span>
           </div>
           
-          {isLoadingComics ? (
-            <div className="ml-8 text-xs text-gray-500">Loading comics...</div>
-          ) : comics.length > 0 ? (
+          {isLoadingCharacters ? (
+            <div className="ml-8 text-xs text-gray-500">Loading characters...</div>
+          ) : characters.length > 0 ? (
             <select
-              value={selectedComic || ""}
-              onChange={(e) => setSelectedComic(e.target.value)}
+              value={selectedCharacter || ""}
+              onChange={(e) => setSelectedCharacter(e.target.value)}
               className="ml-8 w-[calc(100%-2rem)] text-sm border border-gray-300 px-3 py-2 rounded focus:outline-none focus:border-[#DD1215]"
             >
-              {comics.map((comic) => (
-                <option key={comic._id} value={comic._id}>
-                  {comic.title}
+              {characters.map((character) => (
+                <option key={character._id} value={character._id}>
+                  {character.knownAs || character.originalName}
                 </option>
               ))}
             </select>
           ) : (
-            <div className="ml-8 text-xs text-gray-500">No comics available</div>
+            <div className="ml-8 text-xs text-gray-500">No characters available</div>
           )}
         </div>
 
