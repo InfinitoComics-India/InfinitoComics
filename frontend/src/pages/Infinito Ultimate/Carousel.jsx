@@ -1,85 +1,65 @@
 import React from 'react';
 import belowImage from "../../../assets/Images/Ultimate/Botton.png";
-import overlayImage from "../../../assets/Images/Ultimate/OverlayImage.png";
-import leftOverlayImage from "../../../assets/Images/Ultimate/leftoverlay.png";
-import rightOverlayImage from "../../../assets/Images/Ultimate/rightoverlay.png";
 import universetext from "../../../assets/Images/Ultimate/universeText.png";
-import heroBackground from "../../../assets/Images/Ultimate/ultimateCarousel.jpg";
+
+// Import the new banner image - save your banner as this filename
+import heroBanner from "../../../assets/Images/Ultimate/ultimateBanner.png";
 
 const Home = () => {
   return (
     <div className="w-full text-white">
 
-      {/* Desktop View - Full Screen Image Background */}
-      <div className="relative w-full h-screen overflow-hidden hidden md:block">
-
-        {/* Background Image */}
-        <div className="absolute inset-0 w-full h-full">
-          <img
-            src={heroBackground}
-            alt="Infinito Ultimate"
-            className="w-full h-full object-cover"
-          />
-        </div>
-
-        {/* Main Overlay */}
+      {/* Desktop View - Full Width Banner */}
+      <div className="relative w-full hidden md:block">
+        {/* Banner Image */}
         <img
-          src={overlayImage}
-          alt="Overlay"
-          className="absolute inset-0 w-full h-full z-10 pointer-events-none object-cover"
+          src={heroBanner}
+          alt="Infinito Ultimate"
+          className="w-full h-auto object-cover"
         />
-        <img
-          src={leftOverlayImage}
-          alt="Left Overlay"
-          className="absolute left-0 top-0 h-full z-10 pointer-events-none object-contain"
-        />
-        <img
-          src={rightOverlayImage}
-          alt="Right Overlay"
-          className="absolute right-0 top-0 h-full z-10 pointer-events-none object-contain"
-        />
-
-        {/* Desktop Text Content */}
-        <div className='w-full flex justify-center'>
-          <div className="absolute w-2/3 inset-0 flex flex-col items-start justify-center text-left px-8 md:px-16 z-20 md:mx-30">
-            <img src={universetext} alt="" className='mb-3' />
-            <p className="mt-4 max-w-2xl w-[29rem] text-lg md:text-xl">
-              Welcome to Infinito Ultimate — your all-access pass to India's first multiverse comic subscription. anywhere else.
+        
+        {/* Overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+        
+        {/* Text Content Overlay */}
+        <div className="absolute bottom-0 left-0 right-0 px-8 md:px-16 pb-12">
+          <div className="max-w-4xl">
+            <img src={universetext} alt="A Universe of Stories Unlocked" className='mb-3 max-w-md' />
+            <p className="mt-4 max-w-xl text-lg md:text-xl">
+              Welcome to Infinito Ultimate — your all-access pass to India's first multiverse comic subscription.
             </p>
-            <button className="mt-8 h-16 w-72 bg-[#DD1215] hover:bg-red-600 text-white font-semibold py-2 px-4 transition duration-300">
+            <button className="mt-8 h-14 w-64 bg-[#DD1215] hover:bg-red-600 text-white font-semibold py-2 px-4 transition duration-300">
               TRY INFINITO ULTIMATE
             </button>
-            <p className="mt-8 text-xl">
-              Already a subscriber? <span className="underline">Start reading!</span>
+            <p className="mt-6 text-lg">
+              Already a subscriber? <span className="underline cursor-pointer hover:text-[#DD1215]">Start reading!</span>
             </p>
           </div>
         </div>
       </div>
 
-      {/* Mobile View - Full Screen Image Background */}
+      {/* Mobile View */}
       <div className="block md:hidden w-full">
-        <div className="relative w-full h-screen overflow-hidden">
-          {/* Background Image */}
-          <div className="absolute inset-0 w-full h-full">
-            <img
-              src={heroBackground}
-              alt="Infinito Ultimate"
-              className="w-full h-full object-cover"
-            />
-          </div>
+        <div className="relative w-full">
+          {/* Banner Image */}
+          <img
+            src={heroBanner}
+            alt="Infinito Ultimate"
+            className="w-full h-auto object-cover"
+          />
           
           {/* Gradient overlay for text readability */}
-          <div className="absolute bottom-0 w-full h-2/3 bg-gradient-to-t from-black via-black/60 to-transparent z-20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
           
-          {/* Mobile Text Content - Positioned over video at bottom */}
-          <div className="absolute bottom-0 left-0 right-0 px-8 pb-12 text-left z-30">
+          {/* Mobile Text Content */}
+          <div className="absolute bottom-0 left-0 right-0 px-6 pb-8 text-left">
             <h2 className="text-2xl font-bold mb-1">A UNIVERSE OF STORIES.</h2>
             <h3 className="text-[#DD1215] text-2xl font-bold mb-4">UNLOCKED.</h3>
             <p className="text-base mb-5">
-              Welcome to Infinito Ultimate — your all-access pass to India's first multiverse comic subscription. anywhere else.
+              Welcome to Infinito Ultimate — your all-access pass to India's first multiverse comic subscription.
             </p>
-            <button className="w-2/3 bg-[#DD1215] text-[0.8rem] hover:bg-red-600 h-8 text-white transition duration-300">
-              TRY INFINITO ULTIMATE &gt;
+            <button className="w-2/3 bg-[#DD1215] text-sm hover:bg-red-600 h-10 text-white font-semibold transition duration-300">
+              TRY INFINITO ULTIMATE
             </button>
             <p className="mt-4 text-base">
               Already a subscriber? <span className="underline">Start reading!</span>
