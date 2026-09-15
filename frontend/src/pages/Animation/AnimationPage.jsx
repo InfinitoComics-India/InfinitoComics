@@ -1126,7 +1126,7 @@ const AnimationPage = () => {
                           <img
                             src={character.mainImageUrl || character.mainLandscapeImageUrl || "https://via.placeholder.com/300x400"}
                             alt={character.knownAs || character.originalName}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            className="w-full h-full object-contain object-top group-hover:scale-105 transition-transform duration-500"
                           />
                         </div>
                         <p className="text-xs font-bold text-gray-900 group-hover:text-[#E50914] transition-colors font-dmsans line-clamp-2">

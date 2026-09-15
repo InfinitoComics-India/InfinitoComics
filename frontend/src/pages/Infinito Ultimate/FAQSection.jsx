@@ -32,8 +32,8 @@ const FAQSection = ({ category }) => {
   }, [category]);
 
   return (
-    <div className="max-w-10/12 mx-auto pt-20 text-left">
-      <h3 className="flex justify-center text-[2rem] font-bold mb-4">
+    <div className="max-w-4xl mx-auto text-left">
+      <h3 className="text-center text-2xl md:text-3xl font-bold mb-8 text-black">
         Frequently Asked Questions
       </h3>
 
@@ -41,23 +41,27 @@ const FAQSection = ({ category }) => {
         <p className="text-center text-gray-500">Loading FAQs...</p>
       ) : error ? (
         <p className="text-center text-gray-500">
-          Oops! We couldn’t load the FAQs right now. Please refresh or try again later.
+          Oops! We couldn't load the FAQs right now. Please refresh or try again later.
         </p>
       ) : faqData.length === 0 ? (
         <p className="text-center">No FAQs available.</p>
       ) : (
-        <div className="divide-y-2 divide-[#7D7D7D]">
+        <div className="divide-y divide-gray-300">
           {faqData.map((faq, index) => (
             <div key={faq._id || index} className="py-4">
               <button
                 onClick={() => toggleFAQ(index)}
-                className="w-full flex justify-between items-center text-left text-[1.4rem] font-bold text-black"
+                className="w-full flex justify-between items-center text-left text-sm md:text-base font-semibold text-black hover:text-gray-700 transition-colors"
               >
                 <span>{faq.question}</span>
-                {openIndex === index ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                {openIndex === index ? (
+                  <ChevronUp size={18} className="flex-shrink-0 ml-4" />
+                ) : (
+                  <ChevronDown size={18} className="flex-shrink-0 ml-4" />
+                )}
               </button>
               {openIndex === index && (
-                <div className="pt-3 text-xl font-semibold text-left text-gray-700">
+                <div className="pt-3 text-sm md:text-base text-gray-600 leading-relaxed">
                   {faq.answer}
                 </div>
               )}
