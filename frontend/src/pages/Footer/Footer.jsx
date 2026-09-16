@@ -51,7 +51,7 @@ const Footer = () => {
               </Link>
               <Link to="/aboutUS"><span>ABOUT US</span></Link>
               <Link to="/internships"><span>INTERNSHIP</span></Link>
-              <Link to="/contact"><span>CONTACT US</span></Link>
+              <Link to="/contact-us"><span>CONTACT US</span></Link>
               <Link to="/comics">
                 <span>COMICS</span>
               </Link>
@@ -129,7 +129,7 @@ const Footer = () => {
             <Link to={FOUNDATION_BASE_URL}><span className="font">FOUNDATION</span></Link> 
             <Link to="/aboutUS">ABOUT US</Link>
              <Link to="/internships">INTERNSHIP</Link>
-             <Link to="/contact">CONTACT US</Link>
+             <Link to="/contact-us">CONTACT US</Link>
              <a href={`${RESEARCH_BASE_URL}/research`}> <span>RESEARCH</span></a>
             <Link to="/support-us">SUPPORT US</Link>
           </div>
