@@ -8,7 +8,7 @@ import { BASE_URL } from "../../utils/constants.js";
 import PremiumPlansShimmer from '../../shimmer/landingPageShimmer/PremiumPlansShimmer.jsx'
 
 import freeBanner from '../../../assets/Images/merch/free-bannner.jpeg';
-import { Gift } from "lucide-react";
+import { Gift, CircleCheck } from "lucide-react";
 
 // Main component
 const PremiumPlans = () => {
