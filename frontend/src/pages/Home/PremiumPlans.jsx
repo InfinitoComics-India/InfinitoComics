@@ -7,15 +7,8 @@ import axios from "axios";
 import { BASE_URL } from "../../utils/constants.js";
 import PremiumPlansShimmer from '../../shimmer/landingPageShimmer/PremiumPlansShimmer.jsx'
 
-import {
-  Gift,
-  Leaf,
-  LeafyGreen,
-  Flower,
-  TreeDeciduous,
-  CircleCheck,
-  Rss,
-} from "lucide-react";
+import freeBanner from '../../../assets/Images/merch/free-bannner.jpeg';
+import { Gift } from "lucide-react";
 
 // Main component
 const PremiumPlans = () => {
@@ -215,27 +208,13 @@ return loading ? <PremiumPlansShimmer/> : (
         {renderCard(plans[0], 0)}
       </div>
 
-      {/* Everything is free for First year! section */}
-      <div className="mt-12 w-full bg-[#DD1215] py-10 px-6 flex flex-col items-center justify-center text-center rounded-2xl">
-        <div className="flex items-center gap-3 mb-3">
-          <span className="text-4xl">🎉</span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white uppercase tracking-wider">
-            Everything is Free
-          </h2>
-          <span className="text-4xl">🎉</span>
-        </div>
-        <p className="text-white text-xl sm:text-2xl font-bold tracking-widest uppercase">
-          for the First Year!
-        </p>
-        <p className="text-red-100 text-sm sm:text-base mt-3 max-w-xl">
-          Sign up today and get unlimited access to all comics, characters, animated series, and more — absolutely free for your entire first year.
-        </p>
-        <button
-          onClick={() => window.location.href = '/signup'}
-          className="mt-6 bg-white text-[#DD1215] font-black text-sm uppercase tracking-widest px-8 py-3 hover:bg-gray-100 transition"
-        >
-          GET STARTED FREE →
-        </button>
+      {/* Everything is free — image banner */}
+      <div className="mt-12 w-full cursor-pointer" onClick={() => window.location.href = '/signup'}>
+        <img
+          src={freeBanner}
+          alt="Everything is Free for the First Year"
+          className="w-full object-cover rounded-2xl"
+        />
       </div>
 
     </div>
