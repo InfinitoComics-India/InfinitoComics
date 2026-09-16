@@ -26,6 +26,7 @@ import aboutTimelineRoutes from './routes/aboutTimelineRoutes.js';
 import paymentRoutes from './routes/payment-routes.js'
 import comicChapRoutes from './routes/comicChap-routes.js'
 import researchApplicationRoutes from './routes/researchApplication-routes.js'
+import contactQueryRoutes from './routes/contactQuery-routes.js'
 
 
 const allowedOrigins = [
@@ -68,6 +69,7 @@ app.use('/support', supportRoutes);
 app.use('/comic', comicRoutes);
 app.use('/comicChap', comicChapRoutes);
 app.use('/research-application', researchApplicationRoutes);
+app.use('/contact-query', contactQueryRoutes);
 app.use('/character', characterRoutes);
 app.use('/payment', paymentRoutes);
 app.get('/', (req, res) => {
