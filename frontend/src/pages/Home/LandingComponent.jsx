@@ -1,30 +1,17 @@
 // Home.jsx
 import React, { useState, useEffect } from "react";
 import slide1 from "../../../assets/Images/banner.png";
+import slide2 from "../../../assets/Images/banner 2.jpeg";
+import slide3 from "../../../assets/Images/banner 3.jpeg";
 import belowImage from "../../../assets/Images/Botton.png";
 import LandingShimmer from "../../shimmer/landingPageShimmer/landingShimmer";
 
 const images = [
-  {
-    id: 1,
-    url: slide1,
-  },
-  {
-    id: 2,
-    url: slide1,
-  },
-  {
-    id: 3,
-    url: slide1,
-  },
-  {
-    id: 4,
-    url: slide1,
-  },
-  {
-    id: 5,
-    url: slide1,
-  },
+  { id: 1, url: slide1 },
+  { id: 2, url: slide2 },
+  { id: 3, url: slide3 },
+  { id: 4, url: slide2 },
+  { id: 5, url: slide3 },
 ];
 
 const Home = () => {

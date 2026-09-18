@@ -47,6 +47,7 @@ import AntiHarassmentPolicy from './pages/Policy/AntiHarassment.jsx';
 import ProtectedRoute from './components/protectedRoutes.jsx';
 import TrackOrders from './pages/Orders/TrackOrders';
 import OrderHistory from './pages/Orders/OrderHistory';
+import ContactUs from './pages/ContactUs/ContactUs';
 
 function App() {
   useEffect(() => {
@@ -136,9 +137,11 @@ function App() {
               <Route path="/terms-of-use" element={<TermsOfUse />} />
               <Route path="/children-privacy-policy" element={<ChildrensPrivacyPolicy />} />
               <Route path="/anti-harassment" element={<AntiHarassmentPolicy />} />
+              <Route path="/contact-us" element={<ContactUs />} />
               <Route path="/ErrorReport" element={<ProtectedRoute><ErrorPage /></ProtectedRoute>} />
               <Route path="/orders/track" element={<ProtectedRoute><TrackOrders /></ProtectedRoute>} />
               <Route path="/orders/history" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
+              <Route path="/contact-us" element={<ContactUs />} />
               <Route path="/animation" element={<AnimationPage />} />
               <Route path="/shop" element={<Community />} />
               <Route path="*" element={<NotFound />} />

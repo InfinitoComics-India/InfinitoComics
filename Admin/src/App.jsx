@@ -17,6 +17,7 @@ import ResearchManager from './Pages/Research/ResearchManager.jsx';
 import ComicChap from './Pages/Comic/comicChapters.jsx';
 import AdminManagement from './Pages/AdminManagement/AdminManagement.jsx';
 import Unauthorized from './Pages/Unauthorized/Unauthorized.jsx';
+import ContactQueries from './Pages/ContactQueries/ContactQueries.jsx';
 
 // Role constants
 const SUPER   = ["superadmin"];
@@ -96,6 +97,11 @@ function App() {
           {/* Admin Management — superadmin only */}
           <Route path="/admin-management" element={
             <ProtectedRoute allowedRoles={SUPER}><AdminManagement /></ProtectedRoute>
+          } />
+
+          {/* Contact Queries — superadmin only */}
+          <Route path="/contact-queries" element={
+            <ProtectedRoute allowedRoles={SUPER}><ContactQueries /></ProtectedRoute>
           } />
 
         </Route>

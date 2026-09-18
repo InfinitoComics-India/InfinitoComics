@@ -1,21 +1,22 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import URLs from '../../Utils/utils.js';
-import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight } from "lucide-react";
+import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, Mail } from "lucide-react";
 import { message, Popconfirm } from "antd";
 import { getRoles } from '../../Utils/auth.js';
 
 const NAV_ITEMS = [
-  { label: "Home",            to: "/",                  icon: Home,         roles: ["superadmin","comics_admin","character_admin","research_admin","blog_admin","career_admin"] },
-  { label: "Comics",          to: "/comic",             icon: BookOpen,     roles: ["superadmin","comics_admin"] },
-  { label: "Characters",      to: "/characters",        icon: User,         roles: ["superadmin","character_admin"] },
-  { label: "Research",        to: "/research",          icon: FlaskConical, roles: ["superadmin","research_admin"] },
-  { label: "Blogs",           to: "/createblog",        icon: FileText,     roles: ["superadmin","blog_admin"] },
-  { label: "FAQs",            to: "/createfaq",         icon: HelpCircle,   roles: ["superadmin","blog_admin"] },
-  { label: "Timeline",        to: "/timeline",          icon: Clock,        roles: ["superadmin","blog_admin"] },
-  { label: "Career",          to: "/career",            icon: Briefcase,    roles: ["superadmin","career_admin"] },
-  { label: "Users",           to: "/users",             icon: Users,        roles: ["superadmin"] },
-  { label: "Admin Mgmt",      to: "/admin-management",  icon: ShieldCheck,  roles: ["superadmin"] },
+  { label: "Home",              to: "/",                  icon: Home,         roles: ["superadmin","comics_admin","character_admin","research_admin","blog_admin","career_admin"] },
+  { label: "Comics",            to: "/comic",             icon: BookOpen,     roles: ["superadmin","comics_admin"] },
+  { label: "Characters",        to: "/characters",        icon: User,         roles: ["superadmin","character_admin"] },
+  { label: "Research",          to: "/research",          icon: FlaskConical, roles: ["superadmin","research_admin"] },
+  { label: "Blogs",             to: "/createblog",        icon: FileText,     roles: ["superadmin","blog_admin"] },
+  { label: "FAQs",              to: "/createfaq",         icon: HelpCircle,   roles: ["superadmin","blog_admin"] },
+  { label: "Timeline",          to: "/timeline",          icon: Clock,        roles: ["superadmin","blog_admin"] },
+  { label: "Career",            to: "/career",            icon: Briefcase,    roles: ["superadmin","career_admin"] },
+  { label: "Users",             to: "/users",             icon: Users,        roles: ["superadmin"] },
+  { label: "Admin Mgmt",        to: "/admin-management",  icon: ShieldCheck,  roles: ["superadmin"] },
+  { label: "Contact Queries",   to: "/contact-queries",   icon: Mail,         roles: ["superadmin"] },
 ];
 
 const Navbar = () => {
