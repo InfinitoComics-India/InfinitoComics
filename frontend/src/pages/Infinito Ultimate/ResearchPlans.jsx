@@ -3,11 +3,11 @@ import { Check, Sparkles, Zap, Star } from "lucide-react";
 
 const ResearchPlans = () => {
   const features = [
-    { name: "Unlimited Comics", icon: "📚" },
-    { name: "Premium Content", icon: "⭐" },
-    { name: "Animated Series", icon: "🎬" },
-    { name: "Free Online Games", icon: "🎮" },
-    { name: "Exclusive Releases", icon: "🔥" },
+    "Unlimited Comics",
+    "Premium Content",
+    "Animated Series",
+    "Free Online Games",
+    "Exclusive Releases",
   ];
 
   return (
@@ -37,7 +37,7 @@ const ResearchPlans = () => {
           
           {/* Badge */}
           <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#DD1215] text-white px-6 py-2 rounded-full text-sm font-bold uppercase tracking-wide shadow-lg">
-            🎉 100% Free Forever
+            Free Access
           </div>
 
           {/* Price Display */}
@@ -65,9 +65,8 @@ const ResearchPlans = () => {
                   <Check size={20} color="#fff" strokeWidth={3} />
                 </div>
                 <span className="text-base sm:text-lg text-black font-medium flex-1">
-                  {feature.name}
+                  {feature}
                 </span>
-                <span className="text-xl">{feature.icon}</span>
               </div>
             ))}
           </div>
