@@ -36,6 +36,9 @@ import calendarEventRoutes from './routes/calendarEvent-routes.js';
 import taskRoutes from './routes/task-routes.js';
 import workAssignmentRoutes from './routes/workAssignment-routes.js';
 import projectRoutes from './routes/project-routes.js';
+import performanceRoutes from './routes/performance-routes.js';
+import goalRoutes from './routes/goal-routes.js';
+import recognitionRoutes from './routes/recognition-routes.js';
 
 
 const allowedOrigins = [
@@ -90,6 +93,9 @@ app.use('/hr/calendar',       calendarEventRoutes);
 app.use('/hr/tasks',          taskRoutes);
 app.use('/hr/assignments',    workAssignmentRoutes);
 app.use('/hr/projects',       projectRoutes);
+app.use('/hr/performance',    performanceRoutes);
+app.use('/hr/goals',          goalRoutes);
+app.use('/hr/recognition',    recognitionRoutes);
 app.get('/', (req, res) => {
   res.send('Backend is up and running!');
 });
