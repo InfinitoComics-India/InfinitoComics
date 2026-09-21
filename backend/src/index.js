@@ -33,6 +33,9 @@ import auditLogRoutes from './routes/auditLog-routes.js';
 import attendanceRoutes from './routes/attendance-routes.js';
 import leaveRoutes from './routes/leave-routes.js';
 import calendarEventRoutes from './routes/calendarEvent-routes.js';
+import taskRoutes from './routes/task-routes.js';
+import workAssignmentRoutes from './routes/workAssignment-routes.js';
+import projectRoutes from './routes/project-routes.js';
 
 
 const allowedOrigins = [
@@ -84,6 +87,9 @@ app.use('/hr/audit',          auditLogRoutes);
 app.use('/hr/attendance',     attendanceRoutes);
 app.use('/hr/leaves',         leaveRoutes);
 app.use('/hr/calendar',       calendarEventRoutes);
+app.use('/hr/tasks',          taskRoutes);
+app.use('/hr/assignments',    workAssignmentRoutes);
+app.use('/hr/projects',       projectRoutes);
 app.get('/', (req, res) => {
   res.send('Backend is up and running!');
 });

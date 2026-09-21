@@ -28,6 +28,9 @@ import AuditLogPage      from './Pages/HR/AuditLog.jsx';
 import AttendanceManager from './Pages/HR/AttendanceManager.jsx';
 import LeaveManagement   from './Pages/HR/LeaveManagement.jsx';
 import CompanyCalendar   from './Pages/HR/CompanyCalendar.jsx';
+import KanbanBoard       from './Pages/HR/KanbanBoard.jsx';
+import WorkAssignment    from './Pages/HR/WorkAssignment.jsx';
+import ProjectManager    from './Pages/HR/ProjectManager.jsx';
 
 // Role constants
 const SUPER   = ["superadmin"];
@@ -161,6 +164,23 @@ function App() {
           {/* Company Calendar */}
           <Route path="/hr/calendar" element={
             <ProtectedRoute allowedRoles={HR_VIEW}><CompanyCalendar /></ProtectedRoute>
+          } />
+
+          {/* ── HR Phase 3 ─────────────────────────────────── */}
+
+          {/* Job Tracking — Kanban Board */}
+          <Route path="/hr/tasks" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><KanbanBoard /></ProtectedRoute>
+          } />
+
+          {/* Work Assignment */}
+          <Route path="/hr/assignments" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><WorkAssignment /></ProtectedRoute>
+          } />
+
+          {/* Project Management */}
+          <Route path="/hr/projects" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><ProjectManager /></ProtectedRoute>
           } />
 
         </Route>
