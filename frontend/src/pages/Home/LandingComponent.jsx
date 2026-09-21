@@ -44,18 +44,12 @@ const Home = () => {
         {/* Text Overlay (aligned to left) */}
         <div className="absolute inset-0 flex flex-col items-start justify-center text-left z-20">
           <div className="w-full max-w-7xl mx-auto px-8 md:px-16">
-            <h2 className="text-5xl md:text-6xl font-bold uppercase py-10 leading-tight">
-              Rise of the <br />{" "}
-              <span className="text-red-500">Eternal Storm</span>
-            </h2>
             <p className="mt-4 max-w-2xl text-lg md:text-xl">
               An ancient force awakens in the cosmic depths. Heroes will rise,
               dimensions will collide, and the Infinito Universe will never be the
               same.
             </p>
-            <button className="mt-14 bg-[#DD1215] hover:bg-red-600 text-white font-semibold py-2 px-4 rounded transition duration-300">
-              Read Now
-            </button>
+
           </div>
         </div>
 
