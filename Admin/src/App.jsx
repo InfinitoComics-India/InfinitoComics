@@ -31,6 +31,9 @@ import CompanyCalendar   from './Pages/HR/CompanyCalendar.jsx';
 import KanbanBoard       from './Pages/HR/KanbanBoard.jsx';
 import WorkAssignment    from './Pages/HR/WorkAssignment.jsx';
 import ProjectManager    from './Pages/HR/ProjectManager.jsx';
+import PerformanceDashboard from './Pages/HR/PerformanceDashboard.jsx';
+import GoalTracker       from './Pages/HR/GoalTracker.jsx';
+import RecognitionWall   from './Pages/HR/RecognitionWall.jsx';
 
 // Role constants
 const SUPER   = ["superadmin"];
@@ -181,6 +184,17 @@ function App() {
           {/* Project Management */}
           <Route path="/hr/projects" element={
             <ProtectedRoute allowedRoles={HR_VIEW}><ProjectManager /></ProtectedRoute>
+          } />
+
+          {/* ── HR Phase 4 ─────────────────────────────────── */}
+          <Route path="/hr/performance" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><PerformanceDashboard /></ProtectedRoute>
+          } />
+          <Route path="/hr/goals" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><GoalTracker /></ProtectedRoute>
+          } />
+          <Route path="/hr/recognition" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><RecognitionWall /></ProtectedRoute>
           } />
 
         </Route>
