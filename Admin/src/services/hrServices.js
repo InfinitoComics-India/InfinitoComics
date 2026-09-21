@@ -86,3 +86,28 @@ export const addMilestone        = (id, data)                  => axios.post(`${
 export const updateMilestone     = (id, msId, data)            => axios.put(`${BASE}/hr/projects/milestone/${id}/${msId}`, data, authHeaders());
 export const deleteProject       = (id)                        => axios.delete(`${BASE}/hr/projects/delete/${id}`, authHeaders());
 export const getProjectStats     = ()                          => axios.get(`${BASE}/hr/projects/stats`, authHeaders());
+
+// ── PERFORMANCE ───────────────────────────────────────────────
+export const generatePerformance   = (empId, month, year)            => axios.post(`${BASE}/hr/performance/generate/${empId}`, { month, year }, authHeaders());
+export const getPerformanceHistory = (empId)                         => axios.get(`${BASE}/hr/performance/${empId}`, authHeaders());
+export const getPerformancePeriod  = (empId, month, year)            => axios.get(`${BASE}/hr/performance/${empId}/period`, { ...authHeaders(), params: { month, year } });
+export const getAllPerformance     = (month, year)                    => axios.get(`${BASE}/hr/performance/all`, { ...authHeaders(), params: { month, year } });
+export const addManagerScore       = (empId, data)                   => axios.post(`${BASE}/hr/performance/score/${empId}`, data, authHeaders());
+export const getTopPerformers      = (month, year)                   => axios.get(`${BASE}/hr/performance/top`, { ...authHeaders(), params: { month, year } });
+export const getPerformanceTrend   = (empId, months)                 => axios.get(`${BASE}/hr/performance/trend/${empId}`, { ...authHeaders(), params: { months } });
+
+// ── GOALS ─────────────────────────────────────────────────────
+export const createGoal            = (data)                          => axios.post(`${BASE}/hr/goals/create`, data, authHeaders());
+export const getGoalsByEmployee    = (empId, status)                 => axios.get(`${BASE}/hr/goals/employee/${empId}`, { ...authHeaders(), params: { status } });
+export const getGoalSummary        = (empId)                         => axios.get(`${BASE}/hr/goals/summary/${empId}`, authHeaders());
+export const getOverdueGoals       = ()                              => axios.get(`${BASE}/hr/goals/overdue`, authHeaders());
+export const updateGoalProgress    = (id, currentValue)              => axios.patch(`${BASE}/hr/goals/progress/${id}`, { currentValue }, authHeaders());
+export const updateGoal            = (id, data)                      => axios.put(`${BASE}/hr/goals/update/${id}`, data, authHeaders());
+export const deleteGoal            = (id)                            => axios.delete(`${BASE}/hr/goals/delete/${id}`, authHeaders());
+
+// ── RECOGNITION ───────────────────────────────────────────────
+export const giveRecognition       = (data)                          => axios.post(`${BASE}/hr/recognition/give`, data, authHeaders());
+export const getRecognitionWall    = ()                              => axios.get(`${BASE}/hr/recognition/wall`, authHeaders());
+export const getRecognitionForEmp  = (empId)                         => axios.get(`${BASE}/hr/recognition/employee/${empId}`, authHeaders());
+export const getBadgesForEmp       = (empId)                         => axios.get(`${BASE}/hr/recognition/badges/${empId}`, authHeaders());
+export const deleteRecognition     = (id)                            => axios.delete(`${BASE}/hr/recognition/delete/${id}`, authHeaders());
