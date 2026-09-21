@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import URLs from '../../Utils/utils.js';
-import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, Mail } from "lucide-react";
+import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, Mail, UserCog, Bell, ScrollText } from "lucide-react";
 import { message, Popconfirm } from "antd";
 import { getRoles } from '../../Utils/auth.js';
+
+const HR_ALL   = ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin"];
+const HR_AUDIT = ["superadmin","hr_manager"];
 
 const NAV_ITEMS = [
   { label: "Home",              to: "/",                  icon: Home,         roles: ["superadmin","comics_admin","character_admin","research_admin","blog_admin","career_admin"] },
@@ -17,6 +20,11 @@ const NAV_ITEMS = [
   { label: "Users",             to: "/users",             icon: Users,        roles: ["superadmin"] },
   { label: "Admin Mgmt",        to: "/admin-management",  icon: ShieldCheck,  roles: ["superadmin"] },
   { label: "Contact Queries",   to: "/contact-queries",   icon: Mail,         roles: ["superadmin"] },
+  // ── HR System ───────────────────────────────────────────────
+  { label: "─── HR ───",        to: null,                 icon: null,         roles: HR_ALL,  divider: true },
+  { label: "Employees",         to: "/hr/employees",      icon: UserCog,      roles: HR_ALL   },
+  { label: "Notifications",     to: "/hr/notifications",  icon: Bell,         roles: HR_ALL   },
+  { label: "Audit Log",         to: "/hr/audit",          icon: ScrollText,   roles: HR_AUDIT },
 ];
 
 const Navbar = () => {
@@ -60,24 +68,33 @@ const Navbar = () => {
 
       {/* Nav items */}
       <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
-        {visibleItems.map(({ label, to, icon: Icon }) => (
-          <Link
-            key={to}
-            to={to}
-            onClick={onNavClick}
-            title={collapsed ? label : ""}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group
-              ${isActive(to)
-                ? "bg-[#DD1215] text-white"
-                : "text-gray-300 hover:bg-gray-700 hover:text-white"
-              }
-              ${collapsed ? "justify-center" : ""}
-            `}
-          >
-            <Icon size={20} className="shrink-0" />
-            {!collapsed && <span>{label}</span>}
-          </Link>
-        ))}
+        {visibleItems.map(({ label, to, icon: Icon, divider }) => {
+          if (divider) return (
+            !collapsed ? (
+              <div key={label} className="px-3 pt-4 pb-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">HR System</p>
+              </div>
+            ) : <div key={label} className="border-t border-gray-700 my-2 mx-2" />
+          );
+          return (
+            <Link
+              key={to}
+              to={to}
+              onClick={onNavClick}
+              title={collapsed ? label : ""}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group
+                ${isActive(to)
+                  ? "bg-[#DD1215] text-white"
+                  : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                }
+                ${collapsed ? "justify-center" : ""}
+              `}
+            >
+              <Icon size={20} className="shrink-0" />
+              {!collapsed && <span>{label}</span>}
+            </Link>
+          );
+        })}
       </nav>
 
       {/* Logout */}

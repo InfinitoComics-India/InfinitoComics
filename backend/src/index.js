@@ -27,6 +27,9 @@ import paymentRoutes from './routes/payment-routes.js'
 import comicChapRoutes from './routes/comicChap-routes.js'
 import researchApplicationRoutes from './routes/researchApplication-routes.js'
 import contactQueryRoutes from './routes/contactQuery-routes.js'
+import employeeRoutes from './routes/employee-routes.js';
+import notificationRoutes from './routes/notification-routes.js';
+import auditLogRoutes from './routes/auditLog-routes.js';
 
 
 const allowedOrigins = [
@@ -72,6 +75,9 @@ app.use('/research-application', researchApplicationRoutes);
 app.use('/contact-query', contactQueryRoutes);
 app.use('/character', characterRoutes);
 app.use('/payment', paymentRoutes);
+app.use('/hr/employees',      employeeRoutes);
+app.use('/hr/notifications',  notificationRoutes);
+app.use('/hr/audit',          auditLogRoutes);
 app.get('/', (req, res) => {
   res.send('Backend is up and running!');
 });
