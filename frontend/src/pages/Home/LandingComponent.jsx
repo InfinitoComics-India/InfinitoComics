@@ -17,10 +17,18 @@ const images = [
 const Home = () => {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    setTimeout(() => setLoading(false), 2400); 
+    setTimeout(() => setLoading(false), 2400);
   }, []);
 
   const [current, setCurrent] = useState(0);
+
+  // Auto-advance every 4.5 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % images.length);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleSelect = (index) => {
     setCurrent(index);
@@ -31,12 +39,17 @@ const Home = () => {
   ) : (
     <div className="w-full text-white">
       <div className="relative w-full h-[80vh] overflow-hidden">
-        {/* Background Image with Dimming */}
-        <img
-          src={images[current].url}
-          alt={`Slide ${current + 1}`}
-          className="w-full h-full object-cover object-top"
-        />
+        {/* Slides with crossfade */}
+        {images.map((image, index) => (
+          <img
+            key={image.id}
+            src={image.url}
+            alt={`Slide ${index + 1}`}
+            className={`absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-1000 ${
+              index === current ? "opacity-100" : "opacity-0"
+            }`}
+          />
+        ))}
 
 
 
