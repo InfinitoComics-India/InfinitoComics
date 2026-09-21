@@ -1,51 +1,58 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import URLs from '../../Utils/utils.js';
-import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, Mail, UserCog, Bell, ScrollText, CalendarDays, CalendarOff, ClockIcon, Kanban, UserCheck, FolderKanban, TrendingUp, Target, Award as AwardIcon } from "lucide-react";
+import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, ChevronDown, Mail, UserCog, Bell, ScrollText, CalendarDays, CalendarOff, Kanban, UserCheck, FolderKanban, TrendingUp, Target, Award as AwardIcon, Building2 } from "lucide-react";
 import { message, Popconfirm } from "antd";
 import { getRoles } from '../../Utils/auth.js';
 
 const HR_ALL   = ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin"];
 const HR_AUDIT = ["superadmin","hr_manager"];
 
+// ── Regular nav items (above HR section) ────────────────────
 const NAV_ITEMS = [
-  { label: "Home",              to: "/",                  icon: Home,         roles: ["superadmin","comics_admin","character_admin","research_admin","blog_admin","career_admin"] },
-  { label: "Comics",            to: "/comic",             icon: BookOpen,     roles: ["superadmin","comics_admin"] },
-  { label: "Characters",        to: "/characters",        icon: User,         roles: ["superadmin","character_admin"] },
-  { label: "Research",          to: "/research",          icon: FlaskConical, roles: ["superadmin","research_admin"] },
-  { label: "Blogs",             to: "/createblog",        icon: FileText,     roles: ["superadmin","blog_admin"] },
-  { label: "FAQs",              to: "/createfaq",         icon: HelpCircle,   roles: ["superadmin","blog_admin"] },
-  { label: "Timeline",          to: "/timeline",          icon: Clock,        roles: ["superadmin","blog_admin"] },
-  { label: "Career",            to: "/career",            icon: Briefcase,    roles: ["superadmin","career_admin"] },
-  { label: "Users",             to: "/users",             icon: Users,        roles: ["superadmin"] },
-  { label: "Admin Mgmt",        to: "/admin-management",  icon: ShieldCheck,  roles: ["superadmin"] },
-  { label: "Contact Queries",   to: "/contact-queries",   icon: Mail,         roles: ["superadmin"] },
-  // ── HR System ───────────────────────────────────────────────
-  { label: "─── HR ───",        to: null,                 icon: null,         roles: HR_ALL,  divider: true },
-  { label: "Employees",         to: "/hr/employees",      icon: UserCog,      roles: HR_ALL   },
-  { label: "Notifications",     to: "/hr/notifications",  icon: Bell,         roles: HR_ALL   },
-  { label: "Audit Log",         to: "/hr/audit",          icon: ScrollText,   roles: HR_AUDIT },
-  { label: "Attendance",        to: "/hr/attendance",     icon: Clock,        roles: HR_ALL   },
-  { label: "Leaves",            to: "/hr/leaves",         icon: CalendarOff,  roles: HR_ALL   },
-  { label: "Calendar",          to: "/hr/calendar",       icon: CalendarDays, roles: HR_ALL   },
-  { label: "Task Board",        to: "/hr/tasks",          icon: Kanban,       roles: HR_ALL   },
-  { label: "Work Assignment",   to: "/hr/assignments",    icon: UserCheck,    roles: HR_ALL   },
-  { label: "Projects",          to: "/hr/projects",       icon: FolderKanban, roles: HR_ALL   },
-  { label: "Performance",       to: "/hr/performance",    icon: TrendingUp,   roles: HR_ALL   },
-  { label: "Goals",             to: "/hr/goals",          icon: Target,       roles: HR_ALL   },
-  { label: "Recognition",       to: "/hr/recognition",    icon: AwardIcon,    roles: HR_ALL   },
+  { label: "Home",            to: "/",                 icon: Home,        roles: ["superadmin","comics_admin","character_admin","research_admin","blog_admin","career_admin"] },
+  { label: "Comics",          to: "/comic",            icon: BookOpen,    roles: ["superadmin","comics_admin"] },
+  { label: "Characters",      to: "/characters",       icon: User,        roles: ["superadmin","character_admin"] },
+  { label: "Research",        to: "/research",         icon: FlaskConical,roles: ["superadmin","research_admin"] },
+  { label: "Blogs",           to: "/createblog",       icon: FileText,    roles: ["superadmin","blog_admin"] },
+  { label: "FAQs",            to: "/createfaq",        icon: HelpCircle,  roles: ["superadmin","blog_admin"] },
+  { label: "Timeline",        to: "/timeline",         icon: Clock,       roles: ["superadmin","blog_admin"] },
+  { label: "Career",          to: "/career",           icon: Briefcase,   roles: ["superadmin","career_admin"] },
+  { label: "Users",           to: "/users",            icon: Users,       roles: ["superadmin"] },
+  { label: "Admin Mgmt",      to: "/admin-management", icon: ShieldCheck, roles: ["superadmin"] },
+  { label: "Contact Queries", to: "/contact-queries",  icon: Mail,        roles: ["superadmin"] },
+];
+
+// ── HR sub-items (shown inside collapsible accordion) ────────
+const HR_ITEMS = [
+  { label: "Employees",       to: "/hr/employees",    icon: UserCog,      roles: HR_ALL   },
+  { label: "Notifications",   to: "/hr/notifications",icon: Bell,         roles: HR_ALL   },
+  { label: "Audit Log",       to: "/hr/audit",        icon: ScrollText,   roles: HR_AUDIT },
+  { label: "Attendance",      to: "/hr/attendance",   icon: Clock,        roles: HR_ALL   },
+  { label: "Leaves",          to: "/hr/leaves",       icon: CalendarOff,  roles: HR_ALL   },
+  { label: "Calendar",        to: "/hr/calendar",     icon: CalendarDays, roles: HR_ALL   },
+  { label: "Task Board",      to: "/hr/tasks",        icon: Kanban,       roles: HR_ALL   },
+  { label: "Work Assignment", to: "/hr/assignments",  icon: UserCheck,    roles: HR_ALL   },
+  { label: "Projects",        to: "/hr/projects",     icon: FolderKanban, roles: HR_ALL   },
+  { label: "Performance",     to: "/hr/performance",  icon: TrendingUp,   roles: HR_ALL   },
+  { label: "Goals",           to: "/hr/goals",        icon: Target,       roles: HR_ALL   },
+  { label: "Recognition",     to: "/hr/recognition",  icon: AwardIcon,    roles: HR_ALL   },
 ];
 
 const Navbar = () => {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed]   = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [hrOpen, setHrOpen]         = useState(false); // HR accordion open/closed
   const location = useLocation();
   const token = localStorage.getItem("authToken");
   const roles = getRoles();
 
-  const visibleItems = NAV_ITEMS.filter(item =>
-    roles.some(r => item.roles.includes(r))
-  );
+  const visibleNav = NAV_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
+  const visibleHR  = HR_ITEMS.filter(item  => roles.some(r => item.roles.includes(r)));
+  const showHRSection = visibleHR.length > 0;
+
+  // If any HR route is currently active, keep accordion open
+  const isHRActive = visibleHR.some(item => location.pathname.startsWith(`/admin${item.to}`));
 
   const handleLogout = () => {
     localStorage.clear();
@@ -77,37 +84,86 @@ const Navbar = () => {
 
       {/* Nav items */}
       <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
-        {visibleItems.map(({ label, to, icon: Icon, divider }) => {
-          if (divider) return (
-            !collapsed ? (
-              <div key={label} className="px-3 pt-4 pb-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">HR System</p>
+
+        {/* ── Regular items ── */}
+        {visibleNav.map(({ label, to, icon: Icon }) => (
+          <Link
+            key={to}
+            to={to}
+            onClick={onNavClick}
+            title={collapsed ? label : ""}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150
+              ${isActive(to) ? "bg-[#DD1215] text-white" : "text-gray-300 hover:bg-gray-700 hover:text-white"}
+              ${collapsed ? "justify-center" : ""}
+            `}
+          >
+            <Icon size={20} className="shrink-0" />
+            {!collapsed && <span>{label}</span>}
+          </Link>
+        ))}
+
+        {/* ── HR System Accordion ── */}
+        {showHRSection && (
+          <div className="mt-2">
+
+            {/* HR Header — bold, clickable, with chevron */}
+            {!collapsed ? (
+              <button
+                onClick={() => setHrOpen(o => !o)}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-150 group
+                  ${isHRActive ? "bg-gray-800 text-white" : "text-gray-200 hover:bg-gray-700 hover:text-white"}
+                `}
+              >
+                <div className="flex items-center gap-3">
+                  <Building2 size={20} className="shrink-0 text-[#DD1215]" />
+                  <span className="text-sm font-black uppercase tracking-widest text-[#DD1215]">HR System</span>
+                </div>
+                <div className={`transition-transform duration-200 ${(hrOpen || isHRActive) ? "rotate-180" : ""}`}>
+                  <ChevronDown size={16} className="text-[#DD1215]" />
+                </div>
+              </button>
+            ) : (
+              // Collapsed: show just icon as toggle
+              <button
+                onClick={() => setHrOpen(o => !o)}
+                title="HR System"
+                className="flex items-center justify-center w-full py-2.5 rounded-lg text-[#DD1215] hover:bg-gray-700 transition"
+              >
+                <Building2 size={20} />
+              </button>
+            )}
+
+            {/* HR Sub-items — animated dropdown */}
+            {(hrOpen || isHRActive) && (
+              <div className={`mt-1 space-y-0.5 overflow-hidden ${!collapsed ? "pl-2" : ""}`}>
+                {visibleHR.map(({ label, to, icon: Icon }) => (
+                  <Link
+                    key={to}
+                    to={to}
+                    onClick={onNavClick}
+                    title={collapsed ? label : ""}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150
+                      ${isActive(to)
+                        ? "bg-[#DD1215] text-white font-bold"
+                        : "text-gray-400 hover:bg-gray-700 hover:text-white font-medium"
+                      }
+                      ${collapsed ? "justify-center" : ""}
+                    `}
+                  >
+                    <Icon size={17} className="shrink-0" />
+                    {!collapsed && (
+                      <span className="text-xs">{label}</span>
+                    )}
+                  </Link>
+                ))}
               </div>
-            ) : <div key={label} className="border-t border-gray-700 my-2 mx-2" />
-          );
-          return (
-            <Link
-              key={to}
-              to={to}
-              onClick={onNavClick}
-              title={collapsed ? label : ""}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group
-                ${isActive(to)
-                  ? "bg-[#DD1215] text-white"
-                  : "text-gray-300 hover:bg-gray-700 hover:text-white"
-                }
-                ${collapsed ? "justify-center" : ""}
-              `}
-            >
-              <Icon size={20} className="shrink-0" />
-              {!collapsed && <span>{label}</span>}
-            </Link>
-          );
-        })}
+            )}
+          </div>
+        )}
       </nav>
 
       {/* Logout */}
-      <div className={`px-2 py-4 border-t border-gray-700`}>
+      <div className="px-2 py-4 border-t border-gray-700">
         {token ? (
           <Popconfirm
             title="Log Out"
