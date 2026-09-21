@@ -19,6 +19,13 @@ import AdminManagement from './Pages/AdminManagement/AdminManagement.jsx';
 import Unauthorized from './Pages/Unauthorized/Unauthorized.jsx';
 import ContactQueries from './Pages/ContactQueries/ContactQueries.jsx';
 
+// ── HR System imports ─────────────────────────────────────────
+import EmployeeList    from './Pages/HR/EmployeeList.jsx';
+import EmployeeForm    from './Pages/HR/EmployeeForm.jsx';
+import EmployeeProfile from './Pages/HR/EmployeeProfile.jsx';
+import NotificationsPage from './Pages/HR/Notifications.jsx';
+import AuditLogPage    from './Pages/HR/AuditLog.jsx';
+
 // Role constants
 const SUPER   = ["superadmin"];
 const COMICS  = ["superadmin", "comics_admin"];
@@ -27,6 +34,12 @@ const RESEARCH= ["superadmin", "research_admin"];
 const BLOG    = ["superadmin", "blog_admin"];
 const CAREER  = ["superadmin", "career_admin"];
 const ALL_AUTH= ["superadmin", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin"];
+
+// ── HR Role constants ─────────────────────────────────────────
+const HR      = ["superadmin", "hr_manager"];
+const HR_VIEW = ["superadmin", "hr_manager", "manager", "team_lead",
+                 "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin"];
+const AUDIT   = ["superadmin", "hr_manager"];
 
 function App() {
   return (
@@ -102,6 +115,32 @@ function App() {
           {/* Contact Queries — superadmin only */}
           <Route path="/contact-queries" element={
             <ProtectedRoute allowedRoles={SUPER}><ContactQueries /></ProtectedRoute>
+          } />
+
+          {/* ── HR System ──────────────────────────────────── */}
+
+          {/* Employee Management */}
+          <Route path="/hr/employees" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><EmployeeList /></ProtectedRoute>
+          } />
+          <Route path="/hr/employees/new" element={
+            <ProtectedRoute allowedRoles={HR}><EmployeeForm /></ProtectedRoute>
+          } />
+          <Route path="/hr/employees/:id" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><EmployeeProfile /></ProtectedRoute>
+          } />
+          <Route path="/hr/employees/:id/edit" element={
+            <ProtectedRoute allowedRoles={HR}><EmployeeForm /></ProtectedRoute>
+          } />
+
+          {/* Notifications — all admins */}
+          <Route path="/hr/notifications" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><NotificationsPage /></ProtectedRoute>
+          } />
+
+          {/* Audit Log — HR + superadmin only */}
+          <Route path="/hr/audit" element={
+            <ProtectedRoute allowedRoles={AUDIT}><AuditLogPage /></ProtectedRoute>
           } />
 
         </Route>
