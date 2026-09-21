@@ -1,8 +1,10 @@
 // Home.jsx
 import React, { useState, useEffect } from "react";
-import slide1 from "../../../assets/Images/banner.png";
+import slide1 from "../../../assets/Images/banner 1.png";
 import slide2 from "../../../assets/Images/banner 2.jpeg";
 import slide3 from "../../../assets/Images/banner 3.jpeg";
+import slide4 from "../../../assets/Images/banner.png";
+import slide5 from "../../../assets/Images/banner 5.png";
 import belowImage from "../../../assets/Images/Botton.png";
 import LandingShimmer from "../../shimmer/landingPageShimmer/landingShimmer";
 
@@ -10,8 +12,8 @@ const images = [
   { id: 1, url: slide1 },
   { id: 2, url: slide2 },
   { id: 3, url: slide3 },
-  { id: 4, url: slide2 },
-  { id: 5, url: slide3 },
+  { id: 4, url: slide4 },
+  { id: 5, url: slide5 },
 ];
 
 const Home = () => {
@@ -22,11 +24,11 @@ const Home = () => {
 
   const [current, setCurrent] = useState(0);
 
-  // Auto-advance every 4.5 seconds
+  // Auto-advance every 5 seconds
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % images.length);
-    }, 4500);
+    }, 5000);
     return () => clearInterval(timer);
   }, []);
 
@@ -52,6 +54,9 @@ const Home = () => {
         ))}
 
 
+
+        {/* Bottom gradient so nav text is readable */}
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/70 to-transparent z-20 pointer-events-none" />
 
         {/* Bottom Navigation */}
         <div className="absolute bottom-5 left-0 right-0 z-30">
