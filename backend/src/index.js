@@ -30,6 +30,9 @@ import contactQueryRoutes from './routes/contactQuery-routes.js'
 import employeeRoutes from './routes/employee-routes.js';
 import notificationRoutes from './routes/notification-routes.js';
 import auditLogRoutes from './routes/auditLog-routes.js';
+import attendanceRoutes from './routes/attendance-routes.js';
+import leaveRoutes from './routes/leave-routes.js';
+import calendarEventRoutes from './routes/calendarEvent-routes.js';
 
 
 const allowedOrigins = [
@@ -78,6 +81,9 @@ app.use('/payment', paymentRoutes);
 app.use('/hr/employees',      employeeRoutes);
 app.use('/hr/notifications',  notificationRoutes);
 app.use('/hr/audit',          auditLogRoutes);
+app.use('/hr/attendance',     attendanceRoutes);
+app.use('/hr/leaves',         leaveRoutes);
+app.use('/hr/calendar',       calendarEventRoutes);
 app.get('/', (req, res) => {
   res.send('Backend is up and running!');
 });

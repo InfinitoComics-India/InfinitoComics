@@ -20,11 +20,14 @@ import Unauthorized from './Pages/Unauthorized/Unauthorized.jsx';
 import ContactQueries from './Pages/ContactQueries/ContactQueries.jsx';
 
 // ── HR System imports ─────────────────────────────────────────
-import EmployeeList    from './Pages/HR/EmployeeList.jsx';
-import EmployeeForm    from './Pages/HR/EmployeeForm.jsx';
-import EmployeeProfile from './Pages/HR/EmployeeProfile.jsx';
+import EmployeeList      from './Pages/HR/EmployeeList.jsx';
+import EmployeeForm      from './Pages/HR/EmployeeForm.jsx';
+import EmployeeProfile   from './Pages/HR/EmployeeProfile.jsx';
 import NotificationsPage from './Pages/HR/Notifications.jsx';
-import AuditLogPage    from './Pages/HR/AuditLog.jsx';
+import AuditLogPage      from './Pages/HR/AuditLog.jsx';
+import AttendanceManager from './Pages/HR/AttendanceManager.jsx';
+import LeaveManagement   from './Pages/HR/LeaveManagement.jsx';
+import CompanyCalendar   from './Pages/HR/CompanyCalendar.jsx';
 
 // Role constants
 const SUPER   = ["superadmin"];
@@ -141,6 +144,23 @@ function App() {
           {/* Audit Log — HR + superadmin only */}
           <Route path="/hr/audit" element={
             <ProtectedRoute allowedRoles={AUDIT}><AuditLogPage /></ProtectedRoute>
+          } />
+
+          {/* ── HR Phase 2 ─────────────────────────────────── */}
+
+          {/* Attendance */}
+          <Route path="/hr/attendance" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><AttendanceManager /></ProtectedRoute>
+          } />
+
+          {/* Leave Management */}
+          <Route path="/hr/leaves" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><LeaveManagement /></ProtectedRoute>
+          } />
+
+          {/* Company Calendar */}
+          <Route path="/hr/calendar" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><CompanyCalendar /></ProtectedRoute>
           } />
 
         </Route>

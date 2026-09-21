@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import URLs from '../../Utils/utils.js';
-import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, Mail, UserCog, Bell, ScrollText } from "lucide-react";
+import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, Mail, UserCog, Bell, ScrollText, CalendarDays, CalendarOff, ClockIcon } from "lucide-react";
 import { message, Popconfirm } from "antd";
 import { getRoles } from '../../Utils/auth.js';
 
@@ -25,6 +25,9 @@ const NAV_ITEMS = [
   { label: "Employees",         to: "/hr/employees",      icon: UserCog,      roles: HR_ALL   },
   { label: "Notifications",     to: "/hr/notifications",  icon: Bell,         roles: HR_ALL   },
   { label: "Audit Log",         to: "/hr/audit",          icon: ScrollText,   roles: HR_AUDIT },
+  { label: "Attendance",        to: "/hr/attendance",     icon: Clock,        roles: HR_ALL   },
+  { label: "Leaves",            to: "/hr/leaves",         icon: CalendarOff,  roles: HR_ALL   },
+  { label: "Calendar",          to: "/hr/calendar",       icon: CalendarDays, roles: HR_ALL   },
 ];
 
 const Navbar = () => {
