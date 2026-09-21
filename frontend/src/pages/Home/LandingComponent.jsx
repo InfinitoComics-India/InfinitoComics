@@ -10,10 +10,10 @@ import LandingShimmer from "../../shimmer/landingPageShimmer/landingShimmer";
 
 const images = [
   { id: 1, url: slide1 },
-  { id: 2, url: slide2 },
-  { id: 3, url: slide3 },
-  { id: 4, url: slide4 },
-  { id: 5, url: slide5 },
+  { id: 2, url: slide3 },
+  { id: 3, url: slide2 },
+  { id: 4, url: slide5 },
+  { id: 5, url: slide4 },
 ];
 
 const Home = () => {
