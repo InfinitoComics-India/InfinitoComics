@@ -35,23 +35,10 @@ const Home = () => {
         <img
           src={images[current].url}
           alt={`Slide ${current + 1}`}
-          className="w-full h-full object-cover object-top filter brightness-50"
+          className="w-full h-full object-cover object-top"
         />
 
-        {/* Dark Overlay (optional, for extra depth) */}
-        <div className="absolute inset-0 bg-black/40"></div>
 
-        {/* Text Overlay (aligned to left) */}
-        <div className="absolute inset-0 flex flex-col items-start justify-center text-left z-20">
-          <div className="w-full max-w-7xl mx-auto px-8 md:px-16">
-            <p className="mt-4 max-w-2xl text-lg md:text-xl">
-              An ancient force awakens in the cosmic depths. Heroes will rise,
-              dimensions will collide, and the Infinito Universe will never be the
-              same.
-            </p>
-
-          </div>
-        </div>
 
         {/* Bottom Navigation */}
         <div className="absolute bottom-5 left-0 right-0 z-30">
@@ -78,9 +65,8 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Below Image with Shadow */}
+      {/* Below Image */}
       <div className="relative w-full -mt-1">
-        <div className="absolute -top-16 w-full h-16 bg-gradient-to-t from-black to-transparent z-10 pointer-events-none" />
         <img
           src={belowImage}
           alt="Below Carousel"
