@@ -143,3 +143,29 @@ export const getExpiringDocuments = (days)                   => axios.get(`${BAS
 export const getAllDocuments       = ()                       => axios.get(`${BASE}/hr/documents/all`, authHeaders());
 export const updateDocument       = (id, data)               => axios.put(`${BASE}/hr/documents/update/${id}`, data, authHeaders());
 export const deleteDocument       = (id)                     => axios.delete(`${BASE}/hr/documents/delete/${id}`, authHeaders());
+
+// ── RECRUITMENT PIPELINE ──────────────────────────────────────
+export const addToPipeline       = (data)                             => axios.post(`${BASE}/hr/recruitment/add`, data, authHeaders());
+export const getRecruitmentBoard = ()                                 => axios.get(`${BASE}/hr/recruitment/kanban`, authHeaders());
+export const getRecruitmentList  = (stage)                           => axios.get(`${BASE}/hr/recruitment/list`, { ...authHeaders(), params: { stage } });
+export const getRecruitmentStats = ()                                 => axios.get(`${BASE}/hr/recruitment/stats`, authHeaders());
+export const moveRecruitStage    = (id, stage, note)                  => axios.patch(`${BASE}/hr/recruitment/stage/${id}`, { stage, note }, authHeaders());
+export const updateRecruitEntry  = (id, data)                        => axios.put(`${BASE}/hr/recruitment/update/${id}`, data, authHeaders());
+export const addInterview        = (id, data)                        => axios.post(`${BASE}/hr/recruitment/interview/${id}`, data, authHeaders());
+export const updateInterview     = (id, ivId, data)                   => axios.put(`${BASE}/hr/recruitment/interview/${id}/${ivId}`, data, authHeaders());
+export const deleteRecruitEntry  = (id)                              => axios.delete(`${BASE}/hr/recruitment/delete/${id}`, authHeaders());
+
+// ── CHAT ──────────────────────────────────────────────────────
+export const createChannel       = (data)                            => axios.post(`${BASE}/hr/chat/channels/create`, data, authHeaders());
+export const getAllChannels       = ()                                => axios.get(`${BASE}/hr/chat/channels/all`, authHeaders());
+export const getMyChannels       = ()                                => axios.get(`${BASE}/hr/chat/channels/mine`, authHeaders());
+export const getOrCreateDM       = (targetUserId, targetUserName)    => axios.post(`${BASE}/hr/chat/channels/dm`, { targetUserId, targetUserName }, authHeaders());
+export const addChannelMember    = (channelId, userId)               => axios.post(`${BASE}/hr/chat/channels/${channelId}/member`, { userId }, authHeaders());
+export const deleteChannel       = (channelId)                       => axios.delete(`${BASE}/hr/chat/channels/${channelId}`, authHeaders());
+export const sendMessage         = (channelId, content, opts)        => axios.post(`${BASE}/hr/chat/messages/${channelId}`, { content, ...opts }, authHeaders());
+export const getMessages         = (channelId, limit, before)        => axios.get(`${BASE}/hr/chat/messages/${channelId}`, { ...authHeaders(), params: { limit, before } });
+export const markMessagesRead    = (channelId)                       => axios.patch(`${BASE}/hr/chat/messages/${channelId}/read`, {}, authHeaders());
+export const searchMessages      = (channelId, q)                    => axios.get(`${BASE}/hr/chat/messages/${channelId}/search`, { ...authHeaders(), params: { q } });
+export const deleteMessage       = (msgId)                           => axios.delete(`${BASE}/hr/chat/messages/${msgId}`, authHeaders());
+export const addReaction         = (msgId, emoji)                    => axios.post(`${BASE}/hr/chat/messages/${msgId}/react`, { emoji }, authHeaders());
+export const sendAnnouncement    = (channelId, content)              => axios.post(`${BASE}/hr/chat/announce`, { channelId, content }, authHeaders());
