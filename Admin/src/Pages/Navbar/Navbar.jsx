@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import URLs from '../../Utils/utils.js';
-import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, ChevronDown, Mail, UserCog, Bell, ScrollText, CalendarDays, CalendarOff, Kanban, UserCheck, FolderKanban, TrendingUp, Target, Award as AwardIcon, Building2 } from "lucide-react";
+import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, ChevronDown, Mail, UserCog, Bell, ScrollText, CalendarDays, CalendarOff, Kanban, UserCheck, FolderKanban, TrendingUp, Target, Award as AwardIcon, Building2, IndianRupee, UserPlus, FileArchive } from "lucide-react";
 import { message, Popconfirm } from "antd";
 import { getRoles } from '../../Utils/auth.js';
 
@@ -37,6 +37,9 @@ const HR_ITEMS = [
   { label: "Performance",     to: "/hr/performance",  icon: TrendingUp,   roles: HR_ALL   },
   { label: "Goals",           to: "/hr/goals",        icon: Target,       roles: HR_ALL   },
   { label: "Recognition",     to: "/hr/recognition",  icon: AwardIcon,    roles: HR_ALL   },
+  { label: "Payroll",         to: "/hr/payroll",      icon: IndianRupee,  roles: HR_ALL   },
+  { label: "Onboarding",      to: "/hr/onboarding",   icon: UserPlus,     roles: HR_ALL   },
+  { label: "Documents",       to: "/hr/documents",    icon: FileArchive,  roles: HR_ALL   },
 ];
 
 const Navbar = () => {
