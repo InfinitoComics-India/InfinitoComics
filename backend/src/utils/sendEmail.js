@@ -17,7 +17,7 @@ export const sendEmail = async (to, subject, text) => {
       </div>
     `;
     await resend.emails.send({
-      from: 'Infinito Comics <tech@infinitohq.com>',
+      from: 'Infinito Comics <no-reply@infinitohq.com>',
       to,
       subject,
       text,
