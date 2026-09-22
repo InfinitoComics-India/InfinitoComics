@@ -70,7 +70,7 @@ const RecognitionWall = () => {
   const counts = wall.reduce((a, r) => { a[r.type] = (a[r.type]||0)+1; return a; }, {});
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50">
       <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Star size={22} className="text-[#DD1215]"/>

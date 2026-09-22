@@ -93,7 +93,7 @@ const KanbanBoard = () => {
   const totalTasks = Object.values(board).reduce((s, arr) => s + (arr?.length || 0), 0);
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="bg-gray-100">
       {/* Header */}
       <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
         <div>

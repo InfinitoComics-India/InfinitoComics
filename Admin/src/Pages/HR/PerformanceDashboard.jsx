@@ -97,7 +97,7 @@ const PerformanceDashboard = () => {
   const scoreColor = (s) => s >= 80 ? "#22c55e" : s >= 60 ? "#f59e0b" : "#DD1215";
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50">
       <div className="bg-white border-b px-6 py-4 flex items-center gap-3">
         <TrendingUp size={22} className="text-[#DD1215]" />
         <div>
