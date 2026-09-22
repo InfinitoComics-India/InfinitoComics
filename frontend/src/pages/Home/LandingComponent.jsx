@@ -10,10 +10,10 @@ import LandingShimmer from "../../shimmer/landingPageShimmer/landingShimmer";
 
 const images = [
   { id: 1, url: slide1 ,title:"Rise of the Eternal Storm"},
-  { id: 2, url: slide3,title:"Agent Black:04-36" },
+  { id: 2, url: slide3,title:"Agent Black: 04-36" },
   { id: 3, url: slide2,title:"Protectors of MagmaVerse" },
-  { id: 4, url: slide5,title:"Magin Beyond Limits:Mystery Man" },
-  { id: 5, url: slide4,title:"Infinito Universe:Assemble Again" },
+  { id: 4, url: slide5,title:"Magic Beyond Limits: Mystery Man" },
+  { id: 5, url: slide4,title:"Infinito Universe: Assemble Again" },
 ];
 const SLIDE_DURATION = 5000;
 const Home = () => {
