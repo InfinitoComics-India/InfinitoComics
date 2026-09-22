@@ -1,0 +1,14 @@
+import SelfServiceService from "../services/selfService-service.js";
+const svc = new SelfServiceService();
+const gp  = (req) => ({ performedBy: req.user._id, performedByName: req.user.name || req.user.username || req.user.email || "Admin" });
+
+const submitRequest   = async (req,res) => { try { const {performedBy,performedByName}=gp(req); const d=await svc.submitRequest(req.body,performedBy,performedByName); res.status(201).json({success:true,message:"Request submitted.",data:d}); } catch(e){res.status(500).json({success:false,message:e.message});} };
+const getByEmployee   = async (req,res) => { try { const d=await svc.getByEmployee(req.params.employeeId,req.query.status); res.status(200).json({success:true,data:d,count:d.length}); } catch(e){res.status(500).json({success:false,message:e.message});} };
+const getAll          = async (req,res) => { try { const d=await svc.getAll(req.query.status); res.status(200).json({success:true,data:d,count:d.length}); } catch(e){res.status(500).json({success:false,message:e.message});} };
+const getOpen         = async (req,res) => { try { const d=await svc.getOpen(); res.status(200).json({success:true,data:d,count:d.length}); } catch(e){res.status(500).json({success:false,message:e.message});} };
+const updateStatus    = async (req,res) => { try { const {status,assignedTo,assignedToName}=req.body; if(!status) return res.status(400).json({success:false,message:"status required."}); const {performedBy,performedByName}=gp(req); const d=await svc.updateStatus(req.params.id,status,assignedTo,assignedToName,performedBy,performedByName); res.status(200).json({success:true,data:d}); } catch(e){res.status(500).json({success:false,message:e.message});} };
+const resolve         = async (req,res) => { try { const {resolution}=req.body; if(!resolution) return res.status(400).json({success:false,message:"resolution required."}); const {performedBy,performedByName}=gp(req); const d=await svc.resolve(req.params.id,resolution,performedBy,performedByName); res.status(200).json({success:true,data:d}); } catch(e){res.status(500).json({success:false,message:e.message});} };
+const addComment      = async (req,res) => { try { const {content}=req.body; if(!content) return res.status(400).json({success:false,message:"content required."}); const name=req.user.name||req.user.username||req.user.email||"Admin"; const d=await svc.addComment(req.params.id,content,req.user._id,name); res.status(200).json({success:true,data:d}); } catch(e){res.status(500).json({success:false,message:e.message});} };
+const getStats        = async (req,res) => { try { const d=await svc.getStats(); res.status(200).json({success:true,data:d}); } catch(e){res.status(500).json({success:false,message:e.message});} };
+
+export default { submitRequest, getByEmployee, getAll, getOpen, updateStatus, resolve, addComment, getStats };

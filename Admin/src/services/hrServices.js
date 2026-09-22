@@ -169,3 +169,26 @@ export const searchMessages      = (channelId, q)                    => axios.ge
 export const deleteMessage       = (msgId)                           => axios.delete(`${BASE}/hr/chat/messages/${msgId}`, authHeaders());
 export const addReaction         = (msgId, emoji)                    => axios.post(`${BASE}/hr/chat/messages/${msgId}/react`, { emoji }, authHeaders());
 export const sendAnnouncement    = (channelId, content)              => axios.post(`${BASE}/hr/chat/announce`, { channelId, content }, authHeaders());
+
+// ── KNOWLEDGE BASE (WIKI) ─────────────────────────────────────
+export const createWikiArticle    = (data)                  => axios.post(`${BASE}/hr/wiki/create`, data, authHeaders());
+export const getAllWikiArticles   = (category)              => axios.get(`${BASE}/hr/wiki/all`, { ...authHeaders(), params: { category } });
+export const getPublishedArticles = (category)              => axios.get(`${BASE}/hr/wiki/published`, { ...authHeaders(), params: { category } });
+export const getWikiArticleById   = (id)                    => axios.get(`${BASE}/hr/wiki/${id}`, authHeaders());
+export const getWikiArticleBySlug = (slug)                  => axios.get(`${BASE}/hr/wiki/slug/${slug}`, authHeaders());
+export const updateWikiArticle    = (id, data)              => axios.put(`${BASE}/hr/wiki/update/${id}`, data, authHeaders());
+export const deleteWikiArticle    = (id)                    => axios.delete(`${BASE}/hr/wiki/delete/${id}`, authHeaders());
+export const searchWikiArticles   = (q)                     => axios.get(`${BASE}/hr/wiki/search`, { ...authHeaders(), params: { q } });
+export const voteWikiArticle      = (id, helpful)           => axios.post(`${BASE}/hr/wiki/vote/${id}`, { helpful }, authHeaders());
+export const getPopularWikiArticles = ()                    => axios.get(`${BASE}/hr/wiki/popular`, authHeaders());
+export const getWikiCategoryStats = ()                      => axios.get(`${BASE}/hr/wiki/stats`, authHeaders());
+
+// ── SELF SERVICE ──────────────────────────────────────────────
+export const submitSSRequest      = (data)                  => axios.post(`${BASE}/hr/self-service/submit`, data, authHeaders());
+export const getAllSSRequests      = (status)               => axios.get(`${BASE}/hr/self-service/all`, { ...authHeaders(), params: status ? { status } : {} });
+export const getOpenSSRequests    = ()                      => axios.get(`${BASE}/hr/self-service/open`, authHeaders());
+export const getSSRequestsByEmp   = (empId, status)        => axios.get(`${BASE}/hr/self-service/employee/${empId}`, { ...authHeaders(), params: { status } });
+export const updateSSStatus       = (id, status, assigned) => axios.patch(`${BASE}/hr/self-service/status/${id}`, { status, ...assigned }, authHeaders());
+export const resolveSSRequest     = (id, resolution)       => axios.patch(`${BASE}/hr/self-service/resolve/${id}`, { resolution }, authHeaders());
+export const addSSComment         = (id, content)          => axios.post(`${BASE}/hr/self-service/comment/${id}`, { content }, authHeaders());
+export const getSSStats           = ()                      => axios.get(`${BASE}/hr/self-service/stats`, authHeaders());
