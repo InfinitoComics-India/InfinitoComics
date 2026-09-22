@@ -39,6 +39,10 @@ import projectRoutes from './routes/project-routes.js';
 import performanceRoutes from './routes/performance-routes.js';
 import goalRoutes from './routes/goal-routes.js';
 import recognitionRoutes from './routes/recognition-routes.js';
+import salaryRoutes from './routes/salary-routes.js';
+import payrollRoutes from './routes/payroll-routes.js';
+import onboardingRoutes from './routes/onboarding-routes.js';
+import hrDocumentRoutes from './routes/hrDocument-routes.js';
 
 
 const allowedOrigins = [
@@ -96,6 +100,10 @@ app.use('/hr/projects',       projectRoutes);
 app.use('/hr/performance',    performanceRoutes);
 app.use('/hr/goals',          goalRoutes);
 app.use('/hr/recognition',    recognitionRoutes);
+app.use('/hr/salary',         salaryRoutes);
+app.use('/hr/payroll',        payrollRoutes);
+app.use('/hr/onboarding',     onboardingRoutes);
+app.use('/hr/documents',      hrDocumentRoutes);
 app.get('/', (req, res) => {
   res.send('Backend is up and running!');
 });
