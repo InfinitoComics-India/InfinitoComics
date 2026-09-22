@@ -43,6 +43,8 @@ import salaryRoutes from './routes/salary-routes.js';
 import payrollRoutes from './routes/payroll-routes.js';
 import onboardingRoutes from './routes/onboarding-routes.js';
 import hrDocumentRoutes from './routes/hrDocument-routes.js';
+import recruitmentPipelineRoutes from './routes/recruitmentPipeline-routes.js';
+import chatRoutes from './routes/chat-routes.js';
 
 
 const allowedOrigins = [
@@ -104,6 +106,8 @@ app.use('/hr/salary',         salaryRoutes);
 app.use('/hr/payroll',        payrollRoutes);
 app.use('/hr/onboarding',     onboardingRoutes);
 app.use('/hr/documents',      hrDocumentRoutes);
+app.use('/hr/recruitment',    recruitmentPipelineRoutes);
+app.use('/hr/chat',           chatRoutes);
 app.get('/', (req, res) => {
   res.send('Backend is up and running!');
 });

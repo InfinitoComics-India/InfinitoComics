@@ -37,6 +37,8 @@ import RecognitionWall   from './Pages/HR/RecognitionWall.jsx';
 import PayrollManager    from './Pages/HR/PayrollManager.jsx';
 import OnboardingManager from './Pages/HR/OnboardingManager.jsx';
 import DocumentManager   from './Pages/HR/DocumentManager.jsx';
+import RecruitmentPipeline from './Pages/HR/RecruitmentPipeline.jsx';
+import InternalChat      from './Pages/HR/InternalChat.jsx';
 
 // Role constants
 const SUPER   = ["superadmin"];
@@ -209,6 +211,14 @@ function App() {
           } />
           <Route path="/hr/documents" element={
             <ProtectedRoute allowedRoles={HR_VIEW}><DocumentManager /></ProtectedRoute>
+          } />
+
+          {/* ── HR Phase 6 ─────────────────────────────────── */}
+          <Route path="/hr/recruitment" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><RecruitmentPipeline /></ProtectedRoute>
+          } />
+          <Route path="/hr/chat" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><InternalChat /></ProtectedRoute>
           } />
 
         </Route>
