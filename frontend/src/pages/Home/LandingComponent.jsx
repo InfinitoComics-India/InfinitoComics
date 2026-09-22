@@ -9,13 +9,13 @@ import belowImage from "../../../assets/Images/Botton.png";
 import LandingShimmer from "../../shimmer/landingPageShimmer/landingShimmer";
 
 const images = [
-  { id: 1, url: slide1 },
-  { id: 2, url: slide3 },
-  { id: 3, url: slide2 },
-  { id: 4, url: slide5 },
-  { id: 5, url: slide4 },
+  { id: 1, url: slide1 ,title:"Rise of the Eternal Storm"},
+  { id: 2, url: slide3,title:"Agent Black:04-36" },
+  { id: 3, url: slide2,title:"Protectors of MagmaVerse" },
+  { id: 4, url: slide5,title:"Magin Beyond Limits:Mystery Man" },
+  { id: 5, url: slide4,title:"Infinito Universe:Assemble Again" },
 ];
-
+const SLIDE_DURATION = 5000;
 const Home = () => {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -28,18 +28,24 @@ const Home = () => {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % images.length);
-    }, 5000);
+    }, SLIDE_DURATION);
     return () => clearInterval(timer);
-  }, []);
+  }, [current]);
 
   const handleSelect = (index) => {
     setCurrent(index);
   };
-
+ 
   return loading ? (
     <LandingShimmer />
   ) : (
     <div className="w-full text-white">
+       <style>{`
+        @keyframes progressBarAnim {
+          from { width: 0%; }
+          to { width: 100%; }
+        }
+      `}</style>
       <div className="relative w-full h-[80vh] overflow-hidden">
         {/* Slides with crossfade */}
         {images.map((image, index) => (
@@ -66,17 +72,25 @@ const Home = () => {
                 key={image.id}
                 onClick={() => handleSelect(index)}
                 className={`flex-1 text-left text-xs md:text-sm font-medium relative transition-colors px-2 pb-1 ${
-                  current === index ? "text-red-500" : "text-white"
+                  current === index ? "text-red-500" : "text-white/70 hover:text-white"
                 }`}
               >
                 <span className="block text-[11px] leading-tight">
-                  Rise of the <span className="font-bold block">Eternal Storm</span>
+                 {image.title}
                 </span>
-                <span
-                  className={`block mt-1 h-[2px] bg-red-500 transition-all duration-300 ${
-                    current === index ? "w-full" : "w-0"
-                  }`}
-                ></span>
+                 <div className="w-full mt-2 h-[2.5px] bg-white/20 rounded-full overflow-hidden">
+                  {current === index ? (
+                    <div
+                      key={current} // Key resets the animation when active slide changes
+                      className="h-full bg-red-600 rounded-full"
+                      style={{
+                        animation: `progressBarAnim ${SLIDE_DURATION}ms linear forwards`,
+                      }}
+                    />
+                  ) : (
+                    <div className="h-full w-0" />
+                  )}
+                </div>
               </button>
             ))}
           </div>
