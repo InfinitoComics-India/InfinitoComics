@@ -1,0 +1,13 @@
+import OnboardingService from "../services/onboarding-service.js";
+const svc = new OnboardingService();
+const gp  = (req) => ({ performedBy: req.user._id, performedByName: req.user.name || req.user.username || req.user.email || "Admin" });
+
+const initiate         = async (req,res) => { try { const {type,...opts}=req.body; if(!type) return res.status(400).json({success:false,message:"type (onboarding/offboarding) required."}); const {performedBy,performedByName}=gp(req); const d=await svc.initiate(req.params.employeeId,type,opts,performedBy,performedByName); res.status(201).json({success:true,message:`${type} initiated.`,data:d}); } catch(e){res.status(e.message.includes("already")?409:500).json({success:false,message:e.message});} };
+const getByEmployee    = async (req,res) => { try { const d=await svc.getByEmployee(req.params.employeeId); if(!d) return res.status(404).json({success:false,message:"No onboarding record found."}); res.status(200).json({success:true,data:d}); } catch(e){res.status(500).json({success:false,message:e.message});} };
+const getAllActive      = async (req,res) => { try { const d=await svc.getAllActive(); res.status(200).json({success:true,data:d,count:d.length}); } catch(e){res.status(500).json({success:false,message:e.message});} };
+const getByType        = async (req,res) => { try { const d=await svc.getByType(req.params.type); res.status(200).json({success:true,data:d,count:d.length}); } catch(e){res.status(500).json({success:false,message:e.message});} };
+const toggleItem       = async (req,res) => { try { const {itemId,isCompleted}=req.body; if(!itemId||isCompleted===undefined) return res.status(400).json({success:false,message:"itemId and isCompleted required."}); const {performedBy,performedByName}=gp(req); const d=await svc.toggleChecklistItem(req.params.id,itemId,isCompleted,performedBy,performedByName); res.status(200).json({success:true,message:"Checklist item updated.",data:d}); } catch(e){res.status(500).json({success:false,message:e.message});} };
+const addItem          = async (req,res) => { try { const {performedBy,performedByName}=gp(req); const d=await svc.addChecklistItem(req.params.id,req.body,performedBy,performedByName); res.status(200).json({success:true,message:"Item added.",data:d}); } catch(e){res.status(500).json({success:false,message:e.message});} };
+const deleteOnboarding = async (req,res) => { try { const {performedBy,performedByName}=gp(req); await svc.delete(req.params.id,performedBy,performedByName); res.status(200).json({success:true,message:"Deleted."}); } catch(e){res.status(500).json({success:false,message:e.message});} };
+
+export default { initiate, getByEmployee, getAllActive, getByType, toggleItem, addItem, deleteOnboarding };

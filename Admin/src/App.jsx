@@ -34,6 +34,9 @@ import ProjectManager    from './Pages/HR/ProjectManager.jsx';
 import PerformanceDashboard from './Pages/HR/PerformanceDashboard.jsx';
 import GoalTracker       from './Pages/HR/GoalTracker.jsx';
 import RecognitionWall   from './Pages/HR/RecognitionWall.jsx';
+import PayrollManager    from './Pages/HR/PayrollManager.jsx';
+import OnboardingManager from './Pages/HR/OnboardingManager.jsx';
+import DocumentManager   from './Pages/HR/DocumentManager.jsx';
 
 // Role constants
 const SUPER   = ["superadmin"];
@@ -195,6 +198,17 @@ function App() {
           } />
           <Route path="/hr/recognition" element={
             <ProtectedRoute allowedRoles={HR_VIEW}><RecognitionWall /></ProtectedRoute>
+          } />
+
+          {/* ── HR Phase 5 ─────────────────────────────────── */}
+          <Route path="/hr/payroll" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><PayrollManager /></ProtectedRoute>
+          } />
+          <Route path="/hr/onboarding" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><OnboardingManager /></ProtectedRoute>
+          } />
+          <Route path="/hr/documents" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><DocumentManager /></ProtectedRoute>
           } />
 
         </Route>

@@ -111,3 +111,35 @@ export const getRecognitionWall    = ()                              => axios.ge
 export const getRecognitionForEmp  = (empId)                         => axios.get(`${BASE}/hr/recognition/employee/${empId}`, authHeaders());
 export const getBadgesForEmp       = (empId)                         => axios.get(`${BASE}/hr/recognition/badges/${empId}`, authHeaders());
 export const deleteRecognition     = (id)                            => axios.delete(`${BASE}/hr/recognition/delete/${id}`, authHeaders());
+
+// ── SALARY ────────────────────────────────────────────────────
+export const setSalary          = (empId, data)              => axios.post(`${BASE}/hr/salary/set/${empId}`, data, authHeaders());
+export const getSalaryByEmp     = (empId)                    => axios.get(`${BASE}/hr/salary/employee/${empId}`, authHeaders());
+export const getAllSalaries      = ()                         => axios.get(`${BASE}/hr/salary/getall`, authHeaders());
+
+// ── PAYROLL ───────────────────────────────────────────────────
+export const generatePayslip    = (empId, month, year)       => axios.post(`${BASE}/hr/payroll/generate/${empId}`, { month, year }, authHeaders());
+export const generatePayrollAll = (month, year, employeeIds) => axios.post(`${BASE}/hr/payroll/generate-all`, { month, year, employeeIds }, authHeaders());
+export const getPayrollPeriod   = (month, year)              => axios.get(`${BASE}/hr/payroll/period`, { ...authHeaders(), params: { month, year } });
+export const getPayrollSummary  = (month, year)              => axios.get(`${BASE}/hr/payroll/summary`, { ...authHeaders(), params: { month, year } });
+export const getPayrollByEmp    = (empId)                    => axios.get(`${BASE}/hr/payroll/employee/${empId}`, authHeaders());
+export const getPayslip         = (empId, month, year)       => axios.get(`${BASE}/hr/payroll/slip/${empId}`, { ...authHeaders(), params: { month, year } });
+export const approvePayslip     = (id)                       => axios.patch(`${BASE}/hr/payroll/approve/${id}`, {}, authHeaders());
+export const markPayslipPaid    = (id)                       => axios.patch(`${BASE}/hr/payroll/paid/${id}`, {}, authHeaders());
+
+// ── ONBOARDING ────────────────────────────────────────────────
+export const initiateOnboarding   = (empId, data)            => axios.post(`${BASE}/hr/onboarding/initiate/${empId}`, data, authHeaders());
+export const getOnboardingByEmp   = (empId)                  => axios.get(`${BASE}/hr/onboarding/employee/${empId}`, authHeaders());
+export const getOnboardingActive  = ()                       => axios.get(`${BASE}/hr/onboarding/active`, authHeaders());
+export const getOnboardingByType  = (type)                   => axios.get(`${BASE}/hr/onboarding/type/${type}`, authHeaders());
+export const toggleChecklistItem  = (id, itemId, isCompleted)=> axios.patch(`${BASE}/hr/onboarding/toggle/${id}`, { itemId, isCompleted }, authHeaders());
+export const addOnboardingItem    = (id, data)               => axios.post(`${BASE}/hr/onboarding/additem/${id}`, data, authHeaders());
+export const deleteOnboarding     = (id)                     => axios.delete(`${BASE}/hr/onboarding/delete/${id}`, authHeaders());
+
+// ── HR DOCUMENTS ──────────────────────────────────────────────
+export const uploadDocument       = (data)                   => axios.post(`${BASE}/hr/documents/upload`, data, authHeaders());
+export const getDocumentsByEmp    = (empId)                  => axios.get(`${BASE}/hr/documents/employee/${empId}`, authHeaders());
+export const getExpiringDocuments = (days)                   => axios.get(`${BASE}/hr/documents/expiring`, { ...authHeaders(), params: { days } });
+export const getAllDocuments       = ()                       => axios.get(`${BASE}/hr/documents/all`, authHeaders());
+export const updateDocument       = (id, data)               => axios.put(`${BASE}/hr/documents/update/${id}`, data, authHeaders());
+export const deleteDocument       = (id)                     => axios.delete(`${BASE}/hr/documents/delete/${id}`, authHeaders());
