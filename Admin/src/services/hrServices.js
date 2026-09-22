@@ -192,3 +192,10 @@ export const updateSSStatus       = (id, status, assigned) => axios.patch(`${BAS
 export const resolveSSRequest     = (id, resolution)       => axios.patch(`${BASE}/hr/self-service/resolve/${id}`, { resolution }, authHeaders());
 export const addSSComment         = (id, content)          => axios.post(`${BASE}/hr/self-service/comment/${id}`, { content }, authHeaders());
 export const getSSStats           = ()                      => axios.get(`${BASE}/hr/self-service/stats`, authHeaders());
+
+// ── INFINITO AI ASSISTANT ─────────────────────────────────────
+export const aiChat              = (message, conversationId) => axios.post(`${BASE}/hr/ai/chat`, { message, conversationId }, authHeaders());
+export const getAIConversations  = ()                        => axios.get(`${BASE}/hr/ai/conversations`, authHeaders());
+export const getAIConversation   = (id)                      => axios.get(`${BASE}/hr/ai/conversations/${id}`, authHeaders());
+export const deleteAIConversation= (id)                      => axios.delete(`${BASE}/hr/ai/conversations/${id}`, authHeaders());
+export const clearAIHistory      = ()                        => axios.delete(`${BASE}/hr/ai/conversations`, authHeaders());
