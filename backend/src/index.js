@@ -47,6 +47,7 @@ import recruitmentPipelineRoutes from './routes/recruitmentPipeline-routes.js';
 import chatRoutes from './routes/chat-routes.js';
 import wikiRoutes from './routes/wiki-routes.js';
 import selfServiceRoutes from './routes/selfService-routes.js';
+import aiRoutes from './routes/ai-routes.js';
 
 
 const allowedOrigins = [
@@ -112,6 +113,7 @@ app.use('/hr/recruitment',    recruitmentPipelineRoutes);
 app.use('/hr/chat',           chatRoutes);
 app.use('/hr/wiki',           wikiRoutes);
 app.use('/hr/self-service',   selfServiceRoutes);
+app.use('/hr/ai',             aiRoutes);
 app.get('/', (req, res) => {
   res.send('Backend is up and running!');
 });

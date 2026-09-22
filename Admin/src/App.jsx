@@ -41,6 +41,7 @@ import RecruitmentPipeline from './Pages/HR/RecruitmentPipeline.jsx';
 import InternalChat      from './Pages/HR/InternalChat.jsx';
 import KnowledgeBase     from './Pages/HR/KnowledgeBase.jsx';
 import SelfServicePortal from './Pages/HR/SelfServicePortal.jsx';
+import AIAssistant       from './Pages/HR/AIAssistant.jsx';
 
 // Role constants
 const SUPER   = ["superadmin"];
@@ -229,6 +230,11 @@ function App() {
           } />
           <Route path="/hr/self-service" element={
             <ProtectedRoute allowedRoles={HR_VIEW}><SelfServicePortal /></ProtectedRoute>
+          } />
+
+          {/* ── HR Phase 8 ─────────────────────────────────── */}
+          <Route path="/hr/ai" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><AIAssistant /></ProtectedRoute>
           } />
 
         </Route>
