@@ -39,6 +39,8 @@ import OnboardingManager from './Pages/HR/OnboardingManager.jsx';
 import DocumentManager   from './Pages/HR/DocumentManager.jsx';
 import RecruitmentPipeline from './Pages/HR/RecruitmentPipeline.jsx';
 import InternalChat      from './Pages/HR/InternalChat.jsx';
+import KnowledgeBase     from './Pages/HR/KnowledgeBase.jsx';
+import SelfServicePortal from './Pages/HR/SelfServicePortal.jsx';
 
 // Role constants
 const SUPER   = ["superadmin"];
@@ -219,6 +221,14 @@ function App() {
           } />
           <Route path="/hr/chat" element={
             <ProtectedRoute allowedRoles={HR_VIEW}><InternalChat /></ProtectedRoute>
+          } />
+
+          {/* ── HR Phase 7 ─────────────────────────────────── */}
+          <Route path="/hr/wiki" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><KnowledgeBase /></ProtectedRoute>
+          } />
+          <Route path="/hr/self-service" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><SelfServicePortal /></ProtectedRoute>
           } />
 
         </Route>
