@@ -1,4 +1,4 @@
-// Home.jsx
+// LandingComponent.jsx (Home.jsx)
 import React, { useState, useEffect } from "react";
 import slide1 from "../../../assets/Images/banner 1.png";
 import slide2 from "../../../assets/Images/banner 2.jpeg";
@@ -9,13 +9,15 @@ import belowImage from "../../../assets/Images/Botton.png";
 import LandingShimmer from "../../shimmer/landingPageShimmer/landingShimmer";
 
 const images = [
-  { id: 1, url: slide1 ,title:"Rise of the Eternal Storm"},
-  { id: 2, url: slide3,title:"Agent Black: 04-36" },
-  { id: 3, url: slide2,title:"Protectors of MagmaVerse" },
-  { id: 4, url: slide5,title:"Magic Beyond Limits: Mystery Man" },
-  { id: 5, url: slide4,title:"Infinito Universe: Assemble Again" },
+  { id: 1, url: slide1, title: "Rise of the", subtitle: "Eternal Storm" },
+  { id: 2, url: slide3, title: "Agent Black:", subtitle: "04-36" },
+  { id: 3, url: slide2, title: "Protectors of", subtitle: "MagmaVerse" },
+  { id: 4, url: slide5, title: "Magic Beyond Limits:", subtitle: "Mystery Man" },
+  { id: 5, url: slide4, title: "Infinito Universe:", subtitle: "Assemble Again" },
 ];
+
 const SLIDE_DURATION = 5000;
+
 const Home = () => {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -24,7 +26,7 @@ const Home = () => {
 
   const [current, setCurrent] = useState(0);
 
-  // Auto-advance every 5 seconds
+  // Auto-advance every 5 seconds (resets whenever 'current' changes)
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % images.length);
@@ -35,12 +37,12 @@ const Home = () => {
   const handleSelect = (index) => {
     setCurrent(index);
   };
- 
+
   return loading ? (
     <LandingShimmer />
   ) : (
     <div className="w-full text-white">
-       <style>{`
+      <style>{`
         @keyframes progressBarAnim {
           from { width: 0%; }
           to { width: 100%; }
@@ -59,36 +61,40 @@ const Home = () => {
           />
         ))}
 
-
-
-        {/* Bottom gradient so nav text is readable */}
+        {/* Bottom gradient */}
         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/70 to-transparent z-20 pointer-events-none" />
 
-        {/* Bottom Navigation */}
-        <div className="absolute bottom-5 left-0 right-0 z-30">
-          <div className="w-full max-w-7xl mx-auto px-8 md:px-16 flex justify-between items-end">
+        {/* 🌟 Bottom Navigation (Centered White Box) 🌟 */}
+        <div className="absolute bottom-1 md:bottom-2 left-0 right-0 z-30 flex items-center justify-center px-4">
+          {/* Centered White Box (Compact & Shifted Down) */}
+          <div className="w-full max-w-5xl lg:max-w-6xl bg-white/80 backdrop-blur-md py-2 md:py-2.5 px-4 sm:px-8 md:px-10 shadow-xl flex justify-between items-center gap-3 sm:gap-6 rounded-sm">
             {images.map((image, index) => (
               <button
                 key={image.id}
                 onClick={() => handleSelect(index)}
-                className={`flex-1 text-left text-xs md:text-sm font-medium relative transition-colors px-2 pb-1 ${
-                  current === index ? "text-red-500" : "text-white/70 hover:text-white"
-                }`}
+                className="flex-1 text-left relative cursor-pointer px-1 group"
               >
-                <span className="block text-[11px] leading-tight">
-                 {image.title}
-                </span>
-                 <div className="w-full mt-2 h-[2.5px] bg-white/20 rounded-full overflow-hidden">
+                <div className="flex flex-col leading-snug">
+                  <span className="block text-xs sm:text-[13px] md:text-[15px] font-medium text-black truncate">
+                    {image.title}
+                  </span>
+                  <span className="block text-xs sm:text-[13px] md:text-[15px] font-bold text-black truncate">
+                    {image.subtitle}
+                  </span>
+                </div>
+
+                {/* Progress Line */}
+                <div className="w-full mt-2 h-[2.5px] bg-neutral-300 overflow-hidden relative">
                   {current === index ? (
                     <div
-                      key={current} // Key resets the animation when active slide changes
-                      className="h-full bg-red-600 rounded-full"
+                      key={current} // Resets animation on slide change
+                      className="h-full bg-red-600"
                       style={{
                         animation: `progressBarAnim ${SLIDE_DURATION}ms linear forwards`,
                       }}
                     />
                   ) : (
-                    <div className="h-full w-0" />
+                    <div className="h-full bg-black" />
                   )}
                 </div>
               </button>
