@@ -1,8 +1,9 @@
 import React, { useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { categories, products } from "../../services/productService";
 import HeroSlider from "./HeroSlider";
+import ultimateKitBanner from "../../assets/ultimateKit.svg";
 
 const ShopMain = () => {
   const navigate = useNavigate();
@@ -33,52 +34,41 @@ const ShopMain = () => {
       </section>
 
       {/* ─── CATEGORIES ──────────────────────────────────────── */}
-      <section className="max-w-7xl mx-auto px-6 md:px-12 py-10">
-        <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">
+      <section className="max-w-[1400px] mx-auto px-4 md:px-8 py-12">
+        <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 font-dmsans">
           Categories
         </h2>
-        <div className="relative">
-          <button
-            onClick={() => scroll(categoryRef, -1)}
-            className="hidden md:flex items-center justify-center absolute -left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white shadow-md border border-gray-200 hover:bg-gray-50 z-10"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
 
+        {/* 5-up grid on desktop, horizontal scroll on mobile. Card artwork
+            already carries the "INFINITO T-Shirts / HOODIES / ..." labels
+            so we don't overlay any text. */}
+        <div className="border-2 border-[#DD1215] rounded-lg p-4 md:p-6">
           <div
             ref={categoryRef}
-            className="flex gap-5 overflow-x-auto scroll-smooth no-scrollbar pb-2"
+            className="flex md:grid md:grid-cols-5 gap-3 md:gap-4 overflow-x-auto scroll-smooth no-scrollbar"
           >
             {categories.map((cat) => (
               <div
                 key={cat.id}
                 onClick={() => navigate(`/category/${cat.slug}`)}
-                className="flex-shrink-0 w-[280px] cursor-pointer group"
+                className="flex-shrink-0 w-[220px] md:w-auto cursor-pointer group"
               >
-                <div className="w-full h-[280px] bg-gray-100 border border-gray-200 rounded-md overflow-hidden group-hover:shadow-lg transition-shadow flex items-center justify-center">
+                <div className="w-full aspect-[3/4] overflow-hidden">
                   {cat.image ? (
                     <img
                       src={cat.image}
                       alt={cat.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
-                    <span className="text-gray-400 text-sm">{cat.name}</span>
+                    <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
+                      {cat.name}
+                    </div>
                   )}
                 </div>
-                <p className="mt-3 text-center text-base font-semibold group-hover:text-[#DD1215] transition-colors">
-                  {cat.name}
-                </p>
               </div>
             ))}
           </div>
-
-          <button
-            onClick={() => scroll(categoryRef, 1)}
-            className="hidden md:flex items-center justify-center absolute -right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white shadow-md border border-gray-200 hover:bg-gray-50 z-10"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
         </div>
       </section>
 
@@ -114,48 +104,31 @@ const ShopMain = () => {
       </section>
 
       {/* ─── ULTIMATE KIT BANNER ─────────────────────────────── */}
-      <section className="max-w-7xl mx-auto px-6 md:px-12 py-12">
-        <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">
-          ULTIMATE KIT
-        </h2>
-        <div className="relative bg-gradient-to-r from-red-100 via-red-50 to-white border border-red-100 rounded-xl overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="min-h-[280px] bg-gradient-to-br from-red-600 to-red-900 flex items-center justify-center">
-              <span className="text-white/60 text-sm">Ultimate Kit visual</span>
-            </div>
+      {/* The banner artwork already carries the ULTIMATE KIT heading,
+          feature list, ₹2199/₹1999 pricing, and gift illustration.
+          We render it edge-to-edge and overlay a real Get Now button
+          where the artwork shows one. */}
+      <section className="max-w-[1400px] mx-auto px-4 md:px-8 py-12">
+        <a
+          href="#"
+          className="relative block w-full group"
+          aria-label="Get the Infinito Ultimate Kit"
+        >
+          <img
+            src={ultimateKitBanner}
+            alt="Infinito Ultimate Kit — First 10,000 customers get exclusive gift! ₹1999"
+            className="w-full h-auto object-contain"
+          />
 
-            <div className="p-8 md:p-10">
-              <p className="text-xs uppercase tracking-widest text-[#DD1215] font-semibold mb-2">
-                Infinito
-              </p>
-              <h3 className="text-2xl md:text-3xl font-black uppercase mb-4">
-                Ultimate Kit
-              </h3>
-              <ul className="space-y-2 mb-6">
-                {[
-                  "Comic of your choice",
-                  "Surprise Superhero Toy",
-                  "Digital Wall Paintings",
-                  "Superhero Stickers",
-                  "Infinito T-shirt",
-                ].map((item) => (
-                  <li key={item} className="flex items-center gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-[#DD1215]" />
-                    <span className="text-sm">{item}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="flex items-baseline gap-3 mb-5">
-                <span className="text-lg text-gray-400 line-through">₹2199</span>
-                <span className="text-3xl font-black text-black">₹1999</span>
-              </div>
-              <button className="px-8 py-3 bg-[#DD1215] hover:bg-red-700 text-white font-semibold uppercase tracking-wide transition">
-                Get Now
-              </button>
-            </div>
-          </div>
-        </div>
+          {/* Get Now hotspot — sits over the button drawn into the artwork.
+              The percentage-based positioning keeps it lined up as the
+              banner scales. Tweak these numbers if you tighten the crop. */}
+          <span
+            className="absolute right-[4%] bottom-[15%] w-[16%] h-[38%] rounded-md
+                       hover:bg-white/10 transition-colors"
+            aria-hidden="true"
+          />
+        </a>
       </section>
     </div>
   );
