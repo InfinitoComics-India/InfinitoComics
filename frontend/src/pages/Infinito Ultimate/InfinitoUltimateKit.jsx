@@ -42,7 +42,7 @@ const InfinitoUltimateKit = () => {
       "Digital Wall Paintings",
     ],
     note: "First 5,000 customers get exclusive gift!",
-    buttonText: "CHOOSE HALF YEAR",
+    buttonText: "BUY NOW",
   };
 
   return (
