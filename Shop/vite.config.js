@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
-  base: '/shop/',
+  base: '/',
   server: {
     port: 3005
   }

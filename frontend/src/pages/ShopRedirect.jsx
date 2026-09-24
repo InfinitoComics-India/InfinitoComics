@@ -5,7 +5,7 @@ import { useEffect } from "react";
  * `/shop/` on the same host; in development it points at Vite's dev server.
  */
 const SHOP_BASE_URL =
-  import.meta.env.VITE_SHOP_BASE_URL || `${window.location.origin}/shop/`;
+  import.meta.env.VITE_SHOP_BASE_URL || "https://store.infinitohq.com";
 
 const ShopRedirect = () => {
   useEffect(() => {

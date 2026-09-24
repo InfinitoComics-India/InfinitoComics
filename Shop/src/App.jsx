@@ -78,7 +78,7 @@ function App() {
   return (
     <>
       <ToastContainer position="top-right" autoClose={3000} />
-      <BrowserRouter basename="/shop">
+      <BrowserRouter>
         <Routes>
           <Route path="/" element={<Body />}>
             <Route index element={<ShopMain />} />
