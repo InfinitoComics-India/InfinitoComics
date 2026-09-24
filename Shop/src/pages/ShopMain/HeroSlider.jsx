@@ -3,7 +3,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import slide1 from "../../assets/hero/slide1.svg";
 import slide2 from "../../assets/hero/slide2.svg";
-import slide3 from "../../assets/hero/slide4.svg"; // "reference / bottom one"
+// slide4.svg belongs to the 35% off promo banner section (rendered in
+// ShopMain.jsx), not to this hero carousel.
 
 const slides = [
   {
@@ -16,21 +17,42 @@ const slides = [
     align: "left",
   },
   {
-    // Slide 2 artwork already carries the "35% off on The Crimson Bloodline"
-    // copy and Buy Now button, so we render it as-is with no overlay.
+    // Slide 2 uses slide2.svg as background with the "MONTHLY DROP INCOMING"
+    // text laid on top — artwork is set-dressing only, copy is real HTML.
     id: 2,
     image: slide2,
-    hideText: true,
-    variant: "dark",
-    align: "left",
+    variant: "light",
+    eyebrow: "INFINITO",
+    heading: (
+      <>
+        MONTHLY DROP
+        <br />
+        INCOMING
+      </>
+    ),
+    subtext: "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
+    cta: "Shop Now",
+    align: "right",
   },
   {
-    // Slide 3 uses slide4.svg — the bottom reference artwork with its
-    // own baked-in text.
+    // Slide 3 — no artwork yet, so text-only over the dark radial background.
     id: 3,
-    image: slide3,
-    hideText: true,
+    image: null,
     variant: "dark",
+    eyebrow: null,
+    heading: (
+      <>
+        <span className="text-[#DD1215]">BECOME</span>
+        <br />
+        ONE OF US
+        <br />
+        <span className="text-[#DD1215]">BECOME</span>
+        <br />
+        INFINITO
+      </>
+    ),
+    subtext: "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
+    cta: "Shop Now",
     align: "left",
   },
 ];

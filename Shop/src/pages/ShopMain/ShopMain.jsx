@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { categories, products } from "../../services/productService";
 import HeroSlider from "./HeroSlider";
 import ultimateKitBanner from "../../assets/ultimateKit.svg";
+import promoBanner from "../../assets/hero/slide4.svg";
 
 const ShopMain = () => {
   const navigate = useNavigate();
@@ -20,17 +21,21 @@ const ShopMain = () => {
       {/* ─── HERO SLIDER (3 slides) ─────────────────────────── */}
       <HeroSlider />
 
-      {/* ─── PROMO BANNER ────────────────────────────────────── */}
+      {/* ─── PROMO BANNER (35% off on The Crimson Bloodline) ── */}
+      {/* Artwork already contains the heading, subtext and Buy Now button.
+          We render it at its natural aspect ratio with no wrapper chrome. */}
       <section className="max-w-[1200px] mx-auto px-4 md:px-12 py-10">
-        <div className="relative w-full bg-gradient-to-r from-red-600 to-red-800 text-white rounded-lg overflow-hidden py-10 px-8 md:px-14">
-          <h2 className="text-3xl md:text-4xl font-black uppercase">35% off</h2>
-          <p className="mt-2 text-sm md:text-base uppercase tracking-wide">
-            on The Crimson Bloodline
-          </p>
-          <button className="mt-6 px-8 py-2.5 bg-white text-black font-semibold uppercase tracking-wide hover:bg-gray-100 transition">
-            Buy Now
-          </button>
-        </div>
+        <a
+          href="#"
+          aria-label="Shop the Crimson Bloodline — 35% off"
+          className="block w-full"
+        >
+          <img
+            src={promoBanner}
+            alt="35% off on The Crimson Bloodline"
+            className="block w-full h-auto"
+          />
+        </a>
       </section>
 
       {/* ─── CATEGORIES ──────────────────────────────────────── */}
