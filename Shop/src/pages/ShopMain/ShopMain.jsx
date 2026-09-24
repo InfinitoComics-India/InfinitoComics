@@ -2,6 +2,7 @@ import React, { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
 import { categories, products } from "../../services/productService";
+import HeroSlider from "./HeroSlider";
 
 const ShopMain = () => {
   const navigate = useNavigate();
@@ -15,31 +16,8 @@ const ShopMain = () => {
 
   return (
     <div className="w-full bg-white text-black">
-      {/* ─── HERO BANNER ─────────────────────────────────────── */}
-      <section className="relative w-full bg-gradient-to-br from-gray-900 via-black to-red-900 text-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-24 min-h-[420px] md:min-h-[520px] flex flex-col justify-center">
-          <p className="text-sm md:text-base uppercase tracking-widest text-red-400 mb-3">
-            Infinito Merch
-          </p>
-          <h1 className="text-4xl md:text-6xl font-black uppercase leading-tight max-w-2xl">
-            The Crimson Bloodline Collection
-          </h1>
-          <p className="mt-4 text-base md:text-lg text-gray-300 max-w-lg">
-            35% off on the Crimson Bloodline — limited time.
-          </p>
-          <button className="mt-8 w-fit px-8 py-3 bg-[#DD1215] hover:bg-red-700 transition-colors text-white font-semibold uppercase tracking-wide">
-            Shop Now
-          </button>
-        </div>
-
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-white/40" />
-          <span className="w-2.5 h-2.5 rounded-full bg-white/40" />
-          <span className="w-3.5 h-3.5 rounded-full bg-white" />
-          <span className="w-2.5 h-2.5 rounded-full bg-white/40" />
-          <span className="w-2.5 h-2.5 rounded-full bg-white/40" />
-        </div>
-      </section>
+      {/* ─── HERO SLIDER (3 slides) ─────────────────────────── */}
+      <HeroSlider />
 
       {/* ─── PROMO BANNER ────────────────────────────────────── */}
       <section className="max-w-7xl mx-auto px-6 md:px-12 py-10">
