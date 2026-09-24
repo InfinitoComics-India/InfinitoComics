@@ -1,26 +1,38 @@
-// Home.jsx
+// LandingComponent.jsx (Home.jsx)
 import React, { useState, useEffect } from "react";
-import slide1 from "../../../assets/Images/banner.png";
+import slide1 from "../../../assets/Images/banner 1.png";
 import slide2 from "../../../assets/Images/banner 2.jpeg";
 import slide3 from "../../../assets/Images/banner 3.jpeg";
+import slide4 from "../../../assets/Images/banner.png";
+import slide5 from "../../../assets/Images/banner 5.png";
 import belowImage from "../../../assets/Images/Botton.png";
 import LandingShimmer from "../../shimmer/landingPageShimmer/landingShimmer";
 
 const images = [
-  { id: 1, url: slide1 },
-  { id: 2, url: slide2 },
-  { id: 3, url: slide3 },
-  { id: 4, url: slide2 },
-  { id: 5, url: slide3 },
+  { id: 1, url: slide1, title: "Rise of the", subtitle: "Eternal Storm" },
+  { id: 2, url: slide3, title: "Agent Black:", subtitle: "04-36" },
+  { id: 3, url: slide2, title: "Protectors of", subtitle: "MagmaVerse" },
+  { id: 4, url: slide5, title: "Magic Beyond Limits:", subtitle: "Mystery Man" },
+  { id: 5, url: slide4, title: "Infinito Universe:", subtitle: "Assemble Again" },
 ];
+
+const SLIDE_DURATION = 5000;
 
 const Home = () => {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    setTimeout(() => setLoading(false), 2400); 
+    setTimeout(() => setLoading(false), 2400);
   }, []);
 
   const [current, setCurrent] = useState(0);
+
+  // Auto-advance every 5 seconds (resets whenever 'current' changes)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % images.length);
+    }, SLIDE_DURATION);
+    return () => clearInterval(timer);
+  }, [current]);
 
   const handleSelect = (index) => {
     setCurrent(index);
@@ -30,63 +42,69 @@ const Home = () => {
     <LandingShimmer />
   ) : (
     <div className="w-full text-white">
+      <style>{`
+        @keyframes progressBarAnim {
+          from { width: 0%; }
+          to { width: 100%; }
+        }
+      `}</style>
       <div className="relative w-full h-[80vh] overflow-hidden">
-        {/* Background Image with Dimming */}
-        <img
-          src={images[current].url}
-          alt={`Slide ${current + 1}`}
-          className="w-full h-full object-cover object-top filter brightness-50"
-        />
+        {/* Slides with crossfade */}
+        {images.map((image, index) => (
+          <img
+            key={image.id}
+            src={image.url}
+            alt={`Slide ${index + 1}`}
+            className={`absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-1000 ${
+              index === current ? "opacity-100" : "opacity-0"
+            }`}
+          />
+        ))}
 
-        {/* Dark Overlay (optional, for extra depth) */}
-        <div className="absolute inset-0 bg-black/40"></div>
+        {/* Bottom gradient */}
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/70 to-transparent z-20 pointer-events-none" />
 
-        {/* Text Overlay (aligned to left) */}
-        <div className="absolute inset-0 flex flex-col items-start justify-center text-left z-20">
-          <div className="w-full max-w-7xl mx-auto px-8 md:px-16">
-            <h2 className="text-5xl md:text-6xl font-bold uppercase py-10 leading-tight">
-              Rise of the <br />{" "}
-              <span className="text-red-500">Eternal Storm</span>
-            </h2>
-            <p className="mt-4 max-w-2xl text-lg md:text-xl">
-              An ancient force awakens in the cosmic depths. Heroes will rise,
-              dimensions will collide, and the Infinito Universe will never be the
-              same.
-            </p>
-            <button className="mt-14 bg-[#DD1215] hover:bg-red-600 text-white font-semibold py-2 px-4 rounded transition duration-300">
-              Read Now
-            </button>
-          </div>
-        </div>
-
-        {/* Bottom Navigation */}
-        <div className="absolute bottom-5 left-0 right-0 z-30">
-          <div className="w-full max-w-7xl mx-auto px-8 md:px-16 flex justify-between items-end">
+        {/* 🌟 Bottom Navigation (Centered White Box) 🌟 */}
+        <div className="absolute bottom-1 md:bottom-2 left-0 right-0 z-30 flex items-center justify-center px-4">
+          {/* Centered White Box (Compact & Shifted Down) */}
+          <div className="w-full max-w-5xl lg:max-w-6xl bg-white/80 backdrop-blur-md py-2 md:py-2.5 px-4 sm:px-8 md:px-10 shadow-xl flex justify-between items-center gap-3 sm:gap-6 rounded-sm">
             {images.map((image, index) => (
               <button
                 key={image.id}
                 onClick={() => handleSelect(index)}
-                className={`flex-1 text-left text-xs md:text-sm font-medium relative transition-colors px-2 pb-1 ${
-                  current === index ? "text-red-500" : "text-white"
-                }`}
+                className="flex-1 text-left relative cursor-pointer px-1 group"
               >
-                <span className="block text-[11px] leading-tight">
-                  Rise of the <span className="font-bold block">Eternal Storm</span>
-                </span>
-                <span
-                  className={`block mt-1 h-[2px] bg-red-500 transition-all duration-300 ${
-                    current === index ? "w-full" : "w-0"
-                  }`}
-                ></span>
+                <div className="flex flex-col leading-snug">
+                  <span className="block text-xs sm:text-[13px] md:text-[15px] font-medium text-black truncate">
+                    {image.title}
+                  </span>
+                  <span className="block text-xs sm:text-[13px] md:text-[15px] font-bold text-black truncate">
+                    {image.subtitle}
+                  </span>
+                </div>
+
+                {/* Progress Line */}
+                <div className="w-full mt-2 h-[2.5px] bg-neutral-300 overflow-hidden relative">
+                  {current === index ? (
+                    <div
+                      key={current} // Resets animation on slide change
+                      className="h-full bg-red-600"
+                      style={{
+                        animation: `progressBarAnim ${SLIDE_DURATION}ms linear forwards`,
+                      }}
+                    />
+                  ) : (
+                    <div className="h-full bg-black" />
+                  )}
+                </div>
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Below Image with Shadow */}
+      {/* Below Image */}
       <div className="relative w-full -mt-1">
-        <div className="absolute -top-16 w-full h-16 bg-gradient-to-t from-black to-transparent z-10 pointer-events-none" />
         <img
           src={belowImage}
           alt="Below Carousel"

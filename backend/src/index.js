@@ -27,6 +27,27 @@ import paymentRoutes from './routes/payment-routes.js'
 import comicChapRoutes from './routes/comicChap-routes.js'
 import researchApplicationRoutes from './routes/researchApplication-routes.js'
 import contactQueryRoutes from './routes/contactQuery-routes.js'
+import employeeRoutes from './routes/employee-routes.js';
+import notificationRoutes from './routes/notification-routes.js';
+import auditLogRoutes from './routes/auditLog-routes.js';
+import attendanceRoutes from './routes/attendance-routes.js';
+import leaveRoutes from './routes/leave-routes.js';
+import calendarEventRoutes from './routes/calendarEvent-routes.js';
+import taskRoutes from './routes/task-routes.js';
+import workAssignmentRoutes from './routes/workAssignment-routes.js';
+import projectRoutes from './routes/project-routes.js';
+import performanceRoutes from './routes/performance-routes.js';
+import goalRoutes from './routes/goal-routes.js';
+import recognitionRoutes from './routes/recognition-routes.js';
+import salaryRoutes from './routes/salary-routes.js';
+import payrollRoutes from './routes/payroll-routes.js';
+import onboardingRoutes from './routes/onboarding-routes.js';
+import hrDocumentRoutes from './routes/hrDocument-routes.js';
+import recruitmentPipelineRoutes from './routes/recruitmentPipeline-routes.js';
+import chatRoutes from './routes/chat-routes.js';
+import wikiRoutes from './routes/wiki-routes.js';
+import selfServiceRoutes from './routes/selfService-routes.js';
+import aiRoutes from './routes/ai-routes.js';
 
 
 const allowedOrigins = [
@@ -72,6 +93,27 @@ app.use('/research-application', researchApplicationRoutes);
 app.use('/contact-query', contactQueryRoutes);
 app.use('/character', characterRoutes);
 app.use('/payment', paymentRoutes);
+app.use('/hr/employees',      employeeRoutes);
+app.use('/hr/notifications',  notificationRoutes);
+app.use('/hr/audit',          auditLogRoutes);
+app.use('/hr/attendance',     attendanceRoutes);
+app.use('/hr/leaves',         leaveRoutes);
+app.use('/hr/calendar',       calendarEventRoutes);
+app.use('/hr/tasks',          taskRoutes);
+app.use('/hr/assignments',    workAssignmentRoutes);
+app.use('/hr/projects',       projectRoutes);
+app.use('/hr/performance',    performanceRoutes);
+app.use('/hr/goals',          goalRoutes);
+app.use('/hr/recognition',    recognitionRoutes);
+app.use('/hr/salary',         salaryRoutes);
+app.use('/hr/payroll',        payrollRoutes);
+app.use('/hr/onboarding',     onboardingRoutes);
+app.use('/hr/documents',      hrDocumentRoutes);
+app.use('/hr/recruitment',    recruitmentPipelineRoutes);
+app.use('/hr/chat',           chatRoutes);
+app.use('/hr/wiki',           wikiRoutes);
+app.use('/hr/self-service',   selfServiceRoutes);
+app.use('/hr/ai',             aiRoutes);
 app.get('/', (req, res) => {
   res.send('Backend is up and running!');
 });

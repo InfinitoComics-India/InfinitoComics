@@ -19,6 +19,30 @@ import AdminManagement from './Pages/AdminManagement/AdminManagement.jsx';
 import Unauthorized from './Pages/Unauthorized/Unauthorized.jsx';
 import ContactQueries from './Pages/ContactQueries/ContactQueries.jsx';
 
+// ── HR System imports ─────────────────────────────────────────
+import EmployeeList      from './Pages/HR/EmployeeList.jsx';
+import EmployeeForm      from './Pages/HR/EmployeeForm.jsx';
+import EmployeeProfile   from './Pages/HR/EmployeeProfile.jsx';
+import NotificationsPage from './Pages/HR/Notifications.jsx';
+import AuditLogPage      from './Pages/HR/AuditLog.jsx';
+import AttendanceManager from './Pages/HR/AttendanceManager.jsx';
+import LeaveManagement   from './Pages/HR/LeaveManagement.jsx';
+import CompanyCalendar   from './Pages/HR/CompanyCalendar.jsx';
+import KanbanBoard       from './Pages/HR/KanbanBoard.jsx';
+import WorkAssignment    from './Pages/HR/WorkAssignment.jsx';
+import ProjectManager    from './Pages/HR/ProjectManager.jsx';
+import PerformanceDashboard from './Pages/HR/PerformanceDashboard.jsx';
+import GoalTracker       from './Pages/HR/GoalTracker.jsx';
+import RecognitionWall   from './Pages/HR/RecognitionWall.jsx';
+import PayrollManager    from './Pages/HR/PayrollManager.jsx';
+import OnboardingManager from './Pages/HR/OnboardingManager.jsx';
+import DocumentManager   from './Pages/HR/DocumentManager.jsx';
+import RecruitmentPipeline from './Pages/HR/RecruitmentPipeline.jsx';
+import InternalChat      from './Pages/HR/InternalChat.jsx';
+import KnowledgeBase     from './Pages/HR/KnowledgeBase.jsx';
+import SelfServicePortal from './Pages/HR/SelfServicePortal.jsx';
+import AIAssistant       from './Pages/HR/AIAssistant.jsx';
+
 // Role constants
 const SUPER   = ["superadmin"];
 const COMICS  = ["superadmin", "comics_admin"];
@@ -27,6 +51,12 @@ const RESEARCH= ["superadmin", "research_admin"];
 const BLOG    = ["superadmin", "blog_admin"];
 const CAREER  = ["superadmin", "career_admin"];
 const ALL_AUTH= ["superadmin", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin"];
+
+// ── HR Role constants ─────────────────────────────────────────
+const HR      = ["superadmin", "hr_manager"];
+const HR_VIEW = ["superadmin", "hr_manager", "manager", "team_lead",
+                 "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin"];
+const AUDIT   = ["superadmin", "hr_manager"];
 
 function App() {
   return (
@@ -102,6 +132,109 @@ function App() {
           {/* Contact Queries — superadmin only */}
           <Route path="/contact-queries" element={
             <ProtectedRoute allowedRoles={SUPER}><ContactQueries /></ProtectedRoute>
+          } />
+
+          {/* ── HR System ──────────────────────────────────── */}
+
+          {/* Employee Management */}
+          <Route path="/hr/employees" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><EmployeeList /></ProtectedRoute>
+          } />
+          <Route path="/hr/employees/new" element={
+            <ProtectedRoute allowedRoles={HR}><EmployeeForm /></ProtectedRoute>
+          } />
+          <Route path="/hr/employees/:id" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><EmployeeProfile /></ProtectedRoute>
+          } />
+          <Route path="/hr/employees/:id/edit" element={
+            <ProtectedRoute allowedRoles={HR}><EmployeeForm /></ProtectedRoute>
+          } />
+
+          {/* Notifications — all admins */}
+          <Route path="/hr/notifications" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><NotificationsPage /></ProtectedRoute>
+          } />
+
+          {/* Audit Log — HR + superadmin only */}
+          <Route path="/hr/audit" element={
+            <ProtectedRoute allowedRoles={AUDIT}><AuditLogPage /></ProtectedRoute>
+          } />
+
+          {/* ── HR Phase 2 ─────────────────────────────────── */}
+
+          {/* Attendance */}
+          <Route path="/hr/attendance" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><AttendanceManager /></ProtectedRoute>
+          } />
+
+          {/* Leave Management */}
+          <Route path="/hr/leaves" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><LeaveManagement /></ProtectedRoute>
+          } />
+
+          {/* Company Calendar */}
+          <Route path="/hr/calendar" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><CompanyCalendar /></ProtectedRoute>
+          } />
+
+          {/* ── HR Phase 3 ─────────────────────────────────── */}
+
+          {/* Job Tracking — Kanban Board */}
+          <Route path="/hr/tasks" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><KanbanBoard /></ProtectedRoute>
+          } />
+
+          {/* Work Assignment */}
+          <Route path="/hr/assignments" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><WorkAssignment /></ProtectedRoute>
+          } />
+
+          {/* Project Management */}
+          <Route path="/hr/projects" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><ProjectManager /></ProtectedRoute>
+          } />
+
+          {/* ── HR Phase 4 ─────────────────────────────────── */}
+          <Route path="/hr/performance" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><PerformanceDashboard /></ProtectedRoute>
+          } />
+          <Route path="/hr/goals" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><GoalTracker /></ProtectedRoute>
+          } />
+          <Route path="/hr/recognition" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><RecognitionWall /></ProtectedRoute>
+          } />
+
+          {/* ── HR Phase 5 ─────────────────────────────────── */}
+          <Route path="/hr/payroll" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><PayrollManager /></ProtectedRoute>
+          } />
+          <Route path="/hr/onboarding" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><OnboardingManager /></ProtectedRoute>
+          } />
+          <Route path="/hr/documents" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><DocumentManager /></ProtectedRoute>
+          } />
+
+          {/* ── HR Phase 6 ─────────────────────────────────── */}
+          <Route path="/hr/recruitment" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><RecruitmentPipeline /></ProtectedRoute>
+          } />
+          <Route path="/hr/chat" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><InternalChat /></ProtectedRoute>
+          } />
+
+          {/* ── HR Phase 7 ─────────────────────────────────── */}
+          <Route path="/hr/wiki" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><KnowledgeBase /></ProtectedRoute>
+          } />
+          <Route path="/hr/self-service" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><SelfServicePortal /></ProtectedRoute>
+          } />
+
+          {/* ── HR Phase 8 ─────────────────────────────────── */}
+          <Route path="/hr/ai" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><AIAssistant /></ProtectedRoute>
           } />
 
         </Route>
