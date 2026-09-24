@@ -6,7 +6,7 @@ const resend = config.RESEND_API_KEY ? new Resend(config.RESEND_API_KEY) : null;
 
 // Use onboarding@resend.dev as safe default — works without domain verification
 // Switch to no-reply@infinitohq.com once infinitohq.com is verified in Resend dashboard
-const FROM_ADDRESS = 'Infinito Comics <onboarding@resend.dev>';
+const FROM_ADDRESS = 'Infinito Comics <no-reply@infinitohq.com>';
 
 export const sendEmail = async (to, subject, text) => {
   if (!config.RESEND_API_KEY || !resend) {
