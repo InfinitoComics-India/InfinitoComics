@@ -21,7 +21,7 @@ const ShopMain = () => {
       <HeroSlider />
 
       {/* ─── PROMO BANNER ────────────────────────────────────── */}
-      <section className="max-w-7xl mx-auto px-6 md:px-12 py-10">
+      <section className="max-w-[1200px] mx-auto px-4 md:px-12 py-10">
         <div className="relative w-full bg-gradient-to-r from-red-600 to-red-800 text-white rounded-lg overflow-hidden py-10 px-8 md:px-14">
           <h2 className="text-3xl md:text-4xl font-black uppercase">35% off</h2>
           <p className="mt-2 text-sm md:text-base uppercase tracking-wide">
@@ -42,11 +42,10 @@ const ShopMain = () => {
         {/* 5-up grid on desktop, horizontal scroll on mobile. Card artwork
             already carries the "INFINITO T-Shirts / HOODIES / ..." labels
             so we don't overlay any text. */}
-        <div className="border-2 border-[#DD1215] rounded-lg p-4 md:p-6">
-          <div
-            ref={categoryRef}
-            className="flex md:grid md:grid-cols-5 gap-3 md:gap-4 overflow-x-auto scroll-smooth no-scrollbar"
-          >
+        <div
+          ref={categoryRef}
+          className="flex md:grid md:grid-cols-5 gap-3 md:gap-4 overflow-x-auto scroll-smooth no-scrollbar"
+        >
             {categories.map((cat) => (
               <div
                 key={cat.id}
@@ -68,7 +67,6 @@ const ShopMain = () => {
                 </div>
               </div>
             ))}
-          </div>
         </div>
       </section>
 

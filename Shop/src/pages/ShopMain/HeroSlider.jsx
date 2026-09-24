@@ -7,30 +7,18 @@ import slide1 from "../../assets/hero/slide1.svg";
 
 const slides = [
   {
+    // Slide 1 uses the artwork as-is — heading, subtext and Shop Now
+    // button are all baked into the SVG, so we don't render an overlay.
     id: 1,
     image: slide1,
-    // The hero art already includes the product + set dressing, so we
-    // render it as a full-bleed background and lay the text on top.
+    hideText: true,
     variant: "dark",
-    eyebrow: null,
-    heading: (
-      <>
-        <span className="text-[#DD1215]">BECOME</span>
-        <br />
-        ONE OF US
-        <br />
-        <span className="text-[#DD1215]">BECOME</span>
-        <br />
-        INFINITO
-      </>
-    ),
-    subtext: "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
-    cta: "Shop Now",
     align: "left",
   },
   {
+    // No image yet — text-only over a light red-tinted background.
     id: 2,
-    image: slide1, // TODO: replace with slide2.png once exported
+    image: null,
     variant: "light",
     eyebrow: "INFINITO",
     heading: (
@@ -45,8 +33,9 @@ const slides = [
     align: "right",
   },
   {
+    // No image yet — text-only over the dark red radial background.
     id: 3,
-    image: slide1, // TODO: replace with slide3.png once exported
+    image: null,
     variant: "dark",
     eyebrow: null,
     heading: (
@@ -131,59 +120,83 @@ const Slide = ({ slide }) => {
 
   const textColor = isDark ? "text-white" : "text-black";
 
+  // Fallback background when no artwork has been supplied yet — matches
+  // the light / dark variants so text still reads well.
+  const fallbackBg = isDark
+    ? "bg-[radial-gradient(circle_at_65%_50%,#3a0a0a_0%,#000_45%)]"
+    : "bg-[radial-gradient(circle_at_35%_50%,#fde4e4_0%,#fff_55%)]";
+
   return (
-    <div className={`w-full flex-shrink-0 ${textColor} relative bg-black`}>
-      {/* Full-bleed hero artwork — already includes background, products
-          and lighting so we just render it edge-to-edge. */}
-      <img
-        src={slide.image}
-        alt=""
-        aria-hidden="true"
-        className="absolute inset-0 w-full h-full object-cover"
-      />
+    <div
+      className={`w-full flex-shrink-0 ${textColor} relative ${
+        slide.image ? "bg-black" : fallbackBg
+      }`}
+    >
+      {slide.image && (
+        <>
+          {/* Full-bleed hero artwork — already includes background, products
+              and lighting so we just render it edge-to-edge. */}
+          <img
+            src={slide.image}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
 
-      {/* Subtle gradient so text on the left/right stays readable. */}
-      <div
-        className={`absolute inset-0 ${
-          isRight
-            ? "bg-gradient-to-l from-white/60 via-white/10 to-transparent"
-            : "bg-gradient-to-r from-black/70 via-black/20 to-transparent"
-        }`}
-      />
-
-      <div className="relative max-w-[1400px] mx-auto px-6 md:px-12 min-h-[420px] md:min-h-[560px] flex items-center">
-        <div
-          className={`w-full md:w-1/2 py-14 md:py-20 ${
-            isRight ? "md:ml-auto md:text-right" : "md:mr-auto md:text-left"
-          }`}
-        >
-          {slide.eyebrow && (
-            <div className={`inline-block mb-5 ${isRight ? "md:ml-auto" : ""}`}>
-              <span className="inline-block bg-[#DD1215] text-white px-3 py-1 text-sm md:text-base font-black tracking-widest font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif]">
-                {slide.eyebrow}
-              </span>
-            </div>
+          {/* Text-readability gradient only makes sense when there's an
+              overlay to protect. Skip it when the artwork already has
+              baked-in copy. */}
+          {!slide.hideText && (
+            <div
+              className={`absolute inset-0 ${
+                isRight
+                  ? "bg-gradient-to-l from-white/60 via-white/10 to-transparent"
+                  : "bg-gradient-to-r from-black/70 via-black/20 to-transparent"
+              }`}
+            />
           )}
+        </>
+      )}
 
-          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black uppercase leading-[0.9] tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] drop-shadow-lg">
-            {slide.heading}
-          </h1>
-
-          <p
-            className={`mt-6 text-sm md:text-base max-w-md font-dmsans ${
-              isRight ? "md:ml-auto" : ""
-            } ${isDark ? "text-white/85" : "text-black/75"}`}
+      {slide.hideText ? (
+        // Artwork already carries heading, subtext and CTA — reserve
+        // the same vertical space and stay out of the way.
+        <div className="min-h-[420px] md:min-h-[560px]" />
+      ) : (
+        <div className="relative max-w-[1200px] mx-auto px-4 md:px-12 min-h-[420px] md:min-h-[560px] flex items-center">
+          <div
+            className={`w-full md:w-1/2 py-14 md:py-20 ${
+              isRight ? "md:ml-auto md:text-right" : "md:mr-auto md:text-left"
+            }`}
           >
-            {slide.subtext}
-          </p>
+            {slide.eyebrow && (
+              <div className={`inline-block mb-5 ${isRight ? "md:ml-auto" : ""}`}>
+                <span className="inline-block bg-[#DD1215] text-white px-3 py-1 text-sm md:text-base font-black tracking-widest font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif]">
+                  {slide.eyebrow}
+                </span>
+              </div>
+            )}
 
-          <div className={`mt-8 flex ${isRight ? "md:justify-end" : ""}`}>
-            <button className="px-8 py-3 bg-[#DD1215] hover:bg-red-700 text-white text-sm font-bold uppercase tracking-widest transition-colors font-dmsans">
-              {slide.cta}
-            </button>
+            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black uppercase leading-[0.9] tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] drop-shadow-lg">
+              {slide.heading}
+            </h1>
+
+            <p
+              className={`mt-6 text-sm md:text-base max-w-md font-dmsans ${
+                isRight ? "md:ml-auto" : ""
+              } ${isDark ? "text-white/85" : "text-black/75"}`}
+            >
+              {slide.subtext}
+            </p>
+
+            <div className={`mt-8 flex ${isRight ? "md:justify-end" : ""}`}>
+              <button className="px-8 py-3 bg-[#DD1215] hover:bg-red-700 text-white text-sm font-bold uppercase tracking-widest transition-colors font-dmsans">
+                {slide.cta}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
