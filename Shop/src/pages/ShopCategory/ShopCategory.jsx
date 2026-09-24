@@ -53,7 +53,7 @@ const ShopCategory = () => {
 
   return (
     <div className="w-full bg-white text-black">
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-8">
+      <div className="max-w-[1200px] mx-auto px-4 md:px-12 py-8">
         <div className="flex gap-6">
           <aside className="hidden md:block w-[280px] flex-shrink-0 bg-white border border-gray-200 rounded-md h-fit sticky top-32">
             <div className="px-5 py-4 border-b border-gray-200">

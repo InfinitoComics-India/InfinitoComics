@@ -34,7 +34,7 @@ const ShopMain = () => {
       </section>
 
       {/* ─── CATEGORIES ──────────────────────────────────────── */}
-      <section className="max-w-[1400px] mx-auto px-4 md:px-8 py-12">
+      <section className="max-w-[1200px] mx-auto px-4 md:px-12 py-12">
         <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 font-dmsans">
           Categories
         </h2>
@@ -71,7 +71,7 @@ const ShopMain = () => {
       </section>
 
       {/* ─── TOP TRENDING ────────────────────────────────────── */}
-      <section className="max-w-7xl mx-auto px-6 md:px-12 py-10 relative">
+      <section className="max-w-[1200px] mx-auto px-4 md:px-12 py-10 relative">
         <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">
           Top Trending
         </h2>
@@ -106,7 +106,11 @@ const ShopMain = () => {
           feature list, ₹2199/₹1999 pricing, and gift illustration.
           We render it edge-to-edge and overlay a real Get Now button
           where the artwork shows one. */}
-      <section className="max-w-[1400px] mx-auto px-4 md:px-8 py-12">
+      <section className="max-w-[1200px] mx-auto px-4 md:px-12 py-12">
+        <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 font-dmsans uppercase tracking-wider">
+          Ultimate Kit
+        </h2>
+
         <a
           href="#"
           className="relative block w-full group"
@@ -115,7 +119,7 @@ const ShopMain = () => {
           <img
             src={ultimateKitBanner}
             alt="Infinito Ultimate Kit — First 10,000 customers get exclusive gift! ₹1999"
-            className="w-full h-auto object-contain"
+            className="block w-full h-auto max-w-full object-contain"
           />
 
           {/* Get Now hotspot — sits over the button drawn into the artwork.

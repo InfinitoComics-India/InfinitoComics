@@ -15,7 +15,7 @@ const socials = [
 const Footer = () => {
   return (
     <footer className="w-full bg-black text-white mt-20">
-      <div className="max-w-[1400px] mx-auto px-4 md:px-12 pt-14 pb-8">
+      <div className="max-w-[1200px] mx-auto px-4 md:px-12 pt-14 pb-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-8">
           {/* ── Left: Logo, tagline, description ─────────── */}
           <div className="md:col-span-1">
@@ -109,7 +109,7 @@ const Footer = () => {
 
       {/* ── Bottom legal bar ──────────────────────────────── */}
       <div className="border-t border-white/10">
-        <div className="max-w-[1400px] mx-auto px-4 md:px-12 py-5 flex flex-wrap items-center justify-center md:justify-between gap-4 text-[11px] text-white/60 tracking-wide">
+        <div className="max-w-[1200px] mx-auto px-4 md:px-12 py-5 flex flex-wrap items-center justify-center md:justify-between gap-4 text-[11px] text-white/60 tracking-wide">
           <nav className="flex flex-wrap items-center gap-6 md:gap-8">
             <a href={`${FRONTEND_BASE_URL}/terms-of-use`} className="hover:text-white transition">Terms Of Use</a>
             <a href={`${FRONTEND_BASE_URL}/privacy-policy`} className="hover:text-white transition">Privacy Policy</a>
