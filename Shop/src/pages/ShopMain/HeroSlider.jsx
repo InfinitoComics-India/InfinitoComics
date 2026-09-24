@@ -147,22 +147,22 @@ const Slide = ({ slide }) => {
         >
           {slide.eyebrow && (
             <div className={`inline-block mb-5 ${isRight ? "md:ml-auto" : ""}`}>
-              <span className="inline-block bg-[#DD1215] text-white px-3 py-1 text-sm md:text-base font-black tracking-widest">
+              <span className="inline-block bg-[#DD1215] text-white px-3 py-1 text-sm md:text-base font-black tracking-widest font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif]">
                 {slide.eyebrow}
               </span>
             </div>
           )}
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black uppercase leading-[0.95] tracking-tight">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black uppercase leading-[0.9] tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif]">
             {slide.heading}
           </h1>
 
-          <p className={`mt-6 text-sm md:text-base max-w-md ${isRight ? "md:ml-auto" : ""} ${isDark ? "text-white/80" : "text-black/70"}`}>
+          <p className={`mt-6 text-sm md:text-base max-w-md font-dmsans ${isRight ? "md:ml-auto" : ""} ${isDark ? "text-white/80" : "text-black/70"}`}>
             {slide.subtext}
           </p>
 
           <div className={`mt-8 flex ${isRight ? "md:justify-end" : ""}`}>
-            <button className="px-8 py-3 bg-[#DD1215] hover:bg-red-700 text-white text-sm font-bold uppercase tracking-widest transition-colors">
+            <button className="px-8 py-3 bg-[#DD1215] hover:bg-red-700 text-white text-sm font-bold uppercase tracking-widest transition-colors font-dmsans">
               {slide.cta}
             </button>
           </div>
