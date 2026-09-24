@@ -14,12 +14,21 @@
 //   return data.data;
 // };
 
+// Category card artwork already has "INFINITO T-Shirts" etc. baked in,
+// so we import them as-is and skip the label overlay on the grid.
+import tshirtsImg   from "../assets/categories/tshirts.svg";
+import accessoryImg from "../assets/categories/accessory.svg";
+import hoodiesImg   from "../assets/categories/hoodies.svg";
+import totebagsImg  from "../assets/categories/totebags.svg";
+// TODO: save `Shop/src/assets/categories/caps.svg` and swap this fallback.
+const capsImg = tshirtsImg;
+
 export const categories = [
-  { id: 1, name: "T-Shirts", slug: "tshirts", image: "" },
-  { id: 2, name: "Hoodies", slug: "hoodies", image: "" },
-  { id: 3, name: "Stickers", slug: "stickers", image: "" },
-  { id: 4, name: "Posters", slug: "posters", image: "" },
-  { id: 5, name: "Collectibles", slug: "collectibles", image: "" },
+  { id: 1, name: "T-Shirts",  slug: "tshirts",   image: tshirtsImg },
+  { id: 2, name: "Caps/Hats", slug: "caps",      image: capsImg },
+  { id: 3, name: "Accessory", slug: "accessory", image: accessoryImg },
+  { id: 4, name: "Hoodies",   slug: "hoodies",   image: hoodiesImg },
+  { id: 5, name: "Tote Bags", slug: "totebags",  image: totebagsImg },
 ];
 
 export const products = [

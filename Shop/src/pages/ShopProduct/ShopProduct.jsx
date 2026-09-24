@@ -87,7 +87,7 @@ const ShopProduct = () => {
 
   return (
     <div className="w-full bg-white text-black">
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-8">
+      <div className="max-w-[1200px] mx-auto px-4 md:px-12 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
           {/* LEFT: Images */}
           <div>

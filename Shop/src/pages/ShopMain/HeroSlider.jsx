@@ -1,36 +1,26 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-// Once you export the hero product photos from Figma, drop them in
-// Shop/src/assets/hero/ as slide1.png / slide2.png / slide3.png and
-// swap the placeholder gradients below for <img src={slideX} />.
-//
-// import slide1 from "../../assets/hero/slide1.png";
-// import slide2 from "../../assets/hero/slide2.png";
-// import slide3 from "../../assets/hero/slide3.png";
+import slide1 from "../../assets/hero/slide1.svg";
+import slide2 from "../../assets/hero/slide2.svg";
+// slide4.svg belongs to the 35% off promo banner section (rendered in
+// ShopMain.jsx), not to this hero carousel.
 
 const slides = [
   {
+    // Slide 1 uses the artwork as-is — heading, subtext and Shop Now
+    // button are all baked into the SVG, so we don't render an overlay.
     id: 1,
+    image: slide1,
+    hideText: true,
     variant: "dark",
-    eyebrow: null,
-    heading: (
-      <>
-        <span className="text-[#DD1215]">BECOME</span>
-        <br />
-        ONE OF US
-        <br />
-        <span className="text-[#DD1215]">BECOME</span>
-        <br />
-        INFINITO
-      </>
-    ),
-    subtext: "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
-    cta: "Shop Now",
     align: "left",
   },
   {
+    // Slide 2 uses slide2.svg as background with the "MONTHLY DROP INCOMING"
+    // text laid on top — artwork is set-dressing only, copy is real HTML.
     id: 2,
+    image: slide2,
     variant: "light",
     eyebrow: "INFINITO",
     heading: (
@@ -45,7 +35,9 @@ const slides = [
     align: "right",
   },
   {
+    // Slide 3 — no artwork yet, so text-only over the dark radial background.
     id: 3,
+    image: null,
     variant: "dark",
     eyebrow: null,
     heading: (
@@ -128,62 +120,85 @@ const Slide = ({ slide }) => {
   const isDark = slide.variant === "dark";
   const isRight = slide.align === "right";
 
-  // Placeholder background until real hero product photos are dropped in.
-  // Dark variant → black with a red radial glow (matches the tee/hoodie slide).
-  // Light variant → white with a soft red disc (matches the jacket slide).
-  const bg = isDark
+  const textColor = isDark ? "text-white" : "text-black";
+
+  // Fallback background when no artwork has been supplied yet — matches
+  // the light / dark variants so text still reads well.
+  const fallbackBg = isDark
     ? "bg-[radial-gradient(circle_at_65%_50%,#3a0a0a_0%,#000_45%)]"
     : "bg-[radial-gradient(circle_at_35%_50%,#fde4e4_0%,#fff_55%)]";
 
-  const textColor = isDark ? "text-white" : "text-black";
-
   return (
-    <div className={`w-full flex-shrink-0 ${bg} ${textColor} relative`}>
-      <div className="max-w-[1400px] mx-auto px-6 md:px-12 min-h-[520px] md:min-h-[600px] flex items-center">
-        <div
-          className={`w-full md:w-1/2 py-16 md:py-20 ${
-            isRight ? "md:ml-auto md:text-right" : "md:mr-auto md:text-left"
-          }`}
-        >
-          {slide.eyebrow && (
-            <div className={`inline-block mb-5 ${isRight ? "md:ml-auto" : ""}`}>
-              <span className="inline-block bg-[#DD1215] text-white px-3 py-1 text-sm md:text-base font-black tracking-widest font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif]">
-                {slide.eyebrow}
-              </span>
-            </div>
+    <div
+      className={`w-full flex-shrink-0 ${textColor} relative ${
+        slide.image ? "bg-black" : fallbackBg
+      }`}
+    >
+      {slide.image && (
+        <>
+          {/* Full-bleed hero artwork — already includes background, products
+              and lighting so we just render it edge-to-edge. */}
+          <img
+            src={slide.image}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+
+          {/* Text-readability gradient only makes sense when there's an
+              overlay to protect. Skip it when the artwork already has
+              baked-in copy. */}
+          {!slide.hideText && (
+            <div
+              className={`absolute inset-0 ${
+                isRight
+                  ? "bg-gradient-to-l from-white/60 via-white/10 to-transparent"
+                  : "bg-gradient-to-r from-black/70 via-black/20 to-transparent"
+              }`}
+            />
           )}
+        </>
+      )}
 
-          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black uppercase leading-[0.9] tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif]">
-            {slide.heading}
-          </h1>
+      {slide.hideText ? (
+        // Artwork already carries heading, subtext and CTA — reserve
+        // the same vertical space and stay out of the way.
+        <div className="min-h-[420px] md:min-h-[560px]" />
+      ) : (
+        <div className="relative max-w-[1200px] mx-auto px-4 md:px-12 min-h-[420px] md:min-h-[560px] flex items-center">
+          <div
+            className={`w-full md:w-1/2 py-14 md:py-20 ${
+              isRight ? "md:ml-auto md:text-right" : "md:mr-auto md:text-left"
+            }`}
+          >
+            {slide.eyebrow && (
+              <div className={`inline-block mb-5 ${isRight ? "md:ml-auto" : ""}`}>
+                <span className="inline-block bg-[#DD1215] text-white px-3 py-1 text-sm md:text-base font-black tracking-widest font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif]">
+                  {slide.eyebrow}
+                </span>
+              </div>
+            )}
 
-          <p className={`mt-6 text-sm md:text-base max-w-md font-dmsans ${isRight ? "md:ml-auto" : ""} ${isDark ? "text-white/80" : "text-black/70"}`}>
-            {slide.subtext}
-          </p>
+            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black uppercase leading-[0.9] tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] drop-shadow-lg">
+              {slide.heading}
+            </h1>
 
-          <div className={`mt-8 flex ${isRight ? "md:justify-end" : ""}`}>
-            <button className="px-8 py-3 bg-[#DD1215] hover:bg-red-700 text-white text-sm font-bold uppercase tracking-widest transition-colors font-dmsans">
-              {slide.cta}
-            </button>
-          </div>
-        </div>
+            <p
+              className={`mt-6 text-sm md:text-base max-w-md font-dmsans ${
+                isRight ? "md:ml-auto" : ""
+              } ${isDark ? "text-white/85" : "text-black/75"}`}
+            >
+              {slide.subtext}
+            </p>
 
-        {/* Placeholder product visual on the opposite side */}
-        <div
-          className={`hidden md:block absolute top-1/2 -translate-y-1/2 w-1/2 h-[80%] ${
-            isRight ? "left-0" : "right-0"
-          } pointer-events-none`}
-        >
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="text-center opacity-30">
-              <div className={`w-40 h-40 mx-auto rounded-full border-4 ${isDark ? "border-red-500" : "border-red-500"}`} />
-              <p className={`mt-4 text-xs uppercase tracking-widest ${isDark ? "text-white/40" : "text-black/40"}`}>
-                Hero product image
-              </p>
+            <div className={`mt-8 flex ${isRight ? "md:justify-end" : ""}`}>
+              <button className="px-8 py-3 bg-[#DD1215] hover:bg-red-700 text-white text-sm font-bold uppercase tracking-widest transition-colors font-dmsans">
+                {slide.cta}
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
