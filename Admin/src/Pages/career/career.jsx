@@ -5,8 +5,13 @@ import JobForm from './JobForm';
 import JobList from './JobList';
 import ConfirmationModal from './ConfirmationModal';
 import { editJob, fetchJob, sendJob, removeJob, fetchApplications, removeApplication, downloadApplicationsExcel } from '../../services/careerServices';
+import { useNavigate } from 'react-router-dom';
+
+const BASE = import.meta.env.VITE_BASE_URL;
+const authHeaders = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` } });
 
 const Career = () => {
+  const navigate = useNavigate();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('create');
@@ -25,6 +30,10 @@ const Career = () => {
   const [showDeleteAppModal, setShowDeleteAppModal] = useState(false);
   const [appToDelete, setAppToDelete] = useState(null);
   const [isDeletingApp, setIsDeletingApp] = useState(false);
+
+  // Pipeline state — tracks which applications are already in pipeline
+  const [pipelineMap, setPipelineMap] = useState({}); // { appId: true/false }
+  const [movingToPipeline, setMovingToPipeline] = useState(null); // appId being moved
 
   // Fetch all jobs
   const fetchJobs = async () => {
@@ -105,12 +114,57 @@ const Career = () => {
       setAppsError(null);
       const response = await fetchApplications();
       const data = response.data?.data || [];
-      setApplications(Array.isArray(data) ? data : []);
+      const apps = Array.isArray(data) ? data : [];
+      setApplications(apps);
+      // Check which apps are already in pipeline
+      checkPipelineStatuses(apps);
     } catch (err) {
       console.error('Error fetching applications:', err);
       setAppsError('Failed to fetch applications. Please try again.');
     } finally {
       setAppsLoading(false);
+    }
+  };
+
+  // Check pipeline status for all applications in bulk
+  const checkPipelineStatuses = async (apps) => {
+    const map = {};
+    await Promise.allSettled(
+      apps.map(async (app) => {
+        try {
+          const res = await axios.get(`${BASE}/hr/recruitment/check/${app._id}`, authHeaders());
+          map[app._id] = res.data.exists;
+        } catch {
+          map[app._id] = false;
+        }
+      })
+    );
+    setPipelineMap(map);
+  };
+
+  // Move a single application to recruitment pipeline
+  const moveToPipeline = async (app) => {
+    try {
+      setMovingToPipeline(app._id);
+      await axios.post(`${BASE}/hr/recruitment/add`, {
+        applicationId:  app._id,
+        candidateName:  app.fullName,
+        candidateEmail: app.email,
+        candidatePhone: app.phone || "",
+        jobTitle:       app.jobTitle,
+        jobType:        app.jobType || "",
+        resumeUrl:      app.resumeFileName || "",
+        source:         "website",
+      }, authHeaders());
+      // Mark as in pipeline
+      setPipelineMap(prev => ({ ...prev, [app._id]: true }));
+      // Navigate to recruitment page
+      navigate("/hr/recruitment");
+    } catch (err) {
+      console.error("Error moving to pipeline:", err);
+      setAppsError(err.response?.data?.message || "Failed to move to pipeline.");
+    } finally {
+      setMovingToPipeline(null);
     }
   };
 
@@ -370,7 +424,7 @@ const Career = () => {
                 <table className="min-w-full divide-y divide-gray-200 text-sm">
                   <thead className="bg-gray-50">
                     <tr>
-                      {["#", "Applied On", "Name", "Email", "Phone", "Job Title", "Type", "Resume", "Status", "Actions"].map(h => (
+                      {["#", "Applied On", "Name", "Email", "Phone", "Job Title", "Type", "Resume", "Status", "Pipeline", "Actions"].map(h => (
                         <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
                           {h}
                         </th>
@@ -404,6 +458,25 @@ const Career = () => {
                                                             "bg-red-50 text-red-700"}`}>
                             {app.status}
                           </span>
+                        </td>
+                        {/* ── Pipeline cell ── */}
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {pipelineMap[app._id] ? (
+                            <button
+                              onClick={() => navigate("/hr/recruitment")}
+                              className="flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full hover:bg-green-100 transition"
+                            >
+                              ✅ In Pipeline →
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => moveToPipeline(app)}
+                              disabled={movingToPipeline === app._id}
+                              className="flex items-center gap-1 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-full hover:bg-blue-100 transition disabled:opacity-50"
+                            >
+                              {movingToPipeline === app._id ? "Moving..." : "Move to Pipeline →"}
+                            </button>
+                          )}
                         </td>
                         <td className="px-4 py-3">
                           <button

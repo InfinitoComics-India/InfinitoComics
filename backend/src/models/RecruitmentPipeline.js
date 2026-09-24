@@ -17,9 +17,7 @@ const RecruitmentPipelineSchema = new mongoose.Schema(
   {
     // ── Link to existing JobApplication ───────────────────────
     applicationId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "JobApplication",
-      required: true,
+      type: mongoose.Schema.Types.Mixed, // ObjectId for real apps, string for manually added
       unique: true,
     },
 

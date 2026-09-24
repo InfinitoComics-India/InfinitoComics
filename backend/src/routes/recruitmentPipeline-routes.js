@@ -8,6 +8,7 @@ const ALL = ["superadmin","hr_manager","manager","team_lead","comics_admin","cha
 const HR  = ["superadmin","hr_manager","manager"];
 
 router.post  ("/add",                                   adminauthenticate, checkRole(HR),  RecruitmentPipelineController.addToPipeline);
+router.get   ("/check/:applicationId",                  adminauthenticate, checkRole(ALL), RecruitmentPipelineController.checkExists);
 router.get   ("/kanban",                                adminauthenticate, checkRole(ALL), RecruitmentPipelineController.getKanbanBoard);
 router.get   ("/list",                                  adminauthenticate, checkRole(ALL), RecruitmentPipelineController.getByStage);
 router.get   ("/stats",                                 adminauthenticate, checkRole(HR),  RecruitmentPipelineController.getStats);

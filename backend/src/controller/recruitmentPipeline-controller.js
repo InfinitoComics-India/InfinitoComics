@@ -3,6 +3,7 @@ const svc = new RecruitmentPipelineService();
 const gp  = (req) => ({ performedBy: req.user._id, performedByName: req.user.name || req.user.username || req.user.email || "Admin" });
 
 const addToPipeline   = async (req,res) => { try { const {performedBy,performedByName}=gp(req); const d=await svc.addToPipeline(req.body,performedBy,performedByName); res.status(201).json({success:true,message:"Added to pipeline.",data:d}); } catch(e){res.status(500).json({success:false,message:e.message});} };
+const checkExists     = async (req,res) => { try { const d=await svc.checkExists(req.params.applicationId); res.status(200).json({success:true,exists:!!d,data:d||null}); } catch(e){res.status(500).json({success:false,message:e.message});} };
 const getKanbanBoard  = async (req,res) => { try { const d=await svc.getKanbanBoard(); res.status(200).json({success:true,data:d}); } catch(e){res.status(500).json({success:false,message:e.message});} };
 const getByStage      = async (req,res) => { try { const d=await svc.getByStage(req.query.stage); res.status(200).json({success:true,data:d,count:d.length}); } catch(e){res.status(500).json({success:false,message:e.message});} };
 const moveStage       = async (req,res) => { try { const {stage,note}=req.body; if(!stage) return res.status(400).json({success:false,message:"stage required."}); const {performedBy,performedByName}=gp(req); const d=await svc.moveStage(req.params.id,stage,note,performedBy,performedByName); res.status(200).json({success:true,message:`Moved to ${stage}.`,data:d}); } catch(e){res.status(e.message.includes("not found")?404:500).json({success:false,message:e.message});} };
@@ -12,4 +13,4 @@ const updateEntry     = async (req,res) => { try { const {performedBy,performedB
 const getStats        = async (req,res) => { try { const d=await svc.getStats(); res.status(200).json({success:true,data:d}); } catch(e){res.status(500).json({success:false,message:e.message});} };
 const deleteEntry     = async (req,res) => { try { const {performedBy,performedByName}=gp(req); await svc.deleteEntry(req.params.id,performedBy,performedByName); res.status(200).json({success:true,message:"Deleted."}); } catch(e){res.status(500).json({success:false,message:e.message});} };
 
-export default { addToPipeline, getKanbanBoard, getByStage, moveStage, addInterview, updateInterview, updateEntry, getStats, deleteEntry };
+export default { addToPipeline, checkExists, getKanbanBoard, getByStage, moveStage, addInterview, updateInterview, updateEntry, getStats, deleteEntry };

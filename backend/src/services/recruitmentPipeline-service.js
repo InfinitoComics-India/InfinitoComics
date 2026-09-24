@@ -11,6 +11,11 @@ class RecruitmentPipelineService {
     this.employeeRepo     = new EmployeeRepository();
   }
 
+  async checkExists(applicationId) {
+    try { return await this.pipelineRepo.findByApplication(applicationId); }
+    catch (e) { console.error("RecruitmentPipelineService.checkExists:", e); throw e; }
+  }
+
   async addToPipeline(data, performedBy, performedByName) {
     try {
       const existing = await this.pipelineRepo.findByApplication(data.applicationId);
