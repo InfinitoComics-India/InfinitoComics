@@ -9,6 +9,7 @@ import UserIcon from "../../../assets/Images/UserIcon.png";
 import {
   RESEARCH_BASE_URL,
   FOUNDATION_BASE_URL,
+  SHOP_BASE_URL,
 } from "../../utils/constants.js";
 import NavbarShimmer from "../../shimmer/landingPageShimmer/navbarShimmer";
 import { getAllBlogs } from "../../services/userServices.js";
@@ -321,9 +322,7 @@ const Header = () => {
             </li>
             <li>
               <a
-                href="https://www.infinitostyle.com/"
-                target="_blank"
-                rel="noopener noreferrer"
+                href={SHOP_BASE_URL}
                 className="uppercase tracking-wider font-semibold hover:text-white cursor-pointer border-l border-gray-600 px-3 flex items-center gap-2"
               >
                 <ShoppingBag size={16} /> SHOP
@@ -355,9 +354,7 @@ const Header = () => {
             About Us
           </Link>
           <a
-            href="https://www.infinitostyle.com/"
-            target="_blank"
-            rel="noopener noreferrer"
+            href={SHOP_BASE_URL}
             className="block font-bold hover:text-white flex items-center gap-2"
           >
             <ShoppingBag size={14} /> SHOP
