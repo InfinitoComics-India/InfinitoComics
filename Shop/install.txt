@@ -1,0 +1,21 @@
+﻿node : npm warn deprecated eslint@9.39.5: This version is no longer supported. Please 
+see https://eslint.org/version-support for other options.
+At line:1 char:1
++ node "C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js" instal ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm warn deprec... other options.:String 
+   ) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+added 217 packages, and audited 218 packages in 40s
+
+46 packages are looking for funding
+  run `npm fund` for details
+
+2 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
