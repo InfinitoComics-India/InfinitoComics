@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import slide1 from "../../assets/hero/slide1.svg";
-// Slides 2 and 3 fall back to slide1 until you export the other variants.
-// Save additional exports as slide2.png / slide3.png in the same folder.
+import slide2 from "../../assets/hero/slide2.svg";
+import slide3 from "../../assets/hero/slide4.svg"; // "reference / bottom one"
 
 const slides = [
   {
@@ -16,41 +16,21 @@ const slides = [
     align: "left",
   },
   {
-    // No image yet — text-only over a light red-tinted background.
+    // Slide 2 artwork already carries the "35% off on The Crimson Bloodline"
+    // copy and Buy Now button, so we render it as-is with no overlay.
     id: 2,
-    image: null,
-    variant: "light",
-    eyebrow: "INFINITO",
-    heading: (
-      <>
-        MONTHLY DROP
-        <br />
-        INCOMING
-      </>
-    ),
-    subtext: "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
-    cta: "Shop Now",
-    align: "right",
+    image: slide2,
+    hideText: true,
+    variant: "dark",
+    align: "left",
   },
   {
-    // No image yet — text-only over the dark red radial background.
+    // Slide 3 uses slide4.svg — the bottom reference artwork with its
+    // own baked-in text.
     id: 3,
-    image: null,
+    image: slide3,
+    hideText: true,
     variant: "dark",
-    eyebrow: null,
-    heading: (
-      <>
-        <span className="text-[#DD1215]">BECOME</span>
-        <br />
-        ONE OF US
-        <br />
-        <span className="text-[#DD1215]">BECOME</span>
-        <br />
-        INFINITO
-      </>
-    ),
-    subtext: "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
-    cta: "Shop Now",
     align: "left",
   },
 ];
