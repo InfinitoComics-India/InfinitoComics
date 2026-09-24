@@ -34,14 +34,14 @@ Interview Details:
 ${interview.conductedBy ? `- Interviewer: ${interview.conductedBy}` : ""}
 ${interview.notes ? `- Additional Notes: ${interview.notes}` : ""}
 
-Please ensure you are available at the scheduled time. If you have any questions or need to reschedule, please reply to this email.
+Please ensure you are available at the scheduled time. If you have any questions or need to reschedule, please reply to this email or contact us at career@infinitohq.com.
 
 We look forward to speaking with you.
 
 Best regards,
 Talent Acquisition Team
 InfinitoComics India
-careers@infinitohq.com`;
+career@infinitohq.com`;
 };
 
 class RecruitmentPipelineService {
@@ -90,19 +90,19 @@ class RecruitmentPipelineService {
           await sendEmail(
             entry.candidateEmail,
             `Offer Letter — ${entry.jobTitle} | InfinitoComics`,
-            `Dear ${entry.candidateName},\n\nWe are delighted to inform you that we would like to extend an offer for the position of ${entry.jobTitle} at InfinitoComics.\n\nOur HR team will be in touch shortly with the formal offer letter and next steps.\n\nCongratulations and welcome to the InfinitoComics family!\n\nBest regards,\nTalent Acquisition Team\nInfinitoComics India`
+            `Dear ${entry.candidateName},\n\nWe are delighted to inform you that we would like to extend an offer for the position of ${entry.jobTitle} at InfinitoComics.\n\nOur HR team will be in touch shortly with the formal offer letter and next steps.\n\nCongratulations and welcome to the InfinitoComics family!\n\nBest regards,\nTalent Acquisition Team\nInfinitoComics India\ncareer@infinitohq.com`
           );
         } else if (newStage === "hired") {
           await sendEmail(
             entry.candidateEmail,
             `Welcome to InfinitoComics! — ${entry.jobTitle}`,
-            `Dear ${entry.candidateName},\n\nCongratulations! We are thrilled to confirm your selection for the role of ${entry.jobTitle} at InfinitoComics.\n\nPlease check your inbox for further onboarding details from our HR team.\n\nWelcome aboard!\n\nBest regards,\nTalent Acquisition Team\nInfinitoComics India`
+            `Dear ${entry.candidateName},\n\nCongratulations! We are thrilled to confirm your selection for the role of ${entry.jobTitle} at InfinitoComics.\n\nPlease check your inbox for further onboarding details from our HR team. For any queries, feel free to reach us at career@infinitohq.com.\n\nWelcome aboard!\n\nBest regards,\nTalent Acquisition Team\nInfinitoComics India\ncareer@infinitohq.com`
           );
         } else if (newStage === "rejected") {
           await sendEmail(
             entry.candidateEmail,
             `Application Update — ${entry.jobTitle} | InfinitoComics`,
-            `Dear ${entry.candidateName},\n\nThank you for your interest in the ${entry.jobTitle} position at InfinitoComics and for taking the time to go through our interview process.\n\nAfter careful consideration, we have decided to move forward with other candidates whose experience more closely matches our current requirements.\n\nWe truly appreciate your effort and wish you all the best in your career journey. We will keep your profile on file for future opportunities.\n\nBest regards,\nTalent Acquisition Team\nInfinitoComics India`
+            `Dear ${entry.candidateName},\n\nThank you for your interest in the ${entry.jobTitle} position at InfinitoComics and for taking the time to go through our interview process.\n\nAfter careful consideration, we have decided to move forward with other candidates whose experience more closely matches our current requirements.\n\nWe truly appreciate your effort and wish you all the best in your career journey. We will keep your profile on file for future opportunities. Feel free to reach out to us at career@infinitohq.com.\n\nBest regards,\nTalent Acquisition Team\nInfinitoComics India\ncareer@infinitohq.com`
           );
         }
       }
