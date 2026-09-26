@@ -22,7 +22,7 @@ const storage = multer.diskStorage({
 // File filter to accept images including SVG
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif|webp|svg\+xml|svg/;
-  const ext name = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
   const mimetype = allowedTypes.test(file.mimetype);
 
   if (mimetype && extname) {
