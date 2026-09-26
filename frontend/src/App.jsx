@@ -35,9 +35,10 @@ import Biography from './pages/biography/Index.jsx'
 import { Toaster } from 'react-hot-toast'
 import Games from './pages/Games/Games.jsx'
 import AnimationPage from './pages/Animation/AnimationPage.jsx'
+import ShopRedirect from './pages/ShopRedirect.jsx'
 import NotFound from './constants/errorPage/NotFound.jsx'
 import NetworkError from './constants/errorPage/NetworkError'
-import { RESEARCH_BASE_URL, FOUNDATION_BASE_URL } from './utils/constants.js'
+import { RESEARCH_BASE_URL, FOUNDATION_BASE_URL, SHOP_BASE_URL } from './utils/constants.js'
 import PrivacyPolicy from './pages/Policy/PrivacyPolicy.jsx';
 import RefundPolicy from './pages/Policy/Refund.jsx';
 import TermsOfUse from './pages/Policy/TermsofUse.jsx';
@@ -52,7 +53,10 @@ import ContactUs from './pages/ContactUs/ContactUs';
 function App() {
   useEffect(() => {
     const listener = (event) => {
-      const allowedOrigins = [RESEARCH_BASE_URL, FOUNDATION_BASE_URL];
+      // Derive origin from SHOP_BASE_URL since it may include a path segment (/shop/).
+      let shopOrigin = SHOP_BASE_URL;
+      try { shopOrigin = new URL(SHOP_BASE_URL).origin; } catch {}
+      const allowedOrigins = [RESEARCH_BASE_URL, FOUNDATION_BASE_URL, shopOrigin];
       if (!allowedOrigins.includes(event.origin)) return;
 
       if (event.data === "request-user") {
@@ -143,7 +147,8 @@ function App() {
               <Route path="/orders/history" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
               <Route path="/contact-us" element={<ContactUs />} />
               <Route path="/animation" element={<AnimationPage />} />
-              <Route path="/shop" element={<Community />} />
+              {/* /shop bounces to the Shop subdomain */}
+              <Route path="/shop" element={<ShopRedirect />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

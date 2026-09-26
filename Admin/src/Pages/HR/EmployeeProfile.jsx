@@ -42,19 +42,19 @@ const EmployeeProfile = () => {
   }, [id]);
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex items-center justify-center h-full">
       <Loader size={32} className="animate-spin text-[#DD1215]" />
     </div>
   );
 
   if (error || !emp) return (
-    <div className="flex items-center justify-center min-h-screen text-red-600">{error || "Employee not found."}</div>
+    <div className="flex items-center justify-center h-full text-red-600">{error || "Employee not found."}</div>
   );
 
   const fmt = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">

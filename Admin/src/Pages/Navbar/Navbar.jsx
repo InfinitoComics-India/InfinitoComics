@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import URLs from '../../Utils/utils.js';
-import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, ChevronDown, Mail, UserCog, Bell, ScrollText, CalendarDays, CalendarOff, Kanban, UserCheck, FolderKanban, TrendingUp, Target, Award as AwardIcon, Building2, IndianRupee, UserPlus, FileArchive } from "lucide-react";
+import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, ChevronDown, Mail, UserCog, Bell, ScrollText, CalendarDays, CalendarOff, Kanban, UserCheck, FolderKanban, TrendingUp, Target, Award as AwardIcon, Building2, IndianRupee, UserPlus, FileArchive, UserSearch, MessagesSquare, BookMarked, LifeBuoy, Sparkles, ShoppingBag, Package, FolderOpen, BarChart3 } from "lucide-react";
 import { message, Popconfirm } from "antd";
 import { getRoles } from '../../Utils/auth.js';
 
 const HR_ALL   = ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin"];
 const HR_AUDIT = ["superadmin","hr_manager"];
+const SHOP_ALL = ["superadmin","shop_admin"]; // Shop access roles
 
 // ── Regular nav items (above HR section) ────────────────────
 const NAV_ITEMS = [
@@ -40,22 +41,51 @@ const HR_ITEMS = [
   { label: "Payroll",         to: "/hr/payroll",      icon: IndianRupee,  roles: HR_ALL   },
   { label: "Onboarding",      to: "/hr/onboarding",   icon: UserPlus,     roles: HR_ALL   },
   { label: "Documents",       to: "/hr/documents",    icon: FileArchive,  roles: HR_ALL   },
+  { label: "Recruitment",     to: "/hr/recruitment",  icon: UserSearch,    roles: HR_ALL   },
+  { label: "Chat",            to: "/hr/chat",          icon: MessagesSquare, roles: HR_ALL  },
+  { label: "Wiki",            to: "/hr/wiki",          icon: BookMarked,    roles: HR_ALL   },
+  { label: "Self Service",    to: "/hr/self-service",  icon: LifeBuoy,      roles: HR_ALL   },
+  { label: "Infinito AI",     to: "/hr/ai",            icon: Sparkles,      roles: HR_ALL   },
+];
+
+// ── Shop sub-items (shown inside collapsible accordion) ────────
+const SHOP_ITEMS = [
+  { 
+    label: "Products", 
+    icon: Package, 
+    roles: SHOP_ALL,
+    isParent: true,
+    subItems: [
+      { label: "All Products",   to: "/shop/products",    icon: Package,     roles: SHOP_ALL },
+      { label: "Add Product",    to: "/shop/products/new", icon: Package,    roles: SHOP_ALL },
+      { label: "Categories",     to: "/shop/categories",  icon: FolderOpen,  roles: SHOP_ALL },
+      { label: "Inventory",      to: "/shop/inventory",   icon: BarChart3,   roles: SHOP_ALL },
+    ]
+  },
 ];
 
 const Navbar = () => {
   const [collapsed, setCollapsed]   = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hrOpen, setHrOpen]         = useState(false); // HR accordion open/closed
+  const [shopOpen, setShopOpen]     = useState(false); // Shop accordion open/closed
+  const [productsOpen, setProductsOpen] = useState(false); // Products subsection open/closed
   const location = useLocation();
   const token = localStorage.getItem("authToken");
   const roles = getRoles();
 
-  const visibleNav = NAV_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
-  const visibleHR  = HR_ITEMS.filter(item  => roles.some(r => item.roles.includes(r)));
-  const showHRSection = visibleHR.length > 0;
+  const visibleNav  = NAV_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
+  const visibleHR   = HR_ITEMS.filter(item  => roles.some(r => item.roles.includes(r)));
+  const visibleShop = SHOP_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
+  const showHRSection   = visibleHR.length > 0;
+  const showShopSection = visibleShop.length > 0;
 
-  // If any HR route is currently active, keep accordion open
-  const isHRActive = visibleHR.some(item => location.pathname.startsWith(`/admin${item.to}`));
+  // If any HR/Shop route is currently active, keep accordion open
+  const isHRActive   = visibleHR.some(item => location.pathname.startsWith(`/admin${item.to}`));
+  const isShopActive = location.pathname.startsWith('/admin/shop');
+  const isProductsActive = location.pathname.startsWith('/admin/shop/products') || 
+                           location.pathname.startsWith('/admin/shop/categories') ||
+                           location.pathname.startsWith('/admin/shop/inventory');
 
   const handleLogout = () => {
     localStorage.clear();
@@ -104,6 +134,127 @@ const Navbar = () => {
             {!collapsed && <span>{label}</span>}
           </Link>
         ))}
+
+        {/* ── Shop System Accordion ── */}
+        {showShopSection && (
+          <div className="mt-2">
+
+            {/* Shop Header — bold, clickable, with chevron */}
+            {!collapsed ? (
+              <button
+                onClick={() => setShopOpen(o => !o)}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-150 group
+                  ${isShopActive ? "bg-gray-800 text-white" : "text-gray-200 hover:bg-gray-700 hover:text-white"}
+                `}
+              >
+                <div className="flex items-center gap-3">
+                  <ShoppingBag size={20} className="shrink-0 text-[#DD1215]" />
+                  <span className="text-sm font-black uppercase tracking-widest text-[#DD1215]">Shop</span>
+                </div>
+                <div className={`transition-transform duration-200 ${(shopOpen || isShopActive) ? "rotate-180" : ""}`}>
+                  <ChevronDown size={16} className="text-[#DD1215]" />
+                </div>
+              </button>
+            ) : (
+              // Collapsed: show just icon as toggle
+              <button
+                onClick={() => setShopOpen(o => !o)}
+                title="Shop"
+                className="flex items-center justify-center w-full py-2.5 rounded-lg text-[#DD1215] hover:bg-gray-700 transition"
+              >
+                <ShoppingBag size={20} />
+              </button>
+            )}
+
+            {/* Shop Sub-items — animated dropdown */}
+            {(shopOpen || isShopActive) && (
+              <div className={`mt-1 space-y-0.5 overflow-hidden ${!collapsed ? "pl-2" : ""}`}>
+                {visibleShop.map((item) => {
+                  if (item.isParent && item.subItems) {
+                    // This is "Products" with sub-items
+                    const Icon = item.icon;
+                    return (
+                      <div key={item.label}>
+                        {/* Products parent item */}
+                        {!collapsed ? (
+                          <button
+                            onClick={() => setProductsOpen(o => !o)}
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-150
+                              ${isProductsActive ? "bg-gray-700 text-white font-medium" : "text-gray-400 hover:bg-gray-700 hover:text-white font-medium"}
+                            `}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Icon size={17} className="shrink-0" />
+                              <span className="text-xs">{item.label}</span>
+                            </div>
+                            <div className={`transition-transform duration-200 ${(productsOpen || isProductsActive) ? "rotate-180" : ""}`}>
+                              <ChevronDown size={14} />
+                            </div>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => setProductsOpen(o => !o)}
+                            title={item.label}
+                            className="flex items-center justify-center w-full py-2 rounded-lg text-gray-400 hover:bg-gray-700 transition"
+                          >
+                            <Icon size={17} />
+                          </button>
+                        )}
+
+                        {/* Products sub-items */}
+                        {(productsOpen || isProductsActive) && (
+                          <div className={`mt-1 space-y-0.5 ${!collapsed ? "pl-4" : ""}`}>
+                            {item.subItems.map(({ label, to, icon: SubIcon }) => (
+                              <Link
+                                key={to}
+                                to={to}
+                                onClick={onNavClick}
+                                title={collapsed ? label : ""}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all duration-150
+                                  ${isActive(to)
+                                    ? "bg-[#DD1215] text-white font-bold"
+                                    : "text-gray-500 hover:bg-gray-700 hover:text-white font-normal"
+                                  }
+                                  ${collapsed ? "justify-center" : ""}
+                                `}
+                              >
+                                <div className="w-1 h-1 rounded-full bg-current shrink-0"></div>
+                                {!collapsed && <span>{label}</span>}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                  
+                  // Regular item (not parent)
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      onClick={onNavClick}
+                      title={collapsed ? item.label : ""}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150
+                        ${isActive(item.to)
+                          ? "bg-[#DD1215] text-white font-bold"
+                          : "text-gray-400 hover:bg-gray-700 hover:text-white font-medium"
+                        }
+                        ${collapsed ? "justify-center" : ""}
+                      `}
+                    >
+                      <Icon size={17} className="shrink-0" />
+                      {!collapsed && (
+                        <span className="text-xs">{item.label}</span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── HR System Accordion ── */}
         {showHRSection && (

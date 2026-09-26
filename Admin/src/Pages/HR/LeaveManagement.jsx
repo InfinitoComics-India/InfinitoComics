@@ -91,7 +91,7 @@ const LeaveManagement = () => {
   const fmt = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }) : "—";
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">

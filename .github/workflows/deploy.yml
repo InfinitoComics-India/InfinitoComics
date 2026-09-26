@@ -14,11 +14,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # Step 2: Set up Node.js
+      # Step 2: Set up Node.js (v20 is required by Tailwind v4 / @tailwindcss/oxide)
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 20
 
       # Step 3: Install dependencies and Build frontend
       - name: Install and Build Frontend
@@ -28,6 +28,7 @@ jobs:
           echo "VITE_RESEARCH_BASE_URL=https://research.infinitohq.com" >> .env
           echo "VITE_FOUNDATION_BASE_URL=https://foundation.infinitohq.com" >> .env
           echo "VITE_FRONTEND_BASE_URL=https://infinitohq.com" >> .env
+          echo "VITE_SHOP_BASE_URL=https://shop.infinitohq.com" >> .env
           npm install
           npm run build
 
@@ -48,6 +49,19 @@ jobs:
           echo "VITE_BASE_URL=https://infinitocomics-68cr.onrender.com" > .env
           npm install
           NODE_OPTIONS=--max-old-space-size=4096 npm run build
+
+      # Step 5b: Install dependencies and Build Shop
+      - name: Install and Build Shop
+        run: |
+          cd Shop
+          echo "VITE_FRONTEND_URL=https://infinitohq.com" > .env
+          echo "VITE_FRONTEND_BASE_URL=https://infinitohq.com" >> .env
+          echo "VITE_BACKEND_URL=https://infinitocomics-68cr.onrender.com" >> .env
+          echo "VITE_RESEARCH_BASE_URL=https://research.infinitohq.com" >> .env
+          echo "VITE_FOUNDATION_BASE_URL=https://foundation.infinitohq.com" >> .env
+          echo "VITE_SHOP_BASE_URL=https://shop.infinitohq.com" >> .env
+          npm install
+          npm run build
 
       # Step 6: Deploy frontend dist to Hostinger
       - name: Deploy Frontend via FTP
@@ -84,6 +98,19 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./Admin/dist/
           server-dir: /public_html/admin/
+          port: 21
+          protocol: ftp
+          security: loose
+
+      # Step 8b: Deploy Shop dist to /public_html/shop/ (shop.infinitohq.com)
+      - name: Deploy Shop via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./Shop/dist/
+          server-dir: /public_html/shop/
           port: 21
           protocol: ftp
           security: loose

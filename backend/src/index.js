@@ -27,6 +27,12 @@ import paymentRoutes from './routes/payment-routes.js'
 import comicChapRoutes from './routes/comicChap-routes.js'
 import researchApplicationRoutes from './routes/researchApplication-routes.js'
 import contactQueryRoutes from './routes/contactQuery-routes.js'
+import gameRoutes from './routes/game-routes.js';
+import artistRoutes from './routes/artist-routes.js';
+import newsletterRoutes from './routes/newsletter-routes.js';
+import searchRoutes from './routes/search-routes.js';
+import readingProgressRoutes from './routes/readingProgress-routes.js';
+import wishlistRoutes from './routes/wishlist-routes.js';
 import employeeRoutes from './routes/employee-routes.js';
 import notificationRoutes from './routes/notification-routes.js';
 import auditLogRoutes from './routes/auditLog-routes.js';
@@ -43,6 +49,14 @@ import salaryRoutes from './routes/salary-routes.js';
 import payrollRoutes from './routes/payroll-routes.js';
 import onboardingRoutes from './routes/onboarding-routes.js';
 import hrDocumentRoutes from './routes/hrDocument-routes.js';
+import recruitmentPipelineRoutes from './routes/recruitmentPipeline-routes.js';
+import chatRoutes from './routes/chat-routes.js';
+import wikiRoutes from './routes/wiki-routes.js';
+import selfServiceRoutes from './routes/selfService-routes.js';
+import aiRoutes from './routes/ai-routes.js';
+import productRoutes from './routes/product-routes.js';
+import categoryRoutes from './routes/category-routes.js';
+import inventoryRoutes from './routes/inventory-routes.js';
 
 
 const allowedOrigins = [
@@ -50,6 +64,7 @@ const allowedOrigins = [
   config.ADMIN_URL,
   config.RESEARCH_URL,
   config.FOUNDATION_URL,
+  config.SHOP_URL,
   // Local development origins
   'http://localhost:5173',
   'http://localhost:5174',
@@ -71,6 +86,9 @@ app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.json({ limit: '50mb' }));
 
+// Serve static files for uploaded shop images
+app.use('/uploads/shop', express.static('uploads/shop'));
+
 // API Routes
 app.use('/api', userroutes);
 app.use('/blog', blogroutes);
@@ -86,8 +104,14 @@ app.use('/comic', comicRoutes);
 app.use('/comicChap', comicChapRoutes);
 app.use('/research-application', researchApplicationRoutes);
 app.use('/contact-query', contactQueryRoutes);
-app.use('/character', characterRoutes);
-app.use('/payment', paymentRoutes);
+app.use('/character',    characterRoutes);
+app.use('/payment',      paymentRoutes);
+app.use('/games',        gameRoutes);
+app.use('/artists',      artistRoutes);
+app.use('/newsletter',   newsletterRoutes);
+app.use('/search',       searchRoutes);
+app.use('/reading-progress', readingProgressRoutes);
+app.use('/wishlist',     wishlistRoutes);
 app.use('/hr/employees',      employeeRoutes);
 app.use('/hr/notifications',  notificationRoutes);
 app.use('/hr/audit',          auditLogRoutes);
@@ -104,6 +128,17 @@ app.use('/hr/salary',         salaryRoutes);
 app.use('/hr/payroll',        payrollRoutes);
 app.use('/hr/onboarding',     onboardingRoutes);
 app.use('/hr/documents',      hrDocumentRoutes);
+app.use('/hr/recruitment',    recruitmentPipelineRoutes);
+app.use('/hr/chat',           chatRoutes);
+app.use('/hr/wiki',           wikiRoutes);
+app.use('/hr/self-service',   selfServiceRoutes);
+app.use('/hr/ai',             aiRoutes);
+
+// Shop routes
+app.use('/shop/products',     productRoutes);
+app.use('/shop/categories',   categoryRoutes);
+app.use('/shop/inventory',    inventoryRoutes);
+
 app.get('/', (req, res) => {
   res.send('Backend is up and running!');
 });

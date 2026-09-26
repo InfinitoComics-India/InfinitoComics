@@ -82,13 +82,13 @@ const EmployeeForm = () => {
   };
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex items-center justify-center h-full">
       <Loader size={32} className="animate-spin text-[#DD1215]" />
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b px-6 py-4 flex items-center gap-4">
         <button onClick={() => navigate("/hr/employees")}

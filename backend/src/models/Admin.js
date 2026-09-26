@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 
-const VALID_ROLES = ["superadmin", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin"];
+const VALID_ROLES = ["superadmin", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin", "shop_admin"];
 
 const AdminSchema = new mongoose.Schema({
   email: {
