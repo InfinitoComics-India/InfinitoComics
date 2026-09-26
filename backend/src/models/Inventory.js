@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const inventoryHistorySchema = new mongoose.Schema({
   product: {
@@ -40,4 +40,5 @@ const inventoryHistorySchema = new mongoose.Schema({
 // Indexes
 inventoryHistorySchema.index({ product: 1, createdAt: -1 });
 
-module.exports = mongoose.model('InventoryHistory', inventoryHistorySchema);
+const InventoryHistory = mongoose.model('InventoryHistory', inventoryHistorySchema);
+export default InventoryHistory;

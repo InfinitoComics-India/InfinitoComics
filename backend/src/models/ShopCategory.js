@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const shopCategorySchema = new mongoose.Schema({
   name: {
@@ -52,4 +52,5 @@ shopCategorySchema.index({ slug: 1 });
 shopCategorySchema.index({ status: 1 });
 shopCategorySchema.index({ displayOrder: 1 });
 
-module.exports = mongoose.model('ShopCategory', shopCategorySchema);
+const ShopCategory = mongoose.model('ShopCategory', shopCategorySchema);
+export default ShopCategory;
