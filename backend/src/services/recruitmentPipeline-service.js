@@ -4,7 +4,53 @@ import NotificationRepository from "../repository/notification-repository.js";
 import EmployeeRepository from "../repository/employee-repository.js";
 import { sendEmail } from "../utils/sendEmail.js";
 
-// ── Interview email template ──────────────────────────────────
+// ── Offer letter email template ──────────────────────────────
+const buildOfferLetterEmail = (candidate, offerDetails, jobTitle) => {
+  const joiningDate = offerDetails.joiningDate
+    ? new Date(offerDetails.joiningDate).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })
+    : "To be discussed";
+  const today = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
+
+  return `OFFER LETTER
+
+Date: ${today}
+
+To,
+${candidate.candidateName}
+
+Dear ${candidate.candidateName.split(" ")[0]},
+
+Subject: Offer of Employment — ${jobTitle} at InfinitoComics India
+
+We are delighted to extend this formal offer of employment to you for the position of ${jobTitle} at InfinitoComics India Private Limited.
+
+After a thorough evaluation of your qualifications and interviews, we are pleased to offer you the following terms:
+
+POSITION DETAILS
+- Designation: ${jobTitle}
+- Employment Type: Full-Time
+- Joining Date: ${joiningDate}
+${offerDetails.salary ? `- Compensation: ₹${Number(offerDetails.salary).toLocaleString("en-IN")} per annum (CTC)` : ""}
+
+${offerDetails.note ? `ADDITIONAL NOTES\n${offerDetails.note}\n` : ""}
+NEXT STEPS
+Please review this offer and confirm your acceptance by replying to this email at career@infinitohq.com within 3 working days.
+
+Upon acceptance, our HR team will share the complete employment agreement, onboarding details, and any further documentation required.
+
+We are excited about the possibility of you joining the InfinitoComics family and contributing to our mission of bringing world-class comics to India.
+
+Warm regards,
+
+Talent Acquisition Team
+InfinitoComics India Private Limited
+career@infinitohq.com
+https://infinitohq.com
+
+---
+This offer is conditional upon successful background verification and submission of required documents.
+This letter is confidential and intended solely for ${candidate.candidateName}.`;
+};
 const buildInterviewEmail = (candidate, interview, jobTitle) => {
   const dateStr = interview.scheduledAt
     ? new Date(interview.scheduledAt).toLocaleString("en-IN", {
@@ -77,21 +123,33 @@ class RecruitmentPipelineService {
     catch (e) { console.error("RecruitmentPipelineService.getByStage:", e); throw e; }
   }
 
-  async moveStage(id, newStage, note, performedBy, performedByName) {
+  async moveStage(id, newStage, note, performedBy, performedByName, offerDetails = null) {
     try {
       const entry = await this.pipelineRepo.getById(id);
       if (!entry) throw new Error("Pipeline entry not found.");
+
+      // If offer_sent — save offer details to the record first
+      if (newStage === "offer_sent" && offerDetails) {
+        await this.pipelineRepo.findByIdandUpdate(id, {
+          offerDetails: {
+            salary:      offerDetails.salary,
+            joiningDate: offerDetails.joiningDate ? new Date(offerDetails.joiningDate) : undefined,
+            note:        offerDetails.note || "",
+            sentAt:      new Date(),
+          },
+        });
+      }
+
       const updated = await this.pipelineRepo.moveStage(id, newStage, performedBy, note);
       await this.auditRepo.create({ performedBy, performedByName, action: "STATUS_CHANGE", entity: "RecruitmentPipeline", entityId: id, oldValue: { stage: entry.stage }, newValue: { stage: newStage }, description: `${entry.candidateName} moved from ${entry.stage} → ${newStage}. ${note||""}` });
 
       // ── Send stage-change email to candidate ──────────────
       if (entry.candidateEmail) {
         if (newStage === "offer_sent") {
-          await sendEmail(
-            entry.candidateEmail,
-            `Offer Letter — ${entry.jobTitle} | InfinitoComics`,
-            `Dear ${entry.candidateName},\n\nWe are delighted to inform you that we would like to extend an offer for the position of ${entry.jobTitle} at InfinitoComics.\n\nOur HR team will be in touch shortly with the formal offer letter and next steps.\n\nCongratulations and welcome to the InfinitoComics family!\n\nBest regards,\nTalent Acquisition Team\nInfinitoComics India\ncareer@infinitohq.com`
-          );
+          const offerDetails = data?.offerDetails || entry.offerDetails || {};
+          const subject = `Offer Letter — ${entry.jobTitle} | InfinitoComics India`;
+          const body    = buildOfferLetterEmail(entry, offerDetails, entry.jobTitle);
+          await sendEmail(entry.candidateEmail, subject, body);
         } else if (newStage === "hired") {
           await sendEmail(
             entry.candidateEmail,

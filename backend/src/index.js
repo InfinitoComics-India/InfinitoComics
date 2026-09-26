@@ -27,6 +27,12 @@ import paymentRoutes from './routes/payment-routes.js'
 import comicChapRoutes from './routes/comicChap-routes.js'
 import researchApplicationRoutes from './routes/researchApplication-routes.js'
 import contactQueryRoutes from './routes/contactQuery-routes.js'
+import gameRoutes from './routes/game-routes.js';
+import artistRoutes from './routes/artist-routes.js';
+import newsletterRoutes from './routes/newsletter-routes.js';
+import searchRoutes from './routes/search-routes.js';
+import readingProgressRoutes from './routes/readingProgress-routes.js';
+import wishlistRoutes from './routes/wishlist-routes.js';
 import employeeRoutes from './routes/employee-routes.js';
 import notificationRoutes from './routes/notification-routes.js';
 import auditLogRoutes from './routes/auditLog-routes.js';
@@ -91,8 +97,14 @@ app.use('/comic', comicRoutes);
 app.use('/comicChap', comicChapRoutes);
 app.use('/research-application', researchApplicationRoutes);
 app.use('/contact-query', contactQueryRoutes);
-app.use('/character', characterRoutes);
-app.use('/payment', paymentRoutes);
+app.use('/character',    characterRoutes);
+app.use('/payment',      paymentRoutes);
+app.use('/games',        gameRoutes);
+app.use('/artists',      artistRoutes);
+app.use('/newsletter',   newsletterRoutes);
+app.use('/search',       searchRoutes);
+app.use('/reading-progress', readingProgressRoutes);
+app.use('/wishlist',     wishlistRoutes);
 app.use('/hr/employees',      employeeRoutes);
 app.use('/hr/notifications',  notificationRoutes);
 app.use('/hr/audit',          auditLogRoutes);
