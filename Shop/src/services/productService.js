@@ -1,18 +1,17 @@
 import axios from "axios";
 import { BACKEND_URL } from "../utils/constants";
 
-// Category card artwork already has "INFINITO T-Shirts" etc. baked in,
-// so we import them as-is and skip the label overlay on the grid.
+// Branded category artwork bundled with the app. Admin-created categories
+// with a matching slug (e.g. "tshirts", "hoodies") pick these up as a nicer
+// fallback when the admin hasn't uploaded a custom image. If a category
+// doesn't match, we render a red name-only card in the UI — never one of
+// the static preset categories.
 import tshirtsImg   from "../assets/categories/tshirts.svg";
 import accessoryImg from "../assets/categories/accessory.svg";
 import hoodiesImg   from "../assets/categories/hoodies.svg";
 import totebagsImg  from "../assets/categories/totebags.svg";
-// TODO: save `Shop/src/assets/categories/caps.svg` and swap this fallback.
 const capsImg = tshirtsImg;
 
-// Fallback artwork used when a backend category doesn't have its own image.
-// Matches on slug (lowercased) so admin-created categories like "tshirts",
-// "hoodies", "accessory", etc. still pick up the branded card if they exist.
 const fallbackCategoryImages = {
   tshirts: tshirtsImg,
   "t-shirts": tshirtsImg,
@@ -39,27 +38,17 @@ const resolveImageUrl = (url) => {
   return `${base}${path}`;
 };
 
-// Static fallback used when the backend is unreachable, so the shop keeps
-// rendering something recognizable during outages.
-const staticCategories = [
-  { id: 1, _id: "static-tshirts",  name: "T-Shirts",  slug: "tshirts",   image: tshirtsImg },
-  { id: 2, _id: "static-caps",     name: "Caps/Hats", slug: "caps",      image: capsImg },
-  { id: 3, _id: "static-accessory",name: "Accessory", slug: "accessory", image: accessoryImg },
-  { id: 4, _id: "static-hoodies",  name: "Hoodies",   slug: "hoodies",   image: hoodiesImg },
-  { id: 5, _id: "static-totebags", name: "Tote Bags", slug: "totebags",  image: totebagsImg },
-];
+// Empty sync exports kept for backward-compatibility with components that
+// still import these names. New code should always call the async fetchers
+// below so the shop is 100% driven by admin data.
+export const categories = [];
+export const products = [];
 
-// Kept as a synchronous export for existing components that read it directly.
-// New code should call `fetchCategories()` and render the live list.
-export const categories = staticCategories;
-
-// Fetch categories from the backend. Falls back to static data on error so
-// the storefront never renders a blank grid.
+// ─── CATEGORIES ───────────────────────────────────────────────────────────
 export const fetchCategories = async () => {
   try {
     const { data } = await axios.get(`${BACKEND_URL}/shop/categories/public/all`);
     const list = Array.isArray(data?.data) ? data.data : [];
-    if (list.length === 0) return staticCategories;
 
     return list.map((cat) => ({
       id: cat._id,
@@ -75,123 +64,12 @@ export const fetchCategories = async () => {
       status: cat.status,
     }));
   } catch (err) {
-    console.error("Failed to fetch categories, using static fallback:", err);
-    return staticCategories;
+    console.error("Failed to fetch categories:", err);
+    return [];
   }
 };
 
 // ─── PRODUCTS ─────────────────────────────────────────────────────────────
-// Static products kept as fallback until the backend product list is populated.
-export const products = [
-  {
-    id: "p1",
-    name: "INFINITO",
-    title: "Special Edition Crimson Bloodline T-Shirt",
-    description:
-      "The Special Edition Crimson Red T-Shirt is designed to capture the energy, passion, and spirit of INFINITO. Featuring a deep crimson red color with a clean, statement-driven design, this piece is made to stand out while keeping things effortlessly wearable.",
-    price: 1299,
-    mrp: 2599,
-    category: "tshirts",
-    image: "",
-    gallery: ["", "", "", ""],
-    sizes: ["XS", "S", "M", "L", "XL", "XXL"],
-    rating: 4.5,
-    reviewsCount: 175,
-    ratingBreakdown: { 5: 35, 4: 35, 3: 35, 2: 35, 1: 35 },
-    specs: {
-      "Sleeve Length": "Half Sleeve",
-      Fit: "Regular Fit",
-      Length: "Regular",
-      Transparency: "Opaque",
-    },
-  },
-  {
-    id: "p2",
-    name: "INFINITO",
-    title: "Elegant Edition White-Red Hoodie",
-    description:
-      "Premium quality hoodie with the signature INFINITO design. Perfect for casual outings and comic conventions.",
-    price: 1499,
-    mrp: 2999,
-    category: "hoodies",
-    image: "",
-    gallery: ["", "", "", ""],
-    sizes: ["S", "M", "L", "XL", "XXL"],
-    rating: 4.7,
-    reviewsCount: 92,
-    ratingBreakdown: { 5: 40, 4: 30, 3: 15, 2: 4, 1: 3 },
-    specs: {
-      "Sleeve Length": "Full Sleeve",
-      Fit: "Regular Fit",
-      Length: "Regular",
-      Transparency: "Opaque",
-    },
-  },
-  {
-    id: "p3",
-    name: "INFINITO",
-    title: "Special Edition Crimson Bloodline",
-    description: "Limited edition merchandise.",
-    price: 1499,
-    mrp: 2999,
-    category: "tshirts",
-    image: "",
-    gallery: ["", "", "", ""],
-    sizes: ["S", "M", "L", "XL"],
-    rating: 4.3,
-    reviewsCount: 58,
-    ratingBreakdown: { 5: 25, 4: 20, 3: 8, 2: 3, 1: 2 },
-    specs: {
-      "Sleeve Length": "Half Sleeve",
-      Fit: "Regular Fit",
-      Length: "Regular",
-      Transparency: "Opaque",
-    },
-  },
-  {
-    id: "p4",
-    name: "INFINITO",
-    title: "Elegant Edition White-Red Hoodie",
-    description: "Premium comfort hoodie.",
-    price: 1499,
-    mrp: 2999,
-    category: "hoodies",
-    image: "",
-    gallery: ["", "", "", ""],
-    sizes: ["M", "L", "XL"],
-    rating: 4.6,
-    reviewsCount: 41,
-    ratingBreakdown: { 5: 22, 4: 12, 3: 5, 2: 1, 1: 1 },
-    specs: {
-      "Sleeve Length": "Full Sleeve",
-      Fit: "Regular Fit",
-      Length: "Regular",
-      Transparency: "Opaque",
-    },
-  },
-  {
-    id: "p5",
-    name: "INFINITO",
-    title: "Elegant Edition White-Red Hoodie",
-    description: "Signature merchandise.",
-    price: 1499,
-    mrp: 2999,
-    category: "hoodies",
-    image: "",
-    gallery: ["", "", "", ""],
-    sizes: ["S", "M", "L"],
-    rating: 4.4,
-    reviewsCount: 33,
-    ratingBreakdown: { 5: 18, 4: 10, 3: 3, 2: 1, 1: 1 },
-    specs: {
-      "Sleeve Length": "Full Sleeve",
-      Fit: "Regular Fit",
-      Length: "Regular",
-      Transparency: "Opaque",
-    },
-  },
-];
-
 // Normalize a backend product to the shape the UI already understands.
 const mapBackendProduct = (p) => ({
   id: p._id,
@@ -214,20 +92,19 @@ const mapBackendProduct = (p) => ({
   stock: p.stock,
 });
 
-// Fetch all active products from the backend. Falls back to static list on error.
+// All published (active) products.
 export const fetchProducts = async () => {
   try {
     const { data } = await axios.get(`${BACKEND_URL}/shop/products/public/all`);
     const list = Array.isArray(data?.data) ? data.data : [];
-    if (list.length === 0) return products;
     return list.map(mapBackendProduct);
   } catch (err) {
-    console.error("Failed to fetch products, using static fallback:", err);
-    return products;
+    console.error("Failed to fetch products:", err);
+    return [];
   }
 };
 
-// Fetch featured products (used on the shop home).
+// Featured products only (Top Trending row).
 export const fetchFeaturedProducts = async (limit = 10) => {
   try {
     const { data } = await axios.get(
@@ -235,15 +112,14 @@ export const fetchFeaturedProducts = async (limit = 10) => {
       { params: { limit } }
     );
     const list = Array.isArray(data?.data) ? data.data : [];
-    if (list.length === 0) return products;
     return list.map(mapBackendProduct);
   } catch (err) {
-    console.error("Failed to fetch featured products, using static fallback:", err);
-    return products;
+    console.error("Failed to fetch featured products:", err);
+    return [];
   }
 };
 
-// Fetch a single product by slug (used on the product detail page).
+// Single product by slug (product detail page).
 export const fetchProductBySlug = async (slug) => {
   try {
     const { data } = await axios.get(
@@ -257,7 +133,7 @@ export const fetchProductBySlug = async (slug) => {
   }
 };
 
-// Fetch all products for a category slug.
+// All products in a category (category listing page).
 export const fetchProductsByCategory = async (categorySlug) => {
   try {
     const { data } = await axios.get(
@@ -267,11 +143,12 @@ export const fetchProductsByCategory = async (categorySlug) => {
     return list.map(mapBackendProduct);
   } catch (err) {
     console.error("Failed to fetch products by category:", err);
-    return products.filter((p) => p.category === categorySlug);
+    return [];
   }
 };
 
-// Kept for existing components that still use the sync API against the static list.
-export const getProductById = (id) => products.find((p) => p.id === id);
-export const getProductsByCategory = (slug) =>
-  slug ? products.filter((p) => p.category === slug) : products;
+// Legacy sync helpers — now backed by an empty list. Any page still using
+// them will render an empty state; update those pages to call the async
+// fetchers above when you're ready.
+export const getProductById = () => null;
+export const getProductsByCategory = () => [];
