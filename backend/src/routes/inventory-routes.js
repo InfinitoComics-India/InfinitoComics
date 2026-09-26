@@ -5,60 +5,30 @@ import { adminauthenticate } from '../middleware/adminauth.js';
 import { checkRole } from "../middleware/roleCheck.js";
 
 // All inventory routes are admin-protected
-router.get(
-  "/",
+const adminGuard = [
   adminauthenticate,
   checkRole(["superadmin", "shop_admin"]),
-  inventoryController.getAllInventory
-);
+];
 
-router.get(
-  "/product/:productId",
-  adminauthenticate,
-  checkRole(["superadmin", "shop_admin"]),
-  inventoryController.getInventoryByProductId
-);
+// -----------------------------------------------------------------------------
+// IMPORTANT: Express matches routes in declaration order. Specific literal
+// paths (`/low-stock`, `/out-of-stock`, `/export`, `/bulk-update`) MUST be
+// declared BEFORE parameterized paths (`/:productId`, `/:productId/history`)
+// otherwise Express will treat "low-stock" as a productId and 404 the request.
+// -----------------------------------------------------------------------------
 
-router.patch(
-  "/:productId",
-  adminauthenticate,
-  checkRole(["superadmin", "shop_admin"]),
-  inventoryController.updateInventoryStock
-);
+// Overview + specific product-status lists
+router.get("/", ...adminGuard, inventoryController.getAllInventory);
+router.get("/low-stock", ...adminGuard, inventoryController.getLowStockProducts);
+router.get("/out-of-stock", ...adminGuard, inventoryController.getOutOfStockProducts);
+router.get("/export", ...adminGuard, inventoryController.exportInventoryReport);
 
-router.patch(
-  "/bulk-update",
-  adminauthenticate,
-  checkRole(["superadmin", "shop_admin"]),
-  inventoryController.bulkUpdateInventory
-);
+// Bulk update (must come BEFORE `PATCH /:productId`)
+router.patch("/bulk-update", ...adminGuard, inventoryController.bulkUpdateInventory);
 
-router.get(
-  "/:productId/history",
-  adminauthenticate,
-  checkRole(["superadmin", "shop_admin"]),
-  inventoryController.getInventoryHistory
-);
-
-router.get(
-  "/low-stock",
-  adminauthenticate,
-  checkRole(["superadmin", "shop_admin"]),
-  inventoryController.getLowStockProducts
-);
-
-router.get(
-  "/out-of-stock",
-  adminauthenticate,
-  checkRole(["superadmin", "shop_admin"]),
-  inventoryController.getOutOfStockProducts
-);
-
-router.get(
-  "/export",
-  adminauthenticate,
-  checkRole(["superadmin", "shop_admin"]),
-  inventoryController.exportInventoryReport
-);
+// Product-scoped operations
+router.get("/product/:productId", ...adminGuard, inventoryController.getInventoryByProductId);
+router.get("/:productId/history", ...adminGuard, inventoryController.getInventoryHistory);
+router.patch("/:productId", ...adminGuard, inventoryController.updateInventoryStock);
 
 export default router;

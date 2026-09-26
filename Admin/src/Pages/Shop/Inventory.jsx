@@ -1,36 +1,87 @@
-import { useState, useEffect } from 'react';
-import { 
-  Search, Filter, AlertTriangle, AlertCircle, TrendingUp, TrendingDown,
-  Package, Download, Edit2, History, RefreshCw
+import React, { useState, useEffect } from 'react';
+import {
+  Search, AlertTriangle, AlertCircle, TrendingUp,
+  Package, Download, Edit2, RefreshCw,
 } from 'lucide-react';
-import { 
-  getAllInventory, 
+import {
+  getAllInventory,
   updateInventoryStock,
-  getLowStockProducts,
-  getOutOfStockProducts,
-  exportInventoryReport
+  exportInventoryReport,
 } from '../../services/shopServices/inventoryService';
+import { BACKEND_URL } from '../../Utils/constant';
 import Swal from 'sweetalert2';
+
+// Handle any of the response shapes our services return.
+const extractList = (response) => {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.data?.data)) return response.data.data;
+  return [];
+};
+
+// Uploaded images arrive as "/uploads/shop/xxx.png" — prepend backend host.
+const resolveImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  const base = BACKEND_URL?.replace(/\/$/, '') || '';
+  const path = url.startsWith('/') ? url : `/${url}`;
+  return `${base}${path}`;
+};
+
+// Backend `Product` docs are what /shop/inventory returns. Map each doc to
+// the flat shape this page renders, with safe defaults so a missing field
+// (missing category, no images, etc.) never crashes the render.
+const mapProduct = (p) => {
+  const stock = Number.isFinite(p.stock) ? p.stock : 0;
+  const reserved = Number.isFinite(p.reservedStock) ? p.reservedStock : 0;
+  const cost = Number.isFinite(p.costPrice) ? p.costPrice : 0;
+  const stockStatus =
+    stock === 0 ? 'out_of_stock' : stock <= 10 ? 'low_stock' : 'in_stock';
+
+  const primaryImage = Array.isArray(p.images)
+    ? (p.images.find((i) => i?.isPrimary) || p.images[0])?.url || ''
+    : '';
+
+  return {
+    _id: p._id,
+    productName: p.name || 'Untitled product',
+    slug: p.slug || '',
+    categoryName: p.category?.name || 'Uncategorized',
+    categorySlug: p.category?.slug || '',
+    currentStock: stock,
+    reservedStock: reserved,
+    availableStock: Math.max(stock - reserved, 0),
+    costPrice: cost,
+    retailPrice: Number.isFinite(p.basePrice) ? p.basePrice : 0,
+    salePrice: Number.isFinite(p.salePrice) ? p.salePrice : null,
+    status: stockStatus,
+    productStatus: p.status || 'draft',
+    trackInventory: p.trackInventory !== false,
+    imageUrl: resolveImageUrl(primaryImage),
+    variants: Array.isArray(p.variants) ? p.variants : [],
+  };
+};
 
 const Inventory = () => {
   const [inventory, setInventory] = useState([]);
   const [filteredInventory, setFilteredInventory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [stockFilter, setStockFilter] = useState('all'); // all, low, out, in
-  
-  // Stats
+  const [stockFilter, setStockFilter] = useState('all'); // all | in | low | out
   const [stats, setStats] = useState({
     totalProducts: 0,
     lowStock: 0,
     outOfStock: 0,
-    totalValue: 0
+    totalValue: 0,
   });
 
-  // Edit modal
+  // Edit-stock modal state
   const [editingProduct, setEditingProduct] = useState(null);
   const [editStock, setEditStock] = useState('');
   const [editReason, setEditReason] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchInventory();
@@ -38,197 +89,126 @@ const Inventory = () => {
 
   useEffect(() => {
     applyFilters();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inventory, searchTerm, stockFilter]);
 
   const fetchInventory = async () => {
     try {
       setLoading(true);
       const response = await getAllInventory();
-      
-      // Mock data for testing
-      const mockInventory = [
-        {
-          _id: '1',
-          productId: 'p1',
-          productName: 'Infinito Logo T-Shirt',
-          sku: 'INF-TSH-001',
-          category: 'tshirts',
-          currentStock: 45,
-          lowStockThreshold: 10,
-          reservedStock: 5,
-          availableStock: 40,
-          costPrice: 299,
-          retailPrice: 599,
-          status: 'in_stock',
-          lastRestocked: '2024-02-01',
-          variants: [
-            { name: 'S', stock: 10 },
-            { name: 'M', stock: 15 },
-            { name: 'L', stock: 12 },
-            { name: 'XL', stock: 8 }
-          ]
-        },
-        {
-          _id: '2',
-          productId: 'p2',
-          productName: 'Quantum Hoodie',
-          sku: 'INF-HOD-002',
-          category: 'hoodies',
-          currentStock: 8,
-          lowStockThreshold: 10,
-          reservedStock: 2,
-          availableStock: 6,
-          costPrice: 599,
-          retailPrice: 1299,
-          status: 'low_stock',
-          lastRestocked: '2024-01-28',
-          variants: [
-            { name: 'M', stock: 3 },
-            { name: 'L', stock: 3 },
-            { name: 'XL', stock: 2 }
-          ]
-        },
-        {
-          _id: '3',
-          productId: 'p3',
-          productName: 'Comic Cap Black',
-          sku: 'INF-CAP-003',
-          category: 'caps',
-          currentStock: 0,
-          lowStockThreshold: 5,
-          reservedStock: 0,
-          availableStock: 0,
-          costPrice: 199,
-          retailPrice: 399,
-          status: 'out_of_stock',
-          lastRestocked: '2024-01-15',
-          variants: []
-        },
-        {
-          _id: '4',
-          productId: 'p4',
-          productName: 'Infinito Tote Bag',
-          sku: 'INF-TOT-004',
-          category: 'totebags',
-          currentStock: 25,
-          lowStockThreshold: 8,
-          reservedStock: 3,
-          availableStock: 22,
-          costPrice: 149,
-          retailPrice: 349,
-          status: 'in_stock',
-          lastRestocked: '2024-02-05',
-          variants: []
-        },
-        {
-          _id: '5',
-          productId: 'p5',
-          productName: 'Character Sticker Pack',
-          sku: 'INF-ACC-005',
-          category: 'accessory',
-          currentStock: 6,
-          lowStockThreshold: 15,
-          reservedStock: 1,
-          availableStock: 5,
-          costPrice: 49,
-          retailPrice: 99,
-          status: 'low_stock',
-          lastRestocked: '2024-01-20',
-          variants: []
-        }
-      ];
+      const raw = extractList(response);
+      const items = raw.map(mapProduct);
+      setInventory(items);
 
-      const data = response.data || mockInventory;
-      setInventory(data);
-
-      // Calculate stats
-      const totalProducts = data.length;
-      const lowStock = data.filter(item => item.status === 'low_stock').length;
-      const outOfStock = data.filter(item => item.status === 'out_of_stock').length;
-      const totalValue = data.reduce((sum, item) => sum + (item.currentStock * item.costPrice), 0);
-
+      const totalProducts = items.length;
+      const lowStock = items.filter((i) => i.status === 'low_stock').length;
+      const outOfStock = items.filter((i) => i.status === 'out_of_stock').length;
+      const totalValue = items.reduce(
+        (sum, i) => sum + i.currentStock * i.costPrice,
+        0
+      );
       setStats({ totalProducts, lowStock, outOfStock, totalValue });
     } catch (error) {
       console.error('Failed to fetch inventory:', error);
-      Swal.fire('Error', 'Failed to load inventory data', 'error');
+      Swal.fire(
+        'Error',
+        error.response?.data?.message || 'Failed to load inventory data',
+        'error'
+      );
+      setInventory([]);
+      setStats({ totalProducts: 0, lowStock: 0, outOfStock: 0, totalValue: 0 });
     } finally {
       setLoading(false);
     }
   };
 
   const applyFilters = () => {
-    let filtered = [...inventory];
+    // Defensive: always work off an array.
+    const source = Array.isArray(inventory) ? inventory : [];
+    let filtered = [...source];
 
-    // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(item =>
-        item.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.sku.toLowerCase().includes(searchTerm.toLowerCase())
+      const q = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (item) =>
+          item.productName.toLowerCase().includes(q) ||
+          item.slug.toLowerCase().includes(q) ||
+          item.categoryName.toLowerCase().includes(q)
       );
     }
 
-    // Stock filter
     if (stockFilter !== 'all') {
-      if (stockFilter === 'low') {
-        filtered = filtered.filter(item => item.status === 'low_stock');
-      } else if (stockFilter === 'out') {
-        filtered = filtered.filter(item => item.status === 'out_of_stock');
-      } else if (stockFilter === 'in') {
-        filtered = filtered.filter(item => item.status === 'in_stock');
-      }
+      const target =
+        stockFilter === 'in'
+          ? 'in_stock'
+          : stockFilter === 'low'
+          ? 'low_stock'
+          : 'out_of_stock';
+      filtered = filtered.filter((item) => item.status === target);
     }
 
     setFilteredInventory(filtered);
   };
 
-  const handleEditStock = (product) => {
+  const openEditModal = (product) => {
     setEditingProduct(product);
-    setEditStock(product.currentStock.toString());
+    setEditStock(String(product.currentStock ?? 0));
+    setEditReason('');
+  };
+
+  const closeEditModal = () => {
+    setEditingProduct(null);
+    setEditStock('');
     setEditReason('');
   };
 
   const handleSaveStock = async () => {
-    if (!editStock || isNaN(editStock) || parseInt(editStock) < 0) {
+    const parsed = parseInt(editStock, 10);
+    if (Number.isNaN(parsed) || parsed < 0) {
       Swal.fire('Error', 'Please enter a valid stock quantity', 'error');
       return;
     }
-
-    if (!editReason.trim()) {
-      Swal.fire('Error', 'Please provide a reason for stock adjustment', 'error');
+    if (!editReason) {
+      Swal.fire('Error', 'Please select a reason for stock adjustment', 'error');
       return;
     }
 
     try {
-      const stockChange = parseInt(editStock) - editingProduct.currentStock;
-      
+      setSaving(true);
+      // Backend expects PATCH /shop/inventory/:productId with { stock, reason, notes }
       await updateInventoryStock(editingProduct._id, {
-        stock: parseInt(editStock),
+        stock: parsed,
         reason: editReason,
-        change: stockChange
       });
-
       Swal.fire({
         icon: 'success',
         title: 'Stock Updated',
-        text: `${editingProduct.productName} stock updated to ${editStock}`,
-        timer: 2000,
-        showConfirmButton: false
+        text: `${editingProduct.productName} stock updated to ${parsed}`,
+        timer: 1800,
+        showConfirmButton: false,
       });
-
-      setEditingProduct(null);
-      setEditStock('');
-      setEditReason('');
+      closeEditModal();
       fetchInventory();
     } catch (error) {
       console.error('Update stock error:', error);
-      Swal.fire('Error', 'Failed to update stock', 'error');
+      Swal.fire(
+        'Error',
+        error.response?.data?.message || 'Failed to update stock',
+        'error'
+      );
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleExportReport = async (format) => {
+  const handleExportReport = async (format = 'csv') => {
     try {
       const blob = await exportInventoryReport(format);
-      const url = window.URL.createObjectURL(blob);
+      // The service returns response.data for the raw axios call; it may
+      // already be a Blob (responseType: blob) — normalize both cases.
+      const finalBlob =
+        blob instanceof Blob ? blob : new Blob([String(blob)], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(finalBlob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `inventory-report-${new Date().toISOString().split('T')[0]}.${format}`;
@@ -236,34 +216,48 @@ const Inventory = () => {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      
       Swal.fire({
         icon: 'success',
         title: 'Report Downloaded',
         timer: 1500,
-        showConfirmButton: false
+        showConfirmButton: false,
       });
     } catch (error) {
       console.error('Export error:', error);
-      Swal.fire('Error', 'Failed to export report', 'error');
+      Swal.fire(
+        'Error',
+        error.response?.data?.message || 'Failed to export report',
+        'error'
+      );
     }
   };
 
-  const getStockStatusColor = (status) => {
+  const stockBadge = (status) => {
     switch (status) {
-      case 'in_stock': return 'text-green-600 bg-green-50';
-      case 'low_stock': return 'text-orange-600 bg-orange-50';
-      case 'out_of_stock': return 'text-red-600 bg-red-50';
-      default: return 'text-gray-600 bg-gray-50';
-    }
-  };
-
-  const getStockStatusIcon = (status) => {
-    switch (status) {
-      case 'in_stock': return <TrendingUp className="w-4 h-4" />;
-      case 'low_stock': return <AlertTriangle className="w-4 h-4" />;
-      case 'out_of_stock': return <AlertCircle className="w-4 h-4" />;
-      default: return <Package className="w-4 h-4" />;
+      case 'in_stock':
+        return {
+          className: 'text-green-700 bg-green-50 border border-green-200',
+          icon: <TrendingUp className="w-3.5 h-3.5" />,
+          label: 'In Stock',
+        };
+      case 'low_stock':
+        return {
+          className: 'text-orange-700 bg-orange-50 border border-orange-200',
+          icon: <AlertTriangle className="w-3.5 h-3.5" />,
+          label: 'Low Stock',
+        };
+      case 'out_of_stock':
+        return {
+          className: 'text-red-700 bg-red-50 border border-red-200',
+          icon: <AlertCircle className="w-3.5 h-3.5" />,
+          label: 'Out of Stock',
+        };
+      default:
+        return {
+          className: 'text-gray-600 bg-gray-50 border border-gray-200',
+          icon: <Package className="w-3.5 h-3.5" />,
+          label: 'Unknown',
+        };
     }
   };
 
@@ -271,7 +265,7 @@ const Inventory = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" />
           <p className="mt-4 text-gray-600">Loading inventory...</p>
         </div>
       </div>
@@ -286,74 +280,51 @@ const Inventory = () => {
         <p className="text-sm text-gray-600 mt-1">Track and manage product stock levels</p>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Total Products</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalProducts}</p>
-            </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Package className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Low Stock</p>
-              <p className="text-2xl font-bold text-orange-600">{stats.lowStock}</p>
-            </div>
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-orange-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Out of Stock</p>
-              <p className="text-2xl font-bold text-red-600">{stats.outOfStock}</p>
-            </div>
-            <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-              <AlertCircle className="w-6 h-6 text-red-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Total Value</p>
-              <p className="text-2xl font-bold text-gray-900">₹{stats.totalValue.toLocaleString()}</p>
-            </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-        </div>
+        <StatCard
+          label="Total Products"
+          value={stats.totalProducts}
+          Icon={Package}
+          tone="blue"
+        />
+        <StatCard
+          label="Low Stock"
+          value={stats.lowStock}
+          Icon={AlertTriangle}
+          tone="orange"
+          valueClass="text-orange-600"
+        />
+        <StatCard
+          label="Out of Stock"
+          value={stats.outOfStock}
+          Icon={AlertCircle}
+          tone="red"
+          valueClass="text-red-600"
+        />
+        <StatCard
+          label="Total Value"
+          value={`₹${stats.totalValue.toLocaleString()}`}
+          Icon={TrendingUp}
+          tone="green"
+        />
       </div>
 
-      {/* Filters & Actions */}
+      {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="flex-1 flex gap-4 w-full md:w-auto">
-            {/* Search */}
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Search by product name or SKU..."
+                placeholder="Search by product name, slug, or category..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
-            {/* Stock Filter */}
             <select
               value={stockFilter}
               onChange={(e) => setStockFilter(e.target.value)}
@@ -366,7 +337,6 @@ const Inventory = () => {
             </select>
           </div>
 
-          {/* Actions */}
           <div className="flex gap-2">
             <button
               onClick={fetchInventory}
@@ -375,7 +345,6 @@ const Inventory = () => {
               <RefreshCw className="w-4 h-4" />
               Refresh
             </button>
-            
             <button
               onClick={() => handleExportReport('csv')}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
@@ -387,120 +356,128 @@ const Inventory = () => {
         </div>
       </div>
 
-      {/* Inventory Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Product
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  SKU
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Current Stock
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Available
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Reserved
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Value (₹)
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredInventory.map((item) => (
-                <tr key={item._id} className="hover:bg-gray-50 transition">
-                  <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900">{item.productName}</div>
-                    {item.variants && item.variants.length > 0 && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        Variants: {item.variants.map(v => `${v.name} (${v.stock})`).join(', ')}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-600">{item.sku}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-gray-600 capitalize">
-                      {item.category.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="text-sm font-semibold text-gray-900">{item.currentStock}</span>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="text-sm text-gray-600">{item.availableStock}</span>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="text-sm text-gray-600">{item.reservedStock}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-center">
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded ${getStockStatusColor(item.status)}`}>
-                        {getStockStatusIcon(item.status)}
-                        {item.status.replace('_', ' ').toUpperCase()}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="text-sm font-medium text-gray-900">
-                      {(item.currentStock * item.costPrice).toLocaleString()}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => handleEditStock(item)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                        title="Adjust Stock"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition"
-                        title="View History"
-                      >
-                        <History className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Empty state */}
+      {inventory.length === 0 ? (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+          <Package className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+          <h3 className="text-lg font-semibold text-gray-900">No inventory yet</h3>
+          <p className="text-sm text-gray-600 mt-1">
+            Products you add appear here for stock tracking.
+          </p>
         </div>
-      </div>
+      ) : filteredInventory.length === 0 ? (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+          <p className="text-gray-600">No products match the current filters.</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <Th align="left">Product</Th>
+                  <Th align="left">Category</Th>
+                  <Th align="center">Current</Th>
+                  <Th align="center">Available</Th>
+                  <Th align="center">Reserved</Th>
+                  <Th align="center">Status</Th>
+                  <Th align="center">Value (₹)</Th>
+                  <Th align="right">Actions</Th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredInventory.map((item) => {
+                  const badge = stockBadge(item.status);
+                  return (
+                    <tr key={item._id} className="hover:bg-gray-50 transition">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <InventoryThumbnail item={item} />
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {item.productName}
+                            </div>
+                            {item.slug && (
+                              <div className="text-xs text-gray-500">/{item.slug}</div>
+                            )}
+                            {item.variants.length > 0 && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                {item.variants.length} variant
+                                {item.variants.length === 1 ? '' : 's'}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 capitalize">
+                        {item.categoryName}
+                      </td>
+                      <td className="px-6 py-4 text-center text-sm font-semibold text-gray-900">
+                        {item.currentStock}
+                      </td>
+                      <td className="px-6 py-4 text-center text-sm text-gray-600">
+                        {item.availableStock}
+                      </td>
+                      <td className="px-6 py-4 text-center text-sm text-gray-600">
+                        {item.reservedStock}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-center">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded ${badge.className}`}
+                          >
+                            {badge.icon}
+                            {badge.label}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center text-sm font-medium text-gray-900">
+                        {(item.currentStock * item.costPrice).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => openEditModal(item)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                          title="Adjust Stock"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
-      {/* Edit Stock Modal */}
+      {/* Edit-stock modal */}
       {editingProduct && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={closeEditModal}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="text-lg font-bold text-gray-900 mb-4">Adjust Stock</h3>
-            
+
             <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-2">Product</p>
+              <p className="text-sm text-gray-600 mb-1">Product</p>
               <p className="font-semibold text-gray-900">{editingProduct.productName}</p>
-              <p className="text-xs text-gray-500">SKU: {editingProduct.sku}</p>
+              {editingProduct.categoryName && (
+                <p className="text-xs text-gray-500">
+                  Category: {editingProduct.categoryName}
+                </p>
+              )}
             </div>
 
             <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-2">Current Stock: <strong>{editingProduct.currentStock}</strong></p>
+              <p className="text-sm text-gray-600">
+                Current Stock: <strong>{editingProduct.currentStock}</strong>
+              </p>
             </div>
 
             <div className="mb-4">
@@ -538,26 +515,74 @@ const Inventory = () => {
 
             <div className="flex gap-3">
               <button
-                onClick={() => {
-                  setEditingProduct(null);
-                  setEditStock('');
-                  setEditReason('');
-                }}
+                onClick={closeEditModal}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveStock}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                disabled={saving}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
               >
-                Update Stock
+                {saving ? 'Updating…' : 'Update Stock'}
               </button>
             </div>
           </div>
         </div>
       )}
     </div>
+  );
+};
+
+// Reusable stat card
+const StatCard = ({ label, value, Icon, tone, valueClass }) => {
+  const bg = {
+    blue: 'bg-blue-100 text-blue-600',
+    orange: 'bg-orange-100 text-orange-600',
+    red: 'bg-red-100 text-red-600',
+    green: 'bg-green-100 text-green-600',
+  }[tone] || 'bg-gray-100 text-gray-600';
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-gray-600 mb-1">{label}</p>
+          <p className={`text-2xl font-bold ${valueClass || 'text-gray-900'}`}>{value}</p>
+        </div>
+        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${bg}`}>
+          <Icon className="w-6 h-6" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Th = ({ children, align = 'left' }) => (
+  <th
+    className={`px-6 py-3 text-${align} text-xs font-semibold text-gray-600 uppercase tracking-wider`}
+  >
+    {children}
+  </th>
+);
+
+// Thumbnail with graceful fallback (broken URL → gray box, no crash).
+const InventoryThumbnail = ({ item }) => {
+  const [failed, setFailed] = useState(false);
+  if (!item.imageUrl || failed) {
+    return (
+      <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center text-gray-400 text-[10px]">
+        No img
+      </div>
+    );
+  }
+  return (
+    <img
+      src={item.imageUrl}
+      alt={item.productName}
+      className="w-10 h-10 rounded object-cover"
+      onError={() => setFailed(true)}
+    />
   );
 };
 

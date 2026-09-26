@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Save, X, Upload, Trash2, Image as ImageIcon,
@@ -308,10 +309,10 @@ const CategoryForm = () => {
             {/* Image Preview */}
             {imagePreview ? (
               <div className="relative mb-4">
-                <img
+                <PreviewImage
                   src={imagePreview}
                   alt="Category preview"
-                  className="w-full h-48 object-cover rounded-lg border border-gray-200"
+                  className="w-full h-48 object-cover rounded-lg border border-gray-200 bg-gray-50"
                 />
                 <button
                   type="button"
@@ -388,6 +389,29 @@ const CategoryForm = () => {
         </div>
       </form>
     </div>
+  );
+};
+
+// Preview <img> that shows a helpful placeholder when the image can't render
+// (typical case: an uploaded SVG on Render's ephemeral filesystem that got
+// wiped by a redeploy, or a broken URL).
+const PreviewImage = ({ src, alt, className }) => {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
+  if (!src || failed) {
+    return (
+      <div className={`${className || ''} flex items-center justify-center text-xs text-gray-500`}>
+        Image unavailable
+      </div>
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      onError={() => setFailed(true)}
+    />
   );
 };
 

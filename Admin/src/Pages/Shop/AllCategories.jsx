@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, Search, Edit, Trash2, FolderOpen, 
@@ -257,18 +258,17 @@ const AllCategories = () => {
                 >
                   {/* Category Image */}
                   <div className="relative h-48 bg-gray-100">
-                    {category.image ? (
-                      <img
-                        src={resolveImageUrl(category.image)}
-                        alt={category.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => { e.target.style.display = 'none'; }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <ImageIcon className="w-16 h-16 text-gray-300" />
-                      </div>
-                    )}
+                    <CategoryImage
+                      src={resolveImageUrl(category.image)}
+                      alt={category.name}
+                      className="w-full h-full object-cover"
+                      fallback={
+                        <div className="w-full h-full flex items-center justify-center">
+                          <ImageIcon className="w-16 h-16 text-gray-300" />
+                        </div>
+                      }
+                    />
+                  </div>
                     
                     {/* Status Badge */}
                     <div className="absolute top-3 right-3">
@@ -367,18 +367,16 @@ const AllCategories = () => {
                     <tr key={category._id} className="hover:bg-gray-50 transition">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          {category.image ? (
-                            <img
-                              src={resolveImageUrl(category.image)}
-                              alt={category.name}
-                              className="w-12 h-12 rounded object-cover"
-                              onError={(e) => { e.target.style.display = 'none'; }}
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded bg-gray-100 flex items-center justify-center">
-                              <ImageIcon className="w-6 h-6 text-gray-400" />
-                            </div>
-                          )}
+                          <CategoryImage
+                            src={resolveImageUrl(category.image)}
+                            alt={category.name}
+                            className="w-12 h-12 rounded object-cover"
+                            fallback={
+                              <div className="w-12 h-12 rounded bg-gray-100 flex items-center justify-center">
+                                <ImageIcon className="w-6 h-6 text-gray-400" />
+                              </div>
+                            }
+                          />
                           <div>
                             <div className="font-semibold text-gray-900">{category.name}</div>
                             <div className="text-sm text-gray-500">{category.slug}</div>
@@ -451,6 +449,23 @@ const AllCategories = () => {
         </>
       )}
     </div>
+  );
+};
+
+// Renders an <img> with a graceful fallback when the URL is missing or the
+// image fails to load. Prevents the "blank square" that plain onError-hide
+// leaves behind for broken SVG / PNG uploads.
+const CategoryImage = ({ src, alt, className, fallback }) => {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
+  if (!src || failed) return fallback || null;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      onError={() => setFailed(true)}
+    />
   );
 };
 

@@ -1,9 +1,10 @@
 import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   fetchCategories,
-  fetchProducts,
+  fetchFeaturedProducts,
 } from "../../services/productService";
 import HeroSlider from "./HeroSlider";
 import ultimateKitBanner from "../../assets/ultimateKit.svg";
@@ -21,7 +22,12 @@ const ShopMain = () => {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [cats, prods] = await Promise.all([fetchCategories(), fetchProducts()]);
+      // Top Trending shows FEATURED products only. Toggle 'Featured Product'
+      // on a product in the admin panel to make it appear in this rail.
+      const [cats, prods] = await Promise.all([
+        fetchCategories(),
+        fetchFeaturedProducts(10),
+      ]);
       if (cancelled) return;
       // Always trust what the backend returns — no static fallbacks.
       setCategories(Array.isArray(cats) ? cats : []);
@@ -98,7 +104,8 @@ const ShopMain = () => {
           <p className="text-center text-gray-500">Loading products…</p>
         ) : products.length === 0 ? (
           <p className="text-center text-gray-500">
-            No products yet. Add one from the admin panel to see it here.
+            No featured products yet. Mark a product as{' '}
+            <span className="font-semibold">Featured</span> in the admin panel to see it here.
           </p>
         ) : (
           <div className="relative">
@@ -313,19 +320,22 @@ const CategorySlider = ({ categories, navigate }) => {
 
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
-  const target = product.slug || product.id;
+  const target = product.slug || product._id || product.id;
+  const [imgFailed, setImgFailed] = useState(false);
+  const showImage = product.image && !imgFailed;
+
   return (
     <div
       onClick={() => navigate(`/product/${target}`)}
       className="flex-shrink-0 w-[300px] cursor-pointer group border border-gray-200 rounded-md overflow-hidden hover:shadow-lg transition-shadow bg-white"
     >
       <div className="w-full h-[260px] bg-gray-100 flex items-center justify-center overflow-hidden">
-        {product.image ? (
+        {showImage ? (
           <img
             src={product.image}
             alt={product.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            onError={(e) => { e.target.style.display = "none"; }}
+            onError={() => setImgFailed(true)}
           />
         ) : (
           <span className="text-gray-400 text-sm">Product Image</span>

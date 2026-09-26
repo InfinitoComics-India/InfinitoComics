@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -13,6 +13,7 @@ import {
   uploadProductImages 
 } from '../../services/shopServices/productService';
 import { getAllCategories } from '../../services/shopServices/categoryService';
+import { BACKEND_URL } from '../../Utils/constant';
 import Swal from 'sweetalert2';
 
 // Handle any of the response shapes our services return.
@@ -21,6 +22,19 @@ const extractList = (response) => {
   if (Array.isArray(response?.data)) return response.data;
   if (Array.isArray(response?.data?.data)) return response.data.data;
   return [];
+};
+
+// Uploaded images arrive as "/uploads/shop/xxx.png" — the admin panel isn't
+// served from the backend host, so we prepend BACKEND_URL. Data URIs (from
+// the just-picked file preview) and external URLs pass through untouched.
+const resolveImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  const base = BACKEND_URL?.replace(/\/$/, '') || '';
+  const path = url.startsWith('/') ? url : `/${url}`;
+  return `${base}${path}`;
 };
 
 const ProductForm = () => {
@@ -684,25 +698,12 @@ const ProductForm = () => {
             {images.length > 0 && (
               <div className="grid grid-cols-2 gap-3">
                 {images.map((image, index) => (
-                  <div key={index} className="relative group">
-                    <img
-                      src={image.url}
-                      alt={`Product ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg border border-gray-200"
-                    />
-                    {index === 0 && (
-                      <span className="absolute top-2 left-2 px-2 py-1 bg-blue-600 text-white text-xs rounded">
-                        Primary
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveImage(index)}
-                      className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded opacity-0 group-hover:opacity-100 transition"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+                  <ProductImagePreview
+                    key={image.url || index}
+                    image={image}
+                    index={index}
+                    onRemove={() => handleRemoveImage(index)}
+                  />
                 ))}
               </div>
             )}
@@ -765,6 +766,42 @@ const ProductForm = () => {
           )}
         </div>
       </form>
+    </div>
+  );
+};
+
+// A single product-image thumbnail with graceful error handling. Uploaded
+// images use a relative "/uploads/shop/..." URL that needs BACKEND_URL, while
+// freshly-selected files show a data: URI. Both cases go through resolveImageUrl.
+const ProductImagePreview = ({ image, index, onRemove }) => {
+  const [failed, setFailed] = useState(false);
+  const src = resolveImageUrl(image?.url || '');
+  return (
+    <div className="relative group">
+      {src && !failed ? (
+        <img
+          src={src}
+          alt={`Product ${index + 1}`}
+          className="w-full h-32 object-cover rounded-lg border border-gray-200 bg-gray-50"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <div className="w-full h-32 rounded-lg border border-gray-200 bg-gray-100 flex items-center justify-center text-xs text-gray-500">
+          Image unavailable
+        </div>
+      )}
+      {index === 0 && (
+        <span className="absolute top-2 left-2 px-2 py-1 bg-blue-600 text-white text-xs rounded">
+          Primary
+        </span>
+      )}
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded opacity-0 group-hover:opacity-100 transition"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
     </div>
   );
 };
