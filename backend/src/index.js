@@ -54,6 +54,9 @@ import chatRoutes from './routes/chat-routes.js';
 import wikiRoutes from './routes/wiki-routes.js';
 import selfServiceRoutes from './routes/selfService-routes.js';
 import aiRoutes from './routes/ai-routes.js';
+import productRoutes from './routes/product-routes.js';
+import categoryRoutes from './routes/category-routes.js';
+import inventoryRoutes from './routes/inventory-routes.js';
 
 
 const allowedOrigins = [
@@ -61,6 +64,7 @@ const allowedOrigins = [
   config.ADMIN_URL,
   config.RESEARCH_URL,
   config.FOUNDATION_URL,
+  config.SHOP_URL,
   // Local development origins
   'http://localhost:5173',
   'http://localhost:5174',
@@ -81,6 +85,9 @@ app.use(cors({
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.json({ limit: '50mb' }));
+
+// Serve static files for uploaded shop images
+app.use('/uploads/shop', express.static('uploads/shop'));
 
 // API Routes
 app.use('/api', userroutes);
@@ -126,6 +133,12 @@ app.use('/hr/chat',           chatRoutes);
 app.use('/hr/wiki',           wikiRoutes);
 app.use('/hr/self-service',   selfServiceRoutes);
 app.use('/hr/ai',             aiRoutes);
+
+// Shop routes
+app.use('/shop/products',     productRoutes);
+app.use('/shop/categories',   categoryRoutes);
+app.use('/shop/inventory',    inventoryRoutes);
+
 app.get('/', (req, res) => {
   res.send('Backend is up and running!');
 });

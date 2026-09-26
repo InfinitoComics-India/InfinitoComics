@@ -19,7 +19,9 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-8">
           {/* ── Left: Logo, tagline, description ─────────── */}
           <div className="md:col-span-1">
-            <img src={logo} alt="Infinito" className="h-14 w-auto object-contain mb-3" />
+            <a href={FRONTEND_BASE_URL}>
+              <img src={logo} alt="Infinito" className="h-14 w-auto object-contain mb-3" />
+            </a>
             <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-white/80 mb-6">
               Where Imaginations Breaks Boundaries
             </p>
