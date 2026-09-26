@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Save, X, Upload, Trash2, Plus, 
@@ -11,7 +12,16 @@ import {
   updateProduct, 
   uploadProductImages 
 } from '../../services/shopServices/productService';
+import { getAllCategories } from '../../services/shopServices/categoryService';
 import Swal from 'sweetalert2';
+
+// Handle any of the response shapes our services return.
+const extractList = (response) => {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.data?.data)) return response.data.data;
+  return [];
+};
 
 const ProductForm = () => {
   const { id } = useParams();
@@ -22,16 +32,20 @@ const ProductForm = () => {
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState('basic'); // basic, variants, inventory, seo
 
-  // Basic Info
+  // Basic Info. `category` must be a ShopCategory ObjectId — populated
+  // dynamically from the backend so the user picks a real category.
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
     description: '',
     shortDescription: '',
-    category: 'tshirts',
+    category: '',
     status: 'draft',
     featured: false,
   });
+
+  // Category options fetched from the backend.
+  const [categoryOptions, setCategoryOptions] = useState([]);
 
   // Pricing & Inventory
   const [pricing, setPricing] = useState({
@@ -52,6 +66,19 @@ const ProductForm = () => {
 
   // Tag input
   const [keywordInput, setKeywordInput] = useState('');
+
+  // Load categories once on mount so the dropdown is populated.
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getAllCategories();
+        setCategoryOptions(extractList(res));
+      } catch (err) {
+        console.error('Failed to load categories:', err);
+        setCategoryOptions([]);
+      }
+    })();
+  }, []);
 
   // Load product data in edit mode
   useEffect(() => {
@@ -75,14 +102,19 @@ const ProductForm = () => {
     try {
       setLoading(true);
       const response = await getProductById(id);
-      const product = response.data;
+      // response is the raw axios response; backend body is response.data.
+      // In edit-mode the product is response.data.data (backend wraps it).
+      const product =
+        response?.data?._id ? response.data
+        : response?.data?.data || response?.data || {};
 
       setFormData({
         name: product.name || '',
         slug: product.slug || '',
         description: product.description || '',
         shortDescription: product.shortDescription || '',
-        category: product.category || 'tshirts',
+        // Backend populates category as { _id, name, slug } — use _id for the dropdown.
+        category: product.category?._id || product.category || '',
         status: product.status || 'draft',
         featured: product.featured || false,
       });
@@ -122,11 +154,20 @@ const ProductForm = () => {
     try {
       setLoading(true);
 
-      // Upload new images if any
-      let uploadedImages = [...images];
+      // Category is required and must be a real backend ObjectId.
+      if (!formData.category) {
+        Swal.fire('Error', 'Please select a category', 'error');
+        setLoading(false);
+        return;
+      }
+
+      // Keep existing images (already uploaded) and add newly uploaded ones.
+      let uploadedImages = images.filter((img) => !img.isNew);
       if (imageFiles.length > 0) {
         const uploadResponse = await uploadProductImages(imageFiles);
-        uploadedImages = [...uploadedImages, ...uploadResponse.data];
+        // Backend returns { success, message, data: [...] } — axios wraps in .data
+        const newImages = extractList(uploadResponse);
+        uploadedImages = [...uploadedImages, ...newImages];
       }
 
       const productData = {
@@ -389,18 +430,33 @@ const ProductForm = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Category *
                     </label>
-                    <select
-                      value={formData.category}
-                      onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    >
-                      <option value="tshirts">T-Shirts</option>
-                      <option value="hoodies">Hoodies</option>
-                      <option value="caps">Caps</option>
-                      <option value="accessory">Accessories</option>
-                      <option value="totebags">Tote Bags</option>
-                    </select>
+                    {categoryOptions.length === 0 ? (
+                      <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+                        No categories found.{' '}
+                        <button
+                          type="button"
+                          onClick={() => navigate('/shop/categories/new')}
+                          className="underline font-medium hover:text-yellow-900"
+                        >
+                          Create one
+                        </button>{' '}
+                        before adding a product.
+                      </div>
+                    ) : (
+                      <select
+                        value={formData.category}
+                        onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      >
+                        <option value="">Select a category</option>
+                        {categoryOptions.map((cat) => (
+                          <option key={cat._id} value={cat._id}>
+                            {cat.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                 </div>
               )}
