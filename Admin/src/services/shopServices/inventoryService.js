@@ -1,14 +1,13 @@
 import axios from 'axios';
-
-const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
+import { BACKEND_URL } from '../../Utils/constant';
 
 // Get auth token
-const getAuthToken = () => localStorage.getItem('token');
+const getAuthToken = () => localStorage.getItem('authToken');
 
 // Get all inventory items
 export const getAllInventory = async (filters = {}) => {
   try {
-    const response = await axios.get(`${BASE_URL}/shop/inventory`, {
+    const response = await axios.get(`${BACKEND_URL}/shop/inventory`, {
       headers: { Authorization: `Bearer ${getAuthToken()}` },
       params: filters
     });
@@ -22,7 +21,7 @@ export const getAllInventory = async (filters = {}) => {
 // Get inventory by product ID
 export const getInventoryByProductId = async (productId) => {
   try {
-    const response = await axios.get(`${BASE_URL}/shop/inventory/product/${productId}`, {
+    const response = await axios.get(`${BACKEND_URL}/shop/inventory/product/${productId}`, {
       headers: { Authorization: `Bearer ${getAuthToken()}` }
     });
     return response.data;
@@ -35,7 +34,7 @@ export const getInventoryByProductId = async (productId) => {
 // Update inventory stock
 export const updateInventoryStock = async (productId, data) => {
   try {
-    const response = await axios.patch(`${BASE_URL}/shop/inventory/${productId}`, data, {
+    const response = await axios.patch(`${BACKEND_URL}/shop/inventory/${productId}`, data, {
       headers: { 
         Authorization: `Bearer ${getAuthToken()}`,
         'Content-Type': 'application/json'
@@ -51,7 +50,7 @@ export const updateInventoryStock = async (productId, data) => {
 // Bulk update inventory
 export const bulkUpdateInventory = async (updates) => {
   try {
-    const response = await axios.patch(`${BASE_URL}/shop/inventory/bulk-update`, updates, {
+    const response = await axios.patch(`${BACKEND_URL}/shop/inventory/bulk-update`, updates, {
       headers: { 
         Authorization: `Bearer ${getAuthToken()}`,
         'Content-Type': 'application/json'
@@ -67,7 +66,7 @@ export const bulkUpdateInventory = async (updates) => {
 // Get inventory history/logs
 export const getInventoryHistory = async (productId) => {
   try {
-    const response = await axios.get(`${BASE_URL}/shop/inventory/${productId}/history`, {
+    const response = await axios.get(`${BACKEND_URL}/shop/inventory/${productId}/history`, {
       headers: { Authorization: `Bearer ${getAuthToken()}` }
     });
     return response.data;
@@ -80,7 +79,7 @@ export const getInventoryHistory = async (productId) => {
 // Get low stock products
 export const getLowStockProducts = async () => {
   try {
-    const response = await axios.get(`${BASE_URL}/shop/inventory/low-stock`, {
+    const response = await axios.get(`${BACKEND_URL}/shop/inventory/low-stock`, {
       headers: { Authorization: `Bearer ${getAuthToken()}` }
     });
     return response.data;
@@ -93,7 +92,7 @@ export const getLowStockProducts = async () => {
 // Get out of stock products
 export const getOutOfStockProducts = async () => {
   try {
-    const response = await axios.get(`${BASE_URL}/shop/inventory/out-of-stock`, {
+    const response = await axios.get(`${BACKEND_URL}/shop/inventory/out-of-stock`, {
       headers: { Authorization: `Bearer ${getAuthToken()}` }
     });
     return response.data;
@@ -106,7 +105,7 @@ export const getOutOfStockProducts = async () => {
 // Export inventory report
 export const exportInventoryReport = async (format = 'csv') => {
   try {
-    const response = await axios.get(`${BASE_URL}/shop/inventory/export`, {
+    const response = await axios.get(`${BACKEND_URL}/shop/inventory/export`, {
       headers: { Authorization: `Bearer ${getAuthToken()}` },
       params: { format },
       responseType: 'blob'

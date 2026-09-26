@@ -3,12 +3,12 @@ import axios from 'axios';
 const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
 
 // Get auth token
-const getAuthToken = () => localStorage.getItem('token');
+const getAuthToken = () => localStorage.getItem('authToken');
 
 // Get all categories
 export const getAllCategories = async (filters = {}) => {
   try {
-    const response = await axios.get(`${BASE_URL}/shop/categories`, {
+    const response = await axios.get(`${BASE_URL}/shop/categories/admin/all`, {
       headers: { Authorization: `Bearer ${getAuthToken()}` },
       params: filters
     });
