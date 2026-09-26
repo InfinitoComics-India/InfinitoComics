@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Save, X, Upload, Trash2, Plus, 
-  Image as ImageIcon, Tag, Package,
+  Image as ImageIcon, Tag, Package, IndianRupee,
   FileText
 } from 'lucide-react';
 import { 
@@ -508,7 +508,7 @@ const ProductForm = () => {
                   {/* Pricing Section */}
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <DollarSign className="w-5 h-5" />
+                      <IndianRupee className="w-5 h-5" />
                       Pricing
                     </h3>
                     <div className="grid grid-cols-3 gap-4">
