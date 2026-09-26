@@ -48,6 +48,7 @@ import AllProducts       from './Pages/Shop/AllProducts.jsx';
 import ProductForm       from './Pages/Shop/ProductForm.jsx';
 import AllCategories     from './Pages/Shop/AllCategories.jsx';
 import CategoryForm      from './Pages/Shop/CategoryForm.jsx';
+import Inventory         from './Pages/Shop/Inventory.jsx';
 
 // Role constants
 const SUPER   = ["superadmin"];
@@ -270,6 +271,11 @@ function App() {
           } />
           <Route path="/shop/categories/:id" element={
             <ProtectedRoute allowedRoles={SHOP}><CategoryForm /></ProtectedRoute>
+          } />
+
+          {/* Inventory Management */}
+          <Route path="/shop/inventory" element={
+            <ProtectedRoute allowedRoles={SHOP}><Inventory /></ProtectedRoute>
           } />
 
         </Route>
