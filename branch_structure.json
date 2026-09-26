@@ -1,0 +1,33 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "feature/backend-missing",
+    "feature/daily-worklog",
+    "feature/home-page-updates",
+    "feature/infinito-ads",
+    "feature/newsletter-update",
+    "main",
+    "origin",
+    "shop"
+  ],
+  "parent": {
+    "feature/backend-missing": "main",
+    "feature/daily-worklog": "main",
+    "feature/home-page-updates": "main",
+    "feature/infinito-ads": "main",
+    "feature/newsletter-update": "main",
+    "main": null,
+    "origin": "main",
+    "shop": "main"
+  },
+  "order": [
+    "main",
+    "feature/backend-missing",
+    "feature/daily-worklog",
+    "feature/home-page-updates",
+    "feature/infinito-ads",
+    "feature/newsletter-update",
+    "origin",
+    "shop"
+  ]
+}
