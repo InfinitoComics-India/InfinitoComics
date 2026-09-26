@@ -2,7 +2,6 @@ import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
-  products as staticProducts,
   fetchCategories,
   fetchProducts,
 } from "../../services/productService";
@@ -15,18 +14,20 @@ const ShopMain = () => {
   const trendingRef = useRef(null);
 
   const [categories, setCategories] = useState([]);
-  const [products, setProducts] = useState(staticProducts);
+  const [products, setProducts] = useState([]);
   const [catsLoaded, setCatsLoaded] = useState(false);
+  const [productsLoaded, setProductsLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const [cats, prods] = await Promise.all([fetchCategories(), fetchProducts()]);
       if (cancelled) return;
-      // Always trust what the backend returns for categories, even if empty.
-      if (Array.isArray(cats)) setCategories(cats);
-      if (Array.isArray(prods) && prods.length > 0) setProducts(prods);
+      // Always trust what the backend returns — no static fallbacks.
+      setCategories(Array.isArray(cats) ? cats : []);
+      setProducts(Array.isArray(prods) ? prods : []);
       setCatsLoaded(true);
+      setProductsLoaded(true);
     })();
     return () => {
       cancelled = true;
@@ -44,8 +45,6 @@ const ShopMain = () => {
       <HeroSlider />
 
       {/* ─── PROMO BANNER (35% off on The Crimson Bloodline) ── */}
-      {/* Image sets its own natural aspect ratio — no wrapper chrome.
-          Text sits absolutely over the artwork on the left side. */}
       <section className="max-w-[1200px] mx-auto px-4 md:px-12 py-10">
         <div className="relative w-full">
           <img
@@ -54,10 +53,6 @@ const ShopMain = () => {
             aria-hidden="true"
             className="block w-full h-auto"
           />
-
-          {/* Overlay copy — positioned in the left column of the artwork.
-              Sizes scale with the container so text stays balanced when
-              the banner shrinks. */}
           <div className="absolute inset-0 flex items-center pl-[5%] pr-[50%] text-white">
             <div>
               <h2 className="text-2xl sm:text-3xl md:text-5xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] drop-shadow-lg">
@@ -86,7 +81,7 @@ const ShopMain = () => {
           <p className="text-center text-gray-500">Loading categories…</p>
         ) : categories.length === 0 ? (
           <p className="text-center text-gray-500">
-            No categories yet. Check back soon.
+            No categories yet. Add one from the admin panel to see it here.
           </p>
         ) : (
           <CategorySlider categories={categories} navigate={navigate} />
@@ -98,37 +93,42 @@ const ShopMain = () => {
         <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">
           Top Trending
         </h2>
-        <div className="relative">
-          <button
-            onClick={() => scroll(trendingRef, -1)}
-            className="hidden md:flex items-center justify-center absolute -left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white shadow-md border border-gray-200 hover:bg-gray-50 z-10"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
 
-          <div
-            ref={trendingRef}
-            className="flex gap-5 overflow-x-auto scroll-smooth no-scrollbar pb-2"
-          >
-            {products.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
+        {!productsLoaded ? (
+          <p className="text-center text-gray-500">Loading products…</p>
+        ) : products.length === 0 ? (
+          <p className="text-center text-gray-500">
+            No products yet. Add one from the admin panel to see it here.
+          </p>
+        ) : (
+          <div className="relative">
+            <button
+              onClick={() => scroll(trendingRef, -1)}
+              className="hidden md:flex items-center justify-center absolute -left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white shadow-md border border-gray-200 hover:bg-gray-50 z-10"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+
+            <div
+              ref={trendingRef}
+              className="flex gap-5 overflow-x-auto scroll-smooth no-scrollbar pb-2"
+            >
+              {products.map((p) => (
+                <ProductCard key={p._id || p.id} product={p} />
+              ))}
+            </div>
+
+            <button
+              onClick={() => scroll(trendingRef, 1)}
+              className="hidden md:flex items-center justify-center absolute -right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white shadow-md border border-gray-200 hover:bg-gray-50 z-10"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
           </div>
-
-          <button
-            onClick={() => scroll(trendingRef, 1)}
-            className="hidden md:flex items-center justify-center absolute -right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white shadow-md border border-gray-200 hover:bg-gray-50 z-10"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
+        )}
       </section>
 
       {/* ─── ULTIMATE KIT BANNER ─────────────────────────────── */}
-      {/* The banner artwork already carries the ULTIMATE KIT heading,
-          feature list, ₹2199/₹1999 pricing, and gift illustration.
-          We render it edge-to-edge and overlay a real Get Now button
-          where the artwork shows one. */}
       <section className="max-w-[1200px] mx-auto px-4 md:px-12 py-12">
         <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 font-dmsans uppercase tracking-wider">
           Ultimate Kit
@@ -144,10 +144,6 @@ const ShopMain = () => {
             alt="Infinito Ultimate Kit — First 10,000 customers get exclusive gift! ₹1999"
             className="block w-full h-auto max-w-full object-contain"
           />
-
-          {/* Get Now hotspot — sits over the button drawn into the artwork.
-              The percentage-based positioning keeps it lined up as the
-              banner scales. Tweak these numbers if you tighten the crop. */}
           <span
             className="absolute right-[4%] bottom-[15%] w-[16%] h-[38%] rounded-md
                        hover:bg-white/10 transition-colors"
@@ -166,15 +162,13 @@ const CategorySlider = ({ categories, navigate }) => {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
-  // Drag-to-scroll state. We only treat a pointer gesture as a "drag" once
-  // the pointer has moved more than a few pixels; otherwise it stays a click.
   const dragState = useRef({
     isDown: false,
     dragging: false,
     startX: 0,
     scrollLeft: 0,
   });
-  const DRAG_THRESHOLD = 6; // px before we start treating the gesture as a drag
+  const DRAG_THRESHOLD = 6;
 
   const updateArrows = () => {
     const el = trackRef.current;
@@ -199,7 +193,6 @@ const CategorySlider = ({ categories, navigate }) => {
   const scrollByAmount = (dir) => {
     const el = trackRef.current;
     if (!el) return;
-    // Slide roughly one card at a time (card ~ 220px + gap).
     el.scrollBy({ left: dir * 240, behavior: "smooth" });
   };
 
@@ -239,14 +232,12 @@ const CategorySlider = ({ categories, navigate }) => {
       el.style.userSelect = "";
     }
     state.isDown = false;
-    // Keep `dragging` true briefly so the click handler can suppress the click.
     setTimeout(() => {
       state.dragging = false;
     }, 0);
   };
 
   const handleCardClick = (slug) => (e) => {
-    // If this click is the tail-end of a drag, don't navigate.
     if (dragState.current.dragging) {
       e.preventDefault();
       e.stopPropagation();
@@ -257,7 +248,6 @@ const CategorySlider = ({ categories, navigate }) => {
 
   return (
     <div className="relative">
-      {/* Left arrow (desktop only) */}
       {canScrollLeft && (
         <button
           type="button"
@@ -307,7 +297,6 @@ const CategorySlider = ({ categories, navigate }) => {
         ))}
       </div>
 
-      {/* Right arrow (desktop only) */}
       {canScrollRight && (
         <button
           type="button"
@@ -324,9 +313,10 @@ const CategorySlider = ({ categories, navigate }) => {
 
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
+  const target = product.slug || product.id;
   return (
     <div
-      onClick={() => navigate(`/product/${product.id}`)}
+      onClick={() => navigate(`/product/${target}`)}
       className="flex-shrink-0 w-[300px] cursor-pointer group border border-gray-200 rounded-md overflow-hidden hover:shadow-lg transition-shadow bg-white"
     >
       <div className="w-full h-[260px] bg-gray-100 flex items-center justify-center overflow-hidden">
@@ -335,6 +325,7 @@ const ProductCard = ({ product }) => {
             src={product.image}
             alt={product.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            onError={(e) => { e.target.style.display = "none"; }}
           />
         ) : (
           <span className="text-gray-400 text-sm">Product Image</span>
