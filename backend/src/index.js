@@ -59,7 +59,7 @@ import categoryRoutes from './routes/category-routes.js';
 import inventoryRoutes from './routes/inventory-routes.js';
 
 
-const allowedOrigins = [
+const explicitOrigins = [
   config.FRONTEND_URL,
   config.ADMIN_URL,
   config.RESEARCH_URL,
@@ -78,9 +78,19 @@ const allowedOrigins = [
   'http://localhost:3007',
 ].filter(Boolean);
 
+// Any *.infinitohq.com subdomain is trusted, so we don't have to keep
+// hard-coding shop / store / research / foundation URLs into the config.
+const infinitoDomainPattern = /^https:\/\/([a-z0-9-]+\.)?infinitohq\.com$/i;
+
 app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
+  origin: (origin, cb) => {
+    // Non-browser requests (curl, server-to-server, health checks) have no Origin — allow.
+    if (!origin) return cb(null, true);
+    if (explicitOrigins.includes(origin)) return cb(null, true);
+    if (infinitoDomainPattern.test(origin)) return cb(null, true);
+    return cb(new Error(`CORS: origin not allowed: ${origin}`));
+  },
+  credentials: true,
 }));
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
