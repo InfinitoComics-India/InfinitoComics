@@ -96,8 +96,20 @@ app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.json({ limit: '50mb' }));
 
-// Serve static files for uploaded shop images
-app.use('/uploads/shop', express.static('uploads/shop'));
+// Serve static files for uploaded shop images.
+// setHeaders ensures SVGs go out with the correct MIME type — some hosts
+// default to application/octet-stream which browsers refuse to render inline.
+app.use('/uploads/shop', express.static('uploads/shop', {
+  setHeaders: (res, filePath) => {
+    if (filePath.toLowerCase().endsWith('.svg')) {
+      res.setHeader('Content-Type', 'image/svg+xml');
+    }
+    // Allow the shop / admin sites to read these images cross-origin.
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    // Cache uploaded images for an hour — they're immutable once uploaded.
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+  },
+}));
 
 // API Routes
 app.use('/api', userroutes);

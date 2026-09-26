@@ -268,32 +268,11 @@ const CategorySlider = ({ categories, navigate }) => {
         className="flex gap-3 md:gap-4 overflow-x-auto scroll-smooth no-scrollbar cursor-grab select-none"
       >
         {categories.map((cat) => (
-          <div
+          <CategoryCard
             key={cat._id || cat.id}
+            category={cat}
             onClick={handleCardClick(cat.slug)}
-            className="flex-shrink-0 w-[180px] md:w-[220px] cursor-pointer group"
-          >
-            <div className="w-full aspect-[3/4] overflow-hidden rounded-md bg-gray-50">
-              {cat.image ? (
-                <img
-                  src={cat.image}
-                  alt={cat.name}
-                  draggable={false}
-                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 pointer-events-none"
-                  onError={(e) => {
-                    e.target.style.display = "none";
-                  }}
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-[#DD1215] text-white font-bold text-xl uppercase tracking-wide p-4 text-center">
-                  {cat.name}
-                </div>
-              )}
-            </div>
-            <p className="mt-2 text-center text-sm font-semibold text-gray-800 uppercase tracking-wide">
-              {cat.name}
-            </p>
-          </div>
+          />
         ))}
       </div>
 
@@ -307,6 +286,41 @@ const CategorySlider = ({ categories, navigate }) => {
           <ChevronRight className="w-5 h-5" />
         </button>
       )}
+    </div>
+  );
+};
+
+// A single category tile. Tracks its own image-error state so that when an
+// image fails to load (missing file, 404, wrong MIME, blocked SVG, etc.) we
+// swap in the same red name-card that empty-image categories use — no blank
+// squares.
+const CategoryCard = ({ category, onClick }) => {
+  const [imgFailed, setImgFailed] = useState(false);
+  const showImage = category.image && !imgFailed;
+
+  return (
+    <div
+      onClick={onClick}
+      className="flex-shrink-0 w-[180px] md:w-[220px] cursor-pointer group"
+    >
+      <div className="w-full aspect-[3/4] overflow-hidden rounded-md bg-gray-50">
+        {showImage ? (
+          <img
+            src={category.image}
+            alt={category.name}
+            draggable={false}
+            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 pointer-events-none"
+            onError={() => setImgFailed(true)}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-[#DD1215] text-white font-bold text-xl uppercase tracking-wide p-4 text-center">
+            {category.name}
+          </div>
+        )}
+      </div>
+      <p className="mt-2 text-center text-sm font-semibold text-gray-800 uppercase tracking-wide">
+        {category.name}
+      </p>
     </div>
   );
 };
