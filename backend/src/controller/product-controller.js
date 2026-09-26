@@ -26,14 +26,18 @@ const createProduct = async (req, res) => {
   }
 };
 
-// Get all products with filters
+// Get all products with filters (admin sees all; public sees only active)
 const getAllProducts = async (req, res) => {
   try {
+    const isAdminRoute =
+      req.originalUrl.includes("/admin/") || Boolean(req.user);
+
     const filters = {
       category: req.query.category,
       status: req.query.status,
       featured: req.query.featured,
-      search: req.query.search
+      search: req.query.search,
+      includeAll: isAdminRoute && !req.query.status,
     };
 
     const products = await productService.getAll(filters);

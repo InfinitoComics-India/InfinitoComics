@@ -56,6 +56,25 @@ class CrudRepository {
         }
     }
 
+    // Aliases that match common naming used by shop services
+    async update(id, data){
+        try {
+            return await this.model.findByIdAndUpdate(id, data, { new: true });
+        } catch (error) {
+            console.log(error);
+            throw error;
+        }
+    }
+
+    async delete(id){
+        try {
+            return await this.model.findByIdAndDelete(id);
+        } catch (error) {
+            console.log(error);
+            throw error;
+        }
+    }
+
 }
 
 
