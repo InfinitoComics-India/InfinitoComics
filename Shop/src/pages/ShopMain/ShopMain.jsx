@@ -2,7 +2,6 @@ import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
-  categories as staticCategories,
   products as staticProducts,
   fetchCategories,
   fetchProducts,
@@ -15,16 +14,19 @@ const ShopMain = () => {
   const navigate = useNavigate();
   const trendingRef = useRef(null);
 
-  const [categories, setCategories] = useState(staticCategories);
+  const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState(staticProducts);
+  const [catsLoaded, setCatsLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const [cats, prods] = await Promise.all([fetchCategories(), fetchProducts()]);
       if (cancelled) return;
-      if (Array.isArray(cats) && cats.length > 0) setCategories(cats);
+      // Always trust what the backend returns for categories, even if empty.
+      if (Array.isArray(cats)) setCategories(cats);
       if (Array.isArray(prods) && prods.length > 0) setProducts(prods);
+      setCatsLoaded(true);
     })();
     return () => {
       cancelled = true;
@@ -80,7 +82,15 @@ const ShopMain = () => {
           Categories
         </h2>
 
-        <CategorySlider categories={categories} navigate={navigate} />
+        {!catsLoaded ? (
+          <p className="text-center text-gray-500">Loading categories…</p>
+        ) : categories.length === 0 ? (
+          <p className="text-center text-gray-500">
+            No categories yet. Check back soon.
+          </p>
+        ) : (
+          <CategorySlider categories={categories} navigate={navigate} />
+        )}
       </section>
 
       {/* ─── TOP TRENDING ────────────────────────────────────── */}

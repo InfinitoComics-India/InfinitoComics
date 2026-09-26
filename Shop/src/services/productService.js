@@ -53,13 +53,14 @@ const staticCategories = [
 // New code should call `fetchCategories()` and render the live list.
 export const categories = staticCategories;
 
-// Fetch categories from the backend. Falls back to static data on error so
-// the storefront never renders a blank grid.
+// Fetch categories from the backend. Returns whatever the backend has —
+// including an empty array — so the UI shows the real state rather than
+// a hardcoded set of placeholder cards. Only falls back to static data
+// when the request itself fails (network/CORS/500).
 export const fetchCategories = async () => {
   try {
     const { data } = await axios.get(`${BACKEND_URL}/shop/categories/public/all`);
     const list = Array.isArray(data?.data) ? data.data : [];
-    if (list.length === 0) return staticCategories;
 
     return list.map((cat) => ({
       id: cat._id,
