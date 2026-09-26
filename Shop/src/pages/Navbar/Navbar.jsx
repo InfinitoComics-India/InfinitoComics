@@ -181,16 +181,16 @@ const Header = () => {
             )}
           </div>
 
-          {/* Logo Centered */}
-          <Link to="/">
+          {/* Logo Centered — links back to the main site home */}
+          <a href={FRONTEND_BASE_URL}>
             <div className="text-center">
               <img
                 src={logo}
-                alt="infinto"
+                alt="Infinito"
                 className="h-12 w-auto object-contain"
               />
             </div>
-          </Link>
+          </a>
 
           {/* Right: Infinito Ultimate + Search */}
           <div className="flex items-center gap-3">
