@@ -31,10 +31,13 @@ const AllProducts = () => {
     try {
       setLoading(true);
       const response = await getAllProducts();
-      setProducts(response.data || []);
+      // Backend returns { success, data: [...] }, axios wraps in .data
+      const productList = response.data?.data || response.data || [];
+      setProducts(Array.isArray(productList) ? productList : []);
     } catch (error) {
       message.error('Failed to fetch products');
       console.error(error);
+      setProducts([]);
     } finally {
       setLoading(false);
     }

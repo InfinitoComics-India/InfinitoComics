@@ -11,6 +11,7 @@ import {
   updateProduct, 
   uploadProductImages 
 } from '../../services/shopServices/productService';
+import { getAllCategories } from '../../services/shopServices/categoryService';
 import Swal from 'sweetalert2';
 
 const ProductForm = () => {
@@ -28,10 +29,13 @@ const ProductForm = () => {
     slug: '',
     description: '',
     shortDescription: '',
-    category: 'tshirts',
+    category: '',
     status: 'draft',
     featured: false,
   });
+
+  // Available categories from backend
+  const [categories, setCategories] = useState([]);
 
   // Pricing & Inventory
   const [pricing, setPricing] = useState({
@@ -53,12 +57,29 @@ const ProductForm = () => {
   // Tag input
   const [keywordInput, setKeywordInput] = useState('');
 
+  // Load categories on mount
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
   // Load product data in edit mode
   useEffect(() => {
     if (isEditMode) {
       loadProduct();
     }
   }, [id]);
+
+  const loadCategories = async () => {
+    try {
+      const response = await getAllCategories();
+      // Backend returns { success, data: [...] }, axios wraps in .data
+      const categoryList = response.data?.data || response.data || [];
+      setCategories(Array.isArray(categoryList) ? categoryList : []);
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+      setCategories([]);
+    }
+  };
 
   // Auto-generate slug from name
   useEffect(() => {
@@ -75,14 +96,16 @@ const ProductForm = () => {
     try {
       setLoading(true);
       const response = await getProductById(id);
-      const product = response.data;
+      // Backend returns { success, data: {...} }, axios wraps in .data
+      const product = response.data?.data || response.data;
 
       setFormData({
         name: product.name || '',
         slug: product.slug || '',
         description: product.description || '',
         shortDescription: product.shortDescription || '',
-        category: product.category || 'tshirts',
+        // category may be populated object or ObjectId string
+        category: product.category?._id || product.category || '',
         status: product.status || 'draft',
         featured: product.featured || false,
       });
@@ -123,10 +146,22 @@ const ProductForm = () => {
       setLoading(true);
 
       // Upload new images if any
-      let uploadedImages = [...images];
+      // Keep only existing (non-new) images; new files will be uploaded fresh
+      let uploadedImages = images.filter(img => !img.isNew);
       if (imageFiles.length > 0) {
         const uploadResponse = await uploadProductImages(imageFiles);
-        uploadedImages = [...uploadedImages, ...uploadResponse.data];
+        // Backend returns { success, message, data: [...] }, axios wraps in .data
+        const newImages = uploadResponse.data?.data || [];
+        if (Array.isArray(newImages)) {
+          uploadedImages = [...uploadedImages, ...newImages];
+        }
+      }
+
+      // Validate category is selected
+      if (!formData.category) {
+        Swal.fire('Error', 'Please select a category', 'error');
+        setLoading(false);
+        return;
       }
 
       const productData = {
@@ -389,18 +424,33 @@ const ProductForm = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Category *
                     </label>
-                    <select
-                      value={formData.category}
-                      onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    >
-                      <option value="tshirts">T-Shirts</option>
-                      <option value="hoodies">Hoodies</option>
-                      <option value="caps">Caps</option>
-                      <option value="accessory">Accessories</option>
-                      <option value="totebags">Tote Bags</option>
-                    </select>
+                    {categories.length === 0 ? (
+                      <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+                        No categories found. Please{' '}
+                        <button
+                          type="button"
+                          onClick={() => navigate('/shop/categories/new')}
+                          className="underline font-medium hover:text-yellow-900"
+                        >
+                          create a category
+                        </button>{' '}
+                        first before adding products.
+                      </div>
+                    ) : (
+                      <select
+                        value={formData.category}
+                        onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      >
+                        <option value="">Select a category</option>
+                        {categories.map(cat => (
+                          <option key={cat._id} value={cat._id}>
+                            {cat.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                 </div>
               )}

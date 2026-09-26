@@ -92,7 +92,9 @@ const AllCategories = () => {
         }
       ];
 
-      setCategories(response.data || mockCategories);
+      // Backend returns { success, data: [...] }, axios wraps in .data
+      const categoryList = response.data?.data || response.data;
+      setCategories(Array.isArray(categoryList) && categoryList.length > 0 ? categoryList : []);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
       Swal.fire('Error', 'Failed to load categories', 'error');

@@ -54,7 +54,8 @@ const CategoryForm = () => {
     try {
       setLoading(true);
       const response = await getCategoryById(id);
-      const category = response.data;
+      // Backend returns { success, data: {...} }, axios wraps in .data
+      const category = response.data?.data || response.data;
 
       setFormData({
         name: category.name || '',
@@ -119,7 +120,9 @@ const CategoryForm = () => {
       if (imageFile) {
         setUploading(true);
         const uploadResponse = await uploadCategoryImage(imageFile);
-        imageUrl = uploadResponse.data.url;
+        // Backend returns { success, message, data: { url, ... } }
+        const uploadData = uploadResponse.data?.data || uploadResponse.data;
+        imageUrl = uploadData?.url || uploadData || '';
         setUploading(false);
       }
 
