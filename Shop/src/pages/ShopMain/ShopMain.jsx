@@ -13,7 +13,6 @@ import promoBanner from "../../assets/hero/slide4.svg";
 
 const ShopMain = () => {
   const navigate = useNavigate();
-  const categoryRef = useRef(null);
   const trendingRef = useRef(null);
 
   const [categories, setCategories] = useState(staticCategories);
@@ -81,39 +80,7 @@ const ShopMain = () => {
           Categories
         </h2>
 
-        {/* 5-up grid on desktop, horizontal scroll on mobile. Card artwork
-            already carries the "INFINITO T-Shirts / HOODIES / ..." labels
-            so we don't overlay any text. */}
-        <div
-          ref={categoryRef}
-          className="flex md:grid md:grid-cols-5 gap-3 md:gap-4 overflow-x-auto scroll-smooth no-scrollbar"
-        >
-            {categories.map((cat) => (
-              <div
-                key={cat._id || cat.id}
-                onClick={() => navigate(`/category/${cat.slug}`)}
-                className="flex-shrink-0 w-[220px] md:w-auto cursor-pointer group"
-              >
-                <div className="w-full aspect-[3/4] overflow-hidden rounded-md bg-gray-50">
-                  {cat.image ? (
-                    <img
-                      src={cat.image}
-                      alt={cat.name}
-                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
-                      onError={(e) => { e.target.style.display = 'none'; }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-[#DD1215] text-white font-bold text-xl uppercase tracking-wide p-4 text-center">
-                      {cat.name}
-                    </div>
-                  )}
-                </div>
-                <p className="mt-2 text-center text-sm font-semibold text-gray-800 uppercase tracking-wide">
-                  {cat.name}
-                </p>
-              </div>
-            ))}
-        </div>
+        <CategorySlider categories={categories} navigate={navigate} />
       </section>
 
       {/* ─── TOP TRENDING ────────────────────────────────────── */}
@@ -178,6 +145,169 @@ const ShopMain = () => {
           />
         </a>
       </section>
+    </div>
+  );
+};
+
+// Horizontal category slider with mouse-drag support, click-through preserved,
+// and arrow buttons that appear when the content is wider than the viewport.
+const CategorySlider = ({ categories, navigate }) => {
+  const trackRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  // Drag-to-scroll state. We only treat a pointer gesture as a "drag" once
+  // the pointer has moved more than a few pixels; otherwise it stays a click.
+  const dragState = useRef({
+    isDown: false,
+    dragging: false,
+    startX: 0,
+    scrollLeft: 0,
+  });
+  const DRAG_THRESHOLD = 6; // px before we start treating the gesture as a drag
+
+  const updateArrows = () => {
+    const el = trackRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+
+  useEffect(() => {
+    updateArrows();
+    const el = trackRef.current;
+    if (!el) return;
+    const onScroll = () => updateArrows();
+    el.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", updateArrows);
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", updateArrows);
+    };
+  }, [categories.length]);
+
+  const scrollByAmount = (dir) => {
+    const el = trackRef.current;
+    if (!el) return;
+    // Slide roughly one card at a time (card ~ 220px + gap).
+    el.scrollBy({ left: dir * 240, behavior: "smooth" });
+  };
+
+  const onPointerDown = (e) => {
+    const el = trackRef.current;
+    if (!el) return;
+    dragState.current = {
+      isDown: true,
+      dragging: false,
+      startX: e.pageX,
+      scrollLeft: el.scrollLeft,
+    };
+  };
+
+  const onPointerMove = (e) => {
+    const state = dragState.current;
+    if (!state.isDown) return;
+    const el = trackRef.current;
+    if (!el) return;
+    const dx = e.pageX - state.startX;
+    if (!state.dragging && Math.abs(dx) > DRAG_THRESHOLD) {
+      state.dragging = true;
+      el.style.cursor = "grabbing";
+      el.style.userSelect = "none";
+    }
+    if (state.dragging) {
+      e.preventDefault();
+      el.scrollLeft = state.scrollLeft - dx;
+    }
+  };
+
+  const endDrag = () => {
+    const state = dragState.current;
+    const el = trackRef.current;
+    if (el) {
+      el.style.cursor = "";
+      el.style.userSelect = "";
+    }
+    state.isDown = false;
+    // Keep `dragging` true briefly so the click handler can suppress the click.
+    setTimeout(() => {
+      state.dragging = false;
+    }, 0);
+  };
+
+  const handleCardClick = (slug) => (e) => {
+    // If this click is the tail-end of a drag, don't navigate.
+    if (dragState.current.dragging) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    navigate(`/category/${slug}`);
+  };
+
+  return (
+    <div className="relative">
+      {/* Left arrow (desktop only) */}
+      {canScrollLeft && (
+        <button
+          type="button"
+          onClick={() => scrollByAmount(-1)}
+          aria-label="Scroll categories left"
+          className="hidden md:flex items-center justify-center absolute -left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white shadow-md border border-gray-200 hover:bg-gray-50 z-10"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+      )}
+
+      <div
+        ref={trackRef}
+        onMouseDown={onPointerDown}
+        onMouseMove={onPointerMove}
+        onMouseUp={endDrag}
+        onMouseLeave={endDrag}
+        className="flex gap-3 md:gap-4 overflow-x-auto scroll-smooth no-scrollbar cursor-grab select-none"
+      >
+        {categories.map((cat) => (
+          <div
+            key={cat._id || cat.id}
+            onClick={handleCardClick(cat.slug)}
+            className="flex-shrink-0 w-[180px] md:w-[220px] cursor-pointer group"
+          >
+            <div className="w-full aspect-[3/4] overflow-hidden rounded-md bg-gray-50">
+              {cat.image ? (
+                <img
+                  src={cat.image}
+                  alt={cat.name}
+                  draggable={false}
+                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 pointer-events-none"
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                  }}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-[#DD1215] text-white font-bold text-xl uppercase tracking-wide p-4 text-center">
+                  {cat.name}
+                </div>
+              )}
+            </div>
+            <p className="mt-2 text-center text-sm font-semibold text-gray-800 uppercase tracking-wide">
+              {cat.name}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Right arrow (desktop only) */}
+      {canScrollRight && (
+        <button
+          type="button"
+          onClick={() => scrollByAmount(1)}
+          aria-label="Scroll categories right"
+          className="hidden md:flex items-center justify-center absolute -right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white shadow-md border border-gray-200 hover:bg-gray-50 z-10"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      )}
     </div>
   );
 };
