@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Save, X, Upload, Trash2, Plus, 
-  Image as ImageIcon, Tag, DollarSign, Package,
-  FileText, Globe, Eye
+  Image as ImageIcon, Tag, Package,
+  FileText
 } from 'lucide-react';
 import { 
   getProductById, 
@@ -31,7 +31,6 @@ const ProductForm = () => {
     category: 'tshirts',
     status: 'draft',
     featured: false,
-    tags: [],
   });
 
   // Pricing & Inventory
@@ -39,11 +38,8 @@ const ProductForm = () => {
     basePrice: '',
     salePrice: '',
     costPrice: '',
-    sku: '',
-    barcode: '',
     trackInventory: true,
     stock: '',
-    lowStockThreshold: 5,
   });
 
   // Images
@@ -54,15 +50,7 @@ const ProductForm = () => {
   const [variants, setVariants] = useState([]);
   const [showVariantForm, setShowVariantForm] = useState(false);
 
-  // SEO
-  const [seo, setSeo] = useState({
-    metaTitle: '',
-    metaDescription: '',
-    metaKeywords: [],
-  });
-
   // Tag input
-  const [tagInput, setTagInput] = useState('');
   const [keywordInput, setKeywordInput] = useState('');
 
   // Load product data in edit mode
@@ -97,28 +85,18 @@ const ProductForm = () => {
         category: product.category || 'tshirts',
         status: product.status || 'draft',
         featured: product.featured || false,
-        tags: product.tags || [],
       });
 
       setPricing({
         basePrice: product.basePrice || '',
         salePrice: product.salePrice || '',
         costPrice: product.costPrice || '',
-        sku: product.sku || '',
-        barcode: product.barcode || '',
         trackInventory: product.trackInventory !== false,
         stock: product.stock || '',
-        lowStockThreshold: product.lowStockThreshold || 5,
       });
 
       setImages(product.images || []);
       setVariants(product.variants || []);
-      
-      setSeo({
-        metaTitle: product.metaTitle || '',
-        metaDescription: product.metaDescription || '',
-        metaKeywords: product.metaKeywords || [],
-      });
     } catch (error) {
       console.error('Failed to load product:', error);
       Swal.fire('Error', 'Failed to load product details', 'error');
@@ -156,7 +134,6 @@ const ProductForm = () => {
         ...pricing,
         images: uploadedImages,
         variants,
-        ...seo,
       };
 
       let response;
@@ -194,40 +171,6 @@ const ProductForm = () => {
   const handleRemoveImage = (index) => {
     setImages(prev => prev.filter((_, i) => i !== index));
     setImageFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const addTag = () => {
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, tagInput.trim()]
-      }));
-      setTagInput('');
-    }
-  };
-
-  const removeTag = (tag) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter(t => t !== tag)
-    }));
-  };
-
-  const addKeyword = () => {
-    if (keywordInput.trim() && !seo.metaKeywords.includes(keywordInput.trim())) {
-      setSeo(prev => ({
-        ...prev,
-        metaKeywords: [...prev.metaKeywords, keywordInput.trim()]
-      }));
-      setKeywordInput('');
-    }
-  };
-
-  const removeKeyword = (keyword) => {
-    setSeo(prev => ({
-      ...prev,
-      metaKeywords: prev.metaKeywords.filter(k => k !== keyword)
-    }));
   };
 
   // Variant management
@@ -373,18 +316,6 @@ const ProductForm = () => {
                 <Package className="w-4 h-4 inline mr-2" />
                 Pricing & Inventory
               </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('seo')}
-                className={`flex-1 px-6 py-3 text-sm font-medium transition ${
-                  activeTab === 'seo'
-                    ? 'border-b-2 border-blue-600 text-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <Globe className="w-4 h-4 inline mr-2" />
-                SEO
-              </button>
             </div>
 
             {/* Tab Content */}
@@ -470,47 +401,6 @@ const ProductForm = () => {
                       <option value="accessory">Accessories</option>
                       <option value="totebags">Tote Bags</option>
                     </select>
-                  </div>
-
-                  {/* Tags */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tags
-                    </label>
-                    <div className="flex gap-2 mb-2">
-                      <input
-                        type="text"
-                        value={tagInput}
-                        onChange={(e) => setTagInput(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Add tag and press Enter"
-                      />
-                      <button
-                        type="button"
-                        onClick={addTag}
-                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {formData.tags.map(tag => (
-                        <span
-                          key={tag}
-                          className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm flex items-center gap-2"
-                        >
-                          {tag}
-                          <button
-                            type="button"
-                            onClick={() => removeTag(tag)}
-                            className="hover:text-blue-900"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
                   </div>
                 </div>
               )}
@@ -665,40 +555,6 @@ const ProductForm = () => {
                     </div>
                   </div>
 
-                  {/* Product Codes */}
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <Package className="w-5 h-5" />
-                      Product Codes
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          SKU
-                        </label>
-                        <input
-                          type="text"
-                          value={pricing.sku}
-                          onChange={(e) => setPricing(prev => ({ ...prev, sku: e.target.value }))}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="SKU-12345"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Barcode
-                        </label>
-                        <input
-                          type="text"
-                          value={pricing.barcode}
-                          onChange={(e) => setPricing(prev => ({ ...prev, barcode: e.target.value }))}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="1234567890123"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
                   {/* Inventory Tracking */}
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -719,146 +575,20 @@ const ProductForm = () => {
                     </div>
 
                     {pricing.trackInventory && (
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Current Stock
-                          </label>
-                          <input
-                            type="number"
-                            value={pricing.stock}
-                            onChange={(e) => setPricing(prev => ({ ...prev, stock: e.target.value }))}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="0"
-                            min="0"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Low Stock Threshold
-                          </label>
-                          <input
-                            type="number"
-                            value={pricing.lowStockThreshold}
-                            onChange={(e) => setPricing(prev => ({ ...prev, lowStockThreshold: e.target.value }))}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="5"
-                            min="0"
-                          />
-                        </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Current Stock
+                        </label>
+                        <input
+                          type="number"
+                          value={pricing.stock}
+                          onChange={(e) => setPricing(prev => ({ ...prev, stock: e.target.value }))}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="0"
+                          min="0"
+                        />
                       </div>
                     )}
-                  </div>
-                </div>
-              )}
-
-              {/* SEO Tab */}
-              {activeTab === 'seo' && (
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <Globe className="w-5 h-5" />
-                      Search Engine Optimization
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Optimize your product for search engines
-                    </p>
-                  </div>
-
-                  {/* Meta Title */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Meta Title
-                    </label>
-                    <input
-                      type="text"
-                      value={seo.metaTitle}
-                      onChange={(e) => setSeo(prev => ({ ...prev, metaTitle: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Product title for search engines"
-                      maxLength={60}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      {seo.metaTitle.length}/60 characters
-                    </p>
-                  </div>
-
-                  {/* Meta Description */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Meta Description
-                    </label>
-                    <textarea
-                      value={seo.metaDescription}
-                      onChange={(e) => setSeo(prev => ({ ...prev, metaDescription: e.target.value }))}
-                      rows={3}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Brief description for search engine results"
-                      maxLength={160}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      {seo.metaDescription.length}/160 characters
-                    </p>
-                  </div>
-
-                  {/* Meta Keywords */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Meta Keywords
-                    </label>
-                    <div className="flex gap-2 mb-2">
-                      <input
-                        type="text"
-                        value={keywordInput}
-                        onChange={(e) => setKeywordInput(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addKeyword())}
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Add keyword and press Enter"
-                      />
-                      <button
-                        type="button"
-                        onClick={addKeyword}
-                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {seo.metaKeywords.map(keyword => (
-                        <span
-                          key={keyword}
-                          className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm flex items-center gap-2"
-                        >
-                          {keyword}
-                          <button
-                            type="button"
-                            onClick={() => removeKeyword(keyword)}
-                            className="hover:text-green-900"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Preview */}
-                  <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Eye className="w-4 h-4 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-700">Search Preview</span>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="text-blue-600 text-lg">
-                        {seo.metaTitle || formData.name || 'Product Title'}
-                      </div>
-                      <div className="text-green-700 text-sm">
-                        shop.infinitohq.com › products › {formData.slug || 'product-slug'}
-                      </div>
-                      <div className="text-gray-600 text-sm">
-                        {seo.metaDescription || formData.shortDescription || 'Product description will appear here...'}
-                      </div>
-                    </div>
                   </div>
                 </div>
               )}

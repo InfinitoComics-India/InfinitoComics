@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Save, X, Upload, Trash2, Image as ImageIcon,
-  Eye, AlertCircle
+  AlertCircle
 } from 'lucide-react';
 import { 
   getCategoryById, 
@@ -27,14 +27,10 @@ const CategoryForm = () => {
     image: '',
     status: 'active',
     displayOrder: 0,
-    metaTitle: '',
-    metaDescription: '',
-    metaKeywords: []
   });
 
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
-  const [keywordInput, setKeywordInput] = useState('');
 
   // Load category data in edit mode
   useEffect(() => {
@@ -67,9 +63,6 @@ const CategoryForm = () => {
         image: category.image || '',
         status: category.status || 'active',
         displayOrder: category.displayOrder || 0,
-        metaTitle: category.metaTitle || '',
-        metaDescription: category.metaDescription || '',
-        metaKeywords: category.metaKeywords || []
       });
 
       if (category.image) {
@@ -101,23 +94,6 @@ const CategoryForm = () => {
     setImageFile(null);
     setImagePreview('');
     setFormData(prev => ({ ...prev, image: '' }));
-  };
-
-  const addKeyword = () => {
-    if (keywordInput.trim() && !formData.metaKeywords.includes(keywordInput.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        metaKeywords: [...prev.metaKeywords, keywordInput.trim()]
-      }));
-      setKeywordInput('');
-    }
-  };
-
-  const removeKeyword = (keyword) => {
-    setFormData(prev => ({
-      ...prev,
-      metaKeywords: prev.metaKeywords.filter(k => k !== keyword)
-    }));
   };
 
   const handleSubmit = async (e) => {
@@ -294,111 +270,6 @@ const CategoryForm = () => {
                 <p className="text-xs text-gray-500 mt-1">
                   Lower numbers appear first. Use this to control category ordering.
                 </p>
-              </div>
-            </div>
-          </div>
-
-          {/* SEO Section */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              Search Engine Optimization
-            </h2>
-            
-            <div className="space-y-4">
-              {/* Meta Title */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Meta Title
-                </label>
-                <input
-                  type="text"
-                  value={formData.metaTitle}
-                  onChange={(e) => setFormData(prev => ({ ...prev, metaTitle: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Category title for search engines"
-                  maxLength={60}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  {formData.metaTitle.length}/60 characters
-                </p>
-              </div>
-
-              {/* Meta Description */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Meta Description
-                </label>
-                <textarea
-                  value={formData.metaDescription}
-                  onChange={(e) => setFormData(prev => ({ ...prev, metaDescription: e.target.value }))}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Brief description for search results"
-                  maxLength={160}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  {formData.metaDescription.length}/160 characters
-                </p>
-              </div>
-
-              {/* Meta Keywords */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Meta Keywords
-                </label>
-                <div className="flex gap-2 mb-2">
-                  <input
-                    type="text"
-                    value={keywordInput}
-                    onChange={(e) => setKeywordInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addKeyword())}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Add keyword and press Enter"
-                  />
-                  <button
-                    type="button"
-                    onClick={addKeyword}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
-                  >
-                    Add
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {formData.metaKeywords.map(keyword => (
-                    <span
-                      key={keyword}
-                      className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm flex items-center gap-2"
-                    >
-                      {keyword}
-                      <button
-                        type="button"
-                        onClick={() => removeKeyword(keyword)}
-                        className="hover:text-blue-900"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* SEO Preview */}
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="flex items-center gap-2 mb-3">
-                  <Eye className="w-4 h-4 text-gray-600" />
-                  <span className="text-sm font-medium text-gray-700">Search Preview</span>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-blue-600 text-lg">
-                    {formData.metaTitle || formData.name || 'Category Title'}
-                  </div>
-                  <div className="text-green-700 text-sm">
-                    shop.infinitohq.com › category › {formData.slug || 'category-slug'}
-                  </div>
-                  <div className="text-gray-600 text-sm">
-                    {formData.metaDescription || formData.description || 'Category description will appear here...'}
-                  </div>
-                </div>
               </div>
             </div>
           </div>
