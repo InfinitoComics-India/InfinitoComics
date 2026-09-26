@@ -1,18 +1,5 @@
-// import axios from 'axios';
-// import { BACKEND_URL } from '../utils/constants';
-
-// Once the backend Product/Order APIs are ready, swap these dummy exports
-// for real fetches. For example:
-//
-// export const getAllProducts = async () => {
-//   const { data } = await axios.get(`${BACKEND_URL}/products`);
-//   return data.data;
-// };
-//
-// export const getProductById = async (id) => {
-//   const { data } = await axios.get(`${BACKEND_URL}/products/${id}`);
-//   return data.data;
-// };
+import axios from "axios";
+import { BACKEND_URL } from "../utils/constants";
 
 // Category card artwork already has "INFINITO T-Shirts" etc. baked in,
 // so we import them as-is and skip the label overlay on the grid.
@@ -23,14 +10,78 @@ import totebagsImg  from "../assets/categories/totebags.svg";
 // TODO: save `Shop/src/assets/categories/caps.svg` and swap this fallback.
 const capsImg = tshirtsImg;
 
-export const categories = [
-  { id: 1, name: "T-Shirts",  slug: "tshirts",   image: tshirtsImg },
-  { id: 2, name: "Caps/Hats", slug: "caps",      image: capsImg },
-  { id: 3, name: "Accessory", slug: "accessory", image: accessoryImg },
-  { id: 4, name: "Hoodies",   slug: "hoodies",   image: hoodiesImg },
-  { id: 5, name: "Tote Bags", slug: "totebags",  image: totebagsImg },
+// Fallback artwork used when a backend category doesn't have its own image.
+// Matches on slug (lowercased) so admin-created categories like "tshirts",
+// "hoodies", "accessory", etc. still pick up the branded card if they exist.
+const fallbackCategoryImages = {
+  tshirts: tshirtsImg,
+  "t-shirts": tshirtsImg,
+  tshirt: tshirtsImg,
+  caps: capsImg,
+  "caps-hats": capsImg,
+  accessory: accessoryImg,
+  accessories: accessoryImg,
+  hoodies: hoodiesImg,
+  hoodie: hoodiesImg,
+  totebags: totebagsImg,
+  "tote-bags": totebagsImg,
+};
+
+// Uploaded backend images arrive as "/uploads/shop/xxx.png" and need the
+// backend host prepended. External URLs and data URIs are returned as-is.
+const resolveImageUrl = (url) => {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
+    return url;
+  }
+  const base = BACKEND_URL?.replace(/\/$/, "") || "";
+  const path = url.startsWith("/") ? url : `/${url}`;
+  return `${base}${path}`;
+};
+
+// Static fallback used when the backend is unreachable, so the shop keeps
+// rendering something recognizable during outages.
+const staticCategories = [
+  { id: 1, _id: "static-tshirts",  name: "T-Shirts",  slug: "tshirts",   image: tshirtsImg },
+  { id: 2, _id: "static-caps",     name: "Caps/Hats", slug: "caps",      image: capsImg },
+  { id: 3, _id: "static-accessory",name: "Accessory", slug: "accessory", image: accessoryImg },
+  { id: 4, _id: "static-hoodies",  name: "Hoodies",   slug: "hoodies",   image: hoodiesImg },
+  { id: 5, _id: "static-totebags", name: "Tote Bags", slug: "totebags",  image: totebagsImg },
 ];
 
+// Kept as a synchronous export for existing components that read it directly.
+// New code should call `fetchCategories()` and render the live list.
+export const categories = staticCategories;
+
+// Fetch categories from the backend. Falls back to static data on error so
+// the storefront never renders a blank grid.
+export const fetchCategories = async () => {
+  try {
+    const { data } = await axios.get(`${BACKEND_URL}/shop/categories/public/all`);
+    const list = Array.isArray(data?.data) ? data.data : [];
+    if (list.length === 0) return staticCategories;
+
+    return list.map((cat) => ({
+      id: cat._id,
+      _id: cat._id,
+      name: cat.name,
+      slug: cat.slug,
+      description: cat.description || "",
+      image:
+        resolveImageUrl(cat.image) ||
+        fallbackCategoryImages[cat.slug?.toLowerCase()] ||
+        "",
+      productCount: cat.productCount || 0,
+      status: cat.status,
+    }));
+  } catch (err) {
+    console.error("Failed to fetch categories, using static fallback:", err);
+    return staticCategories;
+  }
+};
+
+// ─── PRODUCTS ─────────────────────────────────────────────────────────────
+// Static products kept as fallback until the backend product list is populated.
 export const products = [
   {
     id: "p1",
@@ -141,6 +192,86 @@ export const products = [
   },
 ];
 
+// Normalize a backend product to the shape the UI already understands.
+const mapBackendProduct = (p) => ({
+  id: p._id,
+  _id: p._id,
+  name: "INFINITO",
+  title: p.name,
+  description: p.description || p.shortDescription || "",
+  price: p.salePrice || p.basePrice || 0,
+  mrp: p.basePrice || 0,
+  category: p.category?.slug || p.categorySlug || "",
+  slug: p.slug,
+  image: resolveImageUrl(p.images?.[0]?.url || ""),
+  gallery: (p.images || []).map((img) => resolveImageUrl(img.url)),
+  sizes: [],
+  rating: 0,
+  reviewsCount: 0,
+  ratingBreakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+  specs: {},
+  featured: p.featured,
+  stock: p.stock,
+});
+
+// Fetch all active products from the backend. Falls back to static list on error.
+export const fetchProducts = async () => {
+  try {
+    const { data } = await axios.get(`${BACKEND_URL}/shop/products/public/all`);
+    const list = Array.isArray(data?.data) ? data.data : [];
+    if (list.length === 0) return products;
+    return list.map(mapBackendProduct);
+  } catch (err) {
+    console.error("Failed to fetch products, using static fallback:", err);
+    return products;
+  }
+};
+
+// Fetch featured products (used on the shop home).
+export const fetchFeaturedProducts = async (limit = 10) => {
+  try {
+    const { data } = await axios.get(
+      `${BACKEND_URL}/shop/products/public/featured`,
+      { params: { limit } }
+    );
+    const list = Array.isArray(data?.data) ? data.data : [];
+    if (list.length === 0) return products;
+    return list.map(mapBackendProduct);
+  } catch (err) {
+    console.error("Failed to fetch featured products, using static fallback:", err);
+    return products;
+  }
+};
+
+// Fetch a single product by slug (used on the product detail page).
+export const fetchProductBySlug = async (slug) => {
+  try {
+    const { data } = await axios.get(
+      `${BACKEND_URL}/shop/products/public/slug/${slug}`
+    );
+    if (!data?.data) return null;
+    return mapBackendProduct(data.data);
+  } catch (err) {
+    console.error("Failed to fetch product by slug:", err);
+    return null;
+  }
+};
+
+// Fetch all products for a category slug.
+export const fetchProductsByCategory = async (categorySlug) => {
+  try {
+    const { data } = await axios.get(
+      `${BACKEND_URL}/shop/products/public/category/${categorySlug}`
+    );
+    const list = Array.isArray(data?.data) ? data.data : [];
+    return list.map(mapBackendProduct);
+  } catch (err) {
+    console.error("Failed to fetch products by category:", err);
+    return products.filter((p) => p.category === categorySlug);
+  }
+};
+
+// Kept for existing components that still use the sync API against the static list.
 export const getProductById = (id) => products.find((p) => p.id === id);
 export const getProductsByCategory = (slug) =>
   slug ? products.filter((p) => p.category === slug) : products;

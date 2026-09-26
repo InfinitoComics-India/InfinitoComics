@@ -1,7 +1,12 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { categories, products } from "../../services/productService";
+import {
+  categories as staticCategories,
+  products as staticProducts,
+  fetchCategories,
+  fetchProducts,
+} from "../../services/productService";
 import HeroSlider from "./HeroSlider";
 import ultimateKitBanner from "../../assets/ultimateKit.svg";
 import promoBanner from "../../assets/hero/slide4.svg";
@@ -10,6 +15,22 @@ const ShopMain = () => {
   const navigate = useNavigate();
   const categoryRef = useRef(null);
   const trendingRef = useRef(null);
+
+  const [categories, setCategories] = useState(staticCategories);
+  const [products, setProducts] = useState(staticProducts);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [cats, prods] = await Promise.all([fetchCategories(), fetchProducts()]);
+      if (cancelled) return;
+      if (Array.isArray(cats) && cats.length > 0) setCategories(cats);
+      if (Array.isArray(prods) && prods.length > 0) setProducts(prods);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const scroll = (ref, dir) => {
     if (!ref.current) return;
@@ -69,23 +90,27 @@ const ShopMain = () => {
         >
             {categories.map((cat) => (
               <div
-                key={cat.id}
+                key={cat._id || cat.id}
                 onClick={() => navigate(`/category/${cat.slug}`)}
                 className="flex-shrink-0 w-[220px] md:w-auto cursor-pointer group"
               >
-                <div className="w-full aspect-[3/4] overflow-hidden">
+                <div className="w-full aspect-[3/4] overflow-hidden rounded-md bg-gray-50">
                   {cat.image ? (
                     <img
                       src={cat.image}
                       alt={cat.name}
                       className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => { e.target.style.display = 'none'; }}
                     />
                   ) : (
-                    <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
+                    <div className="w-full h-full flex items-center justify-center bg-[#DD1215] text-white font-bold text-xl uppercase tracking-wide p-4 text-center">
                       {cat.name}
                     </div>
                   )}
                 </div>
+                <p className="mt-2 text-center text-sm font-semibold text-gray-800 uppercase tracking-wide">
+                  {cat.name}
+                </p>
               </div>
             ))}
         </div>
