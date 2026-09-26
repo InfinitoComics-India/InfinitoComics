@@ -50,9 +50,18 @@ const HR_ITEMS = [
 
 // ── Shop sub-items (shown inside collapsible accordion) ────────
 const SHOP_ITEMS = [
-  { label: "Products",      to: "/shop/products",    icon: Package,     roles: SHOP_ALL },
-  { label: "Categories",    to: "/shop/categories",  icon: FolderOpen,  roles: SHOP_ALL },
-  { label: "Inventory",     to: "/shop/inventory",   icon: BarChart3,   roles: SHOP_ALL },
+  { 
+    label: "Products", 
+    icon: Package, 
+    roles: SHOP_ALL,
+    isParent: true,
+    subItems: [
+      { label: "All Products",   to: "/shop/products",    icon: Package,     roles: SHOP_ALL },
+      { label: "Add Product",    to: "/shop/products/new", icon: Package,    roles: SHOP_ALL },
+      { label: "Categories",     to: "/shop/categories",  icon: FolderOpen,  roles: SHOP_ALL },
+      { label: "Inventory",      to: "/shop/inventory",   icon: BarChart3,   roles: SHOP_ALL },
+    ]
+  },
 ];
 
 const Navbar = () => {
@@ -60,6 +69,7 @@ const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hrOpen, setHrOpen]         = useState(false); // HR accordion open/closed
   const [shopOpen, setShopOpen]     = useState(false); // Shop accordion open/closed
+  const [productsOpen, setProductsOpen] = useState(false); // Products subsection open/closed
   const location = useLocation();
   const token = localStorage.getItem("authToken");
   const roles = getRoles();
@@ -72,7 +82,10 @@ const Navbar = () => {
 
   // If any HR/Shop route is currently active, keep accordion open
   const isHRActive   = visibleHR.some(item => location.pathname.startsWith(`/admin${item.to}`));
-  const isShopActive = visibleShop.some(item => location.pathname.startsWith(`/admin${item.to}`));
+  const isShopActive = location.pathname.startsWith('/admin/shop');
+  const isProductsActive = location.pathname.startsWith('/admin/shop/products') || 
+                           location.pathname.startsWith('/admin/shop/categories') ||
+                           location.pathname.startsWith('/admin/shop/inventory');
 
   const handleLogout = () => {
     localStorage.clear();

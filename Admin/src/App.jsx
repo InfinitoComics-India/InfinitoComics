@@ -46,6 +46,8 @@ import AIAssistant       from './Pages/HR/AIAssistant.jsx';
 // ── Shop imports ──────────────────────────────────────────────
 import AllProducts       from './Pages/Shop/AllProducts.jsx';
 import ProductForm       from './Pages/Shop/ProductForm.jsx';
+import AllCategories     from './Pages/Shop/AllCategories.jsx';
+import CategoryForm      from './Pages/Shop/CategoryForm.jsx';
 
 // Role constants
 const SUPER   = ["superadmin"];
@@ -257,6 +259,17 @@ function App() {
           } />
           <Route path="/shop/products/:id" element={
             <ProtectedRoute allowedRoles={SHOP}><ProductForm /></ProtectedRoute>
+          } />
+
+          {/* Categories Management */}
+          <Route path="/shop/categories" element={
+            <ProtectedRoute allowedRoles={SHOP}><AllCategories /></ProtectedRoute>
+          } />
+          <Route path="/shop/categories/new" element={
+            <ProtectedRoute allowedRoles={SHOP}><CategoryForm /></ProtectedRoute>
+          } />
+          <Route path="/shop/categories/:id" element={
+            <ProtectedRoute allowedRoles={SHOP}><CategoryForm /></ProtectedRoute>
           } />
 
         </Route>
