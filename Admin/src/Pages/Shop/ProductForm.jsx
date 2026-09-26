@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Save, X, Upload, Trash2, Plus, 
@@ -14,6 +15,14 @@ import {
 import { getAllCategories } from '../../services/shopServices/categoryService';
 import Swal from 'sweetalert2';
 
+// Handle any of the response shapes our services return.
+const extractList = (response) => {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.data?.data)) return response.data.data;
+  return [];
+};
+
 const ProductForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -23,7 +32,8 @@ const ProductForm = () => {
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState('basic'); // basic, variants, inventory, seo
 
-  // Basic Info
+  // Basic Info. `category` must be a ShopCategory ObjectId — populated
+  // dynamically from the backend so the user picks a real category.
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -34,8 +44,8 @@ const ProductForm = () => {
     featured: false,
   });
 
-  // Available categories from backend
-  const [categories, setCategories] = useState([]);
+  // Category options fetched from the backend.
+  const [categoryOptions, setCategoryOptions] = useState([]);
 
   // Pricing & Inventory
   const [pricing, setPricing] = useState({
@@ -57,9 +67,17 @@ const ProductForm = () => {
   // Tag input
   const [keywordInput, setKeywordInput] = useState('');
 
-  // Load categories on mount
+  // Load categories once on mount so the dropdown is populated.
   useEffect(() => {
-    loadCategories();
+    (async () => {
+      try {
+        const res = await getAllCategories();
+        setCategoryOptions(extractList(res));
+      } catch (err) {
+        console.error('Failed to load categories:', err);
+        setCategoryOptions([]);
+      }
+    })();
   }, []);
 
   // Load product data in edit mode
@@ -68,18 +86,6 @@ const ProductForm = () => {
       loadProduct();
     }
   }, [id]);
-
-  const loadCategories = async () => {
-    try {
-      const response = await getAllCategories();
-      // Backend returns { success, data: [...] }, axios wraps in .data
-      const categoryList = response.data?.data || response.data || [];
-      setCategories(Array.isArray(categoryList) ? categoryList : []);
-    } catch (error) {
-      console.error('Failed to load categories:', error);
-      setCategories([]);
-    }
-  };
 
   // Auto-generate slug from name
   useEffect(() => {
@@ -96,15 +102,18 @@ const ProductForm = () => {
     try {
       setLoading(true);
       const response = await getProductById(id);
-      // Backend returns { success, data: {...} }, axios wraps in .data
-      const product = response.data?.data || response.data;
+      // response is the raw axios response; backend body is response.data.
+      // In edit-mode the product is response.data.data (backend wraps it).
+      const product =
+        response?.data?._id ? response.data
+        : response?.data?.data || response?.data || {};
 
       setFormData({
         name: product.name || '',
         slug: product.slug || '',
         description: product.description || '',
         shortDescription: product.shortDescription || '',
-        // category may be populated object or ObjectId string
+        // Backend populates category as { _id, name, slug } — use _id for the dropdown.
         category: product.category?._id || product.category || '',
         status: product.status || 'draft',
         featured: product.featured || false,
@@ -145,23 +154,20 @@ const ProductForm = () => {
     try {
       setLoading(true);
 
-      // Upload new images if any
-      // Keep only existing (non-new) images; new files will be uploaded fresh
-      let uploadedImages = images.filter(img => !img.isNew);
-      if (imageFiles.length > 0) {
-        const uploadResponse = await uploadProductImages(imageFiles);
-        // Backend returns { success, message, data: [...] }, axios wraps in .data
-        const newImages = uploadResponse.data?.data || [];
-        if (Array.isArray(newImages)) {
-          uploadedImages = [...uploadedImages, ...newImages];
-        }
-      }
-
-      // Validate category is selected
+      // Category is required and must be a real backend ObjectId.
       if (!formData.category) {
         Swal.fire('Error', 'Please select a category', 'error');
         setLoading(false);
         return;
+      }
+
+      // Keep existing images (already uploaded) and add newly uploaded ones.
+      let uploadedImages = images.filter((img) => !img.isNew);
+      if (imageFiles.length > 0) {
+        const uploadResponse = await uploadProductImages(imageFiles);
+        // Backend returns { success, message, data: [...] } — axios wraps in .data
+        const newImages = extractList(uploadResponse);
+        uploadedImages = [...uploadedImages, ...newImages];
       }
 
       const productData = {
@@ -424,17 +430,17 @@ const ProductForm = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Category *
                     </label>
-                    {categories.length === 0 ? (
+                    {categoryOptions.length === 0 ? (
                       <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
-                        No categories found. Please{' '}
+                        No categories found.{' '}
                         <button
                           type="button"
                           onClick={() => navigate('/shop/categories/new')}
                           className="underline font-medium hover:text-yellow-900"
                         >
-                          create a category
+                          Create one
                         </button>{' '}
-                        first before adding products.
+                        before adding a product.
                       </div>
                     ) : (
                       <select
@@ -444,7 +450,7 @@ const ProductForm = () => {
                         required
                       >
                         <option value="">Select a category</option>
-                        {categories.map(cat => (
+                        {categoryOptions.map((cat) => (
                           <option key={cat._id} value={cat._id}>
                             {cat.name}
                           </option>
