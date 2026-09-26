@@ -181,7 +181,7 @@ const Header = () => {
   ) : (
     <div className="text-white font-sans">
       {/* ── Top promo bar ── */}
-      <div className="border-b bg-[#202020] border-gray-600 text-sm py-4 flex flex-col md:flex-row items-center">
+      <div className="border-b bg-[#202020] border-gray-600 text-sm py-3 flex flex-col md:flex-row items-center">
         <div className="w-full max-w-[1200px] mx-auto px-4 md:px-12 flex justify-between items-center">
           {/* Promo Text */}
           <div className="mb-2 md:mb-0 text-center">
@@ -189,7 +189,7 @@ const Header = () => {
           </div>
 
           {/* Navigation Links */}
-          <div className="hidden md:flex gap-10 text-[1rem] text-gray-300">
+          <div className="hidden md:flex gap-10 text-sm text-gray-300">
             <Link to="/news" className="hover:text-white font-bold">
               Blogs &amp; News
             </Link>
@@ -211,7 +211,7 @@ const Header = () => {
 
       {/* ── Main bar: Login | Logo | Search ── */}
       <div className="bg-[#202020] py-1">
-        <div className="w-full max-w-[1200px] mx-auto px-4 md:px-12 flex items-center justify-between gap-4">
+        <div className="relative w-full max-w-[1200px] mx-auto px-4 md:px-12 flex items-center justify-between min-h-[56px]">
           {/* Mobile hamburger */}
           <div className="md:hidden">
             <button onClick={() => setMenuOpen(!menuOpen)}>
@@ -242,9 +242,12 @@ const Header = () => {
           </div>
 
           {/* Logo Centered */}
-          <Link to="/">
+          <Link
+            to="/"
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
+          >
             <div className="text-center">
-              <img src={logo} alt="infinto" className="h-12 w-auto object-contain" />
+              <img src={logo} alt="infinito" className="h-12 w-auto object-contain" />
             </div>
           </Link>
 
