@@ -45,6 +45,7 @@ import AIAssistant       from './Pages/HR/AIAssistant.jsx';
 
 // ── Shop imports ──────────────────────────────────────────────
 import AllProducts       from './Pages/Shop/AllProducts.jsx';
+import ProductForm       from './Pages/Shop/ProductForm.jsx';
 
 // Role constants
 const SUPER   = ["superadmin"];
@@ -250,6 +251,12 @@ function App() {
           {/* Products Management */}
           <Route path="/shop/products" element={
             <ProtectedRoute allowedRoles={SHOP}><AllProducts /></ProtectedRoute>
+          } />
+          <Route path="/shop/products/new" element={
+            <ProtectedRoute allowedRoles={SHOP}><ProductForm /></ProtectedRoute>
+          } />
+          <Route path="/shop/products/:id" element={
+            <ProtectedRoute allowedRoles={SHOP}><ProductForm /></ProtectedRoute>
           } />
 
         </Route>

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Search, Filter, Grid3x3, List, Edit, Trash2, MoreVertical, Eye } from 'lucide-react';
 import { message, Popconfirm, Spin, Tag, Dropdown } from 'antd';
 import { getAllProducts, deleteProduct } from '../../services/shopServices/productService';
 
 const AllProducts = () => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
