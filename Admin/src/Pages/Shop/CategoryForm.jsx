@@ -10,7 +10,18 @@ import {
   updateCategory,
   uploadCategoryImage 
 } from '../../services/shopServices/categoryService';
+import { BACKEND_URL } from '../../Utils/constant';
 import Swal from 'sweetalert2';
+
+const resolveImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  const base = BACKEND_URL?.replace(/\/$/, '') || '';
+  const path = url.startsWith('/') ? url : `/${url}`;
+  return `${base}${path}`;
+};
 
 const CategoryForm = () => {
   const { id } = useParams();
@@ -54,7 +65,12 @@ const CategoryForm = () => {
     try {
       setLoading(true);
       const response = await getCategoryById(id);
-      const category = response.data;
+      // categoryService returns response.data already: { success, data: {...} }.
+      // If it looks like a category (has _id), use it directly; otherwise unwrap.
+      const category =
+        response?._id ? response
+        : response?.data?._id ? response.data
+        : response?.data?.data || response?.data || {};
 
       setFormData({
         name: category.name || '',
@@ -66,11 +82,11 @@ const CategoryForm = () => {
       });
 
       if (category.image) {
-        setImagePreview(category.image);
+        setImagePreview(resolveImageUrl(category.image));
       }
     } catch (error) {
       console.error('Failed to load category:', error);
-      Swal.fire('Error', 'Failed to load category details', 'error');
+      Swal.fire('Error', error.response?.data?.message || 'Failed to load category details', 'error');
     } finally {
       setLoading(false);
     }
@@ -119,7 +135,11 @@ const CategoryForm = () => {
       if (imageFile) {
         setUploading(true);
         const uploadResponse = await uploadCategoryImage(imageFile);
-        imageUrl = uploadResponse.data.url;
+        // categoryService returns response.data: { success, message, data: { url } }
+        const uploadedData = uploadResponse?.data?.url
+          ? uploadResponse.data
+          : uploadResponse?.data?.data || uploadResponse?.data || {};
+        imageUrl = uploadedData.url || '';
         setUploading(false);
       }
 

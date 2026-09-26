@@ -9,7 +9,20 @@ import {
   deleteCategory, 
   updateCategory 
 } from '../../services/shopServices/categoryService';
+import { BACKEND_URL } from '../../Utils/constant';
 import Swal from 'sweetalert2';
+
+// Build the full URL for images. Uploaded images come back as "/uploads/shop/xxx.png"
+// and need the backend host prepended. External URLs and data URIs are returned as-is.
+const resolveImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  const base = BACKEND_URL?.replace(/\/$/, '') || '';
+  const path = url.startsWith('/') ? url : `/${url}`;
+  return `${base}${path}`;
+};
 
 const AllCategories = () => {
   const navigate = useNavigate();
@@ -32,70 +45,20 @@ const AllCategories = () => {
     try {
       setLoading(true);
       const response = await getAllCategories();
-      
-      // Mock data for testing
-      const mockCategories = [
-        {
-          _id: '1',
-          name: 'T-Shirts',
-          slug: 'tshirts',
-          description: 'Comfortable and stylish t-shirts for all occasions',
-          image: 'https://via.placeholder.com/300x200?text=T-Shirts',
-          status: 'active',
-          productCount: 24,
-          displayOrder: 1,
-          createdAt: '2024-01-15'
-        },
-        {
-          _id: '2',
-          name: 'Hoodies',
-          slug: 'hoodies',
-          description: 'Warm and cozy hoodies perfect for cold weather',
-          image: 'https://via.placeholder.com/300x200?text=Hoodies',
-          status: 'active',
-          productCount: 18,
-          displayOrder: 2,
-          createdAt: '2024-01-16'
-        },
-        {
-          _id: '3',
-          name: 'Caps & Hats',
-          slug: 'caps',
-          description: 'Trendy caps and hats to complete your look',
-          image: 'https://via.placeholder.com/300x200?text=Caps',
-          status: 'active',
-          productCount: 12,
-          displayOrder: 3,
-          createdAt: '2024-01-17'
-        },
-        {
-          _id: '4',
-          name: 'Accessories',
-          slug: 'accessory',
-          description: 'Various accessories to enhance your style',
-          image: 'https://via.placeholder.com/300x200?text=Accessories',
-          status: 'active',
-          productCount: 32,
-          displayOrder: 4,
-          createdAt: '2024-01-18'
-        },
-        {
-          _id: '5',
-          name: 'Tote Bags',
-          slug: 'totebags',
-          description: 'Eco-friendly and stylish tote bags',
-          image: 'https://via.placeholder.com/300x200?text=Tote-Bags',
-          status: 'inactive',
-          productCount: 8,
-          displayOrder: 5,
-          createdAt: '2024-01-19'
-        }
-      ];
-
-      setCategories(response.data || mockCategories);
+      // categoryService returns response.data already: { success, data: [...] }.
+      // If wrapper changes to raw axios response, .data.data is the fallback.
+      const list = Array.isArray(response)
+        ? response
+        : Array.isArray(response?.data)
+          ? response.data
+          : Array.isArray(response?.data?.data)
+            ? response.data.data
+            : [];
+      setCategories(list);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
-      Swal.fire('Error', 'Failed to load categories', 'error');
+      Swal.fire('Error', error.response?.data?.message || 'Failed to load categories', 'error');
+      setCategories([]);
     } finally {
       setLoading(false);
     }
@@ -296,9 +259,10 @@ const AllCategories = () => {
                   <div className="relative h-48 bg-gray-100">
                     {category.image ? (
                       <img
-                        src={category.image}
+                        src={resolveImageUrl(category.image)}
                         alt={category.name}
                         className="w-full h-full object-cover"
+                        onError={(e) => { e.target.style.display = 'none'; }}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -405,9 +369,10 @@ const AllCategories = () => {
                         <div className="flex items-center gap-3">
                           {category.image ? (
                             <img
-                              src={category.image}
+                              src={resolveImageUrl(category.image)}
                               alt={category.name}
                               className="w-12 h-12 rounded object-cover"
+                              onError={(e) => { e.target.style.display = 'none'; }}
                             />
                           ) : (
                             <div className="w-12 h-12 rounded bg-gray-100 flex items-center justify-center">

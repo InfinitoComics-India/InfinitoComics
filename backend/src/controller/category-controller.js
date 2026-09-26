@@ -26,11 +26,18 @@ const createCategory = async (req, res) => {
   }
 };
 
-// Get all categories
+// Get all categories (admin sees all; public sees only active)
 const getAllCategories = async (req, res) => {
   try {
+    // Detect admin route by the URL path (`/admin/all`) or an authenticated req.user
+    const isAdminRoute =
+      req.originalUrl.includes("/admin/") || Boolean(req.user);
+
     const filters = {
+      // If an explicit status is provided in the query, respect it
       status: req.query.status,
+      // Admin routes should include categories of all statuses
+      includeAll: isAdminRoute && !req.query.status,
     };
 
     const categories = await categoryService.getAll(filters);
