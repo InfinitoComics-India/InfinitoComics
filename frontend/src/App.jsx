@@ -140,6 +140,18 @@ function App() {
               <Route path="/shop/product/:id" element={<ProductDetail />} />
               <Route path="/merch/:id" element={<ProductDetail />} />
               <Route path="/shop" element={<ProductDetail />} />
+              <Route path="/shop/:id" element={<ProductDetail />} />
+              <Route path="/tote-bags" element={<ProductDetail />} />
+              <Route path="/tote-bags/:id" element={<ProductDetail />} />
+              <Route path="/tshirts" element={<ProductDetail />} />
+              <Route path="/tshirts/:id" element={<ProductDetail />} />
+              <Route path="/hoodies" element={<ProductDetail />} />
+              <Route path="/hoodies/:id" element={<ProductDetail />} />
+              <Route path="/collectibles" element={<ProductDetail />} />
+              <Route path="/collectibles/:id" element={<ProductDetail />} />
+              <Route path="/item/:id" element={<ProductDetail />} />
+              <Route path="/category/:category" element={<ProductDetail />} />
+              <Route path="/category/:category/:id" element={<ProductDetail />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
