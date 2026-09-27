@@ -265,10 +265,6 @@ const AllCategories = () => {
                         <div className="w-full h-full flex items-center justify-center">
                           <ImageIcon className="w-16 h-16 text-gray-300" />
                         </div>
-                      }
-                    />
-                  </div>
-                    
                     {/* Status Badge */}
                     <div className="absolute top-3 right-3">
                       <span
