@@ -45,6 +45,7 @@ import ComicChap from './components/Comics/ComicChap.jsx'
 import ChildrensPrivacyPolicy from './pages/Policy/Children.jsx';
 import AntiHarassmentPolicy from './pages/Policy/AntiHarassment.jsx';
 import ProductDetail from './pages/Shop/ProductDetail.jsx';
+import ShopCatalog from './pages/Shop/ShopCatalog.jsx';
 
 function App() {
   useEffect(() => {
@@ -90,6 +91,7 @@ function App() {
   const isSupportSubdomain =
     hostname.includes("supportus") ||
     hostname.includes("foundation");
+  const isShopSubdomain = hostname.includes("shop");
 
   return (
     <>
@@ -98,7 +100,7 @@ function App() {
         <BrowserRouter basename="/">
           <Routes>
             <Route path="/" element={<Body />}>
-              <Route index element={isSupportSubdomain ? <SupportUs /> : <Home />} />
+              <Route index element={isShopSubdomain ? <ShopCatalog /> : isSupportSubdomain ? <SupportUs /> : <Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/loggedin" element={<Loggedin />} />
               <Route path="/Premium" element={<Premium />} />
@@ -135,11 +137,11 @@ function App() {
               <Route path="/anti-harassment" element={<AntiHarassmentPolicy />} />
               <Route path="/ErrorReport" element={<ErrorPage />} />
               <Route path="/animation" element={<AnimationPage />} />
+              <Route path="/shop" element={<ShopCatalog />} />
               <Route path="/product" element={<ProductDetail />} />
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/shop/product/:id" element={<ProductDetail />} />
               <Route path="/merch/:id" element={<ProductDetail />} />
-              <Route path="/shop" element={<ProductDetail />} />
               <Route path="/shop/:id" element={<ProductDetail />} />
               <Route path="/tote-bags" element={<ProductDetail />} />
               <Route path="/tote-bags/:id" element={<ProductDetail />} />
