@@ -1,6 +1,5 @@
 // PremiumPlansShimmer.jsx
 import React, { useState, useEffect } from "react";
-import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
@@ -87,14 +86,10 @@ const PremiumPlansShimmer = () => {
   return (
     <div className="w-full mt-5 p-4 lg:p-16">
       {isMobile ? (
-        // Mobile/tablet view → slider
-        <Slider {...sliderSettings} className="!overflow-visible">
-          {Array.from({ length: shimmerCount }).map((_, index) => (
-            <div key={index} className="px-3">
-              <ShimmerCard isLarge={index === 0} />
-            </div>
-          ))}
-        </Slider>
+        // Mobile/tablet view
+        <div className="flex gap-4 overflow-hidden px-3">
+          <ShimmerCard isLarge={true} />
+        </div>
       ) : (
         // Desktop view → grid
         <div className="flex justify-center gap-6 flex-wrap">
