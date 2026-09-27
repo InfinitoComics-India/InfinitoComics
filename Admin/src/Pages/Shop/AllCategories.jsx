@@ -267,8 +267,7 @@ const AllCategories = () => {
                         </div>
                       }
                     />
-                  </div>
-                    
+
                     {/* Status Badge */}
                     <div className="absolute top-3 right-3">
                       <span
