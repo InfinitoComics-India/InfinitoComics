@@ -1,5 +1,4 @@
 import React, { useRef, useState, useEffect } from "react";
-import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
