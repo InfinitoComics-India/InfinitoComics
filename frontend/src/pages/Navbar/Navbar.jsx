@@ -70,7 +70,7 @@ const Header = () => {
 
       {/* ── Main bar: Login | Logo | Search ── */}
       <div className="bg-[#202020] py-2">
-        <div className="w-full max-w-[1200px] mx-auto px-4 md:px-12 flex items-center justify-between gap-4">
+        <div className="relative w-full max-w-[1200px] mx-auto px-4 md:px-12 flex items-center justify-between min-h-[56px]">
           {/* Mobile hamburger */}
           <div className="md:hidden">
             <button onClick={() => setMenuOpen(!menuOpen)}>
@@ -101,7 +101,10 @@ const Header = () => {
           </div>
 
           {/* Logo Centered - Always redirects to Main Domain https://infinitohq.com */}
-          <a href={FRONTEND_BASE_URL || "https://infinitohq.com"} className="text-center">
+          <a
+            href={FRONTEND_BASE_URL || "https://infinitohq.com"}
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 text-center"
+          >
             <img src={logo} alt="INFINITO" className="h-10 md:h-12 w-auto object-contain" />
           </a>
 
