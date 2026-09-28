@@ -8,8 +8,7 @@ import slide2 from "../../assets/hero/slide2.svg";
 
 const slides = [
   {
-    // Slide 1 uses the artwork as-is — heading, subtext and Shop Now
-    // button are all baked into the SVG, so we don't render an overlay.
+    // Slide 1 uses the artwork as-is — baked into the SVG, no text overlay.
     id: 1,
     image: slide1,
     hideText: true,
@@ -17,43 +16,12 @@ const slides = [
     align: "left",
   },
   {
-    // Slide 2 uses slide2.svg as background with the "MONTHLY DROP INCOMING"
-    // text laid on top — artwork is set-dressing only, copy is real HTML.
+    // Slide 2: text overlay removed as requested; image only.
     id: 2,
     image: slide2,
+    hideText: true,
     variant: "light",
-    eyebrow: "INFINITO",
-    heading: (
-      <>
-        MONTHLY DROP
-        <br />
-        INCOMING
-      </>
-    ),
-    subtext: "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
-    cta: "Shop Now",
     align: "right",
-  },
-  {
-    // Slide 3 — no artwork yet, so text-only over the dark radial background.
-    id: 3,
-    image: null,
-    variant: "dark",
-    eyebrow: null,
-    heading: (
-      <>
-        <span className="text-[#DD1215]">BECOME</span>
-        <br />
-        ONE OF US
-        <br />
-        <span className="text-[#DD1215]">BECOME</span>
-        <br />
-        INFINITO
-      </>
-    ),
-    subtext: "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
-    cta: "Shop Now",
-    align: "left",
   },
 ];
 
