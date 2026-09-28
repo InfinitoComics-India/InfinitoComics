@@ -11,6 +11,7 @@ const ROLE_OPTIONS = [
   { value: "research_admin",  label: "Research Admin",  desc: "Research papers" },
   { value: "blog_admin",      label: "Blog Admin",      desc: "Blogs, FAQs, Timeline" },
   { value: "career_admin",    label: "Career Admin",    desc: "Career & Jobs" },
+  { value: "employee",        label: "Employee",        desc: "Employee portal only — attendance, work log, leave, payslips" },
 ];
 
 const ROLE_COLORS = {
@@ -20,6 +21,7 @@ const ROLE_COLORS = {
   research_admin:  "bg-green-100 text-green-700",
   blog_admin:      "bg-yellow-100 text-yellow-700",
   career_admin:    "bg-orange-100 text-orange-700",
+  employee:        "bg-teal-100 text-teal-700",
 };
 
 const EMPTY_FORM = { name: "", email: "", password: "", roles: [] };
