@@ -199,3 +199,11 @@ export const getAIConversations  = ()                        => axios.get(`${BAS
 export const getAIConversation   = (id)                      => axios.get(`${BASE}/hr/ai/conversations/${id}`, authHeaders());
 export const deleteAIConversation= (id)                      => axios.delete(`${BASE}/hr/ai/conversations/${id}`, authHeaders());
 export const clearAIHistory      = ()                        => axios.delete(`${BASE}/hr/ai/conversations`, authHeaders());
+
+// ── DAILY WORK LOG ────────────────────────────────────────────
+export const submitWorkLog      = (data)           => axios.post(`${BASE}/hr/worklog/submit`, data, authHeaders());
+export const getTodayWorkLog    = (empId)          => axios.get(`${BASE}/hr/worklog/today/${empId}`, authHeaders());
+export const getWorkLogHistory  = (empId, limit)   => axios.get(`${BASE}/hr/worklog/history/${empId}`, { ...authHeaders(), params: { limit } });
+export const getWorkLogsForDate = (date)           => axios.get(`${BASE}/hr/worklog/date`, { ...authHeaders(), params: { date } });
+export const getWorkLogSummary  = (date)           => axios.get(`${BASE}/hr/worklog/summary`, { ...authHeaders(), params: { date } });
+export const runMidnightCron    = ()               => axios.post(`${BASE}/hr/worklog/run-cron`, {}, authHeaders());
