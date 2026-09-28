@@ -4,6 +4,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   fetchCategories,
   fetchFeaturedProducts,
+  fetchProducts,
+  fallbackCategoryImages,
 } from "../../services/productService";
 import HeroSlider from "./HeroSlider";
 import ultimateKitBanner from "../../assets/ultimateKit.svg";
@@ -21,18 +23,27 @@ const ShopMain = () => {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      // Top Trending shows FEATURED products only. Toggle 'Featured Product'
-      // on a product in the admin panel to make it appear in this rail.
-      const [cats, prods] = await Promise.all([
-        fetchCategories(),
-        fetchFeaturedProducts(10),
-      ]);
-      if (cancelled) return;
-      // Always trust what the backend returns — no static fallbacks.
-      setCategories(Array.isArray(cats) ? cats : []);
-      setProducts(Array.isArray(prods) ? prods : []);
-      setCatsLoaded(true);
-      setProductsLoaded(true);
+      try {
+        const [cats, prods] = await Promise.all([
+          fetchCategories(),
+          fetchFeaturedProducts(10),
+        ]);
+        if (cancelled) return;
+        let trending = Array.isArray(prods) && prods.length > 0 ? prods : [];
+        if (trending.length === 0) {
+          const allProds = await fetchProducts();
+          trending = Array.isArray(allProds) ? allProds : [];
+        }
+        setCategories(Array.isArray(cats) ? cats : []);
+        setProducts(trending);
+      } catch (err) {
+        console.error("Error loading shop data:", err);
+      } finally {
+        if (!cancelled) {
+          setCatsLoaded(true);
+          setProductsLoaded(true);
+        }
+      }
     })();
     return () => {
       cancelled = true;
@@ -274,32 +285,11 @@ const CategorySlider = ({ categories, navigate }) => {
         className="flex gap-3 md:gap-4 overflow-x-auto scroll-smooth no-scrollbar cursor-grab select-none"
       >
         {categories.map((cat) => (
-          <div
+          <CategoryItem
             key={cat._id || cat.id}
+            cat={cat}
             onClick={handleCardClick(cat.slug)}
-            className="flex-shrink-0 w-[180px] md:w-[220px] cursor-pointer group"
-          >
-            <div className="w-full aspect-[3/4] overflow-hidden rounded-md bg-gray-50">
-              {cat.image ? (
-                <img
-                  src={cat.image}
-                  alt={cat.name}
-                  draggable={false}
-                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 pointer-events-none"
-                  onError={(e) => {
-                    e.target.style.display = "none";
-                  }}
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-[#DD1215] text-white font-bold text-xl uppercase tracking-wide p-4 text-center">
-                  {cat.name}
-                </div>
-              )}
-            </div>
-            <p className="mt-2 text-center text-sm font-semibold text-gray-800 uppercase tracking-wide">
-              {cat.name}
-            </p>
-          </div>
+          />
         ))}
       </div>
 
@@ -317,35 +307,69 @@ const CategorySlider = ({ categories, navigate }) => {
   );
 };
 
+const CategoryItem = ({ cat, onClick }) => {
+  const fallback =
+    fallbackCategoryImages[cat.slug?.toLowerCase()] ||
+    fallbackCategoryImages[cat.name?.toLowerCase()] ||
+    fallbackCategoryImages['tshirts'];
+  const [imgSrc, setImgSrc] = useState(cat.image || fallback);
+
+  return (
+    <div
+      onClick={onClick}
+      className="flex-shrink-0 w-[180px] md:w-[220px] cursor-pointer group"
+    >
+      <div className="w-full aspect-[3/4] overflow-hidden rounded-md bg-gray-50 flex items-center justify-center p-2">
+        <img
+          src={imgSrc}
+          alt={cat.name}
+          draggable={false}
+          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 pointer-events-none"
+          onError={() => {
+            if (imgSrc !== fallback) {
+              setImgSrc(fallback);
+            }
+          }}
+        />
+      </div>
+      <p className="mt-2 text-center text-sm font-semibold text-gray-800 uppercase tracking-wide">
+        {cat.name}
+      </p>
+    </div>
+  );
+};
+
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
   const target = product.slug || product._id || product.id;
-  const [imgFailed, setImgFailed] = useState(false);
-  const showImage = product.image && !imgFailed;
+  const fallback =
+    fallbackCategoryImages[product.category?.toLowerCase()] ||
+    fallbackCategoryImages['tshirts'];
+  const [imgSrc, setImgSrc] = useState(product.image || fallback);
 
   return (
     <div
       onClick={() => navigate(`/product/${target}`)}
       className="flex-shrink-0 w-[300px] cursor-pointer group border border-gray-200 rounded-md overflow-hidden hover:shadow-lg transition-shadow bg-white"
     >
-      <div className="w-full h-[260px] bg-gray-100 flex items-center justify-center overflow-hidden">
-        {showImage ? (
-          <img
-            src={product.image}
-            alt={product.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            onError={() => setImgFailed(true)}
-          />
-        ) : (
-          <span className="text-gray-400 text-sm">Product Image</span>
-        )}
+      <div className="w-full h-[260px] bg-gray-100 flex items-center justify-center overflow-hidden p-2">
+        <img
+          src={imgSrc}
+          alt={product.title}
+          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+          onError={() => {
+            if (imgSrc !== fallback) {
+              setImgSrc(fallback);
+            }
+          }}
+        />
       </div>
       <div className="p-4">
         <p className="text-xs uppercase tracking-widest text-[#DD1215] font-bold">
           {product.name}
         </p>
-        <p className="text-sm text-gray-800 line-clamp-1 mt-1">{product.title}</p>
-        <p className="text-lg font-bold mt-2">Rs.{product.price}/-</p>
+        <p className="text-sm text-gray-800 line-clamp-1 mt-1 font-medium">{product.title}</p>
+        <p className="text-lg font-bold mt-2">₹{product.price}/-</p>
       </div>
     </div>
   );

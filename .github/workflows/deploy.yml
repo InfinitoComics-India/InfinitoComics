@@ -55,6 +55,9 @@ jobs:
         run: |
           cd Shop
           echo "VITE_BASE_URL=https://infinitocomics-68cr.onrender.com" > .env
+          echo "VITE_BACKEND_URL=https://infinitocomics-68cr.onrender.com" >> .env
+          echo "VITE_FRONTEND_URL=https://infinitohq.com" >> .env
+          echo "VITE_FRONTEND_BASE_URL=https://infinitohq.com" >> .env
           npm install
           NODE_OPTIONS=--max-old-space-size=4096 npm run build
 
