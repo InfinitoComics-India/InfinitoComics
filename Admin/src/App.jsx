@@ -65,7 +65,7 @@ const ALL_AUTH= ["superadmin", "comics_admin", "character_admin", "research_admi
 // ── HR Role constants ─────────────────────────────────────────
 const HR      = ["superadmin", "hr_manager"];
 const HR_VIEW = ["superadmin", "hr_manager", "manager", "team_lead",
-                 "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin"];
+                 "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin", "shop_admin"];
 const AUDIT   = ["superadmin", "hr_manager"];
 const EMP     = ["employee"];
 

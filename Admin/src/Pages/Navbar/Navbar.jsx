@@ -5,9 +5,11 @@ import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle
 import { message, Popconfirm } from "antd";
 import { getRoles } from '../../Utils/auth.js';
 
-const HR_ALL   = ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin","employee"];
+const HR_ALL   = ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin","shop_admin"];
 const HR_AUDIT = ["superadmin","hr_manager"];
 const SHOP_ALL = ["superadmin","shop_admin"];
+// Employee-only role
+const EMP_ONLY = ["employee"];
 
 // ── Regular nav items (above HR section) ────────────────────
 const NAV_ITEMS = [
@@ -78,8 +80,9 @@ const Navbar = () => {
   const visibleNav  = NAV_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
   const visibleHR   = HR_ITEMS.filter(item  => roles.some(r => item.roles.includes(r)));
   const visibleShop = SHOP_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
-  const showHRSection   = visibleHR.length > 0;
-  const showShopSection = visibleShop.length > 0;
+  const isEmpOnly   = roles.length > 0 && roles.every(r => r === "employee");
+  const showHRSection   = visibleHR.length > 0 && !isEmpOnly;
+  const showShopSection = visibleShop.length > 0 && !isEmpOnly;
 
   // If any HR/Shop route is currently active, keep accordion open
   const isHRActive   = visibleHR.some(item => location.pathname.startsWith(`/admin${item.to}`));
@@ -255,6 +258,22 @@ const Navbar = () => {
               </div>
             )}
           </div>
+        )}
+
+        {/* ── Employee Portal link — shown only for employee role ── */}
+        {isEmpOnly && (
+          <Link
+            to="/employee-portal"
+            onClick={onNavClick}
+            title={collapsed ? "My Portal" : ""}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150
+              ${isActive("/employee-portal") ? "bg-[#DD1215] text-white" : "text-gray-300 hover:bg-gray-700 hover:text-white"}
+              ${collapsed ? "justify-center" : ""}
+            `}
+          >
+            <Users size={20} className="shrink-0" />
+            {!collapsed && <span>My Portal</span>}
+          </Link>
         )}
 
         {/* ── HR System Accordion ── */}
