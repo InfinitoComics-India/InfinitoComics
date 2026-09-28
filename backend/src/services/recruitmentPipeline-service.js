@@ -146,9 +146,9 @@ class RecruitmentPipelineService {
       // ── Send stage-change email to candidate ──────────────
       if (entry.candidateEmail) {
         if (newStage === "offer_sent") {
-          const offerDetails = data?.offerDetails || entry.offerDetails || {};
-          const subject = `Offer Letter — ${entry.jobTitle} | InfinitoComics India`;
-          const body    = buildOfferLetterEmail(entry, offerDetails, entry.jobTitle);
+          const offerData = offerDetails || entry.offerDetails || {};
+          const subject = `Offer Letter — ${entry.jobTitle} | InfinitoComics`;
+          const body    = buildOfferLetterEmail(entry, offerData, entry.jobTitle);
           await sendEmail(entry.candidateEmail, subject, body);
         } else if (newStage === "hired") {
           await sendEmail(
