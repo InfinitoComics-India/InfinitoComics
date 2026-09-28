@@ -9,6 +9,7 @@ dns.setServers(['8.8.8.8', '8.8.4.4']);
 const app = express();
 import config from "./config/server-config.js"
 import connect from "./config/database-config.js"
+import { startCronJobs } from "./utils/cronJobs.js";
 import userroutes from "./routes/user-routes.js";
 import cors from "cors";
 import blogroutes from './routes/blog-routes.js';
@@ -54,6 +55,7 @@ import chatRoutes from './routes/chat-routes.js';
 import wikiRoutes from './routes/wiki-routes.js';
 import selfServiceRoutes from './routes/selfService-routes.js';
 import aiRoutes from './routes/ai-routes.js';
+import dailyWorkLogRoutes from './routes/dailyWorkLog-routes.js';
 import productRoutes from './routes/product-routes.js';
 import categoryRoutes from './routes/category-routes.js';
 import inventoryRoutes from './routes/inventory-routes.js';
@@ -159,6 +161,7 @@ app.use('/hr/chat',           chatRoutes);
 app.use('/hr/wiki',           wikiRoutes);
 app.use('/hr/self-service',   selfServiceRoutes);
 app.use('/hr/ai',             aiRoutes);
+app.use('/hr/worklog',        dailyWorkLogRoutes);
 
 // Shop routes
 app.use('/shop/products',     productRoutes);
@@ -180,6 +183,7 @@ const setupandstartserver = async () => {
         console.log(`Server started at ${config.PORT}`);
         await connect();
         console.log("mongodb connected");
+        startCronJobs(); // Start midnight auto-leave cron
     })
 }
 
