@@ -2,8 +2,13 @@ import mongoose from "mongoose";
 
 const DailyWorkLogSchema = new mongoose.Schema(
   {
-    employeeId:   { type: mongoose.Schema.Types.ObjectId, ref: "Employee", required: true },
-    employeeName: { type: String, default: "" }, // snapshot
+    // ── Who submitted — linked to Admin login ─────────────────
+    adminId:      { type: mongoose.Schema.Types.ObjectId, ref: "Admin", required: true },
+    adminEmail:   { type: String, default: "" }, // snapshot of email
+    adminName:    { type: String, default: "" }, // snapshot of name
+
+    // ── Also link to Employee record if exists ────────────────
+    employeeId:   { type: mongoose.Schema.Types.ObjectId, ref: "Employee" },
 
     // ── Date ──────────────────────────────────────────────────
     date: { type: Date, required: true }, // stored as start of day (midnight IST)
@@ -15,33 +20,37 @@ const DailyWorkLogSchema = new mongoose.Schema(
     // ── Status ────────────────────────────────────────────────
     status: {
       type: String,
-      enum: [
-        "pending",    // employee hasn't submitted yet (today only)
-        "submitted",  // employee submitted on time
-        "auto_leave", // system marked as leave because no submission by midnight
-        "edited",     // submitted then edited (only allowed before midnight)
-      ],
+      enum: ["pending","submitted","edited","auto_leave"],
       default: "pending",
     },
 
-    // ── Lock ──────────────────────────────────────────────────
-    // After midnight the entry is locked — no more edits allowed
-    isLocked: { type: Boolean, default: false },
-    lockedAt: { type: Date },
+    // ── Lock — after midnight no more edits ───────────────────
+    isLocked:    { type: Boolean, default: false },
+    lockedAt:    { type: Date },
 
-    // ── Auto-leave flag ───────────────────────────────────────
-    // Set to true by cron job when employee missed submission
+    // ── Auto-leave flag (set by cron) ─────────────────────────
     isAutoLeave: { type: Boolean, default: false },
 
+    // ── Admin review ──────────────────────────────────────────
+    reviewedBy:    { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
+    reviewerName:  { type: String, default: "" },
+    reviewComment: { type: String, default: "" },
+    reviewedAt:    { type: Date },
+    reviewStatus:  {
+      type: String,
+      enum: ["", "approved", "needs_improvement", "rejected"],
+      default: "",
+    },
+
     // ── Submission time ───────────────────────────────────────
-    submittedAt: { type: Date },
+    submittedAt:  { type: Date },
     lastEditedAt: { type: Date },
   },
   { timestamps: true }
 );
 
-// Unique: one log per employee per day
-DailyWorkLogSchema.index({ employeeId: 1, date: 1 }, { unique: true });
+// Unique: one log per admin per day
+DailyWorkLogSchema.index({ adminId: 1, date: 1 }, { unique: true });
 DailyWorkLogSchema.index({ date: 1, status: 1 });
 
 const DailyWorkLog = mongoose.model("DailyWorkLog", DailyWorkLogSchema);
