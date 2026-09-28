@@ -42,6 +42,7 @@ import InternalChat      from './Pages/HR/InternalChat.jsx';
 import KnowledgeBase     from './Pages/HR/KnowledgeBase.jsx';
 import SelfServicePortal from './Pages/HR/SelfServicePortal.jsx';
 import AIAssistant       from './Pages/HR/AIAssistant.jsx';
+import DailyWorkLog      from './Pages/HR/DailyWorkLog.jsx';
 
 // ── Shop imports ──────────────────────────────────────────────
 import AllProducts       from './Pages/Shop/AllProducts.jsx';
@@ -247,6 +248,9 @@ function App() {
           {/* ── HR Phase 8 ─────────────────────────────────── */}
           <Route path="/hr/ai" element={
             <ProtectedRoute allowedRoles={HR_VIEW}><AIAssistant /></ProtectedRoute>
+          } />
+          <Route path="/hr/worklog" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><DailyWorkLog /></ProtectedRoute>
           } />
 
           {/* ── Shop System ────────────────────────────────── */}
