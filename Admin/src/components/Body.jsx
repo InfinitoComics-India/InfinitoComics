@@ -1,12 +1,21 @@
 import React, { useEffect, useRef } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../Pages/Navbar/Navbar';
+import { isEmployee } from '../Utils/auth';
 
 const Body = () => {
   const admin     = JSON.parse(localStorage.getItem("Admin") || "{}");
   const adminName = admin?.name || admin?.email || "Super Admin";
   const location  = useLocation();
+  const navigate  = useNavigate();
   const mainRef   = useRef(null);
+
+  // Redirect employees away from admin routes to their own portal
+  useEffect(() => {
+    if (isEmployee() && location.pathname !== "/employee-portal") {
+      navigate("/employee-portal", { replace: true });
+    }
+  }, [location.pathname]);
 
   // When route changes, scroll only the content area back to top
   // NOT the whole window — this prevents the unwanted full-page scroll

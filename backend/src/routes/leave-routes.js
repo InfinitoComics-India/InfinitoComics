@@ -4,7 +4,7 @@ import LeaveController from "../controller/leave-controller.js";
 import { adminauthenticate } from "../middleware/adminauth.js";
 import { checkRole } from "../middleware/roleCheck.js";
 
-const HR_ALL    = ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin"];
+const HR_ALL    = ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin","shop_admin","employee"];
 const HR_MANAGE = ["superadmin","hr_manager","manager"];
 
 // POST apply for leave

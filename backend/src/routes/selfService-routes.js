@@ -4,7 +4,7 @@ import SelfServiceController from "../controller/selfService-controller.js";
 import { adminauthenticate } from "../middleware/adminauth.js";
 import { checkRole } from "../middleware/roleCheck.js";
 
-const ALL = ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin"];
+const ALL = ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin","shop_admin","employee"];
 const HR  = ["superadmin","hr_manager","manager"];
 
 router.post  ("/submit",                    adminauthenticate, checkRole(ALL), SelfServiceController.submitRequest);

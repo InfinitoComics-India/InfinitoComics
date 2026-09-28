@@ -6,6 +6,7 @@ export const ROLE_ROUTES = {
   research_admin:   ["/research"],
   blog_admin:       ["/createblog", "/createfaq", "/timeline"],
   career_admin:     ["/career"],
+  employee:         ["/employee-portal"],
 };
 
 // Get the admin object stored at login
@@ -40,4 +41,10 @@ export const canAccess = (path) => {
     const allowed = ROLE_ROUTES[role] || [];
     return allowed.some((prefix) => path.startsWith(prefix));
   });
+};
+
+// Check if the logged-in user is a pure employee (not any admin role)
+export const isEmployee = () => {
+  const roles = getRoles();
+  return roles.length > 0 && roles.every(r => r === "employee");
 };

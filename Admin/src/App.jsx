@@ -43,6 +43,8 @@ import KnowledgeBase     from './Pages/HR/KnowledgeBase.jsx';
 import SelfServicePortal from './Pages/HR/SelfServicePortal.jsx';
 import AIAssistant       from './Pages/HR/AIAssistant.jsx';
 import DailyWorkLog      from './Pages/HR/DailyWorkLog.jsx';
+import EmployeePortal    from './Pages/Employee/EmployeePortal.jsx';
+import { isEmployee }    from './Utils/auth.js';
 
 // ── Shop imports ──────────────────────────────────────────────
 import AllProducts       from './Pages/Shop/AllProducts.jsx';
@@ -65,6 +67,7 @@ const HR      = ["superadmin", "hr_manager"];
 const HR_VIEW = ["superadmin", "hr_manager", "manager", "team_lead",
                  "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin"];
 const AUDIT   = ["superadmin", "hr_manager"];
+const EMP     = ["employee"];
 
 // ── Shop Role constants ───────────────────────────────────────
 const SHOP    = ["superadmin", "shop_admin"];
@@ -80,6 +83,11 @@ function App() {
           {/* Public */}
           <Route path="/login" element={<Login />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
+
+          {/* Employee Portal — for employees only */}
+          <Route path="/employee-portal" element={
+            <ProtectedRoute allowedRoles={EMP}><EmployeePortal /></ProtectedRoute>
+          } />
 
           {/* Dashboard — any logged-in admin */}
           <Route path="/" element={
