@@ -8,9 +8,11 @@ const AdminSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
+    lowercase: true,
+    trim: true,
     validate: {
-      validator: (v) => v.endsWith("@infinitohq.com"),
-      message: "Email must be an @infinitohq.com address"
+      validator: (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
+      message: "Please enter a valid email address"
     }
   },
   password: {
