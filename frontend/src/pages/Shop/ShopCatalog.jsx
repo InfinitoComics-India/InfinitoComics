@@ -1,95 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getAllCategories, getAllProducts } from '../../services/productService';
 
 import heroTshirt from '../../../assets/Images/merch/MerchModel.png';
 
 const ShopCatalog = () => {
   const navigate = useNavigate();
   const [activeSlide, setActiveSlide] = useState(0);
+  const [categories, setCategories] = useState([]);
+  const [trendingProducts, setTrendingProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Categories data matching exact design
-  const categories = [
-    {
-      id: 't-shirts',
-      name: 'INFINITO T-Shirts',
-      label: 'INFINITO T-Shirts',
-      image: '/products/crimson_tshirt.jpg',
-    },
-    {
-      id: 'caps-hats',
-      name: 'INFINITO CAPS/HATS',
-      label: 'INFINITO CAPS/HATS',
-      image: '/products/category_caps.jpg',
-    },
-    {
-      id: 'accessory',
-      name: 'INFINITO ACCESSORY',
-      label: 'INFINITO ACCESSORY',
-      image: '/products/category_accessories.jpg',
-    },
-    {
-      id: 'hoodies',
-      name: 'INFINITO HOODIES',
-      label: 'INFINITO HOODIES',
-      image: '/products/white_hoodie.jpg',
-    },
-    {
-      id: 'tote-bags',
-      name: 'INFINITO TOTE BAGS',
-      label: 'INFINITO TOTE BAGS',
-      image: '/products/category_totebags.jpg',
-    },
-  ];
-
-  // Top Trending Products
-  const trendingProducts = [
-    {
-      id: 'tshirt-1',
-      slug: 'crimson-red-tshirt',
-      title: 'INFINITO',
-      subtitle: 'Special Edition Crimson Bloodline...',
-      price: 'Rs.1499/-',
-      image: '/products/crimson_tshirt.jpg',
-      category: 'T-Shirts',
-    },
-    {
-      id: 'hoodie-1',
-      slug: 'white-red-hoodie',
-      title: 'INFINITO',
-      subtitle: 'Elegant Edition White-Red Hoodie...',
-      price: 'Rs.1499/-',
-      image: '/products/white_hoodie.jpg',
-      category: 'Hoodies',
-    },
-    {
-      id: 'tshirt-2',
-      slug: 'crimson-bloodline-tee-2',
-      title: 'INFINITO',
-      subtitle: 'Special Edition Crimson Bloodline...',
-      price: 'Rs.1499/-',
-      image: '/products/crimson_tshirt.jpg',
-      category: 'T-Shirts',
-    },
-    {
-      id: 'hoodie-2',
-      slug: 'white-red-hoodie-2',
-      title: 'INFINITO',
-      subtitle: 'Elegant Edition White-Red Hoodie...',
-      price: 'Rs.1499/-',
-      image: '/products/white_hoodie.jpg',
-      category: 'Hoodies',
-    },
-  ];
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const [cats, prods] = await Promise.all([
+          getAllCategories(),
+          getAllProducts(),
+        ]);
+        if (!isMounted) return;
+        setCategories(cats);
+        setTrendingProducts(prods);
+      } catch (err) {
+        console.error('Failed to load shop catalog data:', err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleAddToCart = (e, product) => {
     e.stopPropagation();
     toast.success(`Added ${product.subtitle || product.title} to cart!`);
   };
 
-  const handleCategoryClick = (catId) => {
-    navigate(`/product/${catId}`);
+  const handleCategoryClick = (cat) => {
+    const target = cat.slug || cat.id || cat.name;
+    navigate(`/product/${target}`);
   };
 
   const handleProductClick = (prod) => {
@@ -200,8 +153,8 @@ const ShopCatalog = () => {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 md:gap-6">
           {categories.map((cat) => (
             <div
-              key={cat.id}
-              onClick={() => handleCategoryClick(cat.id)}
+              key={cat.id || cat._id}
+              onClick={() => handleCategoryClick(cat)}
               className="group cursor-pointer flex flex-col items-center border border-gray-200 rounded-sm overflow-hidden bg-white shadow-sm hover:shadow-md transition"
             >
               <div className="w-full aspect-square bg-gray-100 overflow-hidden flex items-center justify-center p-2">
@@ -213,8 +166,8 @@ const ShopCatalog = () => {
               </div>
 
               {/* Red Badge Button at bottom */}
-              <div className="w-full bg-red-600 text-white py-2 text-center text-[11px] font-extrabold uppercase tracking-wider group-hover:bg-red-700 transition">
-                {cat.label}
+              <div className="w-full bg-red-600 text-white py-2 text-center text-[11px] font-extrabold uppercase tracking-wider group-hover:bg-red-700 transition truncate px-1">
+                {cat.label || cat.name}
               </div>
             </div>
           ))}

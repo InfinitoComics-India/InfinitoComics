@@ -104,7 +104,7 @@ export const fetchProducts = async () => {
   }
 };
 
-// Featured products only (Top Trending row).
+// Featured products (Top Trending row) with fallback to all products if none marked featured.
 export const fetchFeaturedProducts = async (limit = 10) => {
   try {
     const { data } = await axios.get(
@@ -112,25 +112,37 @@ export const fetchFeaturedProducts = async (limit = 10) => {
       { params: { limit } }
     );
     const list = Array.isArray(data?.data) ? data.data : [];
-    return list.map(mapBackendProduct);
+    if (list.length > 0) {
+      return list.map(mapBackendProduct);
+    }
   } catch (err) {
-    console.error("Failed to fetch featured products:", err);
-    return [];
+    console.error("Failed to fetch featured products, using fallback:", err);
   }
+  const all = await fetchProducts();
+  return all.slice(0, limit);
 };
 
 // Single product by slug (product detail page).
 export const fetchProductBySlug = async (slug) => {
+  if (!slug) return null;
   try {
     const { data } = await axios.get(
       `${BACKEND_URL}/shop/products/public/slug/${slug}`
     );
-    if (!data?.data) return null;
-    return mapBackendProduct(data.data);
+    if (data?.data) return mapBackendProduct(data.data);
   } catch (err) {
-    console.error("Failed to fetch product by slug:", err);
-    return null;
+    console.error("Failed to fetch product by slug endpoint, checking list:", err);
   }
+  const all = await fetchProducts();
+  const clean = String(slug).toLowerCase().trim();
+  return (
+    all.find(
+      (p) =>
+        String(p.slug || '').toLowerCase() === clean ||
+        String(p.id || '').toLowerCase() === clean ||
+        String(p._id || '').toLowerCase() === clean
+    ) || null
+  );
 };
 
 // All products in a category (category listing page).

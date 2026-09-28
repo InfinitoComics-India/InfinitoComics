@@ -218,31 +218,155 @@ const DEFAULT_PRODUCTS = [
   },
 ];
 
-// Fetch all available products (combining API products & dynamic fallbacks)
-export const getAllProducts = async () => {
+// Uploaded backend images arrive as "/uploads/shop/xxx.png" and need the backend host prepended.
+const resolveImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  const base = BASE_URL?.replace(/\/$/, '') || 'https://infinitocomics-68cr.onrender.com';
+  const path = url.startsWith('/') ? url : `/${url}`;
+  return `${base}${path}`;
+};
+
+const fallbackCategoryImages = {
+  tshirts: '/products/crimson_tshirt.jpg',
+  't-shirts': '/products/crimson_tshirt.jpg',
+  tshirt: '/products/crimson_tshirt.jpg',
+  caps: '/products/category_caps.jpg',
+  'caps-hats': '/products/category_caps.jpg',
+  accessory: '/products/category_accessories.jpg',
+  accessories: '/products/category_accessories.jpg',
+  hoodies: '/products/white_hoodie.jpg',
+  hoodie: '/products/white_hoodie.jpg',
+  totebags: '/products/category_totebags.jpg',
+  'tote-bags': '/products/category_totebags.jpg',
+  bags: '/products/category_totebags.jpg',
+  bag: '/products/category_totebags.jpg',
+};
+
+// Map raw backend product object into standard UI product object
+const mapBackendProduct = (p) => {
+  const primaryImg = p.images && p.images.length > 0 ? resolveImageUrl(p.images[0].url) : '/products/crimson_tshirt.jpg';
+  const allImgs = p.images && p.images.length > 0 ? p.images.map(img => resolveImageUrl(img.url)) : [primaryImg];
+  const catName = p.category?.name || p.categorySlug || 'General';
+  const catSlug = p.category?.slug || p.categorySlug || '';
+
+  const sizeVariant = p.variants?.find(v => v.name.toLowerCase().includes('size'));
+  const sizes = sizeVariant?.options?.map(o => o.value) || ['S', 'M', 'L', 'XL'];
+
+  const specs = p.variants && p.variants.length > 0
+    ? p.variants.flatMap(v => v.options.map(o => ({ label: v.name, value: o.value })))
+    : [
+        { label: 'Fit', value: 'Regular Fit' },
+        { label: 'Material', value: '100% Premium Cotton' },
+        { label: 'Wash Care', value: 'Machine Wash Cold' },
+      ];
+
+  return {
+    id: String(p._id),
+    _id: String(p._id),
+    slug: p.slug || String(p._id),
+    title: 'INFINITO',
+    subtitle: p.name,
+    name: p.name,
+    category: catName,
+    categorySlug: catSlug,
+    price: p.salePrice ? `₹${p.salePrice}` : `₹${p.basePrice}`,
+    rawPrice: p.salePrice || p.basePrice || 0,
+    mrp: p.basePrice ? `MRP ₹${p.basePrice}` : '',
+    rawMrp: p.basePrice || 0,
+    description: p.description || p.shortDescription || 'Official INFINITO merchandise created with high-density premium materials.',
+    images: allImgs,
+    image: primaryImg,
+    sizes: sizes,
+    specifications: specs,
+    stock: p.stock ?? 10,
+    status: p.status || 'active',
+    featured: p.featured || false,
+    rating: 4.8,
+    reviewsCount: 18,
+  };
+};
+
+// Fetch all categories dynamically from Admin backend
+export const getAllCategories = async () => {
   try {
-    const res = await axios.get(`${BASE_URL}/products`);
+    const res = await axios.get(`${BASE_URL}/shop/categories/public/all`);
     if (res.data && Array.isArray(res.data.data) && res.data.data.length > 0) {
-      return res.data.data;
+      return res.data.data.map((cat) => ({
+        id: cat.slug || cat._id,
+        _id: cat._id,
+        name: cat.name,
+        label: cat.name.toUpperCase(),
+        slug: cat.slug,
+        description: cat.description || '',
+        image: resolveImageUrl(cat.image) || fallbackCategoryImages[cat.slug?.toLowerCase()] || '/products/category_accessories.jpg',
+        productCount: cat.productCount || 0,
+      }));
     }
   } catch (err) {
-    // API not yet live or returning empty array, fallback cleanly to dataset
+    console.warn('Backend category API fetch error, falling back:', err);
+  }
+
+  // Fallback category list if API returns empty
+  return [
+    { id: 't-shirts', name: 'INFINITO T-Shirts', label: 'INFINITO T-SHIRTS', slug: 't-shirts', image: '/products/crimson_tshirt.jpg' },
+    { id: 'caps-hats', name: 'INFINITO CAPS/HATS', label: 'INFINITO CAPS/HATS', slug: 'caps-hats', image: '/products/category_caps.jpg' },
+    { id: 'accessory', name: 'INFINITO ACCESSORY', label: 'INFINITO ACCESSORY', slug: 'accessory', image: '/products/category_accessories.jpg' },
+    { id: 'hoodies', name: 'INFINITO HOODIES', label: 'INFINITO HOODIES', slug: 'hoodies', image: '/products/white_hoodie.jpg' },
+    { id: 'tote-bags', name: 'INFINITO TOTE BAGS', label: 'INFINITO TOTE BAGS', slug: 'tote-bags', image: '/products/category_totebags.jpg' },
+  ];
+};
+
+export const fetchCategories = getAllCategories;
+
+// Fetch all available products (combining live API products & dynamic fallbacks)
+export const getAllProducts = async () => {
+  try {
+    const res = await axios.get(`${BASE_URL}/shop/products/public/all`);
+    if (res.data && Array.isArray(res.data.data) && res.data.data.length > 0) {
+      const apiProducts = res.data.data.map(mapBackendProduct);
+      // Combine API products with DEFAULT_PRODUCTS for non-overlapping items
+      const existingSlugs = new Set(apiProducts.map(p => p.slug.toLowerCase()));
+      const filteredDefaults = DEFAULT_PRODUCTS.filter(p => !existingSlugs.has(p.slug.toLowerCase()));
+      return [...apiProducts, ...filteredDefaults];
+    }
+  } catch (err) {
+    console.warn('Backend products API fetch error, using default products:', err);
   }
   return DEFAULT_PRODUCTS;
 };
 
+export const fetchProducts = getAllProducts;
+
 // Get a single product by ID, slug, or matching category string
 export const getProductByIdOrSlug = async (param) => {
-  const products = await getAllProducts();
-  if (!param) return products[0];
+  if (!param) {
+    const products = await getAllProducts();
+    return products[0];
+  }
 
   const cleanParam = String(param).toLowerCase().replace(/^:/, '').trim();
+
+  // Try direct backend API by slug
+  try {
+    const res = await axios.get(`${BASE_URL}/shop/products/public/slug/${cleanParam}`);
+    if (res.data && res.data.data) {
+      return mapBackendProduct(res.data.data);
+    }
+  } catch (err) {
+    // Continue to list search
+  }
+
+  const products = await getAllProducts();
 
   // 1. Direct match by ID or slug
   let match = products.find(
     (p) =>
-      p.id.toLowerCase() === cleanParam ||
-      (p.slug && p.slug.toLowerCase() === cleanParam)
+      String(p.id).toLowerCase() === cleanParam ||
+      String(p._id).toLowerCase() === cleanParam ||
+      (p.slug && String(p.slug).toLowerCase() === cleanParam)
   );
 
   if (match) return match;
@@ -250,9 +374,10 @@ export const getProductByIdOrSlug = async (param) => {
   // 2. Partial match on category or title
   match = products.find(
     (p) =>
-      p.category.toLowerCase().includes(cleanParam) ||
-      cleanParam.includes(p.category.toLowerCase()) ||
-      p.name.toLowerCase().includes(cleanParam)
+      (p.category && String(p.category).toLowerCase().includes(cleanParam)) ||
+      (p.categorySlug && String(p.categorySlug).toLowerCase().includes(cleanParam)) ||
+      cleanParam.includes(String(p.category || '').toLowerCase()) ||
+      String(p.name || '').toLowerCase().includes(cleanParam)
   );
 
   if (match) return match;
@@ -261,12 +386,14 @@ export const getProductByIdOrSlug = async (param) => {
   return products[0];
 };
 
+export const fetchProductBySlug = getProductByIdOrSlug;
+
 // Get random products from the SAME category as current product
 export const getCategorySuggestedProducts = async (categoryName, currentProductId, count = 4) => {
   const allProducts = await getAllProducts();
   
   if (!categoryName) {
-    return allProducts.filter(p => p.id !== currentProductId).slice(0, count);
+    return allProducts.filter(p => String(p.id) !== String(currentProductId)).slice(0, count);
   }
 
   const normalizedCategory = String(categoryName).toLowerCase();
@@ -274,23 +401,24 @@ export const getCategorySuggestedProducts = async (categoryName, currentProductI
   // Filter products matching category
   let categoryProducts = allProducts.filter(
     (p) =>
-      p.category.toLowerCase() === normalizedCategory ||
-      p.category.toLowerCase().includes(normalizedCategory) ||
-      normalizedCategory.includes(p.category.toLowerCase())
+      String(p.category || '').toLowerCase() === normalizedCategory ||
+      String(p.category || '').toLowerCase().includes(normalizedCategory) ||
+      normalizedCategory.includes(String(p.category || '').toLowerCase()) ||
+      String(p.categorySlug || '').toLowerCase() === normalizedCategory
   );
 
   // Exclude current product if possible
-  let filtered = categoryProducts.filter((p) => p.id !== currentProductId);
+  let filtered = categoryProducts.filter((p) => String(p.id) !== String(currentProductId) && String(p._id) !== String(currentProductId));
 
   // If not enough products in exact category, fill with remaining products from catalog
   if (filtered.length < count) {
     const remaining = allProducts.filter(
-      (p) => p.id !== currentProductId && !filtered.some((f) => f.id === p.id)
+      (p) => String(p.id) !== String(currentProductId) && String(p._id) !== String(currentProductId) && !filtered.some((f) => String(f.id) === String(p.id))
     );
     filtered = [...filtered, ...remaining];
   }
 
-  // Shuffle array randomly
-  const shuffled = [...filtered].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, count);
+  // Return requested slice
+  return filtered.slice(0, count);
 };
+

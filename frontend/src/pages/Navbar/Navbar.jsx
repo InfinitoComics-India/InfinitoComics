@@ -100,16 +100,10 @@ const Header = () => {
             )}
           </div>
 
-          {/* Logo Centered - Redirects to Main Domain https://infinitohq.com/ if on Shop subdomain */}
-          {isShopSubdomain ? (
-            <a href={FRONTEND_BASE_URL} className="text-center">
-              <img src={logo} alt="INFINITO" className="h-10 md:h-12 w-auto object-contain" />
-            </a>
-          ) : (
-            <Link to="/" className="text-center">
-              <img src={logo} alt="INFINITO" className="h-10 md:h-12 w-auto object-contain" />
-            </Link>
-          )}
+          {/* Logo Centered - Always redirects to Main Domain https://infinitohq.com */}
+          <a href={FRONTEND_BASE_URL || "https://infinitohq.com"} className="text-center">
+            <img src={logo} alt="INFINITO" className="h-10 md:h-12 w-auto object-contain" />
+          </a>
 
           {/* Right: Infinito Ultimate + Search */}
           <div className="flex items-center gap-3">
