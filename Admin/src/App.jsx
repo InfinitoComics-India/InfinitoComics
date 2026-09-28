@@ -43,6 +43,13 @@ import KnowledgeBase     from './Pages/HR/KnowledgeBase.jsx';
 import SelfServicePortal from './Pages/HR/SelfServicePortal.jsx';
 import AIAssistant       from './Pages/HR/AIAssistant.jsx';
 
+// ── Shop imports ──────────────────────────────────────────────
+import AllProducts       from './Pages/Shop/AllProducts.jsx';
+import ProductForm       from './Pages/Shop/ProductForm.jsx';
+import AllCategories     from './Pages/Shop/AllCategories.jsx';
+import CategoryForm      from './Pages/Shop/CategoryForm.jsx';
+import Inventory         from './Pages/Shop/Inventory.jsx';
+
 // Role constants
 const SUPER   = ["superadmin"];
 const COMICS  = ["superadmin", "comics_admin"];
@@ -58,9 +65,14 @@ const HR_VIEW = ["superadmin", "hr_manager", "manager", "team_lead",
                  "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin"];
 const AUDIT   = ["superadmin", "hr_manager"];
 
+// ── Shop Role constants ───────────────────────────────────────
+const SHOP    = ["superadmin", "shop_admin"];
+
 function App() {
+  const basename = import.meta.env.MODE === 'production' ? '/admin' : '';
+  
   return (
-    <BrowserRouter basename="/admin">
+    <BrowserRouter basename={basename}>
       <Routes>
         <Route path="/" element={<Body />}>
 
@@ -235,6 +247,35 @@ function App() {
           {/* ── HR Phase 8 ─────────────────────────────────── */}
           <Route path="/hr/ai" element={
             <ProtectedRoute allowedRoles={HR_VIEW}><AIAssistant /></ProtectedRoute>
+          } />
+
+          {/* ── Shop System ────────────────────────────────── */}
+          
+          {/* Products Management */}
+          <Route path="/shop/products" element={
+            <ProtectedRoute allowedRoles={SHOP}><AllProducts /></ProtectedRoute>
+          } />
+          <Route path="/shop/products/new" element={
+            <ProtectedRoute allowedRoles={SHOP}><ProductForm /></ProtectedRoute>
+          } />
+          <Route path="/shop/products/:id" element={
+            <ProtectedRoute allowedRoles={SHOP}><ProductForm /></ProtectedRoute>
+          } />
+
+          {/* Categories Management */}
+          <Route path="/shop/categories" element={
+            <ProtectedRoute allowedRoles={SHOP}><AllCategories /></ProtectedRoute>
+          } />
+          <Route path="/shop/categories/new" element={
+            <ProtectedRoute allowedRoles={SHOP}><CategoryForm /></ProtectedRoute>
+          } />
+          <Route path="/shop/categories/:id" element={
+            <ProtectedRoute allowedRoles={SHOP}><CategoryForm /></ProtectedRoute>
+          } />
+
+          {/* Inventory Management */}
+          <Route path="/shop/inventory" element={
+            <ProtectedRoute allowedRoles={SHOP}><Inventory /></ProtectedRoute>
           } />
 
         </Route>

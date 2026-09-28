@@ -18,6 +18,7 @@ export default {
     ADMIN_URL: process.env.ADMIN_URL,
     RESEARCH_URL: process.env.RESEARCH_URL,
     FOUNDATION_URL: process.env.FOUNDATION_URL,
+    SHOP_URL: process.env.SHOP_URL,
     // AWS S3 (kept for backwards compat, not used if Hostinger is configured)
     ACCESS_KEY: process.env.ACCESS_KEY,
     SECRET_ACCESS_KEY: process.env.SECRET_ACCESS_KEY,

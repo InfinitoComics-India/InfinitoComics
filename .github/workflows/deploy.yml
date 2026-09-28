@@ -1,9 +1,9 @@
-﻿name: Build and Deploy to Hostinger
+name: Build and Deploy to Hostinger
 
 on:
   push:
     branches:
-      - main
+      - main # Change this to your main branch name (e.g. master/main)
 
 jobs:
   build-and-deploy:
@@ -14,7 +14,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # Step 2: Set up Node.js (v20 is required by Tailwind v4 / @tailwindcss/oxide)
+      # Step 2: Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
@@ -27,8 +27,8 @@ jobs:
           echo "VITE_BASE_URL=https://infinitocomics-68cr.onrender.com" > .env
           echo "VITE_RESEARCH_BASE_URL=https://research.infinitohq.com" >> .env
           echo "VITE_FOUNDATION_BASE_URL=https://foundation.infinitohq.com" >> .env
+          echo "VITE_SHOP_BASE_URL=https://shop.infinitohq.com" >> .env
           echo "VITE_FRONTEND_BASE_URL=https://infinitohq.com" >> .env
-          echo "VITE_SHOP_BASE_URL=https://store.infinitohq.com" >> .env
           npm install
           npm run build
 
@@ -50,20 +50,15 @@ jobs:
           npm install
           NODE_OPTIONS=--max-old-space-size=4096 npm run build
 
-      # Step 5b: Install dependencies and Build Shop
+      # Step 6: Install dependencies and Build Shop
       - name: Install and Build Shop
         run: |
           cd Shop
-          echo "VITE_FRONTEND_URL=https://infinitohq.com" > .env
-          echo "VITE_FRONTEND_BASE_URL=https://infinitohq.com" >> .env
-          echo "VITE_BACKEND_URL=https://infinitocomics-68cr.onrender.com" >> .env
-          echo "VITE_RESEARCH_BASE_URL=https://research.infinitohq.com" >> .env
-          echo "VITE_FOUNDATION_BASE_URL=https://foundation.infinitohq.com" >> .env
-          echo "VITE_SHOP_BASE_URL=https://store.infinitohq.com" >> .env
+          echo "VITE_BASE_URL=https://infinitocomics-68cr.onrender.com" > .env
           npm install
-          npm run build
+          NODE_OPTIONS=--max-old-space-size=4096 npm run build
 
-      # Step 6: Deploy frontend dist to Hostinger
+      # Step 7: Deploy Frontend via FTP
       - name: Deploy Frontend via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
@@ -76,7 +71,7 @@ jobs:
           protocol: ftp
           security: loose
 
-      # Step 7: Deploy Research dist to /public_html/research/
+      # Step 8: Deploy Research dist to /public_html/research/
       - name: Deploy Research via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
@@ -89,7 +84,7 @@ jobs:
           protocol: ftp
           security: loose
 
-      # Step 8: Deploy Admin dist to /public_html/admin/
+      # Step 9: Deploy Admin dist to /public_html/admin/
       - name: Deploy Admin via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
@@ -102,20 +97,7 @@ jobs:
           protocol: ftp
           security: loose
 
-      # Step 8b: Deploy Shop dist to /public_html/store/ (store.infinitohq.com)
-      - name: Deploy Shop via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./Shop/dist/
-          server-dir: /public_html/store/
-          port: 21
-          protocol: ftp
-          security: loose
-
-      # Step 9: Deploy SupportUs dist to /public_html/supportus/
+      # Step 10: Deploy SupportUs dist to /public_html/supportus/
       - name: Deploy SupportUs via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
@@ -124,6 +106,19 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./frontend/dist/
           server-dir: /public_html/supportus/
+          port: 21
+          protocol: ftp
+          security: loose
+
+      # Step 11: Deploy Shop dist to /public_html/shop/
+      - name: Deploy Shop via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./Shop/dist/
+          server-dir: /public_html/shop/
           port: 21
           protocol: ftp
           security: loose

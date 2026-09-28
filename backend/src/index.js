@@ -54,13 +54,17 @@ import chatRoutes from './routes/chat-routes.js';
 import wikiRoutes from './routes/wiki-routes.js';
 import selfServiceRoutes from './routes/selfService-routes.js';
 import aiRoutes from './routes/ai-routes.js';
+import productRoutes from './routes/product-routes.js';
+import categoryRoutes from './routes/category-routes.js';
+import inventoryRoutes from './routes/inventory-routes.js';
 
 
-const allowedOrigins = [
+const explicitOrigins = [
   config.FRONTEND_URL,
   config.ADMIN_URL,
   config.RESEARCH_URL,
   config.FOUNDATION_URL,
+  config.SHOP_URL,
   // Local development origins
   'http://localhost:5173',
   'http://localhost:5174',
@@ -74,13 +78,42 @@ const allowedOrigins = [
   'http://localhost:3007',
 ].filter(Boolean);
 
+// Any *.infinitohq.com subdomain is trusted, so we don't have to keep
+// hard-coding shop / store / research / foundation URLs into the env config.
+// The apex domain (https://infinitohq.com) is also allowed.
+const infinitoDomainPattern = /^https:\/\/([a-z0-9-]+\.)?infinitohq\.com$/i;
+
 app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
+  origin: (origin, cb) => {
+    // Non-browser requests (curl, server-to-server, health checks) have no
+    // Origin header — allow those through without a CORS check.
+    if (!origin) return cb(null, true);
+    if (explicitOrigins.includes(origin)) return cb(null, true);
+    if (infinitoDomainPattern.test(origin)) return cb(null, true);
+    return cb(new Error(`CORS: origin not allowed: ${origin}`));
+  },
+  credentials: true,
 }));
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.json({ limit: '50mb' }));
+
+// Serve static files for uploaded shop images.
+// setHeaders ensures SVGs go out with the correct MIME type (some hosts
+// default to application/octet-stream which browsers refuse to render inline)
+// and enables CORS so the shop / admin sites can display these images from a
+// different origin.
+app.use('/uploads/shop', express.static('uploads/shop', {
+  setHeaders: (res, filePath) => {
+    if (filePath.toLowerCase().endsWith('.svg')) {
+      res.setHeader('Content-Type', 'image/svg+xml');
+    }
+    // Any origin can load these images — they're public product photos.
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    // Cache uploaded images for an hour so the shop reloads feel fast.
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+  },
+}));
 
 // API Routes
 app.use('/api', userroutes);
@@ -126,6 +159,12 @@ app.use('/hr/chat',           chatRoutes);
 app.use('/hr/wiki',           wikiRoutes);
 app.use('/hr/self-service',   selfServiceRoutes);
 app.use('/hr/ai',             aiRoutes);
+
+// Shop routes
+app.use('/shop/products',     productRoutes);
+app.use('/shop/categories',   categoryRoutes);
+app.use('/shop/inventory',    inventoryRoutes);
+
 app.get('/', (req, res) => {
   res.send('Backend is up and running!');
 });
