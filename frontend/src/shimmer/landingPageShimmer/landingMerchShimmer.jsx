@@ -1,8 +1,5 @@
 // 📁 src/components/CollectorShowcaseShimmer.jsx
 import React from 'react';
-import Slider from 'react-slick';
-import 'slick-carousel/slick/slick.css';
-import 'slick-carousel/slick/slick-theme.css';
 
 const CollectorShowcaseShimmer = () => {
   const settings = {
@@ -60,13 +57,9 @@ const CollectorShowcaseShimmer = () => {
           <div className="w-80 h-9 bg-gray-300 rounded"></div>
         </div>
 
-        {/* Mobile Slider View */}
-        <div className="md:hidden">
-          <Slider {...settings}>
-            {[1, 2, 3].map((key) => (
-              <div key={key} className="px-2">{renderShimmerCard(key)}</div>
-            ))}
-          </Slider>
+        {/* Mobile View */}
+        <div className="md:hidden overflow-hidden">
+          <div className="px-2">{renderShimmerCard(1)}</div>
         </div>
 
         {/* Desktop Grid View */}
