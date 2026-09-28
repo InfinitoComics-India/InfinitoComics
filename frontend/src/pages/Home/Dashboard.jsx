@@ -224,21 +224,51 @@ const MyAccountPage = () => {
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-base font-bold tracking-wide">My subscription plan</h2>
             </div>
-            <div className="bg-pink-100 border border-pink-200 px-6 py-4 flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
-                <FaLeaf className="text-black text-lg" />
-                <span className="font-bold uppercase tracking-widest">FREE</span>
-              </div>
-              <span className="text-xs text-red-600 font-medium flex-1 text-center">
-                Upgrade now and enjoy ad-free, unlimited access!
-              </span>
-              <button
-                onClick={() => navigate("/ultimate")}
-                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 text-xs font-bold uppercase tracking-widest flex items-center transition-colors rounded-none"
-              >
-                UPGRADE PLAN <FaArrowRight className="ml-2 text-xs" />
-              </button>
-            </div>
+            {(() => {
+              const user = JSON.parse(localStorage.getItem("user") || "{}");
+              const hasUltimate = user?.hasInfinitoUltimate;
+              const membershipType = user?.membershipType;
+              const expiry = user?.membershipExpiry;
+
+              const planLabel = hasUltimate
+                ? (membershipType || "ULTIMATE")
+                : membershipType
+                ? membershipType
+                : "FREE";
+
+              const isPaid = hasUltimate || !!membershipType;
+
+              return (
+                <div className={`border px-6 py-4 flex flex-wrap items-center gap-4 ${isPaid ? "bg-yellow-50 border-yellow-300" : "bg-pink-100 border-pink-200"}`}>
+                  <div className="flex items-center gap-2">
+                    <FaLeaf className="text-black text-lg" />
+                    <span className="font-bold uppercase tracking-widest">{planLabel}</span>
+                    {isPaid && expiry && (
+                      <span className="text-xs text-gray-500 font-normal">
+                        (expires {new Date(expiry).toLocaleDateString("en-IN")})
+                      </span>
+                    )}
+                  </div>
+                  {!isPaid ? (
+                    <>
+                      <span className="text-xs text-red-600 font-medium flex-1 text-center">
+                        Upgrade now and enjoy ad-free, unlimited access!
+                      </span>
+                      <button
+                        onClick={() => navigate("/ultimate")}
+                        className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 text-xs font-bold uppercase tracking-widest flex items-center transition-colors rounded-none"
+                      >
+                        UPGRADE PLAN <FaArrowRight className="ml-2 text-xs" />
+                      </button>
+                    </>
+                  ) : (
+                    <span className="text-xs text-yellow-700 font-semibold flex-1 text-center">
+                      ✅ You are on the {planLabel} plan. Enjoy unlimited access!
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* My Orders */}
