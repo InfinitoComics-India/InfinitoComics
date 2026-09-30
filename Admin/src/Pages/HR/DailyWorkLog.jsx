@@ -34,7 +34,8 @@ const getCountdown = () => {
 const DailyWorkLog = () => {
   const admin    = JSON.parse(localStorage.getItem("Admin") || "{}");
   const myName   = admin?.name || admin?.email || "You";
-  const myRoles  = admin?.roles || [];
+  // Support both new `roles` array and legacy `role` string
+  const myRoles  = [...(admin?.roles || []), ...(admin?.role ? [admin.role] : [])];
   const isManager= myRoles.some(r => ["superadmin","hr_manager","manager"].includes(r));
 
   const [tab,      setTab]      = useState("my");
