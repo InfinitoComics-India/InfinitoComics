@@ -21,8 +21,11 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   const empOnly   = isEmployee();
   const currentPath = location.pathname;
 
-  // If employee tries to access any admin route → redirect to portal
-  if (empOnly && currentPath !== "/employee-portal") {
+  // If employee tries to access admin routes → redirect to portal
+  // Exception: Work Log (/hr/worklog) is allowed for employees
+  const EMPLOYEE_ALLOWED = ["/employee-portal", "/hr/worklog"];
+  const normalizedPath = currentPath.replace(/^\/admin/, "") || "/";
+  if (empOnly && !EMPLOYEE_ALLOWED.some(a => normalizedPath.startsWith(a))) {
     return <Navigate to="/employee-portal" replace />;
   }
 

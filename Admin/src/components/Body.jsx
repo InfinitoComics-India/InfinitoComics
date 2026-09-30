@@ -10,9 +10,11 @@ const Body = () => {
   const navigate  = useNavigate();
   const mainRef   = useRef(null);
 
-  // Redirect employees away from admin routes to their own portal
+  // Redirect employees away from admin routes — except Work Log which they can access
   useEffect(() => {
-    if (isEmployee() && location.pathname !== "/employee-portal") {
+    const allowed = ["/employee-portal", "/hr/worklog"];
+    const path = location.pathname.replace(/^\/admin/, "") || "/";
+    if (isEmployee() && !allowed.some(a => path.startsWith(a))) {
       navigate("/employee-portal", { replace: true });
     }
   }, [location.pathname]);
