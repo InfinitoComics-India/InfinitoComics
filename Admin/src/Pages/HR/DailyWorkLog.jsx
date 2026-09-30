@@ -343,91 +343,296 @@ const DailyWorkLog = () => {
           </div>
         )}
 
-        {/* ── ADMIN REVIEW TAB ── */}
+        {/* ── ADMIN REVIEW TAB — EXCEL STYLE ── */}
         {tab === "admin" && isManager && (
           <>
-            {/* Controls */}
-            <div className="bg-white border rounded-lg px-5 py-4 flex flex-wrap gap-4 items-end">
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase">Date</label>
-                <input type="date" value={adminDate} onChange={e=>setAdminDate(e.target.value)}
-                  className="border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-[#DD1215]" />
+            {/* Toolbar */}
+            <div className="bg-white border rounded-lg px-4 py-3 flex flex-wrap gap-3 items-center justify-between">
+              <div className="flex gap-3 items-end flex-wrap">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold uppercase text-gray-400">Date</label>
+                  <input type="date" value={adminDate} onChange={e=>setAdminDate(e.target.value)}
+                    className="border border-gray-300 px-3 py-1.5 text-xs focus:outline-none focus:border-[#DD1215]"/>
+                </div>
+                {/* Week navigator */}
+                <div className="flex gap-1">
+                  {[-3,-2,-1,0].map(offset => {
+                    const d = new Date(); d.setDate(d.getDate() + offset);
+                    const val = d.toISOString().split("T")[0];
+                    const label = offset === 0 ? "Today" : d.toLocaleDateString("en-IN",{day:"2-digit",month:"short"});
+                    return (
+                      <button key={offset} onClick={() => setAdminDate(val)}
+                        className={`px-2.5 py-1.5 text-[10px] font-bold border transition ${adminDate===val?"bg-[#DD1215] text-white border-[#DD1215]":"border-gray-300 text-gray-600 hover:bg-gray-50"}`}>
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button onClick={() => { loadAllLogs(); loadSummary(); }}
+                  className="flex items-center gap-1 border border-gray-300 px-3 py-1.5 text-xs hover:bg-gray-50 transition">
+                  <RefreshCw size={12}/> Refresh
+                </button>
               </div>
-              <button onClick={() => { loadAllLogs(); loadSummary(); }}
-                className="flex items-center gap-1 border border-gray-300 px-3 py-2 text-xs hover:bg-gray-50 transition"><RefreshCw size={13}/></button>
-              <button onClick={handleRunCron}
-                className="flex items-center gap-2 bg-gray-900 text-white px-4 py-2 text-xs font-bold uppercase hover:bg-black transition">
-                🌙 Run Midnight Cron
-              </button>
+              <div className="flex gap-2">
+                {/* Export CSV */}
+                <button onClick={() => {
+                  const headers = ["#","Name","Email","Date","Status","Hours","Work Description","Submitted At","Review","Comment"];
+                  const rows = allLogs.map((l,i) => [
+                    i+1, l.adminName||"", l.adminEmail||"",
+                    fmtDate(l.date), l.status, l.hoursWorked||0,
+                    `"${(l.workDescription||"").replace(/"/g,"'")}"`,
+                    l.submittedAt?fmtTime(l.submittedAt):"",
+                    l.reviewStatus||"", l.reviewComment||""
+                  ]);
+                  const csv = [headers, ...rows].map(r=>r.join(",")).join("\n");
+                  const blob = new Blob([csv], {type:"text/csv"});
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href=url; a.download=`worklog_${adminDate}.csv`; a.click();
+                  URL.revokeObjectURL(url);
+                }} className="flex items-center gap-1.5 border border-green-600 text-green-700 px-3 py-1.5 text-xs font-bold hover:bg-green-50 transition">
+                  📥 Export CSV
+                </button>
+                <button onClick={handleRunCron}
+                  className="flex items-center gap-2 bg-gray-900 text-white px-4 py-1.5 text-xs font-bold uppercase hover:bg-black transition">
+                  🌙 Run Cron
+                </button>
+              </div>
             </div>
 
-            {/* Summary */}
+            {/* Summary row — like Excel totals row */}
             {summary && (
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-                {[
-                  { label:"Total",     value:summary.total,      color:"text-gray-900"  },
-                  { label:"Submitted", value:summary.submitted,  color:"text-green-600" },
-                  { label:"Auto Leave",value:summary.auto_leave, color:"text-red-600"   },
-                  { label:"Pending",   value:summary.pending,    color:"text-yellow-600"},
-                  { label:"Reviewed",  value:summary.reviewed,   color:"text-blue-600"  },
-                  { label:"Avg Hours", value:`${summary.avgHours}h`, color:"text-purple-600"},
-                ].map(({ label, value, color }) => (
-                  <div key={label} className="bg-white border rounded-lg px-4 py-3">
-                    <p className={`text-xl font-black ${color}`}>{value}</p>
-                    <p className="text-[10px] uppercase tracking-widest text-gray-400 mt-0.5">{label}</p>
-                  </div>
-                ))}
+              <div className="bg-[#1e3a5f] text-white rounded-lg px-4 py-2.5 flex flex-wrap gap-6 text-xs font-semibold">
+                <span>📋 Total: <strong>{summary.total}</strong></span>
+                <span className="text-green-300">✅ Submitted: <strong>{summary.submitted}</strong></span>
+                <span className="text-red-300">🚨 Auto Leave: <strong>{summary.auto_leave}</strong></span>
+                <span className="text-yellow-300">⏳ Pending: <strong>{summary.pending}</strong></span>
+                <span className="text-blue-300">🔍 Reviewed: <strong>{summary.reviewed}</strong></span>
+                <span className="text-purple-300">⏱ Avg Hours: <strong>{summary.avgHours}h</strong></span>
               </div>
             )}
 
-            {/* Logs list */}
-            <div className="space-y-3">
-              {loading ? (
-                <div className="flex justify-center py-12"><Loader size={24} className="animate-spin text-[#DD1215]"/></div>
-              ) : allLogs.length === 0 ? (
-                <div className="bg-white border rounded-lg text-center py-16 text-gray-400">
-                  <ClipboardList size={32} className="mx-auto mb-2 opacity-30"/>
-                  <p className="font-semibold">No work logs for this date.</p>
-                </div>
-              ) : allLogs.map(log => {
-                const s  = STATUS_STYLE[log.status] || STATUS_STYLE.pending;
-                const SI = s.icon;
-                const isExpanded  = expandedLog === log._id;
-                const isReviewing = reviewingId === log._id;
-                return (
-                  <div key={log._id} className="bg-white border rounded-xl overflow-hidden">
-                    {/* Log row */}
-                    <div className="px-5 py-4 flex items-center gap-4 cursor-pointer hover:bg-gray-50 transition"
-                      onClick={() => setExpandedLog(isExpanded ? null : log._id)}>
-                      {/* Avatar */}
-                      <div className="w-9 h-9 rounded-full bg-[#DD1215] text-white flex items-center justify-center text-xs font-black shrink-0">
-                        {log.adminName?.[0]?.toUpperCase() || "?"}
-                      </div>
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-black text-gray-900 text-sm">{log.adminName || log.adminEmail}</p>
-                          <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${s.bg} ${s.text}`}>
-                            <SI size={9}/> {s.label}
-                          </span>
-                          {log.reviewStatus && (
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${REVIEW_STYLE[log.reviewStatus]?.bg} ${REVIEW_STYLE[log.reviewStatus]?.text}`}>
-                              {REVIEW_STYLE[log.reviewStatus]?.label}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-400 truncate mt-0.5">
-                          {log.workDescription || "No description"}
-                        </p>
-                      </div>
-                      {/* Hours */}
-                      <div className="text-right shrink-0">
-                        <p className="text-sm font-black text-gray-900">{log.hoursWorked > 0 ? `${log.hoursWorked}h` : "—"}</p>
-                        <p className="text-[10px] text-gray-400">{log.submittedAt ? fmtTime(log.submittedAt) : "—"}</p>
-                      </div>
-                      {isExpanded ? <ChevronUp size={16} className="text-gray-400 shrink-0"/> : <ChevronDown size={16} className="text-gray-400 shrink-0"/>}
-                    </div>
+            {/* Excel spreadsheet */}
+            {loading ? (
+              <div className="flex justify-center py-12"><Loader size={24} className="animate-spin text-[#DD1215]"/></div>
+            ) : (
+              <div className="border border-gray-300 rounded-lg overflow-hidden shadow-sm">
+                <div className="overflow-x-auto overflow-y-auto" style={{maxHeight:"65vh"}}>
+                  <table className="min-w-full border-collapse text-xs">
 
+                    {/* Frozen header — Excel style */}
+                    <thead className="sticky top-0 z-10">
+                      <tr className="bg-[#217346] text-white">
+                        <th className="border border-[#1a5c38] px-3 py-2 text-center w-8 font-bold">#</th>
+                        <th className="border border-[#1a5c38] px-3 py-2 text-left min-w-[140px] font-bold">Employee Name</th>
+                        <th className="border border-[#1a5c38] px-3 py-2 text-left min-w-[160px] font-bold">Email</th>
+                        <th className="border border-[#1a5c38] px-3 py-2 text-center w-24 font-bold">Date</th>
+                        <th className="border border-[#1a5c38] px-3 py-2 text-center w-24 font-bold">Status</th>
+                        <th className="border border-[#1a5c38] px-3 py-2 text-center w-16 font-bold">Hours</th>
+                        <th className="border border-[#1a5c38] px-3 py-2 text-left min-w-[300px] font-bold">Work Description</th>
+                        <th className="border border-[#1a5c38] px-3 py-2 text-center w-20 font-bold">Submitted</th>
+                        <th className="border border-[#1a5c38] px-3 py-2 text-center w-24 font-bold">Review</th>
+                        <th className="border border-[#1a5c38] px-3 py-2 text-left min-w-[160px] font-bold">Reviewer Comment</th>
+                        <th className="border border-[#1a5c38] px-3 py-2 text-center w-24 font-bold">Actions</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {allLogs.length === 0 ? (
+                        <tr>
+                          <td colSpan={11} className="text-center py-12 text-gray-400 border border-gray-200">
+                            <ClipboardList size={28} className="mx-auto mb-2 opacity-30"/>
+                            No work logs for this date.
+                          </td>
+                        </tr>
+                      ) : allLogs.map((log, i) => {
+                        const isReviewing = reviewingId === log._id;
+                        // Row background based on status
+                        const rowBg =
+                          log.status === "auto_leave" ? "bg-red-50 hover:bg-red-100" :
+                          log.status === "submitted" || log.status === "edited" ? "bg-white hover:bg-green-50" :
+                          "bg-yellow-50 hover:bg-yellow-100";
+
+                        // Status cell color
+                        const statusColor =
+                          log.status === "auto_leave" ? "bg-red-100 text-red-700" :
+                          log.status === "submitted"  ? "bg-green-100 text-green-700" :
+                          log.status === "edited"     ? "bg-blue-100 text-blue-700" :
+                          "bg-yellow-100 text-yellow-700";
+
+                        // Review cell color
+                        const reviewColor =
+                          log.reviewStatus === "approved"          ? "bg-green-100 text-green-700" :
+                          log.reviewStatus === "needs_improvement" ? "bg-yellow-100 text-yellow-700" :
+                          log.reviewStatus === "rejected"          ? "bg-red-100 text-red-700" :
+                          "text-gray-400";
+
+                        return (
+                          <React.Fragment key={log._id}>
+                            <tr className={`${rowBg} transition-colors`}>
+                              {/* Row number */}
+                              <td className="border border-gray-200 px-3 py-2 text-center text-gray-400 font-mono bg-gray-50 font-semibold">
+                                {i + 1}
+                              </td>
+                              {/* Name */}
+                              <td className="border border-gray-200 px-3 py-2 font-semibold text-gray-900 whitespace-nowrap">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-6 h-6 rounded-full bg-[#217346] text-white flex items-center justify-center text-[10px] font-black shrink-0">
+                                    {log.adminName?.[0]?.toUpperCase()||"?"}
+                                  </div>
+                                  {log.adminName||"—"}
+                                </div>
+                              </td>
+                              {/* Email */}
+                              <td className="border border-gray-200 px-3 py-2 text-gray-500 whitespace-nowrap">
+                                {log.adminEmail||"—"}
+                              </td>
+                              {/* Date */}
+                              <td className="border border-gray-200 px-3 py-2 text-center text-gray-600 whitespace-nowrap">
+                                {fmtDate(log.date)}
+                              </td>
+                              {/* Status */}
+                              <td className="border border-gray-200 px-3 py-2 text-center">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold capitalize inline-block ${statusColor}`}>
+                                  {STATUS_STYLE[log.status]?.label || log.status}
+                                </span>
+                              </td>
+                              {/* Hours */}
+                              <td className="border border-gray-200 px-3 py-2 text-center font-bold text-gray-800">
+                                {log.hoursWorked > 0 ? (
+                                  <span className="text-[#217346]">{log.hoursWorked}h</span>
+                                ) : "—"}
+                              </td>
+                              {/* Work description */}
+                              <td className="border border-gray-200 px-3 py-2 text-gray-700 max-w-xs">
+                                {log.status === "auto_leave" ? (
+                                  <span className="text-red-400 italic">Not submitted — auto leave</span>
+                                ) : (
+                                  <div className="line-clamp-2 leading-relaxed">{log.workDescription || "—"}</div>
+                                )}
+                              </td>
+                              {/* Submitted at */}
+                              <td className="border border-gray-200 px-3 py-2 text-center text-gray-500 whitespace-nowrap">
+                                {log.submittedAt ? fmtTime(log.submittedAt) : "—"}
+                              </td>
+                              {/* Review status */}
+                              <td className="border border-gray-200 px-3 py-2 text-center">
+                                {log.reviewStatus ? (
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold inline-block ${reviewColor}`}>
+                                    {log.reviewStatus === "approved" ? "✅ OK" :
+                                     log.reviewStatus === "needs_improvement" ? "⚠️ Improve" : "❌ Redo"}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-300 text-[10px]">—</span>
+                                )}
+                              </td>
+                              {/* Review comment */}
+                              <td className="border border-gray-200 px-3 py-2 text-gray-500 italic max-w-xs">
+                                {log.reviewComment ? (
+                                  <span className="line-clamp-1">"{log.reviewComment}"</span>
+                                ) : "—"}
+                              </td>
+                              {/* Actions */}
+                              <td className="border border-gray-200 px-3 py-2 text-center">
+                                {log.status !== "auto_leave" && (
+                                  <button
+                                    onClick={() => {
+                                      setReviewingId(isReviewing ? null : log._id);
+                                      setReviewForm({ status: log.reviewStatus||"", comment: log.reviewComment||"" });
+                                    }}
+                                    className={`text-[10px] px-2.5 py-1 font-bold border transition ${
+                                      isReviewing
+                                        ? "bg-[#DD1215] text-white border-[#DD1215]"
+                                        : "border-blue-400 text-blue-600 hover:bg-blue-50"
+                                    }`}>
+                                    {isReviewing ? "Cancel" : log.reviewStatus ? "Edit" : "Review"}
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+
+                            {/* Inline review form row */}
+                            {isReviewing && (
+                              <tr className="bg-blue-50">
+                                <td colSpan={11} className="border border-blue-200 px-5 py-3">
+                                  <div className="flex items-start gap-4 flex-wrap">
+                                    <div>
+                                      <p className="text-[10px] font-bold uppercase text-blue-600 mb-1.5">Review Status</p>
+                                      <div className="flex gap-2">
+                                        {[
+                                          { v:"approved",          label:"✅ Approve"    },
+                                          { v:"needs_improvement", label:"⚠️ Improve"   },
+                                          { v:"rejected",          label:"❌ Redo"       },
+                                        ].map(({ v, label }) => (
+                                          <button key={v} onClick={() => setReviewForm(f=>({...f,status:v}))}
+                                            className={`px-3 py-1 text-xs font-bold border rounded transition ${
+                                              reviewForm.status===v
+                                                ? "border-blue-600 bg-blue-600 text-white"
+                                                : "border-gray-300 bg-white text-gray-700 hover:border-blue-400"
+                                            }`}>
+                                            {label}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                    <div className="flex-1 min-w-[200px]">
+                                      <p className="text-[10px] font-bold uppercase text-blue-600 mb-1.5">Comment (optional)</p>
+                                      <input type="text" value={reviewForm.comment}
+                                        onChange={e=>setReviewForm(f=>({...f,comment:e.target.value}))}
+                                        className="w-full border border-gray-300 px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500 bg-white"
+                                        placeholder="Feedback for employee..." />
+                                    </div>
+                                    <div className="flex items-end gap-2 pt-4">
+                                      <button onClick={() => handleReview(log._id)} disabled={saving}
+                                        className="bg-blue-600 text-white px-4 py-1.5 text-xs font-bold uppercase hover:bg-blue-700 transition disabled:opacity-50 rounded">
+                                        {saving ? "..." : "Save"}
+                                      </button>
+                                      <button onClick={() => setReviewingId(null)}
+                                        className="border border-gray-300 px-3 py-1.5 text-xs font-bold uppercase hover:bg-gray-50 transition rounded">
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+
+                      {/* Totals row — like Excel SUM row */}
+                      {allLogs.length > 0 && (
+                        <tr className="bg-[#e2efda] font-bold sticky bottom-0 border-t-2 border-[#217346]">
+                          <td className="border border-gray-300 px-3 py-2 text-center text-[#217346] bg-[#d5e8cd]">Σ</td>
+                          <td className="border border-gray-300 px-3 py-2 text-[#217346]">TOTALS</td>
+                          <td className="border border-gray-300 px-3 py-2"></td>
+                          <td className="border border-gray-300 px-3 py-2"></td>
+                          <td className="border border-gray-300 px-3 py-2 text-center text-[10px]">
+                            <span className="text-green-700">{allLogs.filter(l=>["submitted","edited"].includes(l.status)).length} ✅</span>
+                            {" / "}
+                            <span className="text-red-600">{allLogs.filter(l=>l.status==="auto_leave").length} 🚨</span>
+                          </td>
+                          <td className="border border-gray-300 px-3 py-2 text-center text-[#217346]">
+                            {allLogs.reduce((s,l)=>s+(l.hoursWorked||0),0)}h
+                          </td>
+                          <td className="border border-gray-300 px-3 py-2 text-[10px] text-gray-500 italic">
+                            {allLogs.filter(l=>l.workDescription&&l.status!=="auto_leave").length} entries submitted
+                          </td>
+                          <td className="border border-gray-300 px-3 py-2"></td>
+                          <td className="border border-gray-300 px-3 py-2 text-center text-[10px] text-blue-600">
+                            {allLogs.filter(l=>l.reviewStatus).length} reviewed
+                          </td>
+                          <td className="border border-gray-300 px-3 py-2"></td>
+                          <td className="border border-gray-300 px-3 py-2"></td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </>
+        )}
                     {/* Expanded: full description + review */}
                     {isExpanded && (
                       <div className="border-t px-5 pb-5 pt-4 space-y-4">
