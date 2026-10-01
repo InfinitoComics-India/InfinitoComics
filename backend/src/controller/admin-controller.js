@@ -3,12 +3,13 @@ const adminService = new AdminService();
 // Create a new admin
 const createAdmin = async (req, res) => {
     try {
-        const { email, password, role, name } = req.body;
+        const { email, password, role, roles, name } = req.body;
 
         const adminData = await adminService.createAdmin({
             email,
             password,
             role,
+            roles: roles?.length > 0 ? roles : (role ? [role] : []),
             name
         });
 

@@ -184,7 +184,22 @@ const setupandstartserver = async () => {
         await connect();
         console.log("mongodb connected");
 
-        // ── One-time migration: drop stale employeeId index on dailyworklogs ──
+        // ── One-time migration: fix admins with empty roles array ──────
+        // Admins created before roles-array support have roles:[] but role:"something"
+        // Copy role → roles so getRoles() works correctly without re-login
+        try {
+            const mongoose = (await import('mongoose')).default;
+            const adminCol = mongoose.connection.collection('admins');
+            const result = await adminCol.updateMany(
+                { role: { $exists: true, $ne: null }, $expr: { $eq: [{ $size: { $ifNull: ["$roles", []] } }, 0] } },
+                [{ $set: { roles: ["$role"] } }]
+            );
+            if (result.modifiedCount > 0) {
+                console.log(`✅ Fixed roles array for ${result.modifiedCount} admin(s)`);
+            }
+        } catch (e) {
+            console.warn('Admin roles migration warning:', e.message);
+        }
         // This index was created in an earlier schema version. It causes E11000
         // duplicate key errors because employeeId is null for admin-linked logs.
         try {
