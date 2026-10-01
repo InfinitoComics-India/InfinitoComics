@@ -183,6 +183,23 @@ const setupandstartserver = async () => {
         console.log(`Server started at ${config.PORT}`);
         await connect();
         console.log("mongodb connected");
+
+        // ── One-time migration: drop stale employeeId index on dailyworklogs ──
+        // This index was created in an earlier schema version. It causes E11000
+        // duplicate key errors because employeeId is null for admin-linked logs.
+        try {
+            const mongoose = (await import('mongoose')).default;
+            const col = mongoose.connection.collection('dailyworklogs');
+            const indexes = await col.indexes();
+            const stale = indexes.find(idx => idx.name === 'employeeId_1_date_1');
+            if (stale) {
+                await col.dropIndex('employeeId_1_date_1');
+                console.log('✅ Dropped stale index: employeeId_1_date_1');
+            }
+        } catch (e) {
+            console.warn('Index migration warning:', e.message);
+        }
+
         startCronJobs(); // Start midnight auto-leave cron
     })
 }
