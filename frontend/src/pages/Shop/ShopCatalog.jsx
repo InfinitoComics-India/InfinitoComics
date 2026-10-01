@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getAllCategories, getAllProducts } from '../../services/productService';
+import { addToCart } from '../../redux/cartSlice';
 
 import heroTshirt from '../../../assets/Images/merch/MerchModel.png';
 
 const ShopCatalog = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [activeSlide, setActiveSlide] = useState(0);
   const [categories, setCategories] = useState([]);
   const [trendingProducts, setTrendingProducts] = useState([]);
@@ -37,7 +40,36 @@ const ShopCatalog = () => {
 
   const handleAddToCart = (e, product) => {
     e.stopPropagation();
-    toast.success(`Added ${product.subtitle || product.title} to cart!`);
+    const cleanPrice = typeof product.price === 'string'
+      ? parseFloat(product.price.replace(/[^\d.]/g, '')) || 1299
+      : Number(product.price || product.salePrice || product.basePrice || 1299);
+
+    const cleanMrp = typeof product.mrp === 'string'
+      ? parseFloat(product.mrp.replace(/[^\d.]/g, '')) || Math.round(cleanPrice * 1.6)
+      : Number(product.mrp || product.basePrice || Math.round(cleanPrice * 1.6));
+
+    const primaryImg = (Array.isArray(product.images) && product.images.length > 0)
+      ? (typeof product.images[0] === 'string' ? product.images[0] : product.images[0]?.url)
+      : (product.image || '/products/crimson_tshirt.jpg');
+
+    dispatch(
+      addToCart({
+        productId: product._id || product.id || product.slug,
+        size: 'M',
+        quantity: 1,
+        product: {
+          id: product._id || product.id || product.slug,
+          name: product.title || product.name || 'INFINITO',
+          title: product.subtitle || product.title || product.name || 'INFINITO',
+          price: cleanPrice,
+          mrp: cleanMrp,
+          image: primaryImg,
+          description: product.description || product.shortDescription || '',
+          rating: product.rating || 4.5,
+        },
+      })
+    );
+    toast.success(`Added ${product.subtitle || product.title || 'item'} to cart!`);
   };
 
   const handleCategoryClick = (cat) => {

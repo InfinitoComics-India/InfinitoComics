@@ -162,6 +162,8 @@ const ShopProduct = () => {
   // ─── ACTION HANDLERS ────────────────────────────────────────────────────
   const handleAddToCart = (item = product) => {
     if (!item) return;
+    const cleanPrice = Number(item.price || item.salePrice || item.basePrice || 1299);
+    const cleanMrp = Number(item.mrp || item.basePrice || Math.round(cleanPrice * 1.6));
     dispatch(
       addToCart({
         productId: item._id || item.id,
@@ -171,8 +173,11 @@ const ShopProduct = () => {
           id: item._id || item.id,
           name: item.name || "INFINITO",
           title: item.title || item.name || "INFINITO",
-          price: item.price,
+          price: cleanPrice,
+          mrp: cleanMrp,
           image: item.image,
+          description: item.description || item.shortDescription || "The Special Edition Crimson Red T-Shirt is designed to capture the energy, passion, and spirit of INFINITO.",
+          rating: item.rating || 4.5,
         },
       })
     );
@@ -181,20 +186,7 @@ const ShopProduct = () => {
 
   const handleBuyNow = () => {
     if (!product) return;
-    dispatch(
-      addToCart({
-        productId: product._id || product.id,
-        size: selectedSize || "M",
-        quantity: 1,
-        product: {
-          id: product._id || product.id,
-          name: product.name || "INFINITO",
-          title: product.title || product.name || "INFINITO",
-          price: product.price,
-          image: product.image,
-        },
-      })
-    );
+    handleAddToCart(product);
     navigate("/cart");
   };
 

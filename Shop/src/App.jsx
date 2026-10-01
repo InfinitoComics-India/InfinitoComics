@@ -12,6 +12,7 @@ import ShopMain from './pages/ShopMain/ShopMain';
 import ShopCategory from './pages/ShopCategory/ShopCategory';
 import ShopProduct from './pages/ShopProduct/ShopProduct';
 import Cart from './pages/Cart/Cart';
+import Checkout from './pages/Checkout/Checkout';
 
 function App() {
   const dispatch = useDispatch();
@@ -85,6 +86,7 @@ function App() {
             <Route path="category/:categoryName" element={<ShopCategory />} />
             <Route path="product/:productId" element={<ShopProduct />} />
             <Route path="cart" element={<Cart />} />
+            <Route path="checkout" element={<Checkout />} />
           </Route>
         </Routes>
       </BrowserRouter>

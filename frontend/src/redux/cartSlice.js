@@ -1,7 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-// Cart is persisted in localStorage so it survives refreshes and
-// stays consistent across tabs on the same subdomain.
 const CART_KEY = "shop_cart";
 
 const loadCart = () => {
@@ -76,6 +74,10 @@ const cartSlice = createSlice({
         saveCart(state.items);
       }
     },
+    clearCart: (state) => {
+      state.items = [];
+      saveCart(state.items);
+    },
   },
 });
 
@@ -87,4 +89,5 @@ export const {
   setCart,
   updateSize,
 } = cartSlice.actions;
+
 export default cartSlice.reducer;

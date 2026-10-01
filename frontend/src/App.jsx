@@ -28,6 +28,7 @@ import FounderProfile from './pages/aboutUs/FounderProfile.jsx'
 import ErrorPage from './pages/ErrorForm/ErrorPage.jsx';
 import SignupStep3 from './pages/Signup/SignupStep3';
 import Cart from './pages/Cart/Cart';
+import Checkout from './pages/Checkout/Checkout';
 
 import ComicsPage from './pages/Comics/ComicsPage.jsx'
 import Characters from './pages/Characters/index.jsx'
@@ -130,6 +131,7 @@ function App() {
               <Route path="/comicChap/:comicId/chapters/pdfView" element={<ComicChap />} />
               <Route path="/games" element={<Games />} />
               <Route path="/cart" element={<Cart />} />
+              <Route path="/checkout" element={<Checkout />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/refund-policy" element={<RefundPolicy />} />
               <Route path="/terms-of-use" element={<TermsOfUse />} />
