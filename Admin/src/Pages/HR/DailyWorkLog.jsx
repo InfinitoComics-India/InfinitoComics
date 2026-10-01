@@ -51,7 +51,6 @@ const DailyWorkLog = () => {
 
   // Form
   const [work,  setWork]  = useState("");
-  const [hours, setHours] = useState("");
 
   // Admin view
   const [adminDate,    setAdminDate]    = useState(new Date().toISOString().split("T")[0]);
@@ -75,7 +74,6 @@ const DailyWorkLog = () => {
       setMyLog(log);
       if (log && !log.isLocked) {
         setWork(log.workDescription || "");
-        setHours(log.hoursWorked?.toString() || "");
       }
     } catch {}
   };
@@ -104,9 +102,8 @@ const DailyWorkLog = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!work.trim()) { setError("Work description is required."); return; }
-    if (!hours || parseFloat(hours) <= 0) { setError("Enter valid hours worked."); return; }
     try { setSaving(true); setError(""); setSuccess("");
-      const res = await axios.post(`${BASE}/hr/worklog/submit`, { workDescription: work.trim(), hoursWorked: parseFloat(hours) }, auth());
+      const res = await axios.post(`${BASE}/hr/worklog/submit`, { workDescription: work.trim() }, auth());
       setMyLog(res.data.data);
       setSuccess(myLog ? "✅ Work log updated!" : "✅ Work log submitted successfully!");
       loadHistory();
@@ -242,24 +239,6 @@ const DailyWorkLog = () => {
                       <p className="text-[10px] text-gray-400 mt-1">{work.length} characters</p>
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1.5">Hours Worked *</label>
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <input type="number" min="0.5" max="24" step="0.5" value={hours} onChange={e=>setHours(e.target.value)}
-                          className="w-24 border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] text-center font-bold"
-                          placeholder="8" required />
-                        <span className="text-sm text-gray-500">hours</span>
-                        <div className="flex gap-2">
-                          {[3,4,6,8,10].map(h => (
-                            <button key={h} type="button" onClick={() => setHours(h.toString())}
-                              className={`px-3 py-1.5 text-xs font-bold border transition rounded ${hours==h?"bg-[#DD1215] text-white border-[#DD1215]":"border-gray-300 text-gray-600 hover:border-[#DD1215]"}`}>
-                              {h}h
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
                     <button type="submit" disabled={saving}
                       className="w-full bg-[#DD1215] text-white py-3 text-xs font-black uppercase tracking-widest hover:bg-red-700 transition disabled:opacity-50 flex items-center justify-center gap-2">
                       <Send size={15}/>
@@ -299,7 +278,7 @@ const DailyWorkLog = () => {
                         {STATUS_STYLE[myLog.status]?.label}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {myLog.submittedAt ? `at ${fmtTime(myLog.submittedAt)}` : ""} · {myLog.hoursWorked}h
+                        {myLog.submittedAt ? `at ${fmtTime(myLog.submittedAt)}` : ""}
                       </p>
                     </div>
                   </div>
@@ -325,7 +304,6 @@ const DailyWorkLog = () => {
                           <div className="flex items-center justify-between">
                             <p className="text-xs font-semibold text-gray-700">{fmtShort(log.date)}</p>
                             <div className="flex items-center gap-1">
-                              {log.hoursWorked > 0 && <span className="text-[10px] text-gray-400">{log.hoursWorked}h</span>}
                               {log.reviewStatus && (
                                 <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${REVIEW_STYLE[log.reviewStatus]?.bg} ${REVIEW_STYLE[log.reviewStatus]?.text}`}>
                                   {log.reviewStatus === "approved" ? "✅" : log.reviewStatus === "needs_improvement" ? "⚠️" : "❌"}
@@ -377,10 +355,10 @@ const DailyWorkLog = () => {
               <div className="flex gap-2">
                 {/* Export CSV */}
                 <button onClick={() => {
-                  const headers = ["#","Name","Email","Date","Status","Hours","Work Description","Submitted At","Review","Comment"];
+                  const headers = ["#","Name","Email","Date","Status","Work Description","Submitted At","Review","Comment"];
                   const rows = allLogs.map((l,i) => [
                     i+1, l.adminName||"", l.adminEmail||"",
-                    fmtDate(l.date), l.status, l.hoursWorked||0,
+                    fmtDate(l.date), l.status,
                     `"${(l.workDescription||"").replace(/"/g,"'")}"`,
                     l.submittedAt?fmtTime(l.submittedAt):"",
                     l.reviewStatus||"", l.reviewComment||""
@@ -409,7 +387,6 @@ const DailyWorkLog = () => {
                 <span className="text-red-300">🚨 Auto Leave: <strong>{summary.auto_leave}</strong></span>
                 <span className="text-yellow-300">⏳ Pending: <strong>{summary.pending}</strong></span>
                 <span className="text-blue-300">🔍 Reviewed: <strong>{summary.reviewed}</strong></span>
-                <span className="text-purple-300">⏱ Avg Hours: <strong>{summary.avgHours}h</strong></span>
               </div>
             )}
 
@@ -429,7 +406,6 @@ const DailyWorkLog = () => {
                         <th className="border border-[#1a5c38] px-3 py-2 text-left min-w-[160px] font-bold">Email</th>
                         <th className="border border-[#1a5c38] px-3 py-2 text-center w-24 font-bold">Date</th>
                         <th className="border border-[#1a5c38] px-3 py-2 text-center w-24 font-bold">Status</th>
-                        <th className="border border-[#1a5c38] px-3 py-2 text-center w-16 font-bold">Hours</th>
                         <th className="border border-[#1a5c38] px-3 py-2 text-left min-w-[300px] font-bold">Work Description</th>
                         <th className="border border-[#1a5c38] px-3 py-2 text-center w-20 font-bold">Submitted</th>
                         <th className="border border-[#1a5c38] px-3 py-2 text-center w-24 font-bold">Review</th>
@@ -441,7 +417,7 @@ const DailyWorkLog = () => {
                     <tbody>
                       {allLogs.length === 0 ? (
                         <tr>
-                          <td colSpan={11} className="text-center py-12 text-gray-400 border border-gray-200">
+                          <td colSpan={10} className="text-center py-12 text-gray-400 border border-gray-200">
                             <ClipboardList size={28} className="mx-auto mb-2 opacity-30"/>
                             No work logs for this date.
                           </td>
@@ -498,12 +474,6 @@ const DailyWorkLog = () => {
                                   {STATUS_STYLE[log.status]?.label || log.status}
                                 </span>
                               </td>
-                              {/* Hours */}
-                              <td className="border border-gray-200 px-3 py-2 text-center font-bold text-gray-800">
-                                {log.hoursWorked > 0 ? (
-                                  <span className="text-[#217346]">{log.hoursWorked}h</span>
-                                ) : "—"}
-                              </td>
                               {/* Work description */}
                               <td className="border border-gray-200 px-3 py-2 text-gray-700 max-w-xs">
                                 {log.status === "auto_leave" ? (
@@ -555,7 +525,7 @@ const DailyWorkLog = () => {
                             {/* Inline review form row */}
                             {isReviewing && (
                               <tr className="bg-blue-50">
-                                <td colSpan={11} className="border border-blue-200 px-5 py-3">
+                                <td colSpan={10} className="border border-blue-200 px-5 py-3">
                                   <div className="flex items-start gap-4 flex-wrap">
                                     <div>
                                       <p className="text-[10px] font-bold uppercase text-blue-600 mb-1.5">Review Status</p>
@@ -612,9 +582,6 @@ const DailyWorkLog = () => {
                             <span className="text-green-700">{allLogs.filter(l=>["submitted","edited"].includes(l.status)).length} ✅</span>
                             {" / "}
                             <span className="text-red-600">{allLogs.filter(l=>l.status==="auto_leave").length} 🚨</span>
-                          </td>
-                          <td className="border border-gray-300 px-3 py-2 text-center text-[#217346]">
-                            {allLogs.reduce((s,l)=>s+(l.hoursWorked||0),0)}h
                           </td>
                           <td className="border border-gray-300 px-3 py-2 text-[10px] text-gray-500 italic">
                             {allLogs.filter(l=>l.workDescription&&l.status!=="auto_leave").length} entries submitted
