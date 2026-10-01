@@ -39,6 +39,7 @@ const ShopProduct = () => {
 
   const [product, setProduct] = useState(null);
   const [suggested, setSuggested] = useState([]);
+  const [visibleSuggestedCount, setVisibleSuggestedCount] = useState(4);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState("M");
@@ -53,6 +54,7 @@ const ShopProduct = () => {
       setLoading(true);
       setProduct(null);
       setSuggested([]);
+      setVisibleSuggestedCount(4);
       setActiveImage(0);
 
       try {
@@ -82,19 +84,18 @@ const ShopProduct = () => {
             );
           }
 
-          if (related.length > 0) {
-            setSuggested(related.slice(0, 4));
-          } else {
-            // If no products in that category, fetch random 4 products from all
-            const all = await fetchProducts();
-            const others = (all || []).filter(
-              (item) =>
-                String(item._id || item.id) !== String(p._id || p.id) &&
-                String(item.slug || "") !== String(p.slug || "")
-            );
-            const shuffled = [...others].sort(() => 0.5 - Math.random());
-            setSuggested(shuffled.slice(0, 4));
-          }
+          // If there are fewer than 8 in the category, supplement with catalog products
+          // so that clicking "View More" can cleanly reveal another line of 4 products.
+          const all = await fetchProducts();
+          const others = (all || []).filter(
+            (item) =>
+              String(item._id || item.id) !== String(p._id || p.id) &&
+              String(item.slug || "") !== String(p.slug || "") &&
+              !related.some((r) => String(r._id || r.id) === String(item._id || item.id))
+          );
+          const shuffledOthers = [...others].sort(() => 0.5 - Math.random());
+          const combined = [...related, ...shuffledOthers];
+          setSuggested(combined);
         }
       } catch (err) {
         console.error("Error loading product:", err);
@@ -515,9 +516,9 @@ const ShopProduct = () => {
               )}
             </div>
 
-            {/* 4 Cards Grid */}
+            {/* Suggested Products Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-5">
-              {suggested.slice(0, 4).map((item) => {
+              {suggested.slice(0, visibleSuggestedCount).map((item) => {
                 const itemImg =
                   item.image ||
                   fallbackCategoryImages[item.category?.toLowerCase()] ||
@@ -569,22 +570,19 @@ const ShopProduct = () => {
               })}
             </div>
 
-            {/* Centered View More Button */}
-            <div className="mt-10 flex justify-center">
-              <button
-                onClick={() => {
-                  if (product.category) {
-                    navigate(`/category/${product.category}`);
-                  } else {
-                    navigate("/");
-                  }
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-                className="px-8 py-3 bg-[#DD1215] hover:bg-red-700 text-white font-bold text-sm uppercase tracking-wider transition shadow-md cursor-pointer rounded-none"
-              >
-                View More
-              </button>
-            </div>
+            {/* View More Button - reveals another line of 4 products */}
+            {suggested.length > visibleSuggestedCount && (
+              <div className="mt-10 flex justify-center">
+                <button
+                  onClick={() => {
+                    setVisibleSuggestedCount((prev) => prev + 4);
+                  }}
+                  className="px-8 py-3 bg-[#DD1215] hover:bg-red-700 text-white font-bold text-sm uppercase tracking-wider transition shadow-md cursor-pointer rounded-none"
+                >
+                  View More
+                </button>
+              </div>
+            )}
           </div>
         )}
 

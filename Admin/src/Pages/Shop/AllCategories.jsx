@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, Search, Edit, Trash2, FolderOpen, 
-  Eye, EyeOff, Image as ImageIcon, Package, Grid, List
+  Eye, EyeOff, Image as ImageIcon, Package, Grid, List,
+  Download, FileSpreadsheet, FileText, FileCode, ChevronDown
 } from 'lucide-react';
 import { 
   getAllCategories, 
@@ -11,6 +12,7 @@ import {
 } from '../../services/shopServices/categoryService';
 import { BACKEND_URL } from '../../Utils/constant';
 import Swal from 'sweetalert2';
+import * as XLSX from 'xlsx';
 
 // Build the full URL for images. Uploaded images come back as "/uploads/shop/xxx.png"
 // and need the backend host prepended. External URLs and data URIs are returned as-is.
@@ -133,6 +135,103 @@ const AllCategories = () => {
     }
   };
 
+  const getExportData = () => {
+    const list = filteredCategories.length > 0 ? filteredCategories : categories;
+    return list.map((cat, index) => ({
+      'S.No': index + 1,
+      'Category Name': cat.name || '',
+      'Slug': cat.slug || '',
+      'Description': cat.description || '',
+      'Status': cat.status || 'active',
+      'Product Count': cat.productCount || 0,
+      'Image URL': resolveImageUrl(cat.image || ''),
+      'Created At': cat.createdAt ? new Date(cat.createdAt).toLocaleDateString('en-IN') : '',
+    }));
+  };
+
+  const exportToExcel = () => {
+    const rows = getExportData();
+    if (rows.length === 0) {
+      Swal.fire('Warning', 'No categories to export', 'warning');
+      return;
+    }
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    worksheet['!cols'] = [
+      { wch: 6 },
+      { wch: 22 },
+      { wch: 20 },
+      { wch: 30 },
+      { wch: 12 },
+      { wch: 14 },
+      { wch: 40 },
+      { wch: 14 },
+    ];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Categories');
+    XLSX.writeFile(workbook, `infinito_categories_${Date.now()}.xlsx`);
+    Swal.fire({
+      icon: 'success',
+      title: 'Exported!',
+      text: 'Categories exported as Excel (.xlsx)',
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  };
+
+  const exportToCSV = () => {
+    const rows = getExportData();
+    if (rows.length === 0) {
+      Swal.fire('Warning', 'No categories to export', 'warning');
+      return;
+    }
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const csvContent = XLSX.utils.sheet_to_csv(worksheet);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `infinito_categories_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    Swal.fire({
+      icon: 'success',
+      title: 'Exported!',
+      text: 'Categories exported as CSV (.csv)',
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  };
+
+  const exportToJSON = () => {
+    const dataToExport = filteredCategories.length > 0 ? filteredCategories : categories;
+    if (dataToExport.length === 0) {
+      Swal.fire('Warning', 'No categories to export', 'warning');
+      return;
+    }
+    const jsonBlob = new Blob([JSON.stringify(dataToExport, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(jsonBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `infinito_categories_${Date.now()}.json`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    Swal.fire({
+      icon: 'success',
+      title: 'Exported!',
+      text: 'Categories exported as JSON (.json)',
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  };
+
+  const [showExportMenu, setShowExportMenu] = useState(false);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -155,13 +254,69 @@ const AllCategories = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => navigate('/shop/categories/new')}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#DD1215] text-white rounded-lg hover:bg-red-700 transition font-medium"
-        >
-          <Plus className="w-5 h-5" />
-          Add Category
-        </button>
+        <div className="flex items-center gap-3 relative">
+          {/* Export Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              className="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium text-sm shadow-sm cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              Export
+              <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+            </button>
+
+            {showExportMenu && (
+              <div 
+                className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1"
+                onMouseLeave={() => setShowExportMenu(false)}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    exportToExcel();
+                    setShowExportMenu(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                  Excel (.xlsx)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    exportToCSV();
+                    setShowExportMenu(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                >
+                  <FileText className="w-4 h-4 text-blue-600" />
+                  CSV (.csv)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    exportToJSON();
+                    setShowExportMenu(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                >
+                  <FileCode className="w-4 h-4 text-amber-600" />
+                  JSON (.json)
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => navigate('/shop/categories/new')}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#DD1215] text-white rounded-lg hover:bg-red-700 transition font-medium shadow-sm cursor-pointer"
+          >
+            <Plus className="w-5 h-5" />
+            Add Category
+          </button>
+        </div>
       </div>
 
       {/* Filters & Search */}

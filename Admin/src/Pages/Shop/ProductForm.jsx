@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Save, X, Upload, Trash2, Plus, 
   Image as ImageIcon, Tag, Package, IndianRupee,
-  FileText
+  FileText, Star, GripVertical
 } from 'lucide-react';
 import { 
   getProductById, 
@@ -69,9 +69,10 @@ const ProductForm = () => {
     stock: '',
   });
 
-  // Images
+  // Images & Drag-and-drop state
   const [images, setImages] = useState([]);
-  const [imageFiles, setImageFiles] = useState([]);
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   // Variants (size, color, etc.)
   const [variants, setVariants] = useState([]);
@@ -140,7 +141,18 @@ const ProductForm = () => {
         stock: product.stock || '',
       });
 
-      setImages(product.images || []);
+      const rawImages = Array.isArray(product.images) ? product.images : [];
+      const loadedImages = rawImages.map((img, idx) => ({
+        url: typeof img === 'string' ? img : (img?.url || ''),
+        alt: typeof img === 'object' ? (img?.alt || '') : '',
+        isPrimary: typeof img === 'object' && img?.isPrimary !== undefined ? Boolean(img.isPrimary) : idx === 0,
+        isNew: false,
+      }));
+      // If there are images and none is marked primary, default the first one to primary
+      if (loadedImages.length > 0 && !loadedImages.some((img) => img.isPrimary)) {
+        loadedImages[0].isPrimary = true;
+      }
+      setImages(loadedImages);
       setVariants(product.variants || []);
     } catch (error) {
       console.error('Failed to load product:', error);
@@ -174,19 +186,37 @@ const ProductForm = () => {
         return;
       }
 
-      // Keep existing images (already uploaded) and add newly uploaded ones.
-      let uploadedImages = images.filter((img) => !img.isNew);
-      if (imageFiles.length > 0) {
-        const uploadResponse = await uploadProductImages(imageFiles);
-        // Backend returns { success, message, data: [...] } — axios wraps in .data
-        const newImages = extractList(uploadResponse);
-        uploadedImages = [...uploadedImages, ...newImages];
+      // 1. Upload any newly added image files to Cloudinary
+      const newItems = images.filter((img) => img.isNew && img.file);
+      const uploadedUrlMap = new Map();
+
+      if (newItems.length > 0) {
+        const filesToUpload = newItems.map((item) => item.file);
+        const uploadResponse = await uploadProductImages(filesToUpload);
+        const uploadedData = extractList(uploadResponse);
+
+        newItems.forEach((item, idx) => {
+          if (uploadedData[idx]?.url) {
+            uploadedUrlMap.set(item, uploadedData[idx].url);
+          }
+        });
       }
+
+      // 2. Build final uploadedImages array in the EXACT dragged order with isPrimary preserved
+      const hasAnyPrimary = images.some((img) => img.isPrimary);
+      const finalImages = images.map((img, index) => {
+        const finalUrl = img.isNew ? (uploadedUrlMap.get(img) || img.url) : img.url;
+        return {
+          url: finalUrl,
+          alt: img.alt || formData.name || 'Product Image',
+          isPrimary: hasAnyPrimary ? Boolean(img.isPrimary) : index === 0,
+        };
+      });
 
       const productData = {
         ...formData,
         ...pricing,
-        images: uploadedImages,
+        images: finalImages,
         variants,
       };
 
@@ -210,21 +240,92 @@ const ProductForm = () => {
 
   const handleImageSelect = (e) => {
     const files = Array.from(e.target.files);
-    setImageFiles(prev => [...prev, ...files]);
+    if (files.length === 0) return;
 
-    // Create preview URLs
-    files.forEach(file => {
+    files.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImages(prev => [...prev, { url: reader.result, isNew: true }]);
+        setImages((prev) => {
+          const isFirst = prev.length === 0;
+          return [
+            ...prev,
+            {
+              url: reader.result,
+              isNew: true,
+              file,
+              alt: file.name,
+              isPrimary: isFirst,
+              id: `new-${Date.now()}-${Math.random()}`,
+            },
+          ];
+        });
       };
       reader.readAsDataURL(file);
     });
+
+    // Reset input so re-selecting the same file works
+    e.target.value = '';
   };
 
   const handleRemoveImage = (index) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
-    setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setImages((prev) => {
+      const filtered = prev.filter((_, i) => i !== index);
+      // If the removed image was primary, set the first remaining image as primary
+      if (prev[index]?.isPrimary && filtered.length > 0) {
+        filtered[0] = { ...filtered[0], isPrimary: true };
+      }
+      return filtered;
+    });
+  };
+
+  const handleSetPrimary = (index) => {
+    setImages((prev) =>
+      prev.map((img, i) => ({
+        ...img,
+        isPrimary: i === index,
+      }))
+    );
+  };
+
+  // Drag-and-drop reordering handlers
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    try {
+      e.dataTransfer.setData('text/plain', `${index}`);
+    } catch (_) {}
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDrop = (e, targetIndex) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === targetIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    setImages((prev) => {
+      const updated = [...prev];
+      const [movedItem] = updated.splice(draggedIndex, 1);
+      updated.splice(targetIndex, 0, movedItem);
+      return updated;
+    });
+
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   // Variant management
@@ -670,18 +771,27 @@ const ProductForm = () => {
           
           {/* Product Images */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <ImageIcon className="w-5 h-5" />
-              Product Images
-            </h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <ImageIcon className="w-5 h-5 text-blue-600" />
+                Product Images
+              </h3>
+              <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                {images.length} image{images.length === 1 ? '' : 's'}
+              </span>
+            </div>
+
+            <p className="text-xs text-gray-500 mb-4">
+              Drag images to reorder. Click <strong>"Make Primary"</strong> to select the main cover image.
+            </p>
 
             {/* Image Upload */}
             <div className="mb-4">
               <label className="block w-full cursor-pointer">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition">
-                  <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">Click to upload images</p>
-                  <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB</p>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-5 text-center hover:border-blue-500 hover:bg-blue-50/50 transition">
+                  <Upload className="w-7 h-7 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-gray-700">Click to upload images</p>
+                  <p className="text-xs text-gray-500 mt-1">PNG, JPG, WebP, SVG up to 5MB</p>
                 </div>
                 <input
                   type="file"
@@ -693,14 +803,23 @@ const ProductForm = () => {
               </label>
             </div>
 
-            {/* Image Preview Grid */}
+            {/* Image Preview Grid with Drag & Drop */}
             {images.length > 0 && (
               <div className="grid grid-cols-2 gap-3">
                 {images.map((image, index) => (
                   <ProductImagePreview
-                    key={image.url || index}
+                    key={image.id || image.url || index}
                     image={image}
                     index={index}
+                    total={images.length}
+                    isPrimary={Boolean(image.isPrimary)}
+                    isDragging={draggedIndex === index}
+                    isDragOver={dragOverIndex === index}
+                    onDragStart={handleDragStart}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    onDragEnd={handleDragEnd}
+                    onSetPrimary={handleSetPrimary}
                     onRemove={() => handleRemoveImage(index)}
                   />
                 ))}
@@ -769,37 +888,101 @@ const ProductForm = () => {
   );
 };
 
-// A single product-image thumbnail with graceful error handling. Uploaded
-// images use a relative "/uploads/shop/..." URL that needs BACKEND_URL, while
-// freshly-selected files show a data: URI. Both cases go through resolveImageUrl.
-const ProductImagePreview = ({ image, index, onRemove }) => {
+// A draggable product-image thumbnail with primary badge and reorder support.
+const ProductImagePreview = ({
+  image,
+  index,
+  total,
+  isPrimary,
+  isDragging,
+  isDragOver,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+  onSetPrimary,
+  onRemove,
+}) => {
   const [failed, setFailed] = useState(false);
   const src = resolveImageUrl(image?.url || '');
+
   return (
-    <div className="relative group">
+    <div
+      draggable
+      onDragStart={(e) => onDragStart(e, index)}
+      onDragOver={(e) => onDragOver(e, index)}
+      onDrop={(e) => onDrop(e, index)}
+      onDragEnd={onDragEnd}
+      className={`relative group rounded-lg border overflow-hidden transition-all duration-150 select-none bg-white cursor-grab active:cursor-grabbing ${
+        isDragging
+          ? 'opacity-30 scale-95 border-dashed border-blue-500 shadow-inner'
+          : 'opacity-100'
+      } ${
+        isDragOver
+          ? 'ring-2 ring-blue-500 border-blue-500 scale-102 shadow-lg'
+          : 'border-gray-200 hover:border-gray-400 hover:shadow-sm'
+      } ${
+        isPrimary ? 'ring-2 ring-amber-500 border-amber-500' : ''
+      }`}
+    >
+      {/* Image Preview */}
       {src && !failed ? (
         <img
           src={src}
-          alt={`Product ${index + 1}`}
-          className="w-full h-32 object-cover rounded-lg border border-gray-200 bg-gray-50"
+          alt={`Product image ${index + 1}`}
+          className="w-full h-32 object-cover bg-gray-50 pointer-events-none"
           onError={() => setFailed(true)}
         />
       ) : (
-        <div className="w-full h-32 rounded-lg border border-gray-200 bg-gray-100 flex items-center justify-center text-xs text-gray-500">
+        <div className="w-full h-32 rounded-lg bg-gray-100 flex items-center justify-center text-xs text-gray-500">
           Image unavailable
         </div>
       )}
-      {index === 0 && (
-        <span className="absolute top-2 left-2 px-2 py-1 bg-blue-600 text-white text-xs rounded">
+
+      {/* Top Left Grip Handle */}
+      <div
+        className="absolute top-2 left-2 p-1 rounded bg-black/60 text-white opacity-80 group-hover:opacity-100 transition shadow"
+        title="Drag to change order"
+      >
+        <GripVertical className="w-3.5 h-3.5" />
+      </div>
+
+      {/* Index Position Badge */}
+      <span className="absolute bottom-2 left-2 px-1.5 py-0.5 bg-black/70 text-white text-[10px] font-bold rounded shadow">
+        #{index + 1}
+      </span>
+
+      {/* Primary Badge or Make Primary Button */}
+      {isPrimary ? (
+        <span className="absolute top-2 left-9 px-2 py-0.5 bg-amber-500 text-white text-xs font-bold rounded flex items-center gap-1 shadow">
+          <Star className="w-3 h-3 fill-current" />
           Primary
         </span>
+      ) : (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onSetPrimary(index);
+          }}
+          className="absolute top-2 left-9 px-2 py-0.5 bg-white/95 hover:bg-amber-500 hover:text-white text-gray-700 text-xs font-medium rounded opacity-0 group-hover:opacity-100 transition shadow border border-gray-200 cursor-pointer"
+          title="Make this the primary product image"
+        >
+          Make Primary
+        </button>
       )}
+
+      {/* Remove Button */}
       <button
         type="button"
-        onClick={onRemove}
-        className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded opacity-0 group-hover:opacity-100 transition"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove();
+        }}
+        className="absolute top-2 right-2 p-1 bg-red-600 hover:bg-red-700 text-white rounded opacity-0 group-hover:opacity-100 transition shadow cursor-pointer"
+        title="Remove image"
       >
-        <Trash2 className="w-4 h-4" />
+        <Trash2 className="w-3.5 h-3.5" />
       </button>
     </div>
   );
