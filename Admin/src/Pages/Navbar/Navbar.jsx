@@ -23,6 +23,8 @@ const NAV_ITEMS = [
   { label: "Users",           to: "/users",            icon: Users,       roles: ["superadmin"] },
   { label: "Admin Mgmt",      to: "/admin-management", icon: ShieldCheck, roles: ["superadmin"] },
   { label: "Contact Queries", to: "/contact-queries",  icon: Mail,        roles: ["superadmin"] },
+  { label: "Wiki",            to: "/hr/wiki",          icon: BookMarked,  roles: HR_ALL          },
+  { label: "Infinito AI",     to: "/hr/ai",            icon: Sparkles,    roles: HR_ALL          },
 ];
 
 // ── HR sub-items (shown inside collapsible accordion) ────────
@@ -44,9 +46,7 @@ const HR_ITEMS = [
   { label: "Documents",       to: "/hr/documents",    icon: FileArchive,    roles: EMP_ALL  },
   { label: "Recruitment",     to: "/hr/recruitment",  icon: UserSearch,     roles: HR_ALL   },
   { label: "Chat",            to: "/hr/chat",         icon: MessagesSquare, roles: HR_ALL   },
-  { label: "Wiki",            to: "/hr/wiki",         icon: BookMarked,     roles: HR_ALL   },
   { label: "Self Service",    to: "/hr/self-service", icon: LifeBuoy,       roles: EMP_ALL  },
-  { label: "Infinito AI",     to: "/hr/ai",           icon: Sparkles,       roles: HR_ALL   },
   { label: "Work Log",        to: "/hr/worklog",      icon: ClipboardList,  roles: EMP_ALL  }, // all roles incl. employees
 ];
 
