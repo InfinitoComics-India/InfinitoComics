@@ -22,9 +22,9 @@ export const getAdmin = () => {
 export const getRoles = () => {
   const admin = getAdmin();
   if (!admin) return [];
-  // New format: roles is an array
-  if (Array.isArray(admin.roles)) return admin.roles;
-  // Old format: role is a string
+  // New format: roles is a non-empty array
+  if (Array.isArray(admin.roles) && admin.roles.length > 0) return admin.roles;
+  // Old format or empty roles array: fall back to role string
   if (admin.role) return [admin.role];
   return [];
 };
