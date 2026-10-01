@@ -18,10 +18,9 @@ export const submitWorkLog = async (req, res) => {
     const adminId   = req.user._id;
     const adminName = req.user.name || req.user.username || "";
     const adminEmail= req.user.email || "";
-    const { workDescription, hoursWorked } = req.body;
+    const { workDescription } = req.body;
 
     if (!workDescription?.trim()) return res.status(400).json({ success: false, message: "Work description is required." });
-    if (!hoursWorked || parseFloat(hoursWorked) <= 0) return res.status(400).json({ success: false, message: "Hours worked must be greater than 0." });
 
     const today = getTodayIST();
     const existing = await DailyWorkLog.findOne({ adminId, date: today });
@@ -29,7 +28,6 @@ export const submitWorkLog = async (req, res) => {
     if (existing) {
       if (existing.isLocked) return res.status(403).json({ success: false, message: "Today's work log is locked. Submissions are closed after midnight IST." });
       existing.workDescription = workDescription.trim();
-      existing.hoursWorked     = parseFloat(hoursWorked);
       existing.status          = "edited";
       existing.lastEditedAt    = new Date();
       await existing.save();
@@ -42,7 +40,6 @@ export const submitWorkLog = async (req, res) => {
       adminEmail,
       date:            today,
       workDescription: workDescription.trim(),
-      hoursWorked:     parseFloat(hoursWorked),
       status:          "submitted",
       submittedAt:     new Date(),
     });
