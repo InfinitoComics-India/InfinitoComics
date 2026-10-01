@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, Grid3x3, List, Edit, Trash2, Eye } from 'lucide-react';
-import { message, Popconfirm, Spin, Tag } from 'antd';
+import { 
+  Plus, Search, Filter, Grid3x3, List, Edit, Trash2, Eye,
+  Download, FileSpreadsheet, FileText, FileCode, ChevronDown
+} from 'lucide-react';
+import { message, Popconfirm, Spin, Tag, Dropdown } from 'antd';
+import * as XLSX from 'xlsx';
 import { getAllProducts, deleteProduct } from '../../services/shopServices/productService';
 import { getAllCategories } from '../../services/shopServices/categoryService';
 import { BACKEND_URL } from '../../Utils/constant';
@@ -141,6 +145,114 @@ const AllProducts = () => {
     }
   };
 
+  const getExportData = () => {
+    const list = filteredProducts.length > 0 ? filteredProducts : products;
+    return list.map((p, index) => ({
+      'S.No': index + 1,
+      'Product Name': productName(p),
+      'Slug': p.slug || '',
+      'Category': productCategoryName(p),
+      'Base Price (₹)': p.basePrice || 0,
+      'Sale Price (₹)': p.salePrice || '',
+      'Stock': p.stock !== null && p.stock !== undefined ? p.stock : 'N/A',
+      'Status': p.status || 'draft',
+      'Featured': p.featured ? 'Yes' : 'No',
+      'Views': p.views || 0,
+      'Sales': p.sales || 0,
+      'Primary Image': productImage(p),
+      'Created At': p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-IN') : '',
+    }));
+  };
+
+  const exportToExcel = () => {
+    const rows = getExportData();
+    if (rows.length === 0) {
+      message.warning('No products to export');
+      return;
+    }
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    worksheet['!cols'] = [
+      { wch: 6 },
+      { wch: 26 },
+      { wch: 20 },
+      { wch: 18 },
+      { wch: 14 },
+      { wch: 14 },
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 10 },
+      { wch: 8 },
+      { wch: 8 },
+      { wch: 40 },
+      { wch: 14 },
+    ];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
+    XLSX.writeFile(workbook, `infinito_products_${Date.now()}.xlsx`);
+    message.success('Products exported as Excel (.xlsx)');
+  };
+
+  const exportToCSV = () => {
+    const rows = getExportData();
+    if (rows.length === 0) {
+      message.warning('No products to export');
+      return;
+    }
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const csvContent = XLSX.utils.sheet_to_csv(worksheet);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `infinito_products_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    message.success('Products exported as CSV (.csv)');
+  };
+
+  const exportToJSON = () => {
+    const dataToExport = filteredProducts.length > 0 ? filteredProducts : products;
+    if (dataToExport.length === 0) {
+      message.warning('No products to export');
+      return;
+    }
+    const jsonBlob = new Blob([JSON.stringify(dataToExport, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(jsonBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `infinito_products_${Date.now()}.json`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    message.success('Products exported as JSON (.json)');
+  };
+
+  const exportMenuItems = [
+    {
+      key: 'excel',
+      label: 'Download Excel (.xlsx)',
+      icon: <FileSpreadsheet className="w-4 h-4 text-green-600" />,
+      onClick: exportToExcel,
+    },
+    {
+      key: 'csv',
+      label: 'Download CSV (.csv)',
+      icon: <FileText className="w-4 h-4 text-blue-600" />,
+      onClick: exportToCSV,
+    },
+    {
+      key: 'json',
+      label: 'Download JSON (.json)',
+      icon: <FileCode className="w-4 h-4 text-amber-600" />,
+      onClick: exportToJSON,
+    },
+  ];
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -159,13 +271,26 @@ const AllProducts = () => {
             {filteredProducts.length} product{filteredProducts.length === 1 ? '' : 's'} found
           </p>
         </div>
-        <Link
-          to="/shop/products/new"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#DD1215] text-white rounded-lg hover:bg-red-700 transition font-medium"
-        >
-          <Plus size={18} />
-          Add Product
-        </Link>
+        <div className="flex items-center gap-3">
+          <Dropdown menu={{ items: exportMenuItems }} placement="bottomRight">
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium text-sm shadow-sm cursor-pointer"
+            >
+              <Download size={16} />
+              Export
+              <ChevronDown size={14} className="text-gray-400" />
+            </button>
+          </Dropdown>
+
+          <Link
+            to="/shop/products/new"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#DD1215] text-white rounded-lg hover:bg-red-700 transition font-medium text-sm shadow-sm"
+          >
+            <Plus size={18} />
+            Add Product
+          </Link>
+        </div>
       </div>
 
       {/* Filters & Search */}

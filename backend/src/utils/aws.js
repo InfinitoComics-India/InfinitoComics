@@ -15,7 +15,7 @@ export const uploadToS3 = async (fileBuffer, fileName, contentType) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder: 'infinito-comics',
-          resource_type: 'image',
+          resource_type: 'auto',
           public_id: `${Date.now()}-${fileName.replace(/\.[^/.]+$/, '')}`,
         },
         (error, result) => {

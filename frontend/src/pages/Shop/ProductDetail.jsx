@@ -12,6 +12,7 @@ const ProductDetail = () => {
 
   const [product, setProduct] = useState(null);
   const [suggestedProducts, setSuggestedProducts] = useState([]);
+  const [visibleSuggestedCount, setVisibleSuggestedCount] = useState(4);
   const [selectedSize, setSelectedSize] = useState('M');
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -39,15 +40,16 @@ const ProductDetail = () => {
         }
         setSelectedImageIndex(0);
 
-        // 2. Fetch suggested products in the same category
+        // 2. Fetch suggested products in the same category (up to 8 items)
         if (currentProduct) {
           const suggested = await getCategorySuggestedProducts(
             currentProduct.category,
             currentProduct.id,
-            4
+            8
           );
           if (isMounted) {
             setSuggestedProducts(suggested);
+            setVisibleSuggestedCount(4);
           }
         }
       } catch (err) {
@@ -366,7 +368,7 @@ const ProductDetail = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            {suggestedProducts.map((prod) => (
+            {suggestedProducts.slice(0, visibleSuggestedCount).map((prod) => (
               <div
                 key={prod.id}
                 onClick={() => handleProductSelect(prod)}
@@ -405,17 +407,18 @@ const ProductDetail = () => {
             ))}
           </div>
 
-          <div className="mt-10 flex justify-center">
-            <button
-              onClick={() => {
-                navigate('/shop');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="px-8 py-3 bg-red-600 text-white font-bold text-sm uppercase tracking-wider hover:bg-red-700 transition shadow-sm rounded-none cursor-pointer"
-            >
-              View More
-            </button>
-          </div>
+          {suggestedProducts.length > visibleSuggestedCount && (
+            <div className="mt-10 flex justify-center">
+              <button
+                onClick={() => {
+                  setVisibleSuggestedCount((prev) => prev + 4);
+                }}
+                className="px-8 py-3 bg-red-600 text-white font-bold text-sm uppercase tracking-wider hover:bg-red-700 transition shadow-sm rounded-none cursor-pointer"
+              >
+                View More
+              </button>
+            </div>
+          )}
         </div>
 
       </div>
