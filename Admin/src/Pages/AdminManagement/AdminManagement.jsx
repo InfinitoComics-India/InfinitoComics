@@ -64,10 +64,6 @@ const AdminManagement = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!form.email.endsWith("@infinitohq.com")) {
-      toast.error("Email must be an @infinitohq.com address");
-      return;
-    }
     if (form.roles.length === 0) {
       toast.error("Please select at least one role");
       return;
