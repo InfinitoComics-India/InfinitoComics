@@ -8,7 +8,7 @@ import { getRoles } from '../../Utils/auth.js';
 const HR_ALL   = ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin","shop_admin"];
 const HR_AUDIT = ["superadmin","hr_manager"];
 const SHOP_ALL = ["superadmin","shop_admin"];
-const EMP_ALL  = [...HR_ALL, "employee"]; // Work Log visible to everyone incl. employees
+const EMP_ALL  = [...HR_ALL, "employee"]; // visible to all roles incl. employees
 
 // ── Regular nav items (above HR section) ────────────────────
 const NAV_ITEMS = [
@@ -30,22 +30,22 @@ const HR_ITEMS = [
   { label: "Employees",       to: "/hr/employees",    icon: UserCog,        roles: HR_ALL   },
   { label: "Notifications",   to: "/hr/notifications",icon: Bell,           roles: HR_ALL   },
   { label: "Audit Log",       to: "/hr/audit",        icon: ScrollText,     roles: HR_AUDIT },
-  { label: "Attendance",      to: "/hr/attendance",   icon: Clock,          roles: HR_ALL   },
-  { label: "Leaves",          to: "/hr/leaves",       icon: CalendarOff,    roles: HR_ALL   },
+  { label: "Attendance",      to: "/hr/attendance",   icon: Clock,          roles: EMP_ALL  },
+  { label: "Leaves",          to: "/hr/leaves",       icon: CalendarOff,    roles: EMP_ALL  },
   { label: "Calendar",        to: "/hr/calendar",     icon: CalendarDays,   roles: HR_ALL   },
   { label: "Task Board",      to: "/hr/tasks",        icon: Kanban,         roles: HR_ALL   },
   { label: "Work Assignment", to: "/hr/assignments",  icon: UserCheck,      roles: HR_ALL   },
   { label: "Projects",        to: "/hr/projects",     icon: FolderKanban,   roles: HR_ALL   },
   { label: "Performance",     to: "/hr/performance",  icon: TrendingUp,     roles: HR_ALL   },
-  { label: "Goals",           to: "/hr/goals",        icon: Target,         roles: HR_ALL   },
+  { label: "Goals",           to: "/hr/goals",        icon: Target,         roles: EMP_ALL  },
   { label: "Recognition",     to: "/hr/recognition",  icon: AwardIcon,      roles: HR_ALL   },
   { label: "Payroll",         to: "/hr/payroll",      icon: IndianRupee,    roles: HR_ALL   },
   { label: "Onboarding",      to: "/hr/onboarding",   icon: UserPlus,       roles: HR_ALL   },
-  { label: "Documents",       to: "/hr/documents",    icon: FileArchive,    roles: HR_ALL   },
+  { label: "Documents",       to: "/hr/documents",    icon: FileArchive,    roles: EMP_ALL  },
   { label: "Recruitment",     to: "/hr/recruitment",  icon: UserSearch,     roles: HR_ALL   },
   { label: "Chat",            to: "/hr/chat",         icon: MessagesSquare, roles: HR_ALL   },
   { label: "Wiki",            to: "/hr/wiki",         icon: BookMarked,     roles: HR_ALL   },
-  { label: "Self Service",    to: "/hr/self-service", icon: LifeBuoy,       roles: HR_ALL   },
+  { label: "Self Service",    to: "/hr/self-service", icon: LifeBuoy,       roles: EMP_ALL  },
   { label: "Infinito AI",     to: "/hr/ai",           icon: Sparkles,       roles: HR_ALL   },
   { label: "Work Log",        to: "/hr/worklog",      icon: ClipboardList,  roles: EMP_ALL  }, // all roles incl. employees
 ];

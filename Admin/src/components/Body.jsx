@@ -10,11 +10,19 @@ const Body = () => {
   const navigate  = useNavigate();
   const mainRef   = useRef(null);
 
-  // Redirect employees away from admin routes — except Work Log which they can access
+  // Redirect employees away from admin routes — except allowed HR pages
   useEffect(() => {
-    const allowed = ["/employee-portal", "/hr/worklog"];
+    const EMPLOYEE_ALLOWED = [
+      "/employee-portal",
+      "/hr/worklog",
+      "/hr/attendance",
+      "/hr/leaves",
+      "/hr/goals",
+      "/hr/documents",
+      "/hr/self-service",
+    ];
     const path = location.pathname.replace(/^\/admin/, "") || "/";
-    if (isEmployee() && !allowed.some(a => path.startsWith(a))) {
+    if (isEmployee() && !EMPLOYEE_ALLOWED.some(a => path.startsWith(a))) {
       navigate("/employee-portal", { replace: true });
     }
   }, [location.pathname]);
