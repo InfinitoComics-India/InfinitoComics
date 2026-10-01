@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Share2, ShoppingCart } from 'lucide-react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import toast from 'react-hot-toast';
 import { getProductByIdOrSlug, getCategorySuggestedProducts } from '../../services/productService';
+import { addToCart } from '../../redux/cartSlice';
 
 const ProductDetail = () => {
   // --- All Hooks declared strictly at top level ---
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const location = useLocation();
   const { category: urlCategory, id: urlId, productId } = useParams();
 
@@ -71,10 +74,40 @@ const ProductDetail = () => {
   // Handlers
   const handleAddToCart = (prod = product) => {
     if (!prod) return;
+    const cleanPrice = typeof prod.price === 'string'
+      ? parseFloat(prod.price.replace(/[^\d.]/g, '')) || 1299
+      : Number(prod.price || prod.salePrice || prod.basePrice || 1299);
+
+    const cleanMrp = typeof prod.mrp === 'string'
+      ? parseFloat(prod.mrp.replace(/[^\d.]/g, '')) || Math.round(cleanPrice * 1.6)
+      : Number(prod.mrp || prod.basePrice || Math.round(cleanPrice * 1.6));
+
+    const primaryImg = (Array.isArray(prod.images) && prod.images.length > 0)
+      ? (typeof prod.images[0] === 'string' ? prod.images[0] : prod.images[0]?.url)
+      : (prod.image || '/products/crimson_tshirt.jpg');
+
+    dispatch(
+      addToCart({
+        productId: prod._id || prod.id || prod.slug,
+        size: selectedSize || 'M',
+        quantity: 1,
+        product: {
+          id: prod._id || prod.id || prod.slug,
+          name: prod.title || prod.name || 'INFINITO',
+          title: prod.name || prod.title || 'INFINITO',
+          price: cleanPrice,
+          mrp: cleanMrp,
+          image: primaryImg,
+          description: prod.description || prod.shortDescription || '',
+          rating: prod.rating || 4.5,
+        },
+      })
+    );
     toast.success(`Added ${prod.name || prod.title} (${selectedSize}) to cart!`);
   };
 
   const handleBuyNow = () => {
+    handleAddToCart(product);
     navigate('/cart');
   };
 
