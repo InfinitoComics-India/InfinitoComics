@@ -1,7 +1,22 @@
 import React, { useEffect, useRef } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../Pages/Navbar/Navbar';
-import { isEmployee } from '../Utils/auth';
+
+// Bulletproof role reader
+const getAdminRoles = () => {
+  try {
+    const token = localStorage.getItem("authToken");
+    const admin = JSON.parse(localStorage.getItem("Admin") || "{}");
+    if (Array.isArray(admin.roles) && admin.roles.length > 0) return admin.roles;
+    if (admin.role) return [admin.role];
+    if (token) {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      if (Array.isArray(payload.roles) && payload.roles.length > 0) return payload.roles;
+      if (payload.role) return [payload.role];
+    }
+  } catch {}
+  return [];
+};
 
 const Body = () => {
   const admin     = JSON.parse(localStorage.getItem("Admin") || "{}");
@@ -12,6 +27,8 @@ const Body = () => {
 
   // Redirect employees away from admin routes — except allowed HR pages
   useEffect(() => {
+    const roles   = getAdminRoles();
+    const empOnly = roles.length > 0 && roles.every(r => r === "employee");
     const EMPLOYEE_ALLOWED = [
       "/employee-portal",
       "/hr/worklog",
@@ -22,7 +39,7 @@ const Body = () => {
       "/hr/self-service",
     ];
     const path = location.pathname.replace(/^\/admin/, "") || "/";
-    if (isEmployee() && !EMPLOYEE_ALLOWED.some(a => path.startsWith(a))) {
+    if (empOnly && !EMPLOYEE_ALLOWED.some(a => path.startsWith(a))) {
       navigate("/employee-portal", { replace: true });
     }
   }, [location.pathname]);

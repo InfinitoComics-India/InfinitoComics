@@ -74,7 +74,22 @@ const Navbar = () => {
   const [productsOpen, setProductsOpen] = useState(false); // Products subsection open/closed
   const location = useLocation();
   const token = localStorage.getItem("authToken");
-  const roles = getRoles();
+
+  // ── Bulletproof role detection — reads directly from localStorage ──
+  const _admin = (() => { try { return JSON.parse(localStorage.getItem("Admin") || "{}"); } catch { return {}; } })();
+  const roles = (() => {
+    // New format: non-empty roles array
+    if (Array.isArray(_admin.roles) && _admin.roles.length > 0) return _admin.roles;
+    // Old format: single role string
+    if (_admin.role) return [_admin.role];
+    // JWT fallback: decode token payload
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      if (Array.isArray(payload.roles) && payload.roles.length > 0) return payload.roles;
+      if (payload.role) return [payload.role];
+    } catch {}
+    return [];
+  })();
 
   const visibleNav  = NAV_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
   const visibleHR   = HR_ITEMS.filter(item  => roles.some(r => item.roles.includes(r)));

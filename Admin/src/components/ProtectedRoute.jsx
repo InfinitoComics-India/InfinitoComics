@@ -1,28 +1,33 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { getRoles, isEmployee } from "../Utils/auth";
 
-/**
- * Wraps a route and redirects if:
- * - Not logged in → /login
- * - Employee trying to access admin routes → /employee-portal
- * - Logged in but none of the admin's roles match allowedRoles → /unauthorized
- */
+// Bulletproof role reader — works even if roles array is empty (old accounts)
+const getAdminRoles = (token) => {
+  try {
+    const admin = JSON.parse(localStorage.getItem("Admin") || "{}");
+    if (Array.isArray(admin.roles) && admin.roles.length > 0) return admin.roles;
+    if (admin.role) return [admin.role];
+    // JWT fallback
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    if (Array.isArray(payload.roles) && payload.roles.length > 0) return payload.roles;
+    if (payload.role) return [payload.role];
+  } catch {}
+  return [];
+};
+
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const token    = localStorage.getItem("authToken");
   const location = useLocation();
 
-  // Not logged in
   if (!token) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  const roles     = getRoles();
-  const empOnly   = isEmployee();
+  const roles    = getAdminRoles(token);
+  const empOnly  = roles.length > 0 && roles.every(r => r === "employee");
   const currentPath = location.pathname;
 
-  // If employee tries to access admin routes → redirect to portal
-  // Exceptions: these HR pages are accessible to employees
+  // Employee-allowed HR pages (everything else → Employee Portal)
   const EMPLOYEE_ALLOWED = [
     "/employee-portal",
     "/hr/worklog",
@@ -37,7 +42,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/employee-portal" replace />;
   }
 
-  // Check role access — admin passes if any of their roles is in allowedRoles
   if (allowedRoles) {
     const hasAccess = roles.some((r) => allowedRoles.includes(r));
     if (!hasAccess) {
