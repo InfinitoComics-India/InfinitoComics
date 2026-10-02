@@ -3,8 +3,15 @@ import Admin from "../models/Admin.js";
 import Attendance from "../models/Attendance.js";
 import Employee from "../models/Employee.js";
 
-// ── Helper: today's date at midnight IST ─────────────────────
-const getTodayIST = () => {
+// ── Helper: convert a date string (YYYY-MM-DD) to IST midnight in UTC ──────
+const dateToISTMidnight = (dateStr) => {
+  // Parse YYYY-MM-DD as IST date, return the UTC equivalent of IST midnight
+  const [y, m, d] = dateStr.split("-").map(Number);
+  // IST midnight = UTC midnight - 5h30m
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const utcMidnight = Date.UTC(y, m - 1, d, 0, 0, 0, 0);
+  return new Date(utcMidnight - istOffset);
+};
   const now = new Date();
   const istOffset = 5.5 * 60 * 60 * 1000;
   const istNow = new Date(now.getTime() + istOffset);
@@ -74,10 +81,8 @@ export const getMyHistory = async (req, res) => {
 export const getLogsForDate = async (req, res) => {
   try {
     const { date } = req.query;
-    const targetDate = date ? new Date(date) : getTodayIST();
-    targetDate.setHours(0, 0, 0, 0);
-    const nextDay = new Date(targetDate);
-    nextDay.setDate(nextDay.getDate() + 1);
+    const targetDate = date ? dateToISTMidnight(date) : getTodayIST();
+    const nextDay = new Date(targetDate.getTime() + 24 * 60 * 60 * 1000);
 
     const logs = await DailyWorkLog.find({
       date: { $gte: targetDate, $lt: nextDay },
@@ -91,10 +96,8 @@ export const getLogsForDate = async (req, res) => {
 export const getSummaryForDate = async (req, res) => {
   try {
     const { date } = req.query;
-    const targetDate = date ? new Date(date) : getTodayIST();
-    targetDate.setHours(0, 0, 0, 0);
-    const nextDay = new Date(targetDate);
-    nextDay.setDate(nextDay.getDate() + 1);
+    const targetDate = date ? dateToISTMidnight(date) : getTodayIST();
+    const nextDay = new Date(targetDate.getTime() + 24 * 60 * 60 * 1000);
 
     const logs = await DailyWorkLog.find({ date: { $gte: targetDate, $lt: nextDay } });
     const totalAdmins = await Admin.countDocuments();
