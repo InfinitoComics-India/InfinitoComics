@@ -36,9 +36,10 @@ const DailyWorkLog = () => {
   const myName   = admin?.name || admin?.email || "You";
   // Support both new `roles` array and legacy `role` string
   const myRoles  = [...(admin?.roles || []), ...(admin?.role ? [admin.role] : [])];
-  const isManager= myRoles.some(r => ["superadmin","hr_manager","manager"].includes(r));
+  const isManager    = myRoles.some(r => ["superadmin","hr_manager","manager"].includes(r));
+  const isSuperAdmin = myRoles.includes("superadmin");
 
-  const [tab,      setTab]      = useState("my");
+  const [tab, setTab] = useState(isSuperAdmin ? "admin" : "my");
   const [myLog,    setMyLog]    = useState(null);
   const [history,  setHistory]  = useState([]);
   const [allLogs,  setAllLogs]  = useState([]);
@@ -166,19 +167,21 @@ const DailyWorkLog = () => {
 
       <div className="max-w-6xl mx-auto px-6 py-6 space-y-5">
 
-        {/* Tabs */}
-        <div className="flex gap-1 bg-white border rounded-lg p-1 w-fit">
-          <button onClick={() => setTab("my")}
-            className={`px-5 py-2 text-xs font-bold uppercase tracking-wider transition rounded ${tab==="my"?"bg-[#DD1215] text-white":"text-gray-500 hover:text-gray-800"}`}>
-            📝 My Work Log
-          </button>
-          {isManager && (
-            <button onClick={() => setTab("admin")}
-              className={`px-5 py-2 text-xs font-bold uppercase tracking-wider transition rounded ${tab==="admin"?"bg-[#DD1215] text-white":"text-gray-500 hover:text-gray-800"}`}>
-              📊 Review Team
+        {/* Tabs — hidden for superadmin (they only see Review Team) */}
+        {!isSuperAdmin && (
+          <div className="flex gap-1 bg-white border rounded-lg p-1 w-fit">
+            <button onClick={() => setTab("my")}
+              className={`px-5 py-2 text-xs font-bold uppercase tracking-wider transition rounded ${tab==="my"?"bg-[#DD1215] text-white":"text-gray-500 hover:text-gray-800"}`}>
+              📝 My Work Log
             </button>
-          )}
-        </div>
+            {isManager && (
+              <button onClick={() => setTab("admin")}
+                className={`px-5 py-2 text-xs font-bold uppercase tracking-wider transition rounded ${tab==="admin"?"bg-[#DD1215] text-white":"text-gray-500 hover:text-gray-800"}`}>
+                📊 Review Team
+              </button>
+            )}
+          </div>
+        )}
 
         {error   && <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded flex items-center gap-2"><AlertTriangle size={14}/>{error}</div>}
         {success && <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded">{success}</div>}
