@@ -18,7 +18,12 @@ const REVIEW_STYLE = {
   rejected:          { bg:"bg-red-100",    text:"text-red-700",    label:"❌ Needs Redo"        },
 };
 
-const fmtDate  = (d) => d ? new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "—";
+const fmtDate  = (d) => {
+  if (!d) return "—";
+  // Add IST offset so date displays correctly in IST
+  const ist = new Date(new Date(d).getTime() + 5.5 * 60 * 60 * 1000);
+  return ist.toLocaleDateString("en-IN", {day:"2-digit", month:"short", year:"numeric"});
+};
 const fmtTime  = (d) => d ? new Date(d).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}) : "—";
 const fmtShort = (d) => d ? new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short"}) : "—";
 
