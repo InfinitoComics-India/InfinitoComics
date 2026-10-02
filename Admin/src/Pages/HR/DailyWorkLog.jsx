@@ -18,12 +18,7 @@ const REVIEW_STYLE = {
   rejected:          { bg:"bg-red-100",    text:"text-red-700",    label:"❌ Needs Redo"        },
 };
 
-const fmtDate  = (d) => {
-  if (!d) return "—";
-  // Add IST offset so date displays correctly in IST
-  const ist = new Date(new Date(d).getTime() + 5.5 * 60 * 60 * 1000);
-  return ist.toLocaleDateString("en-IN", {day:"2-digit", month:"short", year:"numeric"});
-};
+const fmtDate  = (d) => d ? new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "—";
 const fmtTime  = (d) => d ? new Date(d).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}) : "—";
 const fmtShort = (d) => d ? new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short"}) : "—";
 
@@ -59,7 +54,11 @@ const DailyWorkLog = () => {
   const [work,  setWork]  = useState("");
 
   // Admin view
-  const [adminDate,    setAdminDate]    = useState(new Date().toISOString().split("T")[0]);
+  const [adminDate, setAdminDate] = useState(() => {
+    // Use IST date as default (not UTC)
+    const istMs = Date.now() + 5.5 * 60 * 60 * 1000;
+    return new Date(istMs).toISOString().split("T")[0];
+  });
   const [expandedLog,  setExpandedLog]  = useState(null);
   const [reviewForm,   setReviewForm]   = useState({ status:"", comment:"" });
   const [reviewingId,  setReviewingId]  = useState(null);
@@ -344,8 +343,12 @@ const DailyWorkLog = () => {
                 {/* Week navigator */}
                 <div className="flex gap-1">
                   {[-3,-2,-1,0].map(offset => {
-                    const d = new Date(); d.setDate(d.getDate() + offset);
-                    const val = d.toISOString().split("T")[0];
+                    const d = new Date();
+                    d.setDate(d.getDate() + offset);
+                    // Use IST date string (not UTC)
+                    const istMs = d.getTime() + 5.5 * 60 * 60 * 1000;
+                    const istDate = new Date(istMs);
+                    const val = istDate.toISOString().split("T")[0];
                     const label = offset === 0 ? "Today" : d.toLocaleDateString("en-IN",{day:"2-digit",month:"short"});
                     return (
                       <button key={offset} onClick={() => setAdminDate(val)}
