@@ -49,32 +49,50 @@ const ShopMain = () => {
       {/* ─── HERO SLIDER (3 slides) ─────────────────────────── */}
       <HeroSlider />
 
-      {/* ─── PROMO BANNER (35% off on The Crimson Bloodline) ── */}
-      <section className="max-w-[1200px] mx-auto px-4 md:px-12 py-10">
-        <div className="relative w-full">
-          <img
-            src={promoBanner}
-            alt=""
-            aria-hidden="true"
-            className="block w-full h-auto"
-          />
-          <div className="absolute inset-0 flex items-center pl-[5%] pr-[50%] text-white">
-            <div>
-              <h2 className="text-2xl sm:text-3xl md:text-5xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] drop-shadow-lg">
-                35% off
-              </h2>
-              <p className="mt-1 md:mt-2 text-[10px] sm:text-xs md:text-sm uppercase tracking-wide font-dmsans">
-                on The Crimson Bloodline
-              </p>
-              <button
-                className="mt-3 md:mt-5 px-4 md:px-8 py-1.5 md:py-2.5 bg-[#DD1215] hover:bg-red-700 text-white text-[10px] sm:text-xs md:text-sm font-semibold uppercase tracking-wide transition font-dmsans"
-              >
-                Buy Now
-              </button>
+      {/* ─── PROMO BANNER (Dynamic from Admin Marketing Management) ── */}
+      {(() => {
+        let dynamicPromo = null;
+        try {
+          const raw = localStorage.getItem("infinito_shop_banners");
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed.promoBanner && parsed.promoBanner.isActive !== false) {
+              dynamicPromo = parsed.promoBanner;
+            }
+          }
+        } catch {}
+
+        if (dynamicPromo && dynamicPromo.isActive === false) return null;
+
+        return (
+          <section className="max-w-[1200px] mx-auto px-4 md:px-12 py-10">
+            <div className="relative w-full">
+              <img
+                src={dynamicPromo?.bgImageUrl || promoBanner}
+                alt=""
+                aria-hidden="true"
+                className="block w-full h-auto"
+              />
+              <div className="absolute inset-0 flex items-center pl-[5%] pr-[50%] text-white">
+                <div>
+                  <h2 className="text-2xl sm:text-3xl md:text-5xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] drop-shadow-lg">
+                    {dynamicPromo?.headline || "35% off"}
+                  </h2>
+                  <p className="mt-1 md:mt-2 text-[10px] sm:text-xs md:text-sm uppercase tracking-wide font-dmsans">
+                    {dynamicPromo?.subtitle || "on The Crimson Bloodline"}
+                  </p>
+                  <button
+                    onClick={() => navigate(dynamicPromo?.buttonLink || "/shop/catalog")}
+                    className="mt-3 md:mt-5 px-4 md:px-8 py-1.5 md:py-2.5 bg-[#DD1215] hover:bg-red-700 text-white text-[10px] sm:text-xs md:text-sm font-semibold uppercase tracking-wide transition font-dmsans cursor-pointer"
+                  >
+                    {dynamicPromo?.buttonText || "Buy Now"}
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
+        );
+      })()}
 
       {/* ─── CATEGORIES ──────────────────────────────────────── */}
       <section className="max-w-[1200px] mx-auto px-4 md:px-12 py-12">

@@ -62,6 +62,37 @@ const SHOP_ITEMS = [
       { label: "Inventory",      to: "/shop/inventory",   icon: BarChart3,   roles: SHOP_ALL },
     ]
   },
+  { 
+    label: "Orders", 
+    icon: ClipboardList, 
+    roles: SHOP_ALL,
+    isParent: true,
+    subItems: [
+      { label: "All Orders",     to: "/shop/orders",      icon: ClipboardList, roles: SHOP_ALL },
+    ]
+  },
+  { 
+    label: "Analytics & Reports", 
+    icon: TrendingUp, 
+    roles: SHOP_ALL,
+    isParent: true,
+    subItems: [
+      { label: "3.1 Overview",          to: "/shop/analytics?tab=overview",  icon: BarChart3,   roles: SHOP_ALL },
+      { label: "3.2 Sales Reports",     to: "/shop/analytics?tab=sales",     icon: TrendingUp,  roles: SHOP_ALL },
+      { label: "3.3 Inventory Reports", to: "/shop/analytics?tab=inventory", icon: Package,     roles: SHOP_ALL },
+      { label: "3.4 Customer Reports",  to: "/shop/analytics?tab=customers", icon: Users,       roles: SHOP_ALL },
+    ]
+  },
+  { 
+    label: "Marketing & Promotions", 
+    icon: Sparkles, 
+    roles: SHOP_ALL,
+    isParent: true,
+    subItems: [
+      { label: "4.1 Discount Codes",      to: "/shop/marketing?tab=discounts", icon: Sparkles,  roles: SHOP_ALL },
+      { label: "4.2 Banners & Promos",    to: "/shop/marketing?tab=banners",   icon: Sparkles,  roles: SHOP_ALL },
+    ]
+  },
 ];
 
 const Navbar = () => {
@@ -69,7 +100,12 @@ const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hrOpen, setHrOpen]         = useState(false); // HR accordion open/closed
   const [shopOpen, setShopOpen]     = useState(false); // Shop accordion open/closed
-  const [productsOpen, setProductsOpen] = useState(false); // Products subsection open/closed
+  const [parentSectionsOpen, setParentSectionsOpen] = useState({
+    Products: true,
+    Orders: true,
+    "Analytics & Reports": true,
+    "Marketing & Promotions": true,
+  });
   const location = useLocation();
   const token = localStorage.getItem("authToken");
   const roles = getRoles();
@@ -81,11 +117,15 @@ const Navbar = () => {
   const showShopSection = visibleShop.length > 0;
 
   // If any HR/Shop route is currently active, keep accordion open
-  const isHRActive   = visibleHR.some(item => location.pathname.startsWith(`/admin${item.to}`));
-  const isShopActive = location.pathname.startsWith('/admin/shop');
-  const isProductsActive = location.pathname.startsWith('/admin/shop/products') || 
-                           location.pathname.startsWith('/admin/shop/categories') ||
-                           location.pathname.startsWith('/admin/shop/inventory');
+  const isHRActive   = visibleHR.some(item => location.pathname.startsWith(`/admin${item.to}`) || location.pathname.startsWith(item.to));
+  const isShopActive = location.pathname.startsWith('/admin/shop') || location.pathname.startsWith('/shop');
+
+  const toggleParentSection = (label) => {
+    setParentSectionsOpen((prev) => ({
+      ...prev,
+      [label]: prev[label] !== undefined ? !prev[label] : false,
+    }));
+  };
 
   const handleLogout = () => {
     localStorage.clear();
@@ -94,8 +134,13 @@ const Navbar = () => {
   };
 
   const isActive = (to) => {
-    if (to === "/") return location.pathname === "/admin" || location.pathname === "/admin/";
-    return location.pathname.startsWith(`/admin${to}`);
+    if (to === "/") return location.pathname === "/admin" || location.pathname === "/admin/" || location.pathname === "/";
+    const [path, query] = to.split('?');
+    if (query) {
+      const fullCurrent = `${location.pathname}${location.search}`;
+      return fullCurrent.includes(query) && (location.pathname.startsWith(`/admin${path}`) || location.pathname === path || location.pathname.startsWith(`${path}/`));
+    }
+    return location.pathname.startsWith(`/admin${to}`) || location.pathname === to || location.pathname.startsWith(`${to}/`);
   };
 
   const SidebarContent = ({ onNavClick }) => (
@@ -171,29 +216,31 @@ const Navbar = () => {
               <div className={`mt-1 space-y-0.5 overflow-hidden ${!collapsed ? "pl-2" : ""}`}>
                 {visibleShop.map((item) => {
                   if (item.isParent && item.subItems) {
-                    // This is "Products" with sub-items
                     const Icon = item.icon;
+                    const isSectionActive = item.subItems.some((sub) => isActive(sub.to));
+                    const isSectionOpen = parentSectionsOpen[item.label] ?? isSectionActive;
+
                     return (
                       <div key={item.label}>
-                        {/* Products parent item */}
+                        {/* Parent item */}
                         {!collapsed ? (
                           <button
-                            onClick={() => setProductsOpen(o => !o)}
-                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-150
-                              ${isProductsActive ? "bg-gray-700 text-white font-medium" : "text-gray-400 hover:bg-gray-700 hover:text-white font-medium"}
+                            onClick={() => toggleParentSection(item.label)}
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-150 cursor-pointer
+                              ${isSectionActive ? "bg-gray-700 text-white font-medium" : "text-gray-400 hover:bg-gray-700 hover:text-white font-medium"}
                             `}
                           >
                             <div className="flex items-center gap-3">
                               <Icon size={17} className="shrink-0" />
                               <span className="text-xs">{item.label}</span>
                             </div>
-                            <div className={`transition-transform duration-200 ${(productsOpen || isProductsActive) ? "rotate-180" : ""}`}>
+                            <div className={`transition-transform duration-200 ${(isSectionOpen || isSectionActive) ? "rotate-180" : ""}`}>
                               <ChevronDown size={14} />
                             </div>
                           </button>
                         ) : (
                           <button
-                            onClick={() => setProductsOpen(o => !o)}
+                            onClick={() => toggleParentSection(item.label)}
                             title={item.label}
                             className="flex items-center justify-center w-full py-2 rounded-lg text-gray-400 hover:bg-gray-700 transition"
                           >
@@ -201,8 +248,8 @@ const Navbar = () => {
                           </button>
                         )}
 
-                        {/* Products sub-items */}
-                        {(productsOpen || isProductsActive) && (
+                        {/* Sub-items */}
+                        {(isSectionOpen || isSectionActive) && (
                           <div className={`mt-1 space-y-0.5 ${!collapsed ? "pl-4" : ""}`}>
                             {item.subItems.map(({ label, to, icon: SubIcon }) => (
                               <Link

@@ -49,6 +49,10 @@ import ProductForm       from './Pages/Shop/ProductForm.jsx';
 import AllCategories     from './Pages/Shop/AllCategories.jsx';
 import CategoryForm      from './Pages/Shop/CategoryForm.jsx';
 import Inventory         from './Pages/Shop/Inventory.jsx';
+import AllOrders         from './Pages/Shop/Orders/AllOrders.jsx';
+import OrderDetail       from './Pages/Shop/Orders/OrderDetail.jsx';
+import AnalyticsDashboard from './Pages/Shop/Analytics/AnalyticsDashboard.jsx';
+import MarketingDashboard from './Pages/Shop/Marketing/MarketingDashboard.jsx';
 
 // Role constants
 const SUPER   = ["superadmin"];
@@ -276,6 +280,30 @@ function App() {
           {/* Inventory Management */}
           <Route path="/shop/inventory" element={
             <ProtectedRoute allowedRoles={SHOP}><Inventory /></ProtectedRoute>
+          } />
+
+          {/* Orders Management */}
+          <Route path="/shop/orders" element={
+            <ProtectedRoute allowedRoles={SHOP}><AllOrders /></ProtectedRoute>
+          } />
+          <Route path="/shop/orders/:orderId" element={
+            <ProtectedRoute allowedRoles={SHOP}><OrderDetail /></ProtectedRoute>
+          } />
+
+          {/* Section 3: Analytics & Reports */}
+          <Route path="/shop/analytics" element={
+            <ProtectedRoute allowedRoles={SHOP}><AnalyticsDashboard /></ProtectedRoute>
+          } />
+          <Route path="/shop/analytics/:subTab" element={
+            <ProtectedRoute allowedRoles={SHOP}><AnalyticsDashboard /></ProtectedRoute>
+          } />
+
+          {/* Section 4: Marketing & Promotions */}
+          <Route path="/shop/marketing" element={
+            <ProtectedRoute allowedRoles={SHOP}><MarketingDashboard /></ProtectedRoute>
+          } />
+          <Route path="/shop/marketing/:subTab" element={
+            <ProtectedRoute allowedRoles={SHOP}><MarketingDashboard /></ProtectedRoute>
           } />
 
         </Route>
