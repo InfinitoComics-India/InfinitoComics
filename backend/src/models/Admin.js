@@ -23,6 +23,12 @@ const AdminSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  // Optional employee ID (e.g. EMP-001) assigned by superadmin
+  employeeId: {
+    type: String,
+    default: "",
+    trim: true,
+  },
   // roles is now an array (max 4), but we keep role as fallback for backward compat
   roles: {
     type: [String],

@@ -25,6 +25,7 @@ export const submitWorkLog = async (req, res) => {
     const adminId   = req.user._id;
     const adminName = req.user.name || req.user.username || "";
     const adminEmail= req.user.email || "";
+    const adminEmployeeId = req.user.employeeId || "";
     const { workDescription } = req.body;
 
     if (!workDescription?.trim()) return res.status(400).json({ success: false, message: "Work description is required." });
@@ -45,6 +46,7 @@ export const submitWorkLog = async (req, res) => {
       adminId,
       adminName,
       adminEmail,
+      adminEmployeeId,
       date:            today,
       workDescription: workDescription.trim(),
       status:          "submitted",

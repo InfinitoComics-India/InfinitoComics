@@ -24,7 +24,7 @@ const ROLE_COLORS = {
   employee:        "bg-teal-100 text-teal-700",
 };
 
-const EMPTY_FORM = { name: "", email: "", password: "", roles: [] };
+const EMPTY_FORM = { name: "", email: "", password: "", employeeId: "", roles: [] };
 
 const AdminManagement = () => {
   const [admins, setAdmins] = useState([]);
@@ -128,7 +128,7 @@ const AdminManagement = () => {
         >
           <h2 className="text-lg font-bold text-gray-700">Create New Admin</h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
               <input
@@ -138,12 +138,10 @@ const AdminManagement = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input
                 type="email" name="email" value={form.email} onChange={handleChange}
-                placeholder="name@gmail.com or name@company.com" required
+                placeholder="name@gmail.com" required
                 className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-red-400 focus:outline-none"
               />
             </div>
@@ -152,6 +150,16 @@ const AdminManagement = () => {
               <input
                 type="password" name="password" value={form.password} onChange={handleChange}
                 placeholder="Min 8 characters" required minLength={8}
+                className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-red-400 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Employee ID <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <input
+                type="text" name="employeeId" value={form.employeeId} onChange={handleChange}
+                placeholder="EMP-001"
                 className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-red-400 focus:outline-none"
               />
             </div>
@@ -205,6 +213,7 @@ const AdminManagement = () => {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
+              <th className="text-left px-5 py-3 font-semibold text-gray-600">Emp ID</th>
               <th className="text-left px-5 py-3 font-semibold text-gray-600">Name</th>
               <th className="text-left px-5 py-3 font-semibold text-gray-600">Email</th>
               <th className="text-left px-5 py-3 font-semibold text-gray-600">Roles</th>
@@ -215,7 +224,7 @@ const AdminManagement = () => {
           <tbody>
             {admins.length === 0 ? (
               <tr>
-                <td colSpan={5} className="text-center py-10 text-gray-400">No admins found.</td>
+                <td colSpan={6} className="text-center py-10 text-gray-400">No admins found.</td>
               </tr>
             ) : (
               admins.map((admin) => {
@@ -223,6 +232,9 @@ const AdminManagement = () => {
                 const isSuperAdmin = adminRoles.includes("superadmin");
                 return (
                   <tr key={admin._id} className="border-b border-gray-100 hover:bg-gray-50 transition">
+                    <td className="px-5 py-3 font-mono text-xs text-gray-500">
+                      {admin.employeeId || <span className="text-gray-300">—</span>}
+                    </td>
                     <td className="px-5 py-3 font-medium text-gray-800">{admin.name}</td>
                     <td className="px-5 py-3 text-gray-600">{admin.email}</td>
                     <td className="px-5 py-3">
