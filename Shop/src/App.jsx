@@ -13,6 +13,10 @@ import ShopCategory from './pages/ShopCategory/ShopCategory';
 import ShopProduct from './pages/ShopProduct/ShopProduct';
 import Cart from './pages/Cart/Cart';
 import Checkout from './pages/Checkout/Checkout';
+import OrderSuccess from './pages/OrderFlow/OrderSuccess';
+import OrderDetails from './pages/OrderFlow/OrderDetails';
+import OrderCancel from './pages/OrderFlow/OrderCancel';
+import OrderCancelled from './pages/OrderFlow/OrderCancelled';
 
 function App() {
   const dispatch = useDispatch();
@@ -87,6 +91,14 @@ function App() {
             <Route path="product/:productId" element={<ShopProduct />} />
             <Route path="cart" element={<Cart />} />
             <Route path="checkout" element={<Checkout />} />
+            <Route path="order-success/:orderId" element={<OrderSuccess />} />
+            <Route path="order-success" element={<OrderSuccess />} />
+            <Route path="order-details/:orderId" element={<OrderDetails />} />
+            <Route path="order-details" element={<OrderDetails />} />
+            <Route path="order-cancel/:orderId" element={<OrderCancel />} />
+            <Route path="order-cancel" element={<OrderCancel />} />
+            <Route path="order-cancelled/:orderId" element={<OrderCancelled />} />
+            <Route path="order-cancelled" element={<OrderCancelled />} />
           </Route>
         </Routes>
       </BrowserRouter>

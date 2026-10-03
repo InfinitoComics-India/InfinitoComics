@@ -29,6 +29,10 @@ import ErrorPage from './pages/ErrorForm/ErrorPage.jsx';
 import SignupStep3 from './pages/Signup/SignupStep3';
 import Cart from './pages/Cart/Cart';
 import Checkout from './pages/Checkout/Checkout';
+import OrderSuccess from './pages/OrderFlow/OrderSuccess';
+import OrderDetails from './pages/OrderFlow/OrderDetails';
+import OrderCancel from './pages/OrderFlow/OrderCancel';
+import OrderCancelled from './pages/OrderFlow/OrderCancelled';
 
 import ComicsPage from './pages/Comics/ComicsPage.jsx'
 import Characters from './pages/Characters/index.jsx'
@@ -132,6 +136,14 @@ function App() {
               <Route path="/games" element={<Games />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/order-success/:orderId" element={<OrderSuccess />} />
+              <Route path="/order-success" element={<OrderSuccess />} />
+              <Route path="/order-details/:orderId" element={<OrderDetails />} />
+              <Route path="/order-details" element={<OrderDetails />} />
+              <Route path="/order-cancel/:orderId" element={<OrderCancel />} />
+              <Route path="/order-cancel" element={<OrderCancel />} />
+              <Route path="/order-cancelled/:orderId" element={<OrderCancelled />} />
+              <Route path="/order-cancelled" element={<OrderCancelled />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/refund-policy" element={<RefundPolicy />} />
               <Route path="/terms-of-use" element={<TermsOfUse />} />
