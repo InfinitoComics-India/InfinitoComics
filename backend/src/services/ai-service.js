@@ -10,7 +10,7 @@ import PerformanceRepository from "../repository/performance-repository.js";
 
 // ── Groq integration (OpenAI-compatible API) ─────────────────
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_MODEL   = "openai/gpt-oss-120b";
+const GROQ_MODEL   = "llama-3.3-70b-versatile";
 
 const SYSTEM_PROMPT = `You are Infinito AI, the official AI assistant of InfinitoComics India — India's first and most ambitious original superhero comics universe.
 
