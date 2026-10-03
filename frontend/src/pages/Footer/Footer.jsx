@@ -70,6 +70,9 @@ const Footer = () => {
               <Link to="/support-us">
                 <span>SUPPORT US</span>
               </Link>
+              <Link to="/contact-us">
+                <span>CONTACT US</span>
+              </Link>
               {/* <Link to="/terms-of-service"><span>TERMS OF SERVICE</span></Link> */}
             </div>
           </div>
@@ -132,6 +135,7 @@ const Footer = () => {
              <Link to="/contact-us">CONTACT US</Link>
              <a href={`${RESEARCH_BASE_URL}/research`}> <span>RESEARCH</span></a>
             <Link to="/support-us">SUPPORT US</Link>
+            <Link to="/contact-us">CONTACT US</Link>
           </div>
 
           <div className="mt-8 w-full flex rounded overflow-hidden gap-1  px-1 py-1 h-28">
