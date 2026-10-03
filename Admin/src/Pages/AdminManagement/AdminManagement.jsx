@@ -139,11 +139,11 @@ const AdminManagement = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email <span className="text-gray-400 font-normal">(@infinitohq.com)</span>
+                Email
               </label>
               <input
                 type="email" name="email" value={form.email} onChange={handleChange}
-                placeholder="name@infinitohq.com" required
+                placeholder="name@gmail.com or name@company.com" required
                 className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-red-400 focus:outline-none"
               />
             </div>
