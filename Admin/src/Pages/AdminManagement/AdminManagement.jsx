@@ -159,7 +159,7 @@ const AdminManagement = () => {
               </label>
               <input
                 type="text" name="employeeId" value={form.employeeId} onChange={handleChange}
-                placeholder="EMP-001"
+                placeholder="INF-001"
                 className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-red-400 focus:outline-none"
               />
             </div>
