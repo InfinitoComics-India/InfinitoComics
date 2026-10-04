@@ -297,6 +297,24 @@ const EmployeePortal = () => {
                     </div>
                   ))}
                 </div>
+              ) : todayAttd?.clockIn ? (
+                // Legacy single session display
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-2.5 text-xs">
+                    <span className="w-6 h-6 rounded-full bg-[#DD1215] text-white flex items-center justify-center font-black text-[10px] shrink-0">1</span>
+                    <div className="flex-1">
+                      <span className="text-green-700 font-bold">IN: {fmtTime(todayAttd.clockIn)}</span>
+                      {todayAttd.clockOut ? (
+                        <span className="text-red-600 font-bold ml-4">OUT: {fmtTime(todayAttd.clockOut)}</span>
+                      ) : (
+                        <span className="text-yellow-600 font-semibold ml-4 animate-pulse">● Currently working</span>
+                      )}
+                    </div>
+                    {todayAttd.clockOut && (
+                      <span className="text-gray-500 font-semibold">{todayAttd.hoursWorked}h</span>
+                    )}
+                  </div>
+                </div>
               ) : !todayAttd ? (
                 <div className="flex items-center gap-2 text-gray-400 mb-4">
                   <Clock size={20}/>
@@ -306,11 +324,13 @@ const EmployeePortal = () => {
 
               {/* Buttons */}
               <div className="flex gap-3 flex-wrap">
-                {/* Show Clock In if not currently in a session */}
                 {(() => {
                   const sessions = todayAttd?.sessions || [];
                   const lastSession = sessions[sessions.length - 1];
-                  const isCurrentlyIn = sessions.length > 0 && !lastSession?.clockOut;
+                  // Check sessions array OR legacy clockIn/clockOut fields
+                  const isCurrentlyIn = 
+                    (sessions.length > 0 && !lastSession?.clockOut) ||
+                    (sessions.length === 0 && todayAttd?.clockIn && !todayAttd?.clockOut);
                   if (isCurrentlyIn) {
                     return (
                       <button onClick={handleClockOut} disabled={clocking}
@@ -319,10 +339,11 @@ const EmployeePortal = () => {
                       </button>
                     );
                   }
+                  const hasAnySessions = sessions.length > 0 || todayAttd?.clockOut;
                   return (
                     <button onClick={handleClockIn} disabled={clocking}
                       className="flex items-center gap-2 bg-green-600 text-white px-6 py-3 text-xs font-black uppercase tracking-widest hover:bg-green-700 transition disabled:opacity-50 rounded-lg">
-                      <LogIn size={16}/> {clocking ? "Clocking In..." : sessions.length > 0 ? "Clock In Again" : "Clock In"}
+                      <LogIn size={16}/> {clocking ? "Clocking In..." : hasAnySessions ? "Clock In Again" : "Clock In"}
                     </button>
                   );
                 })()}
