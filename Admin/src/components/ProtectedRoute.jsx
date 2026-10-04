@@ -20,7 +20,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/login" replace state={{ from: location, expired: true }} />;
   }
 
-  const roles = getAdminRoles(token);
+  const roles = getRoles();
   const empOnly = roles.length > 0 && roles.every(r => r === "employee");
   const currentPath = location.pathname;
 
