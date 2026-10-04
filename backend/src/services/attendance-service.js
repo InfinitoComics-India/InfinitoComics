@@ -94,8 +94,8 @@ class AttendanceService {
         sessions.reduce((sum, s) => sum + (s.hoursWorked || 0), 0).toFixed(2)
       );
 
-      // Status: present >= 4h, half_day < 4h
-      const newStatus = totalHours >= 4 ? (record.isLate ? "late" : "present") : "half_day";
+      // Status: present if any hours worked, regardless of amount
+      const newStatus = record.isLate ? "late" : "present";
 
       const updated = await this.attendanceRepo.upsert(employeeId, now, {
         sessions,

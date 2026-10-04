@@ -294,23 +294,6 @@ const EmployeePortal = () => {
                       )}
                     </div>
                   ))}
-                  {/* 4hr progress bar */}
-                  <div className="mt-3">
-                    <div className="flex justify-between text-[10px] text-gray-400 mb-1">
-                      <span>Progress to Present</span>
-                      <span>{Math.min((todayAttd.totalHours||0), 4).toFixed(1)}h / 4h minimum</span>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full transition-all ${(todayAttd.totalHours||0) >= 4 ? "bg-green-500" : "bg-yellow-400"}`}
-                        style={{width: `${Math.min(((todayAttd.totalHours||0)/4)*100, 100)}%`}}
-                      />
-                    </div>
-                    {(todayAttd.totalHours||0) >= 4
-                      ? <p className="text-[10px] text-green-600 font-bold mt-1">✅ Minimum hours met — marked Present</p>
-                      : <p className="text-[10px] text-yellow-600 mt-1">⚠️ Need {(4-(todayAttd.totalHours||0)).toFixed(1)} more hours for Present</p>
-                    }
-                  </div>
                 </div>
               ) : !todayAttd ? (
                 <div className="flex items-center gap-2 text-gray-400 mb-4">
