@@ -1,5 +1,6 @@
 import React from 'react';
 import heroImage from '../../../assets/Images/merch/MerchModel.png';
+import modelImg from "../../../assets/Images/merch/MerchModels.png"
 
 const MerchHeroSection = () => {
   return (
@@ -7,7 +8,7 @@ const MerchHeroSection = () => {
       {/* Heading */}
       <div className="w-full max-w-7xl mx-auto px-8 md:px-16 py-6">
         <h2 className="text-[36px] font-bold uppercase">
-          Style yourself like a super hero
+          Fashion Corner
         </h2>
       </div>
 
@@ -21,24 +22,24 @@ const MerchHeroSection = () => {
 
           {/* Left text */}
           <div className="text-white max-w-lg">
-            <p className="text-xl leading-relaxed font-medium">
-              Step into the Infinito Universe with exclusive gear crafted for fans who know every panel, plot twist, and power move.
-            </p>
-            <p className="text-xl mt-8 font-semibold">
-              Limited drops. Infinite style.
+            <h2 className="text-2xl leading-relaxed font-bold">
+              TOP TRENDING
+            </h2>
+            <p className=" mt-8">
+             Discover the most wanted drops from the INFINITO universe. Explore bold graphic T-shirts, premium hoodies, caps, tote bags, collectibles, keychains, and everyday accessories inspired by iconic heroes. Designed for fans who live beyond the panels, every piece brings fearless style and limited-edition energy.
             </p>
             <button className="mt-10 px-6 py-3 bg-white text-black font-semibold tracking-wide border border-black hover:bg-black hover:text-white transition">
-              SHOP NOW ›
+              VIEW ALL ›
             </button>
           </div>
 
           {/* Right: model overflows upward out of black section */}
           <div className="hidden md:flex items-end self-end relative flex-shrink-0">
             <img
-              src={heroImage}
+              src={modelImg}
               alt="Hero Tee"
               className="w-auto object-contain object-bottom"
-              style={{ height: '540px', marginBottom: '56px', marginTop: '-180px' }}
+              style={{ height: '540px', marginBottom: '-56px', marginTop: '-180px' }}
             />
             {/* Color swatches */}
             <div className="flex flex-col gap-4 ml-4 mb-20 self-center">
@@ -49,10 +50,8 @@ const MerchHeroSection = () => {
           </div>
         </div>
 
-        {/* Bottom bar — always sticks to bottom of black section */}
-        <div className="absolute bottom-0 left-0 w-full bg-white text-black flex items-center justify-center h-14 text-lg font-bold tracking-widest z-20">
-          tees • hoodies • art prints • collectibles
-        </div>
+       
+    
       </div>
     </section>
   );
