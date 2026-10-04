@@ -413,6 +413,7 @@ const DailyWorkLog = () => {
                     <thead className="sticky top-0 z-10">
                       <tr className="bg-[#217346] text-white">
                         <th className="border border-[#1a5c38] px-3 py-2 text-center w-8 font-bold">#</th>
+                        <th className="border border-[#1a5c38] px-3 py-2 text-center w-20 font-bold">Emp ID</th>
                         <th className="border border-[#1a5c38] px-3 py-2 text-left min-w-[140px] font-bold">Employee Name</th>
                         <th className="border border-[#1a5c38] px-3 py-2 text-left min-w-[160px] font-bold">Email</th>
                         <th className="border border-[#1a5c38] px-3 py-2 text-center w-24 font-bold">Date</th>
@@ -428,7 +429,7 @@ const DailyWorkLog = () => {
                     <tbody>
                       {allLogs.length === 0 ? (
                         <tr>
-                          <td colSpan={10} className="text-center py-12 text-gray-400 border border-gray-200">
+                          <td colSpan={11} className="text-center py-12 text-gray-400 border border-gray-200">
                             <ClipboardList size={28} className="mx-auto mb-2 opacity-30"/>
                             No work logs for this date.
                           </td>
@@ -461,6 +462,10 @@ const DailyWorkLog = () => {
                               {/* Row number */}
                               <td className="border border-gray-200 px-3 py-2 text-center text-gray-400 font-mono bg-gray-50 font-semibold">
                                 {i + 1}
+                              </td>
+                              {/* Emp ID */}
+                              <td className="border border-gray-200 px-3 py-2 text-center font-mono text-xs text-gray-500 bg-gray-50">
+                                {log.adminEmployeeId || "—"}
                               </td>
                               {/* Name */}
                               <td className="border border-gray-200 px-3 py-2 font-semibold text-gray-900 whitespace-nowrap">
@@ -536,7 +541,7 @@ const DailyWorkLog = () => {
                             {/* Inline review form row */}
                             {isReviewing && (
                               <tr className="bg-blue-50">
-                                <td colSpan={10} className="border border-blue-200 px-5 py-3">
+                                <td colSpan={11} className="border border-blue-200 px-5 py-3">
                                   <div className="flex items-start gap-4 flex-wrap">
                                     <div>
                                       <p className="text-[10px] font-bold uppercase text-blue-600 mb-1.5">Review Status</p>

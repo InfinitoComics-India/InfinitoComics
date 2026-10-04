@@ -5,9 +5,10 @@ import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle
 import { message, Popconfirm } from "antd";
 import { getRoles } from '../../Utils/auth.js';
 
-const HR_ALL = ["superadmin", "hr_manager", "manager", "team_lead", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin", "shop_admin"];
+const HR_ALL = ["superadmin", "hr_manager", "manager", "team_lead"];
 const HR_AUDIT = ["superadmin", "hr_manager"];
-const SHOP_ALL = ["superadmin", "shop_admin", "admin", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin", "manager", "team_lead"]; // Shop access roles
+const SHOP_ALL = ["superadmin", "shop_admin"];
+const EMP_ALL = [...HR_ALL, "employee"]; // visible to all roles incl. employees
 
 // ── Regular nav items (above HR section) ────────────────────
 const NAV_ITEMS = [
@@ -22,8 +23,8 @@ const NAV_ITEMS = [
   { label: "Users", to: "/users", icon: Users, roles: ["superadmin"] },
   { label: "Admin Mgmt", to: "/admin-management", icon: ShieldCheck, roles: ["superadmin"] },
   { label: "Contact Queries", to: "/contact-queries", icon: Mail, roles: ["superadmin"] },
-  { label: "Wiki", to: "/hr/wiki", icon: BookMarked, roles: HR_ALL },
-  { label: "Infinito AI", to: "/hr/ai", icon: Sparkles, roles: HR_ALL },
+  { label: "Wiki", to: "/hr/wiki", icon: BookMarked, roles: ["superadmin"] },
+  { label: "Infinito AI", to: "/hr/ai", icon: Sparkles, roles: ["superadmin"] },
 ];
 
 // ── HR sub-items (shown inside collapsible accordion) ────────
@@ -46,7 +47,7 @@ const HR_ITEMS = [
   { label: "Recruitment", to: "/hr/recruitment", icon: UserSearch, roles: HR_ALL },
   { label: "Chat", to: "/hr/chat", icon: MessagesSquare, roles: HR_ALL },
   { label: "Self Service", to: "/hr/self-service", icon: LifeBuoy, roles: EMP_ALL },
-  { label: "Work Log", to: "/hr/worklog", icon: ClipboardList, roles: EMP_ALL }, // all roles incl. employees
+  { label: "Work Log", to: "/hr/worklog", icon: ClipboardList, roles: EMP_ALL },
 ];
 
 // ── Shop sub-items (shown inside collapsible accordion) ────────

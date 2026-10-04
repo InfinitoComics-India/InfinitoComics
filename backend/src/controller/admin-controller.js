@@ -1,17 +1,51 @@
 import AdminService from "../services/admin-service.js";
+import Employee from "../models/Employee.js";
+
 const adminService = new AdminService();
+
 // Create a new admin
 const createAdmin = async (req, res) => {
     try {
-        const { email, password, role, roles, name } = req.body;
+        const { email, password, role, roles, name, employeeId } = req.body;
+        const finalRoles = roles?.length > 0 ? roles : (role ? [role] : []);
 
         const adminData = await adminService.createAdmin({
             email,
             password,
             role,
-            roles: roles?.length > 0 ? roles : (role ? [role] : []),
-            name
+            roles: finalRoles,
+            name,
+            employeeId: employeeId || "",
         });
+
+        // ── Auto-create Employee record if role includes "employee" ──
+        if (finalRoles.includes("employee")) {
+            try {
+                const nameParts = name.trim().split(" ");
+                const firstName = nameParts[0] || name;
+                const lastName  = nameParts.slice(1).join(" ") || "-";
+
+                // Check if employee record already exists for this email
+                const existing = await Employee.findOne({ email: email.toLowerCase() });
+                if (!existing) {
+                    await Employee.create({
+                        employeeId:     employeeId || undefined, // let auto-gen if not set
+                        firstName,
+                        lastName,
+                        email:          email.toLowerCase(),
+                        designation:    "Team Member",
+                        department:     "Other",
+                        employmentType: "full-time",
+                        joiningDate:    new Date(),
+                        hrRole:         "employee",
+                        status:         "active",
+                    });
+                }
+            } catch (empErr) {
+                // Don't fail the whole request if employee creation fails
+                console.warn("Auto employee record creation warning:", empErr.message);
+            }
+        }
 
         return res.status(201).json({
             success: true,

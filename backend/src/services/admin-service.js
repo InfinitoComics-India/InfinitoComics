@@ -18,6 +18,7 @@ class AdminService {
                 email: newAdmin.email,
                 role: newAdmin.role,
                 roles: newAdmin.roles || (newAdmin.role ? [newAdmin.role] : []),
+                employeeId: newAdmin.employeeId || "",
             };
             const token = jwt.sign(payload, config.JWT_SECRET_KEY, { 
                 expiresIn: config.JWT_EXPIRY_DATE 
@@ -43,6 +44,7 @@ class AdminService {
                 email: admin.email,
                 role: admin.role,
                 roles: admin.roles || (admin.role ? [admin.role] : []),
+                employeeId: admin.employeeId || "",
             };
             const token = jwt.sign(payload, config.JWT_SECRET_KEY, { 
                 expiresIn: config.JWT_EXPIRY_DATE 

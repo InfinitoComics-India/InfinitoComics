@@ -6,6 +6,7 @@ const DailyWorkLogSchema = new mongoose.Schema(
     adminId:      { type: mongoose.Schema.Types.ObjectId, ref: "Admin", required: true },
     adminEmail:   { type: String, default: "" }, // snapshot of email
     adminName:    { type: String, default: "" }, // snapshot of name
+    adminEmployeeId: { type: String, default: "" }, // snapshot of employee ID
 
     // ── Also link to Employee record if exists ────────────────
     employeeId:   { type: mongoose.Schema.Types.ObjectId, ref: "Employee" },

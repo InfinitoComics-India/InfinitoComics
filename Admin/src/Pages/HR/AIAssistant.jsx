@@ -29,6 +29,86 @@ const TypingDots = () => (
   </div>
 );
 
+const renderMarkdown = (text) => {
+  const lines = text.split("\n");
+  const elements = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Horizontal rule
+    if (/^---+$/.test(line.trim())) {
+      elements.push(<hr key={i} className="border-gray-200 my-2" />);
+      i++; continue;
+    }
+
+    // H3
+    if (line.startsWith("### ")) {
+      elements.push(<h3 key={i} className="font-bold text-base mt-3 mb-1">{inlineRender(line.slice(4))}</h3>);
+      i++; continue;
+    }
+
+    // H2
+    if (line.startsWith("## ")) {
+      elements.push(<h2 key={i} className="font-bold text-lg mt-3 mb-1">{inlineRender(line.slice(3))}</h2>);
+      i++; continue;
+    }
+
+    // H1
+    if (line.startsWith("# ")) {
+      elements.push(<h1 key={i} className="font-extrabold text-xl mt-3 mb-1">{inlineRender(line.slice(2))}</h1>);
+      i++; continue;
+    }
+
+    // Bullet list item (- or *)
+    if (/^[-*] /.test(line)) {
+      elements.push(
+        <div key={i} className="flex gap-2 mt-0.5 items-start">
+          <span className="mt-1.5 shrink-0 text-current">•</span>
+          <span>{inlineRender(line.slice(2))}</span>
+        </div>
+      );
+      i++; continue;
+    }
+
+    // Numbered list
+    if (/^\d+\. /.test(line)) {
+      const num = line.match(/^(\d+)\. /)[1];
+      elements.push(
+        <div key={i} className="flex gap-2 mt-0.5">
+          <span className="shrink-0 font-semibold">{num}.</span>
+          <span>{inlineRender(line.replace(/^\d+\. /, ""))}</span>
+        </div>
+      );
+      i++; continue;
+    }
+
+    // Empty line → spacing
+    if (line.trim() === "") {
+      elements.push(<div key={i} className="h-2" />);
+      i++; continue;
+    }
+
+    // Normal paragraph
+    elements.push(<p key={i} className="leading-relaxed">{inlineRender(line)}</p>);
+    i++;
+  }
+
+  return elements;
+};
+
+// Inline: bold, italic, code, links
+const inlineRender = (text) => {
+  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) return <strong key={i}>{part.slice(2, -2)}</strong>;
+    if (part.startsWith("*") && part.endsWith("*"))   return <em key={i}>{part.slice(1, -1)}</em>;
+    if (part.startsWith("`") && part.endsWith("`"))   return <code key={i} className="bg-gray-100 text-red-600 px-1 rounded text-xs font-mono">{part.slice(1, -1)}</code>;
+    return part;
+  });
+};
+
 const MessageBubble = ({ msg }) => {
   const isUser = msg.role === "user";
   return (
@@ -43,20 +123,7 @@ const MessageBubble = ({ msg }) => {
           ? "bg-[#DD1215] text-white rounded-tr-none"
           : "bg-white border border-gray-200 text-gray-800 rounded-tl-none shadow-sm"
       }`}>
-        {/* Render markdown-like content */}
-        {msg.content.split("\n").map((line, i) => {
-          // Bold: **text**
-          const parts = line.split(/(\*\*.*?\*\*)/g);
-          return (
-            <p key={i} className={i > 0 ? "mt-1" : ""}>
-              {parts.map((part, j) =>
-                part.startsWith("**") && part.endsWith("**")
-                  ? <strong key={j}>{part.slice(2, -2)}</strong>
-                  : part
-              )}
-            </p>
-          );
-        })}
+        <div className="space-y-0.5">{renderMarkdown(msg.content)}</div>
         <p className={`text-[10px] mt-1.5 ${isUser ? "text-red-200" : "text-gray-400"}`}>{fmt(msg.createdAt)}</p>
       </div>
     </div>
@@ -220,7 +287,7 @@ const AIAssistant = () => {
             </div>
             <div>
               <p className="font-black text-gray-900 text-sm">Infinito AI Assistant</p>
-              <p className="text-[10px] text-green-500 font-semibold">● Connected to HR data</p>
+              <p className="text-[10px] text-green-500 font-semibold">● Powered by Infinito AI</p>
             </div>
           </div>
           <button onClick={startNewChat} className="flex items-center gap-1.5 text-xs border border-gray-300 px-3 py-1.5 hover:bg-gray-50 transition font-semibold text-gray-600">
@@ -233,7 +300,7 @@ const AIAssistant = () => {
           <div className="bg-yellow-50 border-b border-yellow-200 px-5 py-2 flex items-center gap-2">
             <AlertTriangle size={13} className="text-yellow-600 shrink-0"/>
             <p className="text-xs text-yellow-800">
-              Running in <strong>demo mode</strong> — add <code className="bg-yellow-100 px-1 rounded">OPENAI_API_KEY</code> to <code className="bg-yellow-100 px-1 rounded">backend/.env</code> for full AI responses.
+              Running in <strong>demo mode</strong> — add <code className="bg-yellow-100 px-1 rounded">GROQ_API_KEY</code> to <code className="bg-yellow-100 px-1 rounded">backend/.env</code> for full AI responses.
             </p>
           </div>
         )}
@@ -249,7 +316,7 @@ const AIAssistant = () => {
               </div>
               <h2 className="text-2xl font-black text-gray-900 mb-2">Infinito AI</h2>
               <p className="text-gray-500 text-sm mb-6 leading-relaxed">
-                Your internal AI assistant. Ask me anything about your team, tasks, projects, attendance, leaves, or HR processes.
+                Your official AI assistant. Ask me anything about InfinitoComics — characters, comics, team, tasks, projects, products, careers, or company info.
               </p>
               {/* Suggestion pills */}
               <div className="flex flex-wrap gap-2 justify-center">

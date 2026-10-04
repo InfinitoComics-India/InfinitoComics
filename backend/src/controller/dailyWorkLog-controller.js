@@ -3,20 +3,21 @@ import Admin from "../models/Admin.js";
 import Attendance from "../models/Attendance.js";
 import Employee from "../models/Employee.js";
 
-// ── Helper: convert a date string (YYYY-MM-DD) to IST midnight in UTC ──────
-const dateToISTMidnight = (dateStr) => {
-  // Parse YYYY-MM-DD as IST date, return the UTC equivalent of IST midnight
-  const [y, m, d] = dateStr.split("-").map(Number);
-  // IST midnight = UTC midnight - 5h30m
-  const istOffset = 5.5 * 60 * 60 * 1000;
-  const utcMidnight = Date.UTC(y, m - 1, d, 0, 0, 0, 0);
-  return new Date(utcMidnight - istOffset);
-};
+// ── Helper: today's date at midnight IST ─────────────────────
+const getTodayIST = () => {
   const now = new Date();
   const istOffset = 5.5 * 60 * 60 * 1000;
   const istNow = new Date(now.getTime() + istOffset);
   istNow.setUTCHours(0, 0, 0, 0);
   return new Date(istNow.getTime() - istOffset);
+};
+
+// ── Helper: convert a date string (YYYY-MM-DD) to IST midnight in UTC ──────
+const dateToISTMidnight = (dateStr) => {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const utcMidnight = Date.UTC(y, m - 1, d, 0, 0, 0, 0);
+  return new Date(utcMidnight - istOffset);
 };
 
 // ── SUBMIT / UPDATE today's work log ─────────────────────────
@@ -25,6 +26,7 @@ export const submitWorkLog = async (req, res) => {
     const adminId   = req.user._id;
     const adminName = req.user.name || req.user.username || "";
     const adminEmail= req.user.email || "";
+    const adminEmployeeId = req.user.employeeId || "";
     const { workDescription } = req.body;
 
     if (!workDescription?.trim()) return res.status(400).json({ success: false, message: "Work description is required." });
@@ -45,6 +47,7 @@ export const submitWorkLog = async (req, res) => {
       adminId,
       adminName,
       adminEmail,
+      adminEmployeeId,
       date:            today,
       workDescription: workDescription.trim(),
       status:          "submitted",

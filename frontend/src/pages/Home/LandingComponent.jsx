@@ -1,10 +1,11 @@
 // LandingComponent.jsx (Home.jsx)
 import React, { useState, useEffect } from "react";
-import slide1 from "../../../assets/Images/banner 1.png";
-import slide2 from "../../../assets/Images/banner 2.jpeg";
-import slide3 from "../../../assets/Images/banner 3.jpeg";
-import slide4 from "../../../assets/Images/banner.png";
-import slide5 from "../../../assets/Images/banner 5.png";
+
+import slide1 from "../../../assets/Images/webbanner/banner 1.png";
+import slide2 from "../../../assets/Images/webbanner/banner 2.jpeg";
+import slide3 from "../../../assets/Images/webbanner/banner 3.jpeg";
+import slide4 from "../../../assets/Images/webbanner/banner.png";
+import slide5 from "../../../assets/Images/webbanner/banner 5.png"
 import slide1Mobile from "../../../assets/Images/banners/banner1.png";
 import slide2Mobile from "../../../assets/Images/banners/banner2.png";
 import slide3Mobile from "../../../assets/Images/banners/banner3.png";
