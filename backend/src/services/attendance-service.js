@@ -94,8 +94,9 @@ class AttendanceService {
         if (!record.clockIn) throw new Error("Not currently clocked in.");
         if (record.clockOut) throw new Error("Already clocked out.");
         const hoursWorked = parseFloat(((now - record.clockIn) / (1000*60*60)).toFixed(2));
+        const legacyStatus = hoursWorked >= 4 ? (record.isLate ? "late" : "present") : "half_day";
         const updated = await Attendance.findByIdAndUpdate(record._id,
-          { $set: { clockOut: now, hoursWorked, totalHours: hoursWorked, status: record.isLate ? "late" : "present" } },
+          { $set: { clockOut: now, hoursWorked, totalHours: hoursWorked, status: legacyStatus } },
           { new: true }
         );
         return updated;
@@ -116,7 +117,7 @@ class AttendanceService {
       const totalHours = parseFloat(
         updatedSessions.reduce((sum, s) => sum + (s.hoursWorked || 0), 0).toFixed(2)
       );
-      const newStatus = record.isLate ? "late" : "present";
+      const newStatus = totalHours >= 4 ? (record.isLate ? "late" : "present") : "half_day";
 
       const updated = await Attendance.findByIdAndUpdate(
         record._id,

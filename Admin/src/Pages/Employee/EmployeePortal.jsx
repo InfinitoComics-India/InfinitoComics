@@ -291,11 +291,24 @@ const EmployeePortal = () => {
                           <span className="text-yellow-600 font-semibold ml-4 animate-pulse">● Currently working</span>
                         )}
                       </div>
-                      {s.clockOut && (
-                        <span className="text-gray-500 font-semibold">{s.hoursWorked}h</span>
-                      )}
+                      {s.clockOut && <span className="text-gray-500 font-semibold">{s.hoursWorked}h</span>}
                     </div>
                   ))}
+                  {/* 4hr progress bar */}
+                  <div className="mt-2">
+                    <div className="flex justify-between text-[10px] text-gray-400 mb-1">
+                      <span>Daily target</span>
+                      <span>{Math.min((todayAttd.totalHours||0), 4).toFixed(1)}h / 4h</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2">
+                      <div className={`h-2 rounded-full transition-all ${(todayAttd.totalHours||0) >= 4 ? "bg-green-500" : "bg-yellow-400"}`}
+                        style={{width:`${Math.min(((todayAttd.totalHours||0)/4)*100,100)}%`}}/>
+                    </div>
+                    {(todayAttd.totalHours||0) >= 4
+                      ? <p className="text-[10px] text-green-600 font-bold mt-1">✅ Present — 4h target met</p>
+                      : <p className="text-[10px] text-yellow-600 mt-1">⚠️ {(4-(todayAttd.totalHours||0)).toFixed(1)}h more for Present (Half Day currently)</p>
+                    }
+                  </div>
                 </div>
               ) : todayAttd?.clockIn ? (
                 // Legacy single session display
