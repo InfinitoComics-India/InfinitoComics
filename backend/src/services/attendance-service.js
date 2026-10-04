@@ -17,16 +17,17 @@ class AttendanceService {
   async clockIn(employeeId, performedBy, performedByName) {
     try {
       const now  = new Date();
-      const date = new Date(now);
+      const Attendance = (await import('../models/Attendance.js')).default;
+      const d     = new Date(now);
+      const start = new Date(new Date(d).setHours(0, 0, 0, 0));
+      const end   = new Date(new Date(d).setHours(23, 59, 59, 999));
 
-      const existing = await this.attendanceRepo.getByEmployeeAndDate(employeeId, date);
+      const existing = await Attendance.findOne({ employeeId, date: { $gte: start, $lte: end } });
 
-      // Block if last session has no clock-out (already clocked in)
+      // Block if already clocked in (last session open or legacy clockIn without clockOut)
       if (existing?.sessions?.length > 0) {
-        const lastSession = existing.sessions[existing.sessions.length - 1];
-        if (!lastSession.clockOut) {
-          throw new Error("Already clocked in. Please clock out first.");
-        }
+        const openSession = existing.sessions.find(s => !s.clockOut);
+        if (openSession) throw new Error("Already clocked in. Please clock out first.");
       } else if (existing?.clockIn && !existing?.clockOut) {
         throw new Error("Already clocked in. Please clock out first.");
       }
@@ -38,17 +39,22 @@ class AttendanceService {
       const isLate        = now > graceCutoff;
       const lateByMinutes = isLate ? Math.floor((now - graceCutoff) / 60000) : 0;
 
-      // Add new session
       const newSession = { clockIn: now, clockOut: null, hoursWorked: 0 };
       const sessions   = [...(existing?.sessions || []), newSession];
 
-      const record = await this.attendanceRepo.upsert(employeeId, date, {
-        sessions,
-        clockIn:       existing?.clockIn || now, // legacy compat
-        status:        existing?.status === "present" ? "present" : isLate ? "late" : "present",
-        isLate:        existing?.isLate || isLate,
-        lateByMinutes: existing?.lateByMinutes || lateByMinutes,
-      });
+      let record;
+      if (existing) {
+        record = await Attendance.findByIdAndUpdate(
+          existing._id,
+          { $set: { sessions, status: "present", isLate: existing.isLate || isLate, lateByMinutes: existing.lateByMinutes || lateByMinutes } },
+          { new: true }
+        );
+      } else {
+        record = await Attendance.create({
+          employeeId, date: start, sessions,
+          clockIn: now, status: isLate ? "late" : "present", isLate, lateByMinutes,
+        });
+      }
 
       await this.auditRepo.create({
         performedBy, performedByName,
@@ -67,48 +73,61 @@ class AttendanceService {
   async clockOut(employeeId, performedBy, performedByName) {
     try {
       const now    = new Date();
-      const record = await this.attendanceRepo.getByEmployeeAndDate(employeeId, now);
+      const Attendance = (await import('../models/Attendance.js')).default;
+      const d     = new Date(now);
+      const start = new Date(new Date(d).setHours(0, 0, 0, 0));
+      const end   = new Date(new Date(d).setHours(23, 59, 59, 999));
 
+      const record = await Attendance.findOne({ employeeId, date: { $gte: start, $lte: end } });
       if (!record) throw new Error("No clock-in record found for today.");
 
-      // Find the last open session
-      const sessions  = [...(record.sessions || [])];
-      const lastIndex = sessions.length - 1;
+      // Find last open session
+      const sessions = record.sessions || [];
+      const lastIndex = sessions.findLastIndex ? sessions.findLastIndex(s => !s.clockOut) :
+        [...sessions].reverse().findIndex(s => !s.clockOut);
+      const actualIndex = sessions.findLastIndex ? lastIndex :
+        lastIndex === -1 ? -1 : sessions.length - 1 - lastIndex;
 
-      if (sessions.length === 0 || sessions[lastIndex].clockOut) {
-        throw new Error("Not currently clocked in. Please clock in first.");
+      // Also check legacy clockIn/clockOut
+      if (actualIndex === -1 && sessions.length === 0) {
+        // Legacy mode — no sessions array
+        if (!record.clockIn) throw new Error("Not currently clocked in.");
+        if (record.clockOut) throw new Error("Already clocked out.");
+        const hoursWorked = parseFloat(((now - record.clockIn) / (1000*60*60)).toFixed(2));
+        const updated = await Attendance.findByIdAndUpdate(record._id,
+          { $set: { clockOut: now, hoursWorked, totalHours: hoursWorked, status: record.isLate ? "late" : "present" } },
+          { new: true }
+        );
+        return updated;
       }
 
-      // Close the last session
-      const sessionHours = parseFloat(
-        ((now - sessions[lastIndex].clockIn) / (1000 * 60 * 60)).toFixed(2)
-      );
-      sessions[lastIndex] = {
-        ...sessions[lastIndex],
-        clockOut:    now,
-        hoursWorked: sessionHours,
-      };
+      if (actualIndex === -1) throw new Error("Not currently clocked in. Please clock in first.");
 
-      // Recalculate total hours across all sessions
+      // Close the last open session
+      const sessionClockIn = new Date(sessions[actualIndex].clockIn);
+      const sessionHours = parseFloat(((now - sessionClockIn) / (1000*60*60)).toFixed(2));
+
+      // Build updated sessions array
+      const updatedSessions = sessions.map((s, i) => {
+        if (i === actualIndex) return { clockIn: s.clockIn, clockOut: now, hoursWorked: sessionHours };
+        return { clockIn: s.clockIn, clockOut: s.clockOut, hoursWorked: s.hoursWorked || 0 };
+      });
+
       const totalHours = parseFloat(
-        sessions.reduce((sum, s) => sum + (s.hoursWorked || 0), 0).toFixed(2)
+        updatedSessions.reduce((sum, s) => sum + (s.hoursWorked || 0), 0).toFixed(2)
       );
-
-      // Status: present if any hours worked, regardless of amount
       const newStatus = record.isLate ? "late" : "present";
 
-      const updated = await this.attendanceRepo.upsert(employeeId, now, {
-        sessions,
-        clockOut:    now,         // legacy compat
-        hoursWorked: totalHours,  // legacy compat
-        totalHours,
-        status: newStatus,
-      });
+      const updated = await Attendance.findByIdAndUpdate(
+        record._id,
+        { $set: { sessions: updatedSessions, clockOut: now, hoursWorked: totalHours, totalHours, status: newStatus } },
+        { new: true }
+      );
 
       await this.auditRepo.create({
         performedBy, performedByName,
         action: "UPDATE", entity: "Attendance", entityId: updated._id,
-        description: `Clock Out #${sessions.length} at ${now.toLocaleTimeString()} — Session: ${sessionHours}h | Total: ${totalHours}h`,
+        description: `Clock Out at ${now.toLocaleTimeString()} — Session: ${sessionHours}h | Total: ${totalHours}h`,
       });
 
       return updated;
