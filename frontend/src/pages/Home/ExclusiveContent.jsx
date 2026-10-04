@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import uploadedImage from "../../../assets/Images/ExclusiveContent.jpg";
+import appimg from "../../../assets/Images/Appimg/appimg.png"
 import ExclusiveContentShimmer from "../../shimmer/landingPageShimmer/ExclusiveContentShimmer";
 
 const ExclusiveContent = () => {
@@ -25,7 +26,7 @@ const ExclusiveContent = () => {
         <div className="w-full lg:w-[45%] lg:ml-40">
           <div className="m-4 sm:m-8 md:m-12 lg:m-16">
             <img
-              src={uploadedImage}
+              src={appimg}
               alt="Exclusive Content"
               className="w-full h-full object-cover object-center"
             />

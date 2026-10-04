@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Bookmark } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import spotlightData from '../../constants/spotlight';
 import TodaySpotLightShimmer from "../../shimmer/landingPageShimmer/TodaySpotLightShimmer";
 
@@ -13,10 +14,18 @@ const TodaySpotlight = () => {
 
   return loading ? <TodaySpotLightShimmer /> : (
     <div className="py-8 sm:py-14 bg-white font-dmsans overflow-x-hidden">
-      <div className="w-full max-w-7xl mx-auto px-8 md:px-16">
-        <h2 className="text-2xl sm:text-3xl md:text-[36px] font-black tracking-widest uppercase mb-6 sm:mb-10 text-left">
-          Today's Spotlight
-        </h2>
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 md:px-12">
+        <div className="flex justify-between items-center mb-6 sm:mb-10">
+          <h2 className="text-2xl sm:text-3xl md:text-[36px] font-black tracking-widest uppercase text-left">
+            Today's Spotlight
+          </h2>
+          <Link
+            to="/comics"
+            className="text-red-600 text-xs sm:text-sm font-semibold tracking-wider uppercase hover:underline"
+          >
+            VIEW ALL &gt;
+          </Link>
+        </div>
 
         <div className="flex flex-col md:flex-row gap-6 transition-all duration-500 ease-in-out overflow-x-auto md:overflow-hidden">
           {spotlightData.map((comic) => {
