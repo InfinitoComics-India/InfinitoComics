@@ -1,6 +1,6 @@
 import './App.css'
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import appStore from './redux/appStore';
 import Body from './components/Body';
@@ -116,6 +116,11 @@ function App() {
               <Route path="/verifyEmail" element={<OTPVerification />} />
               <Route path="/createAvatar" element={<SignupStep3 />} />
               <Route path="/Dashboard" element={<DashboardPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/my-account" element={<DashboardPage />} />
+              <Route path="/orders" element={<Navigate to="/dashboard?tab=orders" replace />} />
+              <Route path="/orders/history" element={<Navigate to="/dashboard?tab=orders" replace />} />
+              <Route path="/orders/track" element={<Navigate to="/dashboard?tab=orders" replace />} />
               <Route path="/Feedback" element={<FeedbackForm />} />
               <Route path="/aboutUS" element={<AboutUs />} />
               <Route path="/founder-profile" element={<FounderProfile />} />
