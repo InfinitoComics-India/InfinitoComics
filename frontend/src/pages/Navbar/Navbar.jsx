@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { FiSearch, FiMenu, FiX } from "react-icons/fi";
 import logo from "../../../assets/Logo.png";
-import { Heart, ShoppingBag } from "lucide-react";
+import { Heart, ShoppingBag, Package } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import UserIcon from "../../../assets/Images/UserIcon.png";
@@ -70,7 +70,7 @@ const Header = () => {
 
       {/* ── Main bar: Login | Logo | Search ── */}
       <div className="bg-[#202020] py-2">
-        <div className="relative w-full max-w-[1200px] mx-auto px-4 md:px-12 flex items-center justify-between min-h-[56px]">
+        <div className="w-full max-w-[1200px] mx-auto px-4 md:px-12 flex items-center justify-between gap-4">
           {/* Mobile hamburger */}
           <div className="md:hidden">
             <button onClick={() => setMenuOpen(!menuOpen)}>
@@ -81,14 +81,25 @@ const Header = () => {
           {/* Login / User */}
           <div className="hidden cursor-pointer md:block">
             {user ? (
-              <div
-                className="flex items-center gap-2 pointer border border-white px-4 py-1.5 uppercase text-xs font-semibold"
-                onClick={() => navigate("/dashboard")}
-              >
-                <img src={UserIcon} alt="User Icon" className="w-4 h-4" />
-                <span className="tracking-wide">
-                  Hi, {user?.name?.split(" ")[0] || "Guest"}!
-                </span>
+              <div className="flex items-center gap-2">
+                <div
+                  className="flex items-center gap-2 pointer border border-white px-3 py-1.5 uppercase text-xs font-semibold hover:bg-white hover:text-black transition"
+                  onClick={() => navigate("/dashboard")}
+                  title="My Account"
+                >
+                  <img src={UserIcon} alt="User Icon" className="w-4 h-4" />
+                  <span className="tracking-wide">
+                    Hi, {user?.name?.split(" ")[0] || "Guest"}!
+                  </span>
+                </div>
+                <button
+                  onClick={() => navigate("/dashboard?tab=orders")}
+                  className="border border-gray-600 hover:border-[#DD1215] px-2.5 py-1.5 uppercase text-xs font-semibold text-gray-300 hover:text-white hover:bg-gray-800 transition flex items-center gap-1.5"
+                  title="My Orders"
+                >
+                  <Package size={14} className="text-[#DD1215]" />
+                  <span>Orders</span>
+                </button>
               </div>
             ) : (
               <button
@@ -101,10 +112,7 @@ const Header = () => {
           </div>
 
           {/* Logo Centered - Always redirects to Main Domain https://infinitohq.com */}
-          <a
-            href={FRONTEND_BASE_URL || "https://infinitohq.com"}
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 text-center"
-          >
+          <a href={FRONTEND_BASE_URL || "https://infinitohq.com"} className="text-center">
             <img src={logo} alt="INFINITO" className="h-10 md:h-12 w-auto object-contain" />
           </a>
 
@@ -173,6 +181,22 @@ const Header = () => {
       {/* Mobile Dropdown Menu */}
       {menuOpen && (
         <div className="md:hidden bg-[#171717] text-sm text-gray-300 px-4 py-6 space-y-4">
+          {user ? (
+            <div className="pb-3 border-b border-gray-800 space-y-2">
+              <Link to="/dashboard" className="block font-bold text-white flex items-center gap-2" onClick={() => setMenuOpen(false)}>
+                <img src={UserIcon} alt="User" className="w-4 h-4" /> My Account ({user?.name?.split(" ")[0] || "Profile"})
+              </Link>
+              <Link to="/dashboard?tab=orders" className="block font-bold text-[#DD1215] flex items-center gap-2" onClick={() => setMenuOpen(false)}>
+                <Package size={15} /> My Orders
+              </Link>
+            </div>
+          ) : (
+            <div className="pb-3 border-b border-gray-800">
+              <Link to="/login" className="block font-bold text-white uppercase text-xs tracking-wider" onClick={() => setMenuOpen(false)}>
+                LOG IN | SIGN UP &gt;
+              </Link>
+            </div>
+          )}
           <Link to="/characters" className="block font-bold hover:text-white" onClick={() => setMenuOpen(false)}>
             Characters
           </Link>
