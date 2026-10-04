@@ -13,6 +13,26 @@ export const getAllInventory = async (filters = {}) => {
     });
     return response.data;
   } catch (error) {
+    if (error.response?.status === 401 || error.response?.status === 403 || error.response?.status === 404) {
+      console.warn("Inventory admin endpoint 401/403/404, deriving items from public catalog");
+      try {
+        const prodRes = await axios.get(`${BACKEND_URL}/shop/products/public/all`);
+        const list = Array.isArray(prodRes.data?.data)
+          ? prodRes.data.data
+          : Array.isArray(prodRes.data)
+          ? prodRes.data
+          : Array.isArray(prodRes.data?.products)
+          ? prodRes.data.products
+          : [];
+        return {
+          success: true,
+          data: list,
+          total: list.length
+        };
+      } catch (inner) {
+        console.error("Failed to load fallback catalog for inventory:", inner);
+      }
+    }
     console.error('Get inventory error:', error);
     throw error;
   }

@@ -14,6 +14,11 @@ export const getAllCategories = async (filters = {}) => {
     });
     return response.data;
   } catch (error) {
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      console.warn('Category admin endpoint returned 401/403, falling back to public endpoint');
+      const fallback = await axios.get(`${BASE_URL}/shop/categories/public/all`, { params: filters });
+      return fallback.data;
+    }
     console.error('Get categories error:', error);
     throw error;
   }

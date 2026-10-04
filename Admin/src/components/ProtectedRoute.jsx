@@ -1,19 +1,23 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { getRoles } from "../Utils/auth";
+import { getRoles, isTokenValid } from "../Utils/auth";
 
 /**
  * Wraps a route and redirects if:
- * - Not logged in → /login
+ * - Not logged in or token expired → /login
  * - Logged in but none of the admin's roles match allowedRoles → /unauthorized
  */
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const token = localStorage.getItem("authToken");
   const location = useLocation();
 
-  // Not logged in
-  if (!token) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
+  // Not logged in or token expired
+  if (!token || !isTokenValid(token)) {
+    if (token && !isTokenValid(token)) {
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("Admin");
+    }
+    return <Navigate to="/login" replace state={{ from: location, expired: true }} />;
   }
 
   // Check role access — admin passes if any of their roles is in allowedRoles

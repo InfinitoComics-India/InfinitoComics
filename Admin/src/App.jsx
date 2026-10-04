@@ -70,7 +70,7 @@ const HR_VIEW = ["superadmin", "hr_manager", "manager", "team_lead",
 const AUDIT   = ["superadmin", "hr_manager"];
 
 // ── Shop Role constants ───────────────────────────────────────
-const SHOP    = ["superadmin", "shop_admin"];
+const SHOP    = ["superadmin", "shop_admin", "admin", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin", "manager", "team_lead"];
 
 function App() {
   const basename = import.meta.env.MODE === 'production' ? '/admin' : '';

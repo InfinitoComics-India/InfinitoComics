@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   FaEye,
   FaEyeSlash,
@@ -9,13 +9,16 @@ import {
   FaShieldAlt,
 } from "react-icons/fa";
 import { login } from "../services/adminLogin";
+import { isTokenValid } from "../Utils/auth";
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const sessionExpired = location.state?.expired || false;
 
   const {
     register,
@@ -26,12 +29,16 @@ const LoginPage = () => {
   const passwordRegex =
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
-  // 🔐 Redirect if already logged in
+  // 🔐 Redirect only if already logged in with a VALID token
   useEffect(() => {
     const token = localStorage.getItem("authToken");
-    if (token && token !== "undefined") {
+    if (token && token !== "undefined" && isTokenValid(token)) {
       navigate("/");
     } else {
+      if (token && !isTokenValid(token)) {
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("Admin");
+      }
       setCheckingAuth(false);
     }
   }, [navigate]);
@@ -85,6 +92,13 @@ const LoginPage = () => {
           </div>
 
           <div className="p-8">
+            {sessionExpired && (
+              <div className="mb-6 bg-amber-50 border border-amber-300 text-amber-800 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
+                <span>⚠️</span>
+                <span>Your previous session has expired. Please sign in again.</span>
+              </div>
+            )}
+
             {showSuccess && (
               <div className="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg text-center">
                 Login successful! Redirecting...
