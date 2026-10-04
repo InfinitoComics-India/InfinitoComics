@@ -13,12 +13,27 @@ const getConfig = () => {
 
 // Get all products
 export const getAllProducts = async () => {
-  return await axios.get(`${BACKEND_URL}/shop/products/admin/all`, getConfig());
+  try {
+    return await axios.get(`${BACKEND_URL}/shop/products/admin/all`, getConfig());
+  } catch (error) {
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      console.warn("Product admin endpoint returned 401/403, falling back to public catalog endpoint");
+      return await axios.get(`${BACKEND_URL}/shop/products/public/all`);
+    }
+    throw error;
+  }
 };
 
 // Get single product by ID
 export const getProductById = async (id) => {
-  return await axios.get(`${BACKEND_URL}/shop/products/${id}`, getConfig());
+  try {
+    return await axios.get(`${BACKEND_URL}/shop/products/${id}`, getConfig());
+  } catch (error) {
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      return await axios.get(`${BACKEND_URL}/shop/products/public/slug/${id}`);
+    }
+    throw error;
+  }
 };
 
 // Create new product
