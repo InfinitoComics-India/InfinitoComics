@@ -1,5 +1,11 @@
 import mongoose from "mongoose";
 
+const SessionSchema = new mongoose.Schema({
+  clockIn:     { type: Date, required: true },
+  clockOut:    { type: Date },
+  hoursWorked: { type: Number, default: 0 },
+}, { _id: false });
+
 const AttendanceSchema = new mongoose.Schema(
   {
     employeeId: {
@@ -13,37 +19,38 @@ const AttendanceSchema = new mongoose.Schema(
       required: true,
     },
 
-    // ── Clock In / Out ────────────────────────────────────────
-    clockIn:  { type: Date },
-    clockOut: { type: Date },
+    // ── Multiple Clock In/Out Sessions ────────────────────────
+    sessions: { type: [SessionSchema], default: [] },
 
-    // Calculated on clockOut — stored so reports don't recompute
-    hoursWorked: { type: Number, default: 0 }, // in decimal hours e.g. 7.5
+    // Total hours across all sessions
+    totalHours: { type: Number, default: 0 },
+
+    // ── Legacy single clock in/out (kept for backward compat) ─
+    clockIn:     { type: Date },
+    clockOut:    { type: Date },
+    hoursWorked: { type: Number, default: 0 },
 
     // ── Status ────────────────────────────────────────────────
+    // present = totalHours >= 4, half_day = totalHours > 0 but < 4
     status: {
       type: String,
       enum: ["present", "absent", "late", "half_day", "on_leave", "holiday", "weekend"],
       default: "absent",
     },
 
-    // Auto-flagged if clockIn > shift start + 15 min grace
-    isLate:       { type: Boolean, default: false },
-    lateByMinutes: { type: Number, default: 0 },
+    isLate:        { type: Boolean, default: false },
+    lateByMinutes: { type: Number,  default: 0 },
 
-    // ── Notes ─────────────────────────────────────────────────
-    note:         { type: String, default: "" }, // admin can add notes
-    markedBy:     { type: mongoose.Schema.Types.ObjectId }, // who marked/corrected it
-    isCorrected:  { type: Boolean, default: false }, // was it manually corrected
+    note:        { type: String,  default: "" },
+    markedBy:    { type: mongoose.Schema.Types.ObjectId },
+    isCorrected: { type: Boolean, default: false },
 
-    // ── Shift (for future shift management) ──────────────────
-    shiftStart: { type: String, default: "09:00" }, // "HH:MM"
+    shiftStart: { type: String, default: "09:00" },
     shiftEnd:   { type: String, default: "18:00" },
   },
   { timestamps: true }
 );
 
-// Compound index — one record per employee per day
 AttendanceSchema.index({ employeeId: 1, date: 1 }, { unique: true });
 AttendanceSchema.index({ date: 1, status: 1 });
 

@@ -258,46 +258,95 @@ const EmployeePortal = () => {
           <div className="space-y-5">
             {/* Clock in/out card */}
             <div className="bg-white border rounded-xl p-6">
-              <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Today — {fmt(new Date())}</p>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-                {/* Status */}
-                <div className="flex-1">
-                  {!todayAttd ? (
-                    <div className="flex items-center gap-2 text-gray-400">
-                      <Clock size={20}/>
-                      <div><p className="font-black text-gray-700">Not Clocked In</p><p className="text-xs">Tap clock in to mark attendance</p></div>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Today — {fmt(new Date())}</p>
+                {todayAttd && (
+                  <div className="flex items-center gap-3">
+                    {/* Total hours badge */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5 text-center">
+                      <p className="text-[10px] text-blue-500 font-bold uppercase">Total Hours</p>
+                      <p className="text-lg font-black text-blue-700">{(todayAttd.totalHours || todayAttd.hoursWorked || 0).toFixed(1)}h</p>
                     </div>
-                  ) : (
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold capitalize ${STATUS_COLORS[todayAttd.status]||"bg-gray-100 text-gray-600"}`}>
-                          {todayAttd.status?.replace("_"," ")}
-                        </span>
-                        {todayAttd.isLate && <span className="text-xs text-yellow-600 font-semibold">⚠️ Late by {todayAttd.lateByMinutes} mins</span>}
+                    {/* Status badge */}
+                    <span className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize ${STATUS_COLORS[todayAttd.status]||"bg-gray-100 text-gray-600"}`}>
+                      {todayAttd.status?.replace("_"," ")}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Sessions list */}
+              {todayAttd?.sessions?.length > 0 ? (
+                <div className="space-y-2 mb-4">
+                  {todayAttd.sessions.map((s, i) => (
+                    <div key={i} className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-2.5 text-xs">
+                      <span className="w-6 h-6 rounded-full bg-[#DD1215] text-white flex items-center justify-center font-black text-[10px] shrink-0">{i+1}</span>
+                      <div className="flex-1">
+                        <span className="text-green-700 font-bold">IN: {fmtTime(s.clockIn)}</span>
+                        {s.clockOut ? (
+                          <span className="text-red-600 font-bold ml-4">OUT: {fmtTime(s.clockOut)}</span>
+                        ) : (
+                          <span className="text-yellow-600 font-semibold ml-4 animate-pulse">● Currently working</span>
+                        )}
                       </div>
-                      <p className="text-xs text-gray-500">Clock In: <strong>{fmtTime(todayAttd.clockIn)}</strong></p>
-                      {todayAttd.clockOut && <p className="text-xs text-gray-500">Clock Out: <strong>{fmtTime(todayAttd.clockOut)}</strong> · {todayAttd.hoursWorked}h worked</p>}
+                      {s.clockOut && (
+                        <span className="text-gray-500 font-semibold">{s.hoursWorked}h</span>
+                      )}
                     </div>
-                  )}
+                  ))}
+                  {/* 4hr progress bar */}
+                  <div className="mt-3">
+                    <div className="flex justify-between text-[10px] text-gray-400 mb-1">
+                      <span>Progress to Present</span>
+                      <span>{Math.min((todayAttd.totalHours||0), 4).toFixed(1)}h / 4h minimum</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full transition-all ${(todayAttd.totalHours||0) >= 4 ? "bg-green-500" : "bg-yellow-400"}`}
+                        style={{width: `${Math.min(((todayAttd.totalHours||0)/4)*100, 100)}%`}}
+                      />
+                    </div>
+                    {(todayAttd.totalHours||0) >= 4
+                      ? <p className="text-[10px] text-green-600 font-bold mt-1">✅ Minimum hours met — marked Present</p>
+                      : <p className="text-[10px] text-yellow-600 mt-1">⚠️ Need {(4-(todayAttd.totalHours||0)).toFixed(1)} more hours for Present</p>
+                    }
+                  </div>
                 </div>
-                {/* Buttons */}
-                <div className="flex gap-3">
-                  {!todayAttd?.clockIn ? (
+              ) : !todayAttd ? (
+                <div className="flex items-center gap-2 text-gray-400 mb-4">
+                  <Clock size={20}/>
+                  <div><p className="font-black text-gray-700">Not Clocked In</p><p className="text-xs">Tap Clock In to start your session</p></div>
+                </div>
+              ) : null}
+
+              {/* Buttons */}
+              <div className="flex gap-3 flex-wrap">
+                {/* Show Clock In if not currently in a session */}
+                {(() => {
+                  const sessions = todayAttd?.sessions || [];
+                  const lastSession = sessions[sessions.length - 1];
+                  const isCurrentlyIn = sessions.length > 0 && !lastSession?.clockOut;
+                  if (isCurrentlyIn) {
+                    return (
+                      <button onClick={handleClockOut} disabled={clocking}
+                        className="flex items-center gap-2 bg-red-600 text-white px-6 py-3 text-xs font-black uppercase tracking-widest hover:bg-red-700 transition disabled:opacity-50 rounded-lg">
+                        <LogOutIcon size={16}/> {clocking ? "Clocking Out..." : "Clock Out"}
+                      </button>
+                    );
+                  }
+                  return (
                     <button onClick={handleClockIn} disabled={clocking}
                       className="flex items-center gap-2 bg-green-600 text-white px-6 py-3 text-xs font-black uppercase tracking-widest hover:bg-green-700 transition disabled:opacity-50 rounded-lg">
-                      <LogIn size={16}/> {clocking?"Clocking In...":"Clock In"}
+                      <LogIn size={16}/> {clocking ? "Clocking In..." : sessions.length > 0 ? "Clock In Again" : "Clock In"}
                     </button>
-                  ) : !todayAttd?.clockOut ? (
-                    <button onClick={handleClockOut} disabled={clocking}
-                      className="flex items-center gap-2 bg-red-600 text-white px-6 py-3 text-xs font-black uppercase tracking-widest hover:bg-red-700 transition disabled:opacity-50 rounded-lg">
-                      <LogOutIcon size={16}/> {clocking?"Clocking Out...":"Clock Out"}
-                    </button>
-                  ) : (
-                    <div className="flex items-center gap-2 bg-gray-100 text-gray-500 px-6 py-3 text-xs font-bold uppercase rounded-lg">
-                      <CheckCircle size={16} className="text-green-500"/> Done for today
-                    </div>
-                  )}
-                </div>
+                  );
+                })()}
+                {todayAttd && (
+                  <div className="flex items-center gap-2 text-xs text-gray-400">
+                    {todayAttd.isLate && <span className="text-yellow-600 font-semibold">⚠️ Late by {todayAttd.lateByMinutes} mins</span>}
+                    <span>{(todayAttd.sessions||[]).length} session{(todayAttd.sessions||[]).length !== 1 ? "s" : ""} today</span>
+                  </div>
+                )}
               </div>
             </div>
 
