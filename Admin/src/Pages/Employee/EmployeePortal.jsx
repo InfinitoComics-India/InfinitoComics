@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 import {
   Clock, CheckCircle, AlertTriangle, CalendarOff, IndianRupee,
@@ -57,8 +58,23 @@ const EmployeePortal = () => {
   const myId     = admin?._id || admin?.id || "";
   const myName   = admin?.name || admin?.email?.split("@")[0] || "Employee";
   const myEmail  = admin?.email || "";
+  const location = useLocation();
 
-  const [tab,        setTab]        = useState("attendance");
+  // Derive active tab from URL path
+  const PATH_TO_TAB = {
+    "/hr/attendance":  "attendance",
+    "/hr/worklog":     "worklog",
+    "/hr/leaves":      "leave",
+    "/hr/payslips":    "payslips",
+    "/hr/goals":       "goals",
+    "/hr/documents":   "documents",
+    "/hr/self-service":"requests",
+    "/messages":       "messages",
+    "/employee-portal":"attendance",
+  };
+  const currentPath = location.pathname.replace(/^\/admin/, "");
+  const tab = PATH_TO_TAB[currentPath] || "attendance";
+  const setTab = () => {}; // no-op — navigation handled by sidebar
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState("");
   const [success,    setSuccess]    = useState("");
@@ -288,21 +304,6 @@ const EmployeePortal = () => {
       </div>
 
       {/* Tab bar */}
-      <div className="bg-white border-b px-6 flex gap-0 overflow-x-auto">
-        {TABS.map(t => {
-          const Icon = t.icon;
-          return (
-            <button key={t.key} onClick={() => setTab(t.key)}
-              className={`flex items-center gap-1.5 px-4 py-3 text-xs font-bold uppercase tracking-wider whitespace-nowrap border-b-2 transition ${
-                tab===t.key?"border-[#DD1215] text-[#DD1215]":"border-transparent text-gray-500 hover:text-gray-800"}`}>
-              <Icon size={13}/>{t.label}
-              {t.key==="messages" && msgUnread>0 && (
-                <span className="bg-[#DD1215] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full min-w-[16px] text-center leading-none">{msgUnread}</span>
-              )}
-            </button>
-          );
-        })}
-      </div>
 
       <div className="max-w-5xl mx-auto px-6 py-6 space-y-5">
         {error   && <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded flex items-center gap-2"><AlertTriangle size={14}/>{error}<button onClick={()=>setError("")} className="ml-auto text-red-400 hover:text-red-700">✕</button></div>}
