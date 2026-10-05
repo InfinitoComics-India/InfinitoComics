@@ -112,7 +112,7 @@ const ShopMain = () => {
             Categories
           </h2>
           <button
-            onClick={() => navigate("/catalog")}
+            onClick={() => navigate("/products")}
             className="text-xs md:text-sm font-bold text-[#DD1215] hover:text-red-700 uppercase tracking-wider flex items-center gap-1 cursor-pointer transition py-1.5 px-3 rounded hover:bg-red-50 border border-red-200 font-dmsans"
           >
             <span>View All</span>

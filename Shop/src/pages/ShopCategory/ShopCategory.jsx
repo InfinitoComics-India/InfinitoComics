@@ -72,11 +72,11 @@ const ShopCategory = () => {
         fetchCategories(),
       ]);
       if (cancelled) return;
-      setProducts(Array.isArray(prods) ? prods : []);
+      const isAll = !categoryName || categoryName.toLowerCase() === "all";
       const match = Array.isArray(cats)
         ? cats.find((c) => c.slug === categoryName)
         : null;
-      setCategoryLabel(match?.name || categoryName || "All Products");
+      setCategoryLabel(isAll ? "All Products" : (match?.name || categoryName));
       setLoading(false);
     })();
     return () => {
