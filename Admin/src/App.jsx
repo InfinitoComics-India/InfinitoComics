@@ -93,7 +93,7 @@ function App() {
             <ProtectedRoute allowedRoles={EMP}><EmployeePortal /></ProtectedRoute>
           } />
           {/* Employee portal sections — sidebar links render EmployeePortal with correct tab */}
-          {["/hr/attendance","/hr/worklog","/hr/leaves","/hr/goals","/hr/documents","/hr/self-service"].map(path => (
+          {["/hr/attendance","/hr/worklog","/hr/leaves","/hr/goals","/hr/documents","/hr/self-service","/hr/chat"].map(path => (
             <Route key={`emp-${path}`} path={path} element={
               <ProtectedRoute allowedRoles={[...HR_VIEW,"employee"]}><EmployeePortal /></ProtectedRoute>
             } />

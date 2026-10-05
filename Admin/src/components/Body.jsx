@@ -58,7 +58,7 @@ const Body = () => {
   useEffect(() => {
     const roles   = getAdminRoles();
     const empOnly = roles.length > 0 && roles.every(r => r === "employee");
-    const ALLOWED = ["/employee-portal","/hr/worklog","/hr/attendance","/hr/leaves","/hr/goals","/hr/documents","/hr/self-service","/messages"];
+    const ALLOWED = ["/employee-portal","/hr/worklog","/hr/attendance","/hr/leaves","/hr/goals","/hr/documents","/hr/self-service","/hr/chat","/messages"];
     const path = location.pathname.replace(/^\/admin/, "") || "/";
     if (empOnly && !ALLOWED.some(a => path.startsWith(a))) {
       navigate("/employee-portal", { replace: true });
