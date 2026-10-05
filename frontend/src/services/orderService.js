@@ -33,6 +33,140 @@ export const saveDeliveryAddress = (addr) => {
   }
 };
 
+const ADDRESSES_LIST_KEY = "infinito_saved_addresses";
+
+export const getSavedAddresses = () => {
+  try {
+    const raw = localStorage.getItem(ADDRESSES_LIST_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+
+  const currentDefault = getDeliveryAddress();
+  const initial = [
+    {
+      id: "addr_default_1",
+      name: "Default Address",
+      phone: "+91 98765 43210",
+      line1: currentDefault.line1 || DEFAULT_ADDRESS.line1,
+      city: currentDefault.city || DEFAULT_ADDRESS.city,
+      state: currentDefault.state || DEFAULT_ADDRESS.state,
+      pincode: currentDefault.pincode || DEFAULT_ADDRESS.pincode,
+      country: currentDefault.country || "India",
+      type: "Home",
+      isDefault: true,
+    },
+  ];
+  try {
+    localStorage.setItem(ADDRESSES_LIST_KEY, JSON.stringify(initial));
+  } catch {}
+  return initial;
+};
+
+export const saveNewAddress = (addr) => {
+  try {
+    const list = getSavedAddresses();
+    const newId = `addr_${Date.now()}`;
+    const formatted = `${addr.line1 || ''}\n${addr.city || ''}, ${addr.state || ''}\n${addr.pincode || ''}, ${addr.country || 'India'}`.trim();
+    
+    if (addr.isDefault || list.length === 0) {
+      list.forEach((a) => (a.isDefault = false));
+    }
+    
+    const entry = {
+      ...addr,
+      id: newId,
+      formatted,
+      isDefault: Boolean(addr.isDefault || list.length === 0),
+    };
+    
+    list.unshift(entry);
+    localStorage.setItem(ADDRESSES_LIST_KEY, JSON.stringify(list));
+    
+    if (entry.isDefault) {
+      saveDeliveryAddress(entry);
+    }
+    return entry;
+  } catch (e) {
+    console.error("Failed to add address:", e);
+    return addr;
+  }
+};
+
+export const updateSavedAddress = (id, updatedFields) => {
+  try {
+    const list = getSavedAddresses();
+    const index = list.findIndex((a) => a.id === id);
+    if (index !== -1) {
+      if (updatedFields.isDefault) {
+        list.forEach((a) => (a.isDefault = false));
+      }
+      list[index] = { ...list[index], ...updatedFields };
+      localStorage.setItem(ADDRESSES_LIST_KEY, JSON.stringify(list));
+      if (list[index].isDefault) {
+        saveDeliveryAddress(list[index]);
+      }
+      return list[index];
+    }
+  } catch (e) {
+    console.error("Failed to update address:", e);
+  }
+  return null;
+};
+
+export const deleteSavedAddress = (id) => {
+  try {
+    let list = getSavedAddresses();
+    const toDelete = list.find((a) => a.id === id);
+    list = list.filter((a) => a.id !== id);
+    if (toDelete?.isDefault && list.length > 0) {
+      list[0].isDefault = true;
+      saveDeliveryAddress(list[0]);
+    }
+    localStorage.setItem(ADDRESSES_LIST_KEY, JSON.stringify(list));
+    return list;
+  } catch (e) {
+    console.error("Failed to delete address:", e);
+    return [];
+  }
+};
+
+export const setDefaultSavedAddress = (id) => {
+  try {
+    const list = getSavedAddresses();
+    let defaultItem = null;
+    list.forEach((a) => {
+      if (a.id === id) {
+        a.isDefault = true;
+        defaultItem = a;
+      } else {
+        a.isDefault = false;
+      }
+    });
+    localStorage.setItem(ADDRESSES_LIST_KEY, JSON.stringify(list));
+    if (defaultItem) {
+      saveDeliveryAddress(defaultItem);
+    }
+    return list;
+  } catch (e) {
+    console.error("Failed to set default address:", e);
+    return [];
+  }
+};
+
+export const getAllOrders = () => {
+  try {
+    const raw = localStorage.getItem(ORDERS_KEY);
+    const list = raw ? JSON.parse(raw) : [];
+    return list;
+  } catch (e) {
+    console.error("Failed to fetch all orders:", e);
+    return [];
+  }
+};
+
 export const formatOrderDate = (baseDate = new Date(), daysToAdd = 0) => {
   const d = new Date(baseDate);
   d.setDate(d.getDate() + daysToAdd);

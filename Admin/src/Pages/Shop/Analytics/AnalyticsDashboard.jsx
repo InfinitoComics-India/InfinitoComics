@@ -317,13 +317,10 @@ const AnalyticsDashboard = () => {
           <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
             <span>Shop</span>
             <span>/</span>
-            <span className="text-[#DD1215]">Section 3: Analytics & Reports</span>
+            <span className="text-[#DD1215]">Analytics & Reports</span>
           </div>
           <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight mt-1 flex items-center gap-2">
             <span>Analytics & Reports</span>
-            <span className="text-sm px-2.5 py-0.5 bg-red-100 text-[#DD1215] rounded-full font-bold">
-              💰 SECTION 3
-            </span>
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             Real-time sales performance, inventory valuations, and customer lifetime value metrics.
@@ -353,13 +350,13 @@ const AnalyticsDashboard = () => {
         </div>
       </div>
 
-      {/* ── Section 3 Subtabs Navigation ── */}
+      {/* ── Subtabs Navigation ── */}
       <div className="flex items-center gap-2 border-b border-gray-200 overflow-x-auto pb-1 no-scrollbar">
         {[
-          { key: 'overview', label: '3.1 Dashboard (Overview)', icon: BarChart3 },
-          { key: 'sales', label: '3.2 Sales Reports', icon: TrendingUp },
-          { key: 'inventory', label: '3.3 Inventory Reports', icon: Package },
-          { key: 'customers', label: '3.4 Customer Reports', icon: Users },
+          { key: 'overview', label: 'Dashboard (Overview)', icon: BarChart3 },
+          { key: 'sales', label: 'Sales Reports', icon: TrendingUp },
+          { key: 'inventory', label: 'Inventory Reports', icon: Package },
+          { key: 'customers', label: 'Customer Reports', icon: Users },
         ].map((tab) => {
           const isActive = activeTab === tab.key;
           const Icon = tab.icon;

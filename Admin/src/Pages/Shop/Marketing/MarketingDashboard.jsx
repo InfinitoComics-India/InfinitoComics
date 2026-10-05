@@ -267,13 +267,10 @@ const MarketingDashboard = () => {
           <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
             <span>Shop</span>
             <span>/</span>
-            <span className="text-[#DD1215]">Section 4: Marketing & Promotions</span>
+            <span className="text-[#DD1215]">Marketing & Promotions</span>
           </div>
           <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight mt-1 flex items-center gap-2">
             <span>Marketing & Promotions</span>
-            <span className="text-sm px-2.5 py-0.5 bg-red-100 text-[#DD1215] rounded-full font-bold">
-              🎨 SECTION 4
-            </span>
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             Create discount codes, automate promotional campaigns, and manage live shop frontend banners.
@@ -310,7 +307,7 @@ const MarketingDashboard = () => {
           }`}
         >
           <TagIcon size={15} className={activeTab === 'discounts' ? 'text-[#DD1215]' : 'text-gray-400'} />
-          <span>4.1 Discount Codes</span>
+          <span>Discount Codes</span>
           <span className="text-[10px] px-1.5 py-0.2 rounded-full font-black bg-gray-200 text-gray-800">
             {discountCodes.length}
           </span>
@@ -325,7 +322,7 @@ const MarketingDashboard = () => {
           }`}
         >
           <ImageIcon size={15} className={activeTab === 'banners' ? 'text-[#DD1215]' : 'text-gray-400'} />
-          <span>4.2 Banners & Promotions</span>
+          <span>Banners & Promotions</span>
           <span className="text-[10px] px-2 py-0.5 rounded-full font-black bg-emerald-100 text-emerald-800">
             Shop Frontend Live
           </span>
@@ -636,6 +633,35 @@ const MarketingDashboard = () => {
                     }))}
                   />
                 </div>
+
+                <div>
+                  <label className="block font-bold text-gray-700 uppercase mb-1">Background Picture (Image URL or Upload)</label>
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      value={promoBannerForm?.bgImageUrl || ''}
+                      onChange={(e) => setPromoBannerForm({ ...promoBannerForm, bgImageUrl: e.target.value })}
+                      placeholder="e.g. /products/banner.jpg or https://... or pick file"
+                    />
+                    <label className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded text-gray-700 font-bold text-xs cursor-pointer whitespace-nowrap">
+                      Browse
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              setPromoBannerForm({ ...promoBannerForm, bgImageUrl: reader.result });
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
               </div>
 
               {/* Live Preview Card */}
@@ -643,7 +669,10 @@ const MarketingDashboard = () => {
                 <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 block">
                   Live Shop Homepage Preview
                 </span>
-                <div className="relative w-full rounded-xl overflow-hidden border border-gray-300 shadow-md bg-gray-900 min-h-[170px] flex items-center p-6 text-white">
+                <div
+                  className="relative w-full rounded-xl overflow-hidden border border-gray-300 shadow-md bg-gray-900 min-h-[170px] flex items-center p-6 text-white bg-cover bg-center"
+                  style={promoBannerForm?.bgImageUrl ? { backgroundImage: `url(${promoBannerForm.bgImageUrl})` } : undefined}
+                >
                   <div className="relative z-10 max-w-[70%] space-y-1">
                     <span className="text-[10px] font-black uppercase tracking-widest text-[#DD1215] bg-black/40 px-2 py-0.5 rounded">
                       {promoBannerForm?.discountCode || 'PROMO'}
@@ -756,6 +785,52 @@ const MarketingDashboard = () => {
                           setHeroSlides(updated);
                         }}
                       />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block font-semibold text-gray-600 mb-1">Background Picture (Image URL or Upload)</label>
+                      <div className="flex gap-2 items-center">
+                        <Input
+                          value={slide.imageUrl || slide.image || ''}
+                          onChange={(e) => {
+                            const updated = [...heroSlides];
+                            updated[idx].imageUrl = e.target.value;
+                            updated[idx].image = e.target.value;
+                            setHeroSlides(updated);
+                          }}
+                          placeholder="e.g. /products/hero-slide.jpg or https://... or pick file"
+                        />
+                        <label className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded text-gray-700 font-bold text-xs cursor-pointer whitespace-nowrap">
+                          Browse
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = () => {
+                                  const updated = [...heroSlides];
+                                  updated[idx].imageUrl = reader.result;
+                                  updated[idx].image = reader.result;
+                                  setHeroSlides(updated);
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                      {(slide.imageUrl || slide.image) && (
+                        <div className="mt-2 h-16 w-32 rounded border border-gray-300 overflow-hidden bg-gray-100">
+                          <img
+                            src={slide.imageUrl || slide.image}
+                            alt={`Slide ${idx + 1} background`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

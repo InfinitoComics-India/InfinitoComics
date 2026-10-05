@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { FiSearch, FiMenu, FiX } from "react-icons/fi";
 import logo from "../../../assets/Logo.png";
-import { Heart, ShoppingBag } from "lucide-react";
+import { Heart, ShoppingBag, Package } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import UserIcon from "../../../assets/Images/UserIcon.png";
@@ -81,14 +81,17 @@ const Header = () => {
           {/* Login / User */}
           <div className="hidden cursor-pointer md:block">
             {user ? (
-              <div
-                className="flex items-center gap-2 pointer border border-white px-4 py-1.5 uppercase text-xs font-semibold"
-                onClick={() => navigate("/dashboard")}
-              >
-                <img src={UserIcon} alt="User Icon" className="w-4 h-4" />
-                <span className="tracking-wide">
-                  Hi, {user?.name?.split(" ")[0] || "Guest"}!
-                </span>
+              <div className="flex items-center gap-2">
+                <div
+                  className="flex items-center gap-2 pointer border border-white px-3 py-1.5 uppercase text-xs font-semibold hover:bg-white hover:text-black transition"
+                  onClick={() => navigate("/dashboard")}
+                  title="My Account"
+                >
+                  <img src={UserIcon} alt="User Icon" className="w-4 h-4" />
+                  <span className="tracking-wide">
+                    Hi, {user?.name?.split(" ")[0] || "Guest"}!
+                  </span>
+                </div>
               </div>
             ) : (
               <button
@@ -170,6 +173,19 @@ const Header = () => {
       {/* Mobile Dropdown Menu */}
       {menuOpen && (
         <div className="md:hidden bg-[#171717] text-sm text-gray-300 px-4 py-6 space-y-4">
+          {user ? (
+            <div className="pb-3 border-b border-gray-800 space-y-2">
+              <Link to="/dashboard" className="block font-bold text-white flex items-center gap-2" onClick={() => setMenuOpen(false)}>
+                <img src={UserIcon} alt="User" className="w-4 h-4" /> My Account ({user?.name?.split(" ")[0] || "Profile"})
+              </Link>
+            </div>
+          ) : (
+            <div className="pb-3 border-b border-gray-800">
+              <Link to="/login" className="block font-bold text-white uppercase text-xs tracking-wider" onClick={() => setMenuOpen(false)}>
+                LOG IN | SIGN UP &gt;
+              </Link>
+            </div>
+          )}
           <Link to="/characters" className="block font-bold hover:text-white" onClick={() => setMenuOpen(false)}>
             Characters
           </Link>

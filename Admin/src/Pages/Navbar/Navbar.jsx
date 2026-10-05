@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useLayoutEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import URLs from '../../Utils/utils.js';
 import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, ChevronDown, Mail, UserCog, Bell, ScrollText, CalendarDays, CalendarOff, Kanban, UserCheck, FolderKanban, TrendingUp, Target, Award as AwardIcon, Building2, IndianRupee, UserPlus, FileArchive, UserSearch, MessagesSquare, BookMarked, LifeBuoy, Sparkles, ShoppingBag, Package, FolderOpen, BarChart3, ClipboardList } from "lucide-react";
@@ -77,10 +77,10 @@ const SHOP_ITEMS = [
     roles: SHOP_ALL,
     isParent: true,
     subItems: [
-      { label: "3.1 Overview",          to: "/shop/analytics?tab=overview",  icon: BarChart3,   roles: SHOP_ALL },
-      { label: "3.2 Sales Reports",     to: "/shop/analytics?tab=sales",     icon: TrendingUp,  roles: SHOP_ALL },
-      { label: "3.3 Inventory Reports", to: "/shop/analytics?tab=inventory", icon: Package,     roles: SHOP_ALL },
-      { label: "3.4 Customer Reports",  to: "/shop/analytics?tab=customers", icon: Users,       roles: SHOP_ALL },
+      { label: "Overview",          to: "/shop/analytics?tab=overview",  icon: BarChart3,   roles: SHOP_ALL },
+      { label: "Sales Reports",     to: "/shop/analytics?tab=sales",     icon: TrendingUp,  roles: SHOP_ALL },
+      { label: "Inventory Reports", to: "/shop/analytics?tab=inventory", icon: Package,     roles: SHOP_ALL },
+      { label: "Customer Reports",  to: "/shop/analytics?tab=customers", icon: Users,       roles: SHOP_ALL },
     ]
   },
   { 
@@ -89,8 +89,8 @@ const SHOP_ITEMS = [
     roles: SHOP_ALL,
     isParent: true,
     subItems: [
-      { label: "4.1 Discount Codes",      to: "/shop/marketing?tab=discounts", icon: Sparkles,  roles: SHOP_ALL },
-      { label: "4.2 Banners & Promos",    to: "/shop/marketing?tab=banners",   icon: Sparkles,  roles: SHOP_ALL },
+      { label: "Discount Codes",      to: "/shop/marketing?tab=discounts", icon: Sparkles,  roles: SHOP_ALL },
+      { label: "Banners & Promotions",to: "/shop/marketing?tab=banners",   icon: Sparkles,  roles: SHOP_ALL },
     ]
   },
 ];
@@ -99,13 +99,14 @@ const Navbar = () => {
   const [collapsed, setCollapsed]   = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hrOpen, setHrOpen]         = useState(false); // HR accordion open/closed
-  const [shopOpen, setShopOpen]     = useState(false); // Shop accordion open/closed
+  const [shopOpen, setShopOpen]     = useState(true); // Shop accordion open/closed (defaults to open)
   const [parentSectionsOpen, setParentSectionsOpen] = useState({
     Products: true,
     Orders: true,
     "Analytics & Reports": true,
     "Marketing & Promotions": true,
   });
+  const desktopNavRef = useRef(null);
   const location = useLocation();
   const token = localStorage.getItem("authToken");
   const roles = getRoles();
@@ -119,6 +120,18 @@ const Navbar = () => {
   // If any HR/Shop route is currently active, keep accordion open
   const isHRActive   = visibleHR.some(item => location.pathname.startsWith(`/admin${item.to}`) || location.pathname.startsWith(item.to));
   const isShopActive = location.pathname.startsWith('/admin/shop') || location.pathname.startsWith('/shop');
+
+  // Track and persist scroll position of the sidebar navigation
+  const handleNavScroll = (e) => {
+    sessionStorage.setItem('admin_sidebar_scroll', String(e.currentTarget.scrollTop));
+  };
+
+  useLayoutEffect(() => {
+    const saved = sessionStorage.getItem('admin_sidebar_scroll');
+    if (saved && desktopNavRef.current) {
+      desktopNavRef.current.scrollTop = Number(saved);
+    }
+  }, [location.pathname, location.search]);
 
   const toggleParentSection = (label) => {
     setParentSectionsOpen((prev) => ({
@@ -143,7 +156,7 @@ const Navbar = () => {
     return location.pathname.startsWith(`/admin${to}`) || location.pathname === to || location.pathname.startsWith(`${to}/`);
   };
 
-  const SidebarContent = ({ onNavClick }) => (
+  const renderSidebarContent = (onNavClick, isMobile = false) => (
     <div className="flex flex-col h-full">
       {/* Logo + collapse button */}
       <div className={`flex items-center ${collapsed ? "justify-center" : "justify-between"} px-4 py-4 border-b border-gray-700`}>
@@ -161,7 +174,11 @@ const Navbar = () => {
       </div>
 
       {/* Nav items */}
-      <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
+      <nav
+        ref={!isMobile ? desktopNavRef : undefined}
+        onScroll={!isMobile ? handleNavScroll : undefined}
+        className="flex-1 overflow-y-auto py-4 px-2 space-y-1"
+      >
 
         {/* ── Regular items ── */}
         {visibleNav.map(({ label, to, icon: Icon }) => (
@@ -408,7 +425,7 @@ const Navbar = () => {
           ${collapsed ? "w-16" : "w-60"}
         `}
       >
-        <SidebarContent />
+        {renderSidebarContent()}
       </aside>
 
       {/* ── Mobile Top Bar ── */}
@@ -432,7 +449,7 @@ const Navbar = () => {
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
           {/* Drawer */}
           <div className="relative w-64 bg-gray-900 h-full shadow-2xl flex flex-col pt-16">
-            <SidebarContent onNavClick={() => setMobileOpen(false)} />
+            {renderSidebarContent(() => setMobileOpen(false), true)}
           </div>
         </div>
       )}
