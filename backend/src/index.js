@@ -56,6 +56,7 @@ import wikiRoutes from './routes/wiki-routes.js';
 import selfServiceRoutes from './routes/selfService-routes.js';
 import aiRoutes from './routes/ai-routes.js';
 import dailyWorkLogRoutes from './routes/dailyWorkLog-routes.js';
+import directMessageRoutes from './routes/directMessage-routes.js';
 import productRoutes from './routes/product-routes.js';
 import categoryRoutes from './routes/category-routes.js';
 import inventoryRoutes from './routes/inventory-routes.js';
@@ -162,6 +163,7 @@ app.use('/hr/wiki',           wikiRoutes);
 app.use('/hr/self-service',   selfServiceRoutes);
 app.use('/hr/ai',             aiRoutes);
 app.use('/hr/worklog',        dailyWorkLogRoutes);
+app.use('/messages',          directMessageRoutes);
 
 // Shop routes
 app.use('/shop/products',     productRoutes);

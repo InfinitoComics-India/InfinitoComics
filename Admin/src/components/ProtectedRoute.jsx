@@ -33,6 +33,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     "/hr/goals",
     "/hr/documents",
     "/hr/self-service",
+    "/messages",
   ];
   const normalizedPath = currentPath.replace(/^\/admin/, "") || "/";
   if (empOnly && !EMPLOYEE_ALLOWED.some(a => normalizedPath.startsWith(a))) {
