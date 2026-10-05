@@ -268,7 +268,9 @@ const EmployeePortal = () => {
   };
 
   const { minsLeft, timeStr } = countdown;
-  const workLocked = myLog?.isLocked;
+  // Allow submission if not locked, OR if locked but was auto_leave (late submission allowed)
+  const workLocked   = myLog?.isLocked && myLog?.status !== "auto_leave";
+  const isAutoLeave  = myLog?.status === "auto_leave";
   const workSubmitted = myLog && ["submitted","edited"].includes(myLog.status);
 
   // Build monthly calendar grid
@@ -459,7 +461,8 @@ const EmployeePortal = () => {
               <div className="bg-gray-900 text-white px-6 py-4 flex items-center justify-between">
                 <div><p className="font-black text-lg">{fmt(new Date())}</p><p className="text-xs text-gray-400">Your daily work update</p></div>
                 {workLocked && <div className="flex items-center gap-1.5 bg-red-900/50 text-red-300 px-3 py-1.5 rounded text-xs font-semibold"><Lock size={12}/>Locked</div>}
-                {workSubmitted && !workLocked && <div className="flex items-center gap-1.5 bg-green-900/50 text-green-300 px-3 py-1.5 rounded text-xs font-semibold"><CheckCircle size={12}/>Submitted {fmtTime(myLog.submittedAt)}</div>}
+                {isAutoLeave && <div className="flex items-center gap-1.5 bg-orange-900/50 text-orange-300 px-3 py-1.5 rounded text-xs font-semibold"><AlertTriangle size={12}/>Auto Leave — Submit to override</div>}
+                {workSubmitted && !workLocked && !isAutoLeave && <div className="flex items-center gap-1.5 bg-green-900/50 text-green-300 px-3 py-1.5 rounded text-xs font-semibold"><CheckCircle size={12}/>Submitted {fmtTime(myLog.submittedAt)}</div>}
               </div>
               <div className="p-6">
                 {workLocked ? (
@@ -470,6 +473,12 @@ const EmployeePortal = () => {
                   </div>
                 ) : (
                   <form onSubmit={handleWorkSubmit} className="space-y-4">
+                    {isAutoLeave && (
+                      <div className="bg-orange-50 border border-orange-300 text-orange-800 text-sm px-4 py-3 rounded flex items-center gap-2">
+                        <AlertTriangle size={16}/>
+                        <span>You were auto-marked as <strong>on leave</strong> for missing the deadline. Submit your work now to override it.</span>
+                      </div>
+                    )}
                     <div>
                       <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">What did you work on today? *</label>
                       <textarea rows={6} value={workDesc} onChange={e=>setWorkDesc(e.target.value)}
