@@ -149,11 +149,32 @@ const Navbar = () => {
   const isActive = (to) => {
     if (to === "/") return location.pathname === "/admin" || location.pathname === "/admin/" || location.pathname === "/";
     const [path, query] = to.split('?');
+    const normCurrentPath = location.pathname.startsWith('/admin') ? location.pathname.replace(/^\/admin/, '') : location.pathname;
+    const normTarget = path.startsWith('/admin') ? path.replace(/^\/admin/, '') : path;
+
     if (query) {
       const fullCurrent = `${location.pathname}${location.search}`;
-      return fullCurrent.includes(query) && (location.pathname.startsWith(`/admin${path}`) || location.pathname === path || location.pathname.startsWith(`${path}/`));
+      const pathMatches = normCurrentPath === normTarget || normCurrentPath.startsWith(`${normTarget}/`);
+      return pathMatches && fullCurrent.includes(query);
     }
-    return location.pathname.startsWith(`/admin${to}`) || location.pathname === to || location.pathname.startsWith(`${to}/`);
+
+    // Exact path match
+    if (normCurrentPath === normTarget) {
+      return true;
+    }
+
+    // Do NOT highlight "All Products" when on "Add Product" (/shop/products/new)
+    if (normTarget === "/shop/products" && normCurrentPath === "/shop/products/new") {
+      return false;
+    }
+
+    // Do NOT highlight "Categories" when on "Add Category" (/shop/categories/new)
+    if (normTarget === "/shop/categories" && normCurrentPath === "/shop/categories/new") {
+      return false;
+    }
+
+    // Sub-path match (e.g. editing a product /shop/products/:id where id is not new)
+    return normCurrentPath.startsWith(`${normTarget}/`);
   };
 
   const renderSidebarContent = (onNavClick, isMobile = false) => (
@@ -243,15 +264,15 @@ const Navbar = () => {
                         {!collapsed ? (
                           <button
                             onClick={() => toggleParentSection(item.label)}
-                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-150 cursor-pointer
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-150 cursor-pointer text-left
                               ${isSectionActive ? "bg-gray-700 text-white font-medium" : "text-gray-400 hover:bg-gray-700 hover:text-white font-medium"}
                             `}
                           >
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2.5 min-w-0">
                               <Icon size={17} className="shrink-0" />
-                              <span className="text-xs">{item.label}</span>
+                              <span className="text-xs whitespace-nowrap font-medium">{item.label}</span>
                             </div>
-                            <div className={`transition-transform duration-200 ${(isSectionOpen || isSectionActive) ? "rotate-180" : ""}`}>
+                            <div className={`transition-transform duration-200 shrink-0 ml-1.5 ${(isSectionOpen || isSectionActive) ? "rotate-180" : ""}`}>
                               <ChevronDown size={14} />
                             </div>
                           </button>
@@ -283,7 +304,7 @@ const Navbar = () => {
                                 `}
                               >
                                 <div className="w-1 h-1 rounded-full bg-current shrink-0"></div>
-                                {!collapsed && <span>{label}</span>}
+                                {!collapsed && <span className="whitespace-nowrap">{label}</span>}
                               </Link>
                             ))}
                           </div>
@@ -422,7 +443,7 @@ const Navbar = () => {
       {/* ── Desktop Sidebar ── */}
       <aside
         className={`hidden md:flex flex-col fixed top-0 left-0 h-screen bg-gray-900 z-50 transition-all duration-300 shadow-xl
-          ${collapsed ? "w-16" : "w-60"}
+          ${collapsed ? "w-16" : "w-64"}
         `}
       >
         {renderSidebarContent()}
