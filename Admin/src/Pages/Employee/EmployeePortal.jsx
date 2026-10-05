@@ -3,7 +3,8 @@ import axios from "axios";
 import {
   Clock, CheckCircle, AlertTriangle, CalendarOff, IndianRupee,
   Target, FileText, User, Send, Loader, LogIn, LogOut as LogOutIcon,
-  ClipboardList, Headphones, TrendingUp, Lock
+  ClipboardList, Headphones, TrendingUp, Lock, MessageCircle, Inbox,
+  SendHorizonal, Trash2, Plus, X, ChevronDown
 } from "lucide-react";
 
 const BASE = import.meta.env.VITE_BASE_URL;
@@ -22,6 +23,14 @@ const STATUS_COLORS = {
 const fmt      = (d) => d ? new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "—";
 const fmtTime  = (d) => d ? new Date(d).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}) : "—";
 const fmtShort = (d) => d ? new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short"}) : "—";
+const fmtAgo   = (d) => {
+  if (!d) return "";
+  const diff = Math.floor((Date.now() - new Date(d)) / 1000);
+  if (diff < 60)    return "just now";
+  if (diff < 3600)  return `${Math.floor(diff/60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+  return new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short"});
+};
 const INR      = (n) => `₹${Number(n||0).toLocaleString("en-IN")}`;
 
 // Countdown to midnight IST
@@ -40,6 +49,7 @@ const TABS = [
   { key:"documents",   label:"Documents",    icon:FileText       },
   { key:"requests",    label:"Requests",     icon:Headphones     },
   { key:"performance", label:"Performance",  icon:TrendingUp     },
+  { key:"messages",    label:"Messages",     icon:MessageCircle  },
 ];
 
 const EmployeePortal = () => {
@@ -96,6 +106,21 @@ const EmployeePortal = () => {
   // Performance
   const [perfHistory,setPerfHistory]= useState([]);
 
+  // Messages
+  const [msgTab,     setMsgTab]     = useState("inbox");
+  const [inbox,      setInbox]      = useState([]);
+  const [sentMsgs,   setSentMsgs]   = useState([]);
+  const [contacts,   setContacts]   = useState([]);
+  const [selMsg,     setSelMsg]     = useState(null);
+  const [composing,  setComposing]  = useState(false);
+  const [msgUnread,  setMsgUnread]  = useState(0);
+  const [toId,       setToId]       = useState("");
+  const [toSearch,   setToSearch]   = useState("");
+  const [msgSubject, setMsgSubject] = useState("");
+  const [msgBody,    setMsgBody]    = useState("");
+  const [msgSending, setMsgSending] = useState(false);
+  const [dropOpen,   setDropOpen]   = useState(false);
+
   useEffect(() => {
     const t = setInterval(() => setCountdown(getCountdown()), 30000);
     return () => clearInterval(t);
@@ -111,6 +136,7 @@ const EmployeePortal = () => {
     if (tab === "documents")   loadDocs();
     if (tab === "requests")    loadRequests();
     if (tab === "performance") loadPerformance();
+    if (tab === "messages")    { loadInbox(); loadSentMsgs(); loadContacts(); loadMsgUnread(); }
   }, [tab]);
 
   useEffect(() => { if (tab === "attendance") loadMonthlyAttd(); }, [attdMonth, attdYear]);
@@ -153,6 +179,30 @@ const EmployeePortal = () => {
   };
   const loadPerformance = async () => {
     try { const r = await axios.get(`${BASE}/hr/performance/${myId}`, auth()); setPerfHistory(r.data.data||[]); } catch {}
+  };
+
+  const loadInbox     = async () => { try { const r = await axios.get(`${BASE}/messages/inbox`, auth()); setInbox(r.data.data||[]); } catch {} };
+  const loadSentMsgs  = async () => { try { const r = await axios.get(`${BASE}/messages/sent`, auth()); setSentMsgs(r.data.data||[]); } catch {} };
+  const loadContacts  = async () => { try { const r = await axios.get(`${BASE}/messages/contacts`, auth()); setContacts(r.data.data||[]); } catch {} };
+  const loadMsgUnread = async () => { try { const r = await axios.get(`${BASE}/messages/unread-count`, auth()); setMsgUnread(r.data.count||0); } catch {} };
+
+  const openMsg = async (msg) => {
+    setSelMsg(msg);
+    if (!msg.isRead && msgTab === "inbox") {
+      try { await axios.patch(`${BASE}/messages/read/${msg._id}`, {}, auth()); setInbox(p=>p.map(m=>m._id===msg._id?{...m,isRead:true}:m)); setMsgUnread(c=>Math.max(0,c-1)); } catch {}
+    }
+  };
+  const deleteMsg = async (id) => {
+    try { await axios.delete(`${BASE}/messages/delete/${id}`, auth()); setInbox(p=>p.filter(m=>m._id!==id)); setSentMsgs(p=>p.filter(m=>m._id!==id)); if(selMsg?._id===id)setSelMsg(null); setSuccess("Deleted."); } catch {}
+  };
+  const sendMsg = async (e) => {
+    e.preventDefault();
+    if (!toId) { setError("Select a recipient."); return; }
+    if (!msgBody.trim()) { setError("Message is required."); return; }
+    try { setMsgSending(true); setError("");
+      await axios.post(`${BASE}/messages/send`, { receiverId:toId, subject:msgSubject, body:msgBody }, auth());
+      setSuccess("✅ Sent!"); setComposing(false); setToId(""); setToSearch(""); setMsgSubject(""); setMsgBody(""); loadSentMsgs();
+    } catch(e) { setError(e.response?.data?.message||"Failed."); } finally { setMsgSending(false); }
   };
 
   // ── Actions ──────────────────────────────────────────────────
@@ -246,6 +296,9 @@ const EmployeePortal = () => {
               className={`flex items-center gap-1.5 px-4 py-3 text-xs font-bold uppercase tracking-wider whitespace-nowrap border-b-2 transition ${
                 tab===t.key?"border-[#DD1215] text-[#DD1215]":"border-transparent text-gray-500 hover:text-gray-800"}`}>
               <Icon size={13}/>{t.label}
+              {t.key==="messages" && msgUnread>0 && (
+                <span className="bg-[#DD1215] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full min-w-[16px] text-center leading-none">{msgUnread}</span>
+              )}
             </button>
           );
         })}
@@ -697,6 +750,128 @@ const EmployeePortal = () => {
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* ── MESSAGES ── */}
+        {tab === "messages" && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            {/* List */}
+            <div className="bg-white border rounded-xl overflow-hidden flex flex-col">
+              <div className="flex border-b">
+                {["inbox","sent"].map(t => (
+                  <button key={t} onClick={() => { setMsgTab(t); setSelMsg(null); }}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-bold uppercase transition ${msgTab===t?"bg-[#DD1215] text-white":"text-gray-500 hover:bg-gray-50"}`}>
+                    {t==="inbox" ? <Inbox size={13}/> : <SendHorizonal size={13}/>}
+                    {t}
+                    {t==="inbox" && inbox.filter(m=>!m.isRead).length>0 && (
+                      <span className="bg-white text-[#DD1215] text-[9px] font-black px-1.5 py-0.5 rounded-full">{inbox.filter(m=>!m.isRead).length}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <div className="px-3 py-2 border-b">
+                <button onClick={() => { setComposing(true); setSelMsg(null); }}
+                  className="w-full flex items-center justify-center gap-1.5 bg-[#DD1215] text-white py-2 text-xs font-black uppercase rounded-lg hover:bg-red-700">
+                  <Plus size={13}/> Compose
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto divide-y" style={{maxHeight:"45vh"}}>
+                {(msgTab==="inbox"?inbox:sentMsgs).length===0
+                  ? <div className="text-center py-8"><MessageCircle size={24} className="mx-auto text-gray-200 mb-2"/><p className="text-xs text-gray-400">No messages</p></div>
+                  : (msgTab==="inbox"?inbox:sentMsgs).map(msg=>(
+                    <div key={msg._id} onClick={()=>openMsg(msg)}
+                      className={`px-4 py-3 cursor-pointer hover:bg-gray-50 transition ${selMsg?._id===msg._id?"bg-blue-50 border-l-2 border-l-[#DD1215]":""} ${!msg.isRead&&msgTab==="inbox"?"bg-blue-50/40":""}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-xs truncate ${!msg.isRead&&msgTab==="inbox"?"font-black text-gray-900":"font-semibold text-gray-700"}`}>
+                            {msgTab==="inbox"?msg.senderName:msg.receiverName}
+                          </p>
+                          {msg.subject && <p className="text-[10px] text-gray-500 truncate">{msg.subject}</p>}
+                          <p className="text-[10px] text-gray-400 truncate">{msg.body}</p>
+                        </div>
+                        <div className="shrink-0 flex flex-col items-end gap-1">
+                          <p className="text-[9px] text-gray-400">{fmtAgo(msg.createdAt)}</p>
+                          {!msg.isRead&&msgTab==="inbox"&&<span className="w-2 h-2 rounded-full bg-[#DD1215]"/>}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            {/* View / Compose */}
+            <div className="lg:col-span-2 bg-white border rounded-xl overflow-hidden flex flex-col" style={{minHeight:"360px"}}>
+              {composing ? (
+                <div className="flex flex-col h-full">
+                  <div className="px-5 py-3 border-b bg-gray-50 flex items-center justify-between">
+                    <p className="font-black text-sm text-gray-900">New Message</p>
+                    <button onClick={()=>setComposing(false)} className="text-gray-400 hover:text-gray-700"><X size={16}/></button>
+                  </div>
+                  <form onSubmit={sendMsg} className="flex-1 flex flex-col p-5 space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">To *</label>
+                      <div className="relative">
+                        <div onClick={()=>setDropOpen(o=>!o)} className="w-full border border-gray-300 px-3 py-2.5 text-xs cursor-pointer flex items-center justify-between rounded-lg">
+                          {contacts.find(c=>c._id===toId) ? <span className="font-semibold">{contacts.find(c=>c._id===toId).name}</span> : <span className="text-gray-400">Select recipient...</span>}
+                          <ChevronDown size={14} className="text-gray-400"/>
+                        </div>
+                        {dropOpen && (
+                          <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-20 mt-1 max-h-48 overflow-y-auto">
+                            <div className="p-2 border-b">
+                              <input value={toSearch} onChange={e=>setToSearch(e.target.value)} autoFocus placeholder="Search..." className="w-full text-xs focus:outline-none px-2 py-1.5 border border-gray-200 rounded"/>
+                            </div>
+                            {contacts.filter(c=>!toSearch||c.name?.toLowerCase().includes(toSearch.toLowerCase())||c.email?.toLowerCase().includes(toSearch.toLowerCase())).map(c=>(
+                              <div key={c._id} onClick={()=>{setToId(c._id);setToSearch("");setDropOpen(false);}} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer border-b last:border-0">
+                                <div className="w-6 h-6 rounded-full bg-[#DD1215] text-white flex items-center justify-center text-[10px] font-black shrink-0">{c.name?.[0]?.toUpperCase()||"?"}</div>
+                                <div><p className="text-xs font-bold">{c.name}</p><p className="text-[10px] text-gray-400">{c.email}</p></div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Subject</label>
+                      <input value={msgSubject} onChange={e=>setMsgSubject(e.target.value)} placeholder="Optional" className="w-full border border-gray-300 px-3 py-2 text-sm rounded-lg focus:outline-none focus:border-[#DD1215]"/>
+                    </div>
+                    <div className="flex-1 flex flex-col">
+                      <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Message *</label>
+                      <textarea value={msgBody} onChange={e=>setMsgBody(e.target.value)} required rows={5} placeholder="Type your message..." className="flex-1 border border-gray-300 px-3 py-2 text-sm rounded-lg focus:outline-none focus:border-[#DD1215] resize-none"/>
+                    </div>
+                    <button type="submit" disabled={msgSending} className="flex items-center justify-center gap-2 bg-[#DD1215] text-white py-2.5 text-xs font-black uppercase rounded-lg hover:bg-red-700 disabled:opacity-50">
+                      <Send size={13}/> {msgSending?"Sending...":"Send"}
+                    </button>
+                  </form>
+                </div>
+              ) : selMsg ? (
+                <div className="flex flex-col h-full">
+                  <div className="px-5 py-3 border-b bg-gray-50 flex items-start justify-between">
+                    <div>
+                      <p className="font-black text-gray-900">{selMsg.subject||"(No subject)"}</p>
+                      <p className="text-xs text-gray-500 mt-1">{msgTab==="inbox"?`From: ${selMsg.senderName}`:`To: ${selMsg.receiverName}`} · {fmtAgo(selMsg.createdAt)}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={()=>{setComposing(true);setToId(msgTab==="inbox"?selMsg.senderId:selMsg.receiverId);setMsgSubject(`Re: ${selMsg.subject||""}`);setMsgBody("");setSelMsg(null);}}
+                        className="flex items-center gap-1 border border-gray-300 px-3 py-1.5 text-xs font-bold hover:bg-gray-100 rounded-lg"><Send size={11}/> Reply</button>
+                      <button onClick={()=>deleteMsg(selMsg._id)} className="flex items-center gap-1 border border-red-200 text-red-500 px-3 py-1.5 text-xs font-bold hover:bg-red-50 rounded-lg"><Trash2 size={11}/> Delete</button>
+                      <button onClick={()=>setSelMsg(null)} className="text-gray-400 hover:text-gray-700 ml-1"><X size={15}/></button>
+                    </div>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-5">
+                    <div className="bg-gray-50 rounded-xl p-4 text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{selMsg.body}</div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center py-16 text-gray-300">
+                  <MessageCircle size={40} className="mb-3 opacity-30"/>
+                  <p className="font-bold text-gray-400 text-sm">Select a message or compose</p>
+                  <button onClick={()=>setComposing(true)} className="mt-4 flex items-center gap-2 bg-[#DD1215] text-white px-5 py-2.5 text-xs font-black uppercase rounded-lg hover:bg-red-700">
+                    <Plus size={13}/> Compose
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

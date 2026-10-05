@@ -43,6 +43,7 @@ import KnowledgeBase     from './Pages/HR/KnowledgeBase.jsx';
 import SelfServicePortal from './Pages/HR/SelfServicePortal.jsx';
 import AIAssistant       from './Pages/HR/AIAssistant.jsx';
 import DailyWorkLog      from './Pages/HR/DailyWorkLog.jsx';
+import DirectMessages    from './Pages/Messages/DirectMessages.jsx';
 import EmployeePortal    from './Pages/Employee/EmployeePortal.jsx';
 import { isEmployee }    from './Utils/auth.js';
 
@@ -262,6 +263,9 @@ function App() {
           } />
           <Route path="/hr/worklog" element={
             <ProtectedRoute allowedRoles={HR_VIEW}><DailyWorkLog /></ProtectedRoute>
+          } />
+          <Route path="/messages" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><DirectMessages /></ProtectedRoute>
           } />
 
           {/* ── Shop System ────────────────────────────────── */}

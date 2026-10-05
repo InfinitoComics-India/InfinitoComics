@@ -73,6 +73,7 @@ const Body = () => {
       "/hr/goals",
       "/hr/documents",
       "/hr/self-service",
+      "/messages",
     ];
     const path = location.pathname.replace(/^\/admin/, "") || "/";
     if (empOnly && !EMPLOYEE_ALLOWED.some(a => path.startsWith(a))) {
@@ -85,11 +86,14 @@ const Body = () => {
     if (mainRef.current) mainRef.current.scrollTop = 0;
   }, [location.pathname]);
 
-  // Poll unread count every 30s
+  // Poll unread count every 30s (notifications + messages)
   const fetchUnreadCount = useCallback(async () => {
     try {
-      const r = await axios.get(`${BASE}/hr/notifications/unread-count`, auth());
-      setUnreadCount(r.data.count || 0);
+      const [nRes, mRes] = await Promise.all([
+        axios.get(`${BASE}/hr/notifications/unread-count`, auth()),
+        axios.get(`${BASE}/messages/unread-count`, auth()),
+      ]);
+      setUnreadCount((nRes.data.count || 0) + (mRes.data.count || 0));
     } catch {}
   }, []);
 

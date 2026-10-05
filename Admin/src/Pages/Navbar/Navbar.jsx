@@ -5,26 +5,27 @@ import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle
 import { message, Popconfirm } from "antd";
 import { getRoles } from '../../Utils/auth.js';
 
-const HR_ALL = ["superadmin", "hr_manager", "manager", "team_lead"];
-const HR_AUDIT = ["superadmin", "hr_manager"];
-const SHOP_ALL = ["superadmin", "shop_admin"];
-const EMP_ALL = [...HR_ALL, "employee"]; // visible to all roles incl. employees
+const HR_ALL = ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin","shop_admin"];
+const HR_AUDIT = ["superadmin","hr_manager"];
+const SHOP_ALL = ["superadmin","shop_admin"];
+const EMP_ALL  = [...HR_ALL, "employee"];
 
 // ── Regular nav items (above HR section) ────────────────────
 const NAV_ITEMS = [
-  { label: "Home", to: "/", icon: Home, roles: ["superadmin", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin"] },
-  { label: "Comics", to: "/comic", icon: BookOpen, roles: ["superadmin", "comics_admin"] },
-  { label: "Characters", to: "/characters", icon: User, roles: ["superadmin", "character_admin"] },
-  { label: "Research", to: "/research", icon: FlaskConical, roles: ["superadmin", "research_admin"] },
-  { label: "Blogs", to: "/createblog", icon: FileText, roles: ["superadmin", "blog_admin"] },
-  { label: "FAQs", to: "/createfaq", icon: HelpCircle, roles: ["superadmin", "blog_admin"] },
-  { label: "Timeline", to: "/timeline", icon: Clock, roles: ["superadmin", "blog_admin"] },
-  { label: "Career", to: "/career", icon: Briefcase, roles: ["superadmin", "career_admin"] },
-  { label: "Users", to: "/users", icon: Users, roles: ["superadmin"] },
-  { label: "Admin Mgmt", to: "/admin-management", icon: ShieldCheck, roles: ["superadmin"] },
-  { label: "Contact Queries", to: "/contact-queries", icon: Mail, roles: ["superadmin"] },
-  { label: "Wiki", to: "/hr/wiki", icon: BookMarked, roles: ["superadmin"] },
-  { label: "Infinito AI", to: "/hr/ai", icon: Sparkles, roles: ["superadmin"] },
+  { label: "Home",            to: "/",                 icon: Home,           roles: ["superadmin","comics_admin","character_admin","research_admin","blog_admin","career_admin"] },
+  { label: "Comics",          to: "/comic",            icon: BookOpen,       roles: ["superadmin","comics_admin"] },
+  { label: "Characters",      to: "/characters",       icon: User,           roles: ["superadmin","character_admin"] },
+  { label: "Research",        to: "/research",         icon: FlaskConical,   roles: ["superadmin","research_admin"] },
+  { label: "Blogs",           to: "/createblog",       icon: FileText,       roles: ["superadmin","blog_admin"] },
+  { label: "FAQs",            to: "/createfaq",        icon: HelpCircle,     roles: ["superadmin","blog_admin"] },
+  { label: "Timeline",        to: "/timeline",         icon: Clock,          roles: ["superadmin","blog_admin"] },
+  { label: "Career",          to: "/career",           icon: Briefcase,      roles: ["superadmin","career_admin"] },
+  { label: "Users",           to: "/users",            icon: Users,          roles: ["superadmin"] },
+  { label: "Admin Mgmt",      to: "/admin-management", icon: ShieldCheck,    roles: ["superadmin"] },
+  { label: "Contact Queries", to: "/contact-queries",  icon: Mail,           roles: ["superadmin"] },
+  { label: "Wiki",            to: "/hr/wiki",          icon: BookMarked,     roles: HR_ALL          },
+  { label: "Infinito AI",     to: "/hr/ai",            icon: Sparkles,       roles: HR_ALL          },
+  { label: "Messages",        to: "/messages",         icon: MessagesSquare, roles: EMP_ALL         },
 ];
 
 // ── HR sub-items (shown inside collapsible accordion) ────────
