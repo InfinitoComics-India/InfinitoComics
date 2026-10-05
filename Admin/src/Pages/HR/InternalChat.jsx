@@ -31,6 +31,9 @@ const InternalChat = () => {
   const [newChannel, setNewChannel] = useState({ name:"", description:"", type:"public", icon:"💬" });
   const [announcement, setAnnouncement] = useState({ channelId:"", content:"" });
   const [dmTarget,   setDmTarget]   = useState("");
+  const [addMemberModal, setAddMemberModal] = useState(false);
+  const [addMemberSearch, setAddMemberSearch] = useState("");
+  const [addingMember, setAddingMember] = useState(false);
   const [sending,    setSending]    = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef       = useRef(null);
@@ -102,6 +105,17 @@ const InternalChat = () => {
       setCreateModal(false); setNewChannel({ name:"", description:"", type:"public", icon:"💬" });
       loadChannels();
     } catch (e) { setError(e.response?.data?.message||"Failed to create."); } finally { setSending(false); }
+  };
+
+  const handleAddMember = async (memberId) => {
+    if (!selChannel || !memberId) return;
+    try {
+      setAddingMember(true);
+      await axios.post(`${BASE}/hr/chat/channels/${selChannel._id}/member`, { memberId }, auth());
+      setAddMemberModal(false); setAddMemberSearch("");
+      loadChannels();
+    } catch (e) { setError(e.response?.data?.message || "Failed to add member."); }
+    finally { setAddingMember(false); }
   };
 
   const handleSendAnnouncement = async () => {
@@ -204,6 +218,11 @@ const InternalChat = () => {
               {selChannel.description && <p className="text-xs text-gray-400 hidden sm:block">— {selChannel.description}</p>}
             </div>
             <div className="flex items-center gap-2">
+              {/* Add Member button — managers only */}
+              <button onClick={() => setAddMemberModal(true)} title="Add Member"
+                className="flex items-center gap-1 border border-gray-300 px-2.5 py-1.5 text-xs font-bold hover:bg-gray-50 rounded transition text-gray-600">
+                <Plus size={12}/> Add Member
+              </button>
               {/* Search */}
               <div className="flex gap-1">
                 <input type="text" value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key==="Enter" && handleSearch()}
@@ -360,6 +379,49 @@ const InternalChat = () => {
               <button onClick={handleSendAnnouncement} disabled={sending} className="flex-1 bg-[#DD1215] text-white px-4 py-2 text-xs font-bold uppercase hover:bg-red-700 transition disabled:opacity-50">
                 {sending ? "Sending..." : "Send"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Member Modal */}
+      {addMemberModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-black uppercase tracking-widest">Add Member to #{selChannel?.name}</h3>
+              <button onClick={() => { setAddMemberModal(false); setAddMemberSearch(""); }} className="text-gray-400 hover:text-gray-700"><X size={18}/></button>
+            </div>
+            <input value={addMemberSearch} onChange={e => setAddMemberSearch(e.target.value)} autoFocus
+              placeholder="Search by name or email..."
+              className="w-full border border-gray-300 px-3 py-2.5 text-sm rounded-lg focus:outline-none focus:border-[#DD1215] mb-3"/>
+            <div className="overflow-y-auto space-y-1" style={{maxHeight:"280px"}}>
+              {employees
+                .filter(e => !addMemberSearch ||
+                  `${e.firstName} ${e.lastName}`.toLowerCase().includes(addMemberSearch.toLowerCase()) ||
+                  e.email?.toLowerCase().includes(addMemberSearch.toLowerCase()))
+                .map(e => (
+                  <div key={e._id} className="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-200">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-[#DD1215] text-white flex items-center justify-center text-xs font-black">
+                        {e.firstName?.[0]?.toUpperCase() || "?"}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">{e.firstName} {e.lastName}</p>
+                        <p className="text-[10px] text-gray-400">{e.email} · {e.designation}</p>
+                      </div>
+                    </div>
+                    <button onClick={() => handleAddMember(e._id)} disabled={addingMember}
+                      className="text-xs bg-[#DD1215] text-white px-3 py-1.5 rounded font-bold hover:bg-red-700 transition disabled:opacity-50">
+                      {addingMember ? "..." : "+ Add"}
+                    </button>
+                  </div>
+                ))}
+              {employees.filter(e => !addMemberSearch ||
+                `${e.firstName} ${e.lastName}`.toLowerCase().includes(addMemberSearch.toLowerCase()) ||
+                e.email?.toLowerCase().includes(addMemberSearch.toLowerCase())).length === 0 && (
+                <p className="text-center text-xs text-gray-400 py-6">No employees found</p>
+              )}
             </div>
           </div>
         </div>
