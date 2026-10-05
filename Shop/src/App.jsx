@@ -87,6 +87,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Body />}>
             <Route index element={<ShopMain />} />
+            <Route path="products" element={<ShopCategory />} />
+            <Route path="catalog" element={<ShopCategory />} />
             <Route path="category/:categoryName" element={<ShopCategory />} />
             <Route path="product/:productId" element={<ShopProduct />} />
             <Route path="cart" element={<Cart />} />

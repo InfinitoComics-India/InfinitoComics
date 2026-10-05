@@ -53,6 +53,15 @@ const MarketingDashboard = () => {
   const [heroSlides, setHeroSlides] = useState([]);
   const [promoBarForm, setPromoBarForm] = useState(null);
   const [savingBanners, setSavingBanners] = useState(false);
+  const [previewSlideIdx, setPreviewSlideIdx] = useState(0);
+
+  // Sync activeTab when URL search params change (e.g. clicking sidebar menu items)
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     loadAllData();
@@ -661,6 +670,15 @@ const MarketingDashboard = () => {
                       />
                     </label>
                   </div>
+                  {promoBannerForm?.bgImageUrl && (
+                    <div className="mt-2 h-16 w-32 rounded border border-gray-300 overflow-hidden bg-gray-100 shadow-xs">
+                      <img
+                        src={promoBannerForm.bgImageUrl}
+                        alt="Hero Banner Background"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -720,6 +738,61 @@ const MarketingDashboard = () => {
                 Save Hero Slider
               </button>
             </div>
+
+            {/* Live Slider Preview Card */}
+            {heroSlides.length > 0 && (
+              <div className="space-y-2 pb-4 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 block">
+                    Live Hero Slider Preview (Slide #{previewSlideIdx + 1} of {heroSlides.length})
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {heroSlides.map((_, dotIdx) => (
+                      <button
+                        key={dotIdx}
+                        type="button"
+                        onClick={() => setPreviewSlideIdx(dotIdx)}
+                        className={`h-2 rounded-full transition-all cursor-pointer ${
+                          previewSlideIdx === dotIdx ? 'w-5 bg-[#DD1215]' : 'w-2 bg-gray-300 hover:bg-gray-400'
+                        }`}
+                        title={`Preview slide ${dotIdx + 1}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {(() => {
+                  const currentSlide = heroSlides[previewSlideIdx] || heroSlides[0];
+                  const bg = currentSlide?.imageUrl || currentSlide?.image;
+                  return (
+                    <div
+                      className="relative w-full rounded-xl overflow-hidden border border-gray-300 shadow-md bg-gray-950 min-h-[190px] flex items-center p-8 text-white bg-cover bg-center transition-all"
+                      style={bg ? { backgroundImage: `url(${bg})` } : undefined}
+                    >
+                      {/* Dark overlay so text is readable if image is bright */}
+                      <div className="absolute inset-0 bg-black/45"></div>
+
+                      <div className="relative z-10 max-w-[75%] space-y-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[#DD1215] bg-black/60 px-2.5 py-0.5 rounded">
+                          Slide #{previewSlideIdx + 1} {currentSlide?.isActive ? '• Active' : '• Inactive'}
+                        </span>
+                        <h2 className="text-2xl md:text-3xl font-black uppercase tracking-wider drop-shadow-md text-white">
+                          {currentSlide?.headline || 'Hero Headline'}
+                        </h2>
+                        <p className="text-xs md:text-sm uppercase tracking-wide text-gray-200">
+                          {currentSlide?.subheading || 'Subheading description text'}
+                        </p>
+                        <div className="pt-2">
+                          <span className="inline-block px-5 py-2 bg-[#DD1215] text-white text-xs font-bold uppercase tracking-widest shadow-sm rounded-sm">
+                            {currentSlide?.buttonText || 'Explore Now'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
 
             <div className="space-y-4">
               {heroSlides.map((slide, idx) => (
