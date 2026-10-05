@@ -12,12 +12,12 @@ const EMP_ALL  = [...HR_ALL, "employee"];
 
 // ── Employee-facing standalone items (shown outside HR accordion) ───
 const EMP_ITEMS = [
-  { label: "Attendance",   to: "/hr/attendance",   icon: Clock,         roles: EMP_ALL  },
-  { label: "Leaves",       to: "/hr/leaves",        icon: CalendarOff,   roles: EMP_ALL  },
-  { label: "Goals",        to: "/hr/goals",         icon: Target,        roles: EMP_ALL  },
-  { label: "Documents",    to: "/hr/documents",     icon: FileArchive,   roles: EMP_ALL  },
-  { label: "Self Service", to: "/hr/self-service",  icon: LifeBuoy,      roles: EMP_ALL  },
-  { label: "Work Log",     to: "/hr/worklog",       icon: ClipboardList, roles: EMP_ALL  },
+  { label: "Attendance",   to: "/employee-portal?tab=attendance",   icon: Clock,         roles: EMP_ALL  },
+  { label: "Leaves",       to: "/employee-portal?tab=leave",         icon: CalendarOff,   roles: EMP_ALL  },
+  { label: "Goals",        to: "/employee-portal?tab=goals",         icon: Target,        roles: EMP_ALL  },
+  { label: "Documents",    to: "/employee-portal?tab=documents",     icon: FileArchive,   roles: EMP_ALL  },
+  { label: "Self Service", to: "/employee-portal?tab=requests",      icon: LifeBuoy,      roles: EMP_ALL  },
+  { label: "Work Log",     to: "/employee-portal?tab=worklog",       icon: ClipboardList, roles: EMP_ALL  },
 ];
 
 // ── Regular nav items (above HR section) ────────────────────
@@ -33,9 +33,10 @@ const NAV_ITEMS = [
   { label: "Users",           to: "/users",            icon: Users,          roles: ["superadmin"] },
   { label: "Admin Mgmt",      to: "/admin-management", icon: ShieldCheck,    roles: ["superadmin"] },
   { label: "Contact Queries", to: "/contact-queries",  icon: Mail,           roles: ["superadmin"] },
-  { label: "Wiki",            to: "/hr/wiki",          icon: BookMarked,     roles: HR_ALL },
-  { label: "Infinito AI",     to: "/hr/ai",            icon: Sparkles,       roles: HR_ALL },
-  { label: "Messages",        to: "/messages",         icon: MessagesSquare, roles: EMP_ALL },
+  { label: "Wiki",            to: "/hr/wiki",                        icon: BookMarked,     roles: HR_ALL      },
+  { label: "Infinito AI",     to: "/hr/ai",                          icon: Sparkles,       roles: HR_ALL      },
+  { label: "Messages",        to: "/employee-portal?tab=messages",   icon: MessagesSquare, roles: ["employee"]},
+  { label: "Messages",        to: "/messages",                       icon: MessagesSquare, roles: HR_ALL      },
 ];
 
 // ── HR sub-items (shown inside collapsible accordion, HR admins only) ──

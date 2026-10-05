@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import {
   Clock, CheckCircle, AlertTriangle, CalendarOff, IndianRupee,
@@ -59,22 +59,11 @@ const EmployeePortal = () => {
   const myName   = admin?.name || admin?.email?.split("@")[0] || "Employee";
   const myEmail  = admin?.email || "";
   const location = useLocation();
+  const [searchParams] = useSearchParams();
 
-  // Derive active tab from URL path
-  const PATH_TO_TAB = {
-    "/hr/attendance":  "attendance",
-    "/hr/worklog":     "worklog",
-    "/hr/leaves":      "leave",
-    "/hr/payslips":    "payslips",
-    "/hr/goals":       "goals",
-    "/hr/documents":   "documents",
-    "/hr/self-service":"requests",
-    "/messages":       "messages",
-    "/employee-portal":"attendance",
-  };
-  const currentPath = location.pathname.replace(/^\/admin/, "");
-  const tab = PATH_TO_TAB[currentPath] || "attendance";
-  const setTab = () => {}; // no-op — navigation handled by sidebar
+  // Read tab from URL search param ?tab=xxx, fallback to "attendance"
+  const tab = searchParams.get("tab") || "attendance";
+  const setTab = () => {}; // navigation handled by sidebar links
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState("");
   const [success,    setSuccess]    = useState("");
