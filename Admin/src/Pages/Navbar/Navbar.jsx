@@ -165,11 +165,32 @@ const Navbar = () => {
   const isActive = (to) => {
     if (to === "/") return location.pathname === "/admin" || location.pathname === "/admin/" || location.pathname === "/";
     const [path, query] = to.split('?');
+    const normCurrentPath = location.pathname.startsWith('/admin') ? location.pathname.replace(/^\/admin/, '') : location.pathname;
+    const normTarget = path.startsWith('/admin') ? path.replace(/^\/admin/, '') : path;
+
     if (query) {
       const fullCurrent = `${location.pathname}${location.search}`;
-      return fullCurrent.includes(query) && (location.pathname.startsWith(`/admin${path}`) || location.pathname === path || location.pathname.startsWith(`${path}/`));
+      const pathMatches = normCurrentPath === normTarget || normCurrentPath.startsWith(`${normTarget}/`);
+      return pathMatches && fullCurrent.includes(query);
     }
-    return location.pathname.startsWith(`/admin${to}`) || location.pathname === to || location.pathname.startsWith(`${to}/`);
+
+    // Exact path match
+    if (normCurrentPath === normTarget) {
+      return true;
+    }
+
+    // Do NOT highlight "All Products" when on "Add Product" (/shop/products/new)
+    if (normTarget === "/shop/products" && normCurrentPath === "/shop/products/new") {
+      return false;
+    }
+
+    // Do NOT highlight "Categories" when on "Add Category" (/shop/categories/new)
+    if (normTarget === "/shop/categories" && normCurrentPath === "/shop/categories/new") {
+      return false;
+    }
+
+    // Sub-path match (e.g. editing a product /shop/products/:id where id is not new)
+    return normCurrentPath.startsWith(`${normTarget}/`);
   };
 
   const renderSidebarContent = (onNavClick, isMobile = false) => (

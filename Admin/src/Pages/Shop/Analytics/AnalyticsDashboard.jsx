@@ -35,8 +35,13 @@ const AnalyticsDashboard = () => {
   useEffect(() => {
     if (subTab) {
       setActiveTab(subTab);
+    } else {
+      const tabFromUrl = searchParams.get('tab');
+      if (tabFromUrl && tabFromUrl !== activeTab) {
+        setActiveTab(tabFromUrl);
+      }
     }
-  }, [subTab]);
+  }, [subTab, searchParams]);
 
   useEffect(() => {
     loadAnalytics();
