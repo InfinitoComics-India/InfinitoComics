@@ -46,7 +46,16 @@ const InternalChat = () => {
 
   const loadChannels = async () => {
     try { setLoading(true);
-      const res = await axios.get(`${BASE}/hr/chat/channels/all`, auth());
+      // Employees only see channels they're members of
+      const isEmp = (() => {
+        try {
+          const a = JSON.parse(localStorage.getItem("Admin") || "{}");
+          const roles = Array.isArray(a.roles) && a.roles.length > 0 ? a.roles : a.role ? [a.role] : [];
+          return roles.length > 0 && roles.every(r => r === "employee");
+        } catch { return false; }
+      })();
+      const endpoint = isEmp ? `${BASE}/hr/chat/channels/mine` : `${BASE}/hr/chat/channels/all`;
+      const res = await axios.get(endpoint, auth());
       setChannels(res.data.data || []);
     } catch { setError("Failed to load channels."); } finally { setLoading(false); }
   };
@@ -218,11 +227,13 @@ const InternalChat = () => {
               {selChannel.description && <p className="text-xs text-gray-400 hidden sm:block">— {selChannel.description}</p>}
             </div>
             <div className="flex items-center gap-2">
-              {/* Add Member button — managers only */}
-              <button onClick={() => setAddMemberModal(true)} title="Add Member"
-                className="flex items-center gap-1 border border-gray-300 px-2.5 py-1.5 text-xs font-bold hover:bg-gray-50 rounded transition text-gray-600">
-                <Plus size={12}/> Add Member
-              </button>
+              {/* Add Member button — managers only, hidden for employees */}
+              {!(() => { try { const a=JSON.parse(localStorage.getItem("Admin")||"{}"); const r=Array.isArray(a.roles)&&a.roles.length>0?a.roles:a.role?[a.role]:[]; return r.every(x=>x==="employee"); } catch{return false;} })() && (
+                <button onClick={() => setAddMemberModal(true)} title="Add Member"
+                  className="flex items-center gap-1 border border-gray-300 px-2.5 py-1.5 text-xs font-bold hover:bg-gray-50 rounded transition text-gray-600">
+                  <Plus size={12}/> Add Member
+                </button>
+              )}
               {/* Search */}
               <div className="flex gap-1">
                 <input type="text" value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key==="Enter" && handleSearch()}
