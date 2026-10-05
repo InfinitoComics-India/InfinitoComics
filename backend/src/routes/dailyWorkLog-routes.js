@@ -16,6 +16,7 @@ router.get   ("/my/history",      adminauthenticate, checkRole(ALL), DailyWorkLo
 router.get   ("/date",            adminauthenticate, checkRole(MGR), DailyWorkLogController.getLogsForDate);
 router.get   ("/summary",         adminauthenticate, checkRole(MGR), DailyWorkLogController.getSummaryForDate);
 router.patch ("/review/:id",      adminauthenticate, checkRole(MGR), DailyWorkLogController.reviewLog);
+router.patch ("/override/:id",    adminauthenticate, checkRole(["superadmin"]), DailyWorkLogController.overrideStatus);
 router.post  ("/run-cron",        adminauthenticate, checkRole(["superadmin"]), DailyWorkLogController.runMidnightCron);
 
 export default router;

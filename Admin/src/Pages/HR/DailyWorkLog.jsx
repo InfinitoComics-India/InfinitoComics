@@ -125,6 +125,16 @@ const DailyWorkLog = () => {
     finally { setSaving(false); }
   };
 
+  const handleOverrideStatus = async (logId, newStatus) => {
+    if (!window.confirm(`Change status to "${newStatus}"?`)) return;
+    try { setSaving(true);
+      const res = await axios.patch(`${BASE}/hr/worklog/override/${logId}`, { status: newStatus }, auth());
+      setAllLogs(prev => prev.map(l => l._id === logId ? res.data.data : l));
+      setSuccess(`Status updated to ${newStatus}.`);
+    } catch (e) { setError(e.response?.data?.message || "Failed."); }
+    finally { setSaving(false); }
+  };
+
   const handleReview = async (logId) => {
     if (!reviewForm.status) { setError("Please select a review status."); return; }
     try { setSaving(true);
@@ -595,20 +605,32 @@ const DailyWorkLog = () => {
                               </td>
                               {/* Actions */}
                               <td className="border border-gray-200 px-3 py-2 text-center">
-                                {log.status !== "auto_leave" && (
-                                  <button
-                                    onClick={() => {
-                                      setReviewingId(isReviewing ? null : log._id);
-                                      setReviewForm({ status: log.reviewStatus||"", comment: log.reviewComment||"" });
-                                    }}
-                                    className={`text-[10px] px-2.5 py-1 font-bold border transition ${
-                                      isReviewing
-                                        ? "bg-[#DD1215] text-white border-[#DD1215]"
-                                        : "border-blue-400 text-blue-600 hover:bg-blue-50"
-                                    }`}>
-                                    {isReviewing ? "Cancel" : log.reviewStatus ? "Edit" : "Review"}
-                                  </button>
-                                )}
+                                <div className="flex flex-col gap-1 items-center">
+                                  {log.status !== "auto_leave" && (
+                                    <button
+                                      onClick={() => {
+                                        setReviewingId(isReviewing ? null : log._id);
+                                        setReviewForm({ status: log.reviewStatus||"", comment: log.reviewComment||"" });
+                                      }}
+                                      className={`text-[10px] px-2.5 py-1 font-bold border transition ${
+                                        isReviewing
+                                          ? "bg-[#DD1215] text-white border-[#DD1215]"
+                                          : "border-blue-400 text-blue-600 hover:bg-blue-50"
+                                      }`}>
+                                      {isReviewing ? "Cancel" : log.reviewStatus ? "Edit" : "Review"}
+                                    </button>
+                                  )}
+                                  {/* Override button — superadmin only, for auto_leave with work submitted */}
+                                  {log.status === "auto_leave" && isSuperAdmin && (
+                                    <button
+                                      onClick={() => handleOverrideStatus(log._id, "submitted")}
+                                      disabled={saving}
+                                      title="Mark as Submitted (override auto leave)"
+                                      className="text-[10px] px-2.5 py-1 font-bold border border-green-500 text-green-700 hover:bg-green-50 transition disabled:opacity-50">
+                                      ✓ Override
+                                    </button>
+                                  )}
+                                </div>
                               </td>
                             </tr>
 

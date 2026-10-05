@@ -35,18 +35,22 @@ export const submitWorkLog = async (req, res) => {
     const existing = await DailyWorkLog.findOne({ adminId, date: today });
 
     if (existing) {
-      // Allow updating auto_leave records even if locked — employee is submitting late work
+      // Allow updating auto_leave records — save work but keep auto_leave status
+      // Only superadmin can change status from auto_leave (via review endpoint)
       if (existing.isLocked && existing.status !== "auto_leave") {
         return res.status(403).json({ success: false, message: "Today's work log is locked. Submissions are closed after midnight IST." });
       }
       existing.workDescription = workDescription.trim();
-      existing.status          = existing.status === "auto_leave" ? "submitted" : "edited";
-      existing.isLocked        = false; // unlock if was auto_leave
-      existing.isAutoLeave     = false;
-      existing.submittedAt     = existing.submittedAt || new Date();
-      existing.lastEditedAt    = new Date();
+      // If auto_leave, keep the status — superadmin reviews and overrides manually
+      if (existing.status !== "auto_leave") {
+        existing.status = "edited";
+      }
+      existing.lastEditedAt = new Date();
       await existing.save();
-      return res.status(200).json({ success: true, message: existing.status === "submitted" ? "Work log submitted (late)! Auto leave removed." : "Work log updated.", data: existing });
+      const msg = existing.status === "auto_leave"
+        ? "Work saved. Note: You are still marked as Auto Leave. Superadmin can change your status."
+        : "Work log updated.";
+      return res.status(200).json({ success: true, message: msg, data: existing });
     }
 
     const log = await DailyWorkLog.create({
@@ -146,6 +150,23 @@ export const reviewLog = async (req, res) => {
 
     if (!updated) return res.status(404).json({ success: false, message: "Log not found." });
     res.status(200).json({ success: true, message: "Review saved.", data: updated });
+  } catch (e) { res.status(500).json({ success: false, message: e.message }); }
+};
+
+// ── OVERRIDE STATUS (superadmin only) ─────────────────────────
+export const overrideStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!["submitted","edited","auto_leave","pending"].includes(status)) {
+      return res.status(400).json({ success: false, message: "Invalid status." });
+    }
+    const updated = await DailyWorkLog.findByIdAndUpdate(
+      req.params.id,
+      { $set: { status, isAutoLeave: status === "auto_leave", isLocked: true } },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ success: false, message: "Log not found." });
+    res.status(200).json({ success: true, message: `Status updated to ${status}.`, data: updated });
   } catch (e) { res.status(500).json({ success: false, message: e.message }); }
 };
 

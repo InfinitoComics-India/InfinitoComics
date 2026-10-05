@@ -476,7 +476,7 @@ const EmployeePortal = () => {
                     {isAutoLeave && (
                       <div className="bg-orange-50 border border-orange-300 text-orange-800 text-sm px-4 py-3 rounded flex items-center gap-2">
                         <AlertTriangle size={16}/>
-                        <span>You were auto-marked as <strong>on leave</strong> for missing the deadline. Submit your work now to override it.</span>
+                        <span>You were auto-marked as <strong>on leave</strong>. You can still add your work below — your manager can review and override your status.</span>
                       </div>
                     )}
                     <div>
