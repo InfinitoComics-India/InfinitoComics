@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Plus, Search, Edit, Trash2, FolderOpen,
+import { 
+  Plus, Search, Edit, Trash2, FolderOpen, 
   Eye, EyeOff, Image as ImageIcon, Package, Grid, List,
   Download, FileSpreadsheet, FileText, FileCode, ChevronDown
 } from 'lucide-react';
-import {
-  getAllCategories,
-  deleteCategory,
-  updateCategory
+import { 
+  getAllCategories, 
+  deleteCategory, 
+  updateCategory 
 } from '../../services/shopServices/categoryService';
 import { BACKEND_URL } from '../../Utils/constant';
 import Swal from 'sweetalert2';
@@ -21,7 +21,7 @@ const resolveImageUrl = (url) => {
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
     return url;
   }
-  const base = BACKEND_URL?.replace(/\/$/, '') || '';
+  const base = (BACKEND_URL || 'https://infinitocomics-68cr.onrender.com').replace(/\/$/, '');
   const path = url.startsWith('/') ? url : `/${url}`;
   return `${base}${path}`;
 };
@@ -118,7 +118,7 @@ const AllCategories = () => {
 
   const toggleStatus = async (category) => {
     const newStatus = category.status === 'active' ? 'inactive' : 'active';
-
+    
     try {
       await updateCategory(category._id, { status: newStatus });
       Swal.fire({
@@ -268,7 +268,7 @@ const AllCategories = () => {
             </button>
 
             {showExportMenu && (
-              <div
+              <div 
                 className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1"
                 onMouseLeave={() => setShowExportMenu(false)}
               >
@@ -349,20 +349,22 @@ const AllCategories = () => {
           <div className="flex items-center gap-2 border border-gray-300 rounded-lg p-1">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded ${viewMode === 'grid'
-                ? 'bg-blue-100 text-blue-600'
-                : 'text-gray-600 hover:bg-gray-100'
-                }`}
+              className={`p-2 rounded ${
+                viewMode === 'grid' 
+                  ? 'bg-blue-100 text-blue-600' 
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
               title="Grid View"
             >
               <Grid className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded ${viewMode === 'list'
-                ? 'bg-blue-100 text-blue-600'
-                : 'text-gray-600 hover:bg-gray-100'
-                }`}
+              className={`p-2 rounded ${
+                viewMode === 'list' 
+                  ? 'bg-blue-100 text-blue-600' 
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
               title="List View"
             >
               <List className="w-4 h-4" />
@@ -384,7 +386,7 @@ const AllCategories = () => {
           <FolderOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No Categories Found</h3>
           <p className="text-gray-600 mb-6">
-            {searchTerm || statusFilter !== 'all'
+            {searchTerm || statusFilter !== 'all' 
               ? 'Try adjusting your filters'
               : 'Get started by creating your first category'}
           </p>
@@ -424,10 +426,11 @@ const AllCategories = () => {
                     {/* Status Badge */}
                     <div className="absolute top-3 right-3">
                       <span
-                        className={`px-2 py-1 text-xs font-semibold rounded ${category.status === 'active'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-700'
-                          }`}
+                        className={`px-2 py-1 text-xs font-semibold rounded ${
+                          category.status === 'active'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}
                       >
                         {category.status === 'active' ? 'Active' : 'Inactive'}
                       </span>
@@ -458,13 +461,14 @@ const AllCategories = () => {
                         <Edit className="w-4 h-4" />
                         Edit
                       </button>
-
+                      
                       <button
                         onClick={() => toggleStatus(category)}
-                        className={`px-3 py-2 rounded-lg transition text-sm font-medium ${category.status === 'active'
-                          ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          : 'bg-green-100 text-green-700 hover:bg-green-200'
-                          }`}
+                        className={`px-3 py-2 rounded-lg transition text-sm font-medium ${
+                          category.status === 'active'
+                            ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            : 'bg-green-100 text-green-700 hover:bg-green-200'
+                        }`}
                         title={category.status === 'active' ? 'Deactivate' : 'Activate'}
                       >
                         {category.status === 'active' ? (
@@ -545,10 +549,11 @@ const AllCategories = () => {
                       </td>
                       <td className="px-6 py-4">
                         <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded ${category.status === 'active'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-700'
-                            }`}
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded ${
+                            category.status === 'active'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-gray-100 text-gray-700'
+                          }`}
                         >
                           {category.status === 'active' ? 'Active' : 'Inactive'}
                         </span>
@@ -562,13 +567,14 @@ const AllCategories = () => {
                           >
                             <Edit className="w-4 h-4" />
                           </button>
-
+                          
                           <button
                             onClick={() => toggleStatus(category)}
-                            className={`p-2 rounded-lg transition ${category.status === 'active'
-                              ? 'text-gray-600 hover:bg-gray-50'
-                              : 'text-green-600 hover:bg-green-50'
-                              }`}
+                            className={`p-2 rounded-lg transition ${
+                              category.status === 'active'
+                                ? 'text-gray-600 hover:bg-gray-50'
+                                : 'text-green-600 hover:bg-green-50'
+                            }`}
                             title={category.status === 'active' ? 'Deactivate' : 'Activate'}
                           >
                             {category.status === 'active' ? (

@@ -18,7 +18,7 @@ const resolveImageUrl = (url) => {
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
     return url;
   }
-  const base = BACKEND_URL?.replace(/\/$/, '') || '';
+  const base = (BACKEND_URL || 'https://infinitocomics-68cr.onrender.com').replace(/\/$/, '');
   const path = url.startsWith('/') ? url : `/${url}`;
   return `${base}${path}`;
 };
@@ -510,7 +510,7 @@ const ProductThumbnail = ({ product, size, fill }) => {
     const raw = first?.url || first || '';
     if (!raw) return '';
     if (raw.startsWith('http') || raw.startsWith('data:')) return raw;
-    const base = BACKEND_URL?.replace(/\/$/, '') || '';
+    const base = (BACKEND_URL || 'https://infinitocomics-68cr.onrender.com').replace(/\/$/, '');
     return `${base}${raw.startsWith('/') ? raw : `/${raw}`}`;
   })();
 

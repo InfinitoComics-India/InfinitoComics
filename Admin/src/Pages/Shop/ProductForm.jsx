@@ -31,7 +31,7 @@ const resolveImageUrl = (url) => {
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
     return url;
   }
-  const base = BACKEND_URL?.replace(/\/$/, '') || '';
+  const base = (BACKEND_URL || 'https://infinitocomics-68cr.onrender.com').replace(/\/$/, '');
   const path = url.startsWith('/') ? url : `/${url}`;
   return `${base}${path}`;
 };
@@ -186,20 +186,26 @@ const ProductForm = () => {
         return;
       }
 
-      // 1. Upload any newly added image files to Cloudinary
+      // 1. Upload any newly added image files to Cloudinary / storage
       const newItems = images.filter((img) => img.isNew && img.file);
       const uploadedUrlMap = new Map();
 
       if (newItems.length > 0) {
         const filesToUpload = newItems.map((item) => item.file);
-        const uploadResponse = await uploadProductImages(filesToUpload);
-        const uploadedData = extractList(uploadResponse);
+        try {
+          const uploadResponse = await uploadProductImages(filesToUpload);
+          const uploadedData = extractList(uploadResponse);
 
-        newItems.forEach((item, idx) => {
-          if (uploadedData[idx]?.url) {
-            uploadedUrlMap.set(item, uploadedData[idx].url);
-          }
-        });
+          newItems.forEach((item, idx) => {
+            if (uploadedData[idx]?.url) {
+              uploadedUrlMap.set(item, uploadedData[idx].url);
+            }
+          });
+        } catch (uploadErr) {
+          console.warn('Backend image upload returned error, falling back to local Data URIs:', uploadErr);
+          // If server upload fails, newItems already have item.url as reader.result (data URI)
+          // so uploadedUrlMap won't override them, and finalImages safely uses item.url!
+        }
       }
 
       // 2. Build final uploadedImages array in the EXACT dragged order with isPrimary preserved

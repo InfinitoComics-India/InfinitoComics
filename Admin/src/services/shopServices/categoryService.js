@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { BACKEND_URL } from '../../Utils/constant';
 
-const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
+const BASE_URL = BACKEND_URL || 'https://infinitocomics-68cr.onrender.com';
 
 // Get auth token
 const getAuthToken = () => localStorage.getItem('authToken');

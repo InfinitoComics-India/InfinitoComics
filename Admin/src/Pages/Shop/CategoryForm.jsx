@@ -18,7 +18,7 @@ const resolveImageUrl = (url) => {
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
     return url;
   }
-  const base = BACKEND_URL?.replace(/\/$/, '') || '';
+  const base = (BACKEND_URL || 'https://infinitocomics-68cr.onrender.com').replace(/\/$/, '');
   const path = url.startsWith('/') ? url : `/${url}`;
   return `${base}${path}`;
 };
@@ -134,13 +134,23 @@ const CategoryForm = () => {
       // Upload new image if selected
       if (imageFile) {
         setUploading(true);
-        const uploadResponse = await uploadCategoryImage(imageFile);
-        // categoryService returns response.data: { success, message, data: { url } }
-        const uploadedData = uploadResponse?.data?.url
-          ? uploadResponse.data
-          : uploadResponse?.data?.data || uploadResponse?.data || {};
-        imageUrl = uploadedData.url || '';
-        setUploading(false);
+        try {
+          const uploadResponse = await uploadCategoryImage(imageFile);
+          // categoryService returns response.data: { success, message, data: { url } }
+          const uploadedData = uploadResponse?.data?.url
+            ? uploadResponse.data
+            : uploadResponse?.data?.data || uploadResponse?.data || {};
+          if (uploadedData.url) {
+            imageUrl = uploadedData.url;
+          }
+        } catch (uploadErr) {
+          console.warn('Backend category image upload returned error, falling back to local preview Data URI:', uploadErr);
+          if (imagePreview) {
+            imageUrl = imagePreview;
+          }
+        } finally {
+          setUploading(false);
+        }
       }
 
       const categoryData = {
