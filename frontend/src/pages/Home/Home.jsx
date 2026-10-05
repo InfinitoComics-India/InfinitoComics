@@ -86,7 +86,8 @@ const Home = () => {
       <ExclusiveContent />
 
       {/* 14. Newsletter */}
-      {user && !user.newsLetter && <NewsletterSection />}
+      <NewsletterSection/>
+      {/* {user && !user.newsLetter && <NewsletterSection />} */}
     </div>
   );
 };
