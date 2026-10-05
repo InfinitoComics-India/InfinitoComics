@@ -93,7 +93,7 @@ function App() {
             <ProtectedRoute allowedRoles={EMP}><EmployeePortal /></ProtectedRoute>
           } />
           {/* Employee portal sections — sidebar links render EmployeePortal with correct tab */}
-          {["/hr/attendance","/hr/worklog","/hr/leaves","/hr/goals","/hr/documents","/hr/self-service","/hr/chat"].map(path => (
+          {["/hr/attendance","/hr/worklog","/hr/leaves","/hr/goals","/hr/documents","/hr/self-service"].map(path => (
             <Route key={`emp-${path}`} path={path} element={
               <ProtectedRoute allowedRoles={[...HR_VIEW,"employee"]}><EmployeePortal /></ProtectedRoute>
             } />
@@ -252,7 +252,7 @@ function App() {
             <ProtectedRoute allowedRoles={HR_VIEW}><RecruitmentPipeline /></ProtectedRoute>
           } />
           <Route path="/hr/chat" element={
-            <ProtectedRoute allowedRoles={HR_VIEW}><InternalChat /></ProtectedRoute>
+            <ProtectedRoute allowedRoles={[...HR_VIEW,"employee"]}><InternalChat /></ProtectedRoute>
           } />
 
           {/* ── HR Phase 7 ─────────────────────────────────── */}
