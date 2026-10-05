@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ClipboardList, Clock, CheckCircle, AlertTriangle, RefreshCw, Loader, Lock, Send, ThumbsUp, ThumbsDown, MessageSquare, ChevronDown, ChevronUp } from "lucide-react";
 import axios from "axios";
 
@@ -62,6 +62,8 @@ const DailyWorkLog = () => {
   const [expandedLog,  setExpandedLog]  = useState(null);
   const [reviewForm,   setReviewForm]   = useState({ status:"", comment:"" });
   const [reviewingId,  setReviewingId]  = useState(null);
+  const [exportOpen,   setExportOpen]   = useState(false);
+  const exportRef = useRef(null);
 
   // Live countdown
   useEffect(() => {
@@ -71,6 +73,13 @@ const DailyWorkLog = () => {
 
   useEffect(() => { loadMyLog(); loadHistory(); }, []);
   useEffect(() => { if (tab === "admin") { loadAllLogs(); loadSummary(); } }, [tab, adminDate]);
+
+  // Close export dropdown on outside click
+  useEffect(() => {
+    const h = (e) => { if (exportRef.current && !exportRef.current.contains(e.target)) setExportOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
 
   const loadMyLog = async () => {
     try {
@@ -364,25 +373,90 @@ const DailyWorkLog = () => {
                 </button>
               </div>
               <div className="flex gap-2">
-                {/* Export CSV */}
-                <button onClick={() => {
-                  const headers = ["#","Name","Email","Date","Status","Work Description","Submitted At","Review","Comment"];
-                  const rows = allLogs.map((l,i) => [
-                    i+1, l.adminName||"", l.adminEmail||"",
-                    fmtDate(l.date), l.status,
-                    `"${(l.workDescription||"").replace(/"/g,"'")}"`,
-                    l.submittedAt?fmtTime(l.submittedAt):"",
-                    l.reviewStatus||"", l.reviewComment||""
-                  ]);
-                  const csv = [headers, ...rows].map(r=>r.join(",")).join("\n");
-                  const blob = new Blob([csv], {type:"text/csv"});
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href=url; a.download=`worklog_${adminDate}.csv`; a.click();
-                  URL.revokeObjectURL(url);
-                }} className="flex items-center gap-1.5 border border-green-600 text-green-700 px-3 py-1.5 text-xs font-bold hover:bg-green-50 transition">
-                  📥 Export CSV
-                </button>
+                {/* Export Dropdown */}
+                <div className="relative" ref={exportRef}>
+                  <button onClick={() => setExportOpen(o=>!o)}
+                    className="flex items-center gap-1.5 border border-green-600 text-green-700 px-3 py-1.5 text-xs font-bold hover:bg-green-50 transition">
+                    📥 Export <ChevronDown size={12}/>
+                  </button>
+                  {exportOpen && (
+                    <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 w-36 overflow-hidden">
+                      {/* CSV */}
+                      <button onClick={() => {
+                        setExportOpen(false);
+                        const headers = ["#","Name","Email","Date","Status","Work Description","Submitted At","Review","Comment"];
+                        const rows = allLogs.map((l,i) => [
+                          i+1, l.adminName||"", l.adminEmail||"",
+                          fmtDate(l.date), l.status,
+                          `"${(l.workDescription||"").replace(/"/g,"'")}"`,
+                          l.submittedAt?fmtTime(l.submittedAt):"",
+                          l.reviewStatus||"", l.reviewComment||""
+                        ]);
+                        const csv = [headers, ...rows].map(r=>r.join(",")).join("\n");
+                        const blob = new Blob([csv], {type:"text/csv"});
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href=url; a.download=`worklog_${adminDate}.csv`; a.click();
+                        URL.revokeObjectURL(url);
+                      }} className="w-full text-left px-3 py-2 text-xs font-bold hover:bg-green-50 text-green-700 border-b border-gray-100 flex items-center gap-2">
+                        📊 Export CSV
+                      </button>
+                      {/* JSON */}
+                      <button onClick={() => {
+                        setExportOpen(false);
+                        const data = allLogs.map((l,i) => ({
+                          no: i+1,
+                          employeeId: l.adminEmployeeId||"",
+                          name: l.adminName||"",
+                          email: l.adminEmail||"",
+                          date: fmtDate(l.date),
+                          status: l.status,
+                          workDescription: l.workDescription||"",
+                          submittedAt: l.submittedAt?fmtTime(l.submittedAt):"",
+                          reviewStatus: l.reviewStatus||"",
+                          reviewComment: l.reviewComment||""
+                        }));
+                        const blob = new Blob([JSON.stringify({ date: adminDate, total: allLogs.length, logs: data }, null, 2)], {type:"application/json"});
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href=url; a.download=`worklog_${adminDate}.json`; a.click();
+                        URL.revokeObjectURL(url);
+                      }} className="w-full text-left px-3 py-2 text-xs font-bold hover:bg-blue-50 text-blue-700 border-b border-gray-100 flex items-center gap-2">
+                        🗂️ Export JSON
+                      </button>
+                      {/* PDF */}
+                      <button onClick={() => {
+                        setExportOpen(false);
+                        const rows = allLogs.map((l,i) =>
+                          `<tr style="border-bottom:1px solid #eee">
+                            <td style="padding:6px 8px">${i+1}</td>
+                            <td style="padding:6px 8px">${l.adminEmployeeId||"—"}</td>
+                            <td style="padding:6px 8px">${l.adminName||""}</td>
+                            <td style="padding:6px 8px">${fmtDate(l.date)}</td>
+                            <td style="padding:6px 8px"><span style="background:${l.status==='auto_leave'?'#fee2e2':l.status==='submitted'||l.status==='edited'?'#dcfce7':'#fef9c3'};padding:2px 6px;border-radius:4px;font-size:11px">${l.status}</span></td>
+                            <td style="padding:6px 8px;max-width:300px">${(l.workDescription||"").substring(0,100)}${l.workDescription?.length>100?"...":""}</td>
+                            <td style="padding:6px 8px">${l.submittedAt?fmtTime(l.submittedAt):"—"}</td>
+                            <td style="padding:6px 8px">${l.reviewStatus||"—"}</td>
+                          </tr>`
+                        ).join("");
+                        const html = `<!DOCTYPE html><html><head><title>Work Log - ${adminDate}</title>
+                          <style>body{font-family:Arial,sans-serif;padding:20px}h1{color:#DD1215;font-size:20px}table{width:100%;border-collapse:collapse;font-size:12px}th{background:#217346;color:white;padding:8px;text-align:left}</style>
+                          </head><body>
+                          <h1>📋 Daily Work Log — ${adminDate}</h1>
+                          <p style="color:#666;font-size:12px">Total: ${allLogs.length} | Submitted: ${allLogs.filter(l=>["submitted","edited"].includes(l.status)).length} | Auto Leave: ${allLogs.filter(l=>l.status==="auto_leave").length}</p>
+                          <table><thead><tr><th>#</th><th>Emp ID</th><th>Name</th><th>Date</th><th>Status</th><th>Work Description</th><th>Submitted</th><th>Review</th></tr></thead>
+                          <tbody>${rows}</tbody></table></body></html>`;
+                        const blob = new Blob([html], {type:"text/html"});
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href=url; a.download=`worklog_${adminDate}.html`; a.click();
+                        URL.revokeObjectURL(url);
+                      }} className="w-full text-left px-3 py-2 text-xs font-bold hover:bg-red-50 text-red-700 flex items-center gap-2">
+                        📄 Export PDF
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <button onClick={handleRunCron}
                   className="flex items-center gap-2 bg-gray-900 text-white px-4 py-1.5 text-xs font-bold uppercase hover:bg-black transition">
                   🌙 Run Cron
