@@ -185,10 +185,15 @@ export const fetchProductBySlug = async (slug) => {
   );
 };
 
-// All products in a category (category listing page).
+// All products in a category (or all products if category is "all" or empty).
 export const fetchProductsByCategory = async (categorySlug) => {
-  if (!categorySlug) return [];
+  if (!categorySlug || categorySlug === "all") {
+    return await fetchProducts();
+  }
   const cleanSlug = String(categorySlug).toLowerCase().trim();
+  if (cleanSlug === "all") {
+    return await fetchProducts();
+  }
   try {
     const { data } = await axios.get(
       `${BACKEND_URL}/shop/products/public/category/${cleanSlug}`
