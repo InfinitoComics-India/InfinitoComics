@@ -6,7 +6,7 @@ import slide2 from "../../assets/hero/slide2.svg";
 // slide4.svg belongs to the 35% off promo banner section (rendered in
 // ShopMain.jsx), not to this hero carousel.
 
-const slides = [
+const defaultSlides = [
   {
     // Slide 1 uses the artwork as-is — baked into the SVG, no text overlay.
     id: 1,
@@ -26,6 +26,32 @@ const slides = [
 ];
 
 const HeroSlider = () => {
+  const [slides, setSlides] = useState(() => {
+    try {
+      const raw = localStorage.getItem("infinito_shop_banners");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.heroSlider) && parsed.heroSlider.length > 0) {
+          const enabled = parsed.heroSlider.filter((s) => s.isActive !== false);
+          if (enabled.length > 0) {
+            return enabled.map((s, idx) => ({
+              id: s.id || idx + 1,
+              image: s.imageUrl || s.image || (idx === 0 ? slide1 : slide2),
+              heading: s.headline,
+              subtext: s.subheading,
+              cta: s.buttonText || "Shop Now",
+              ctaLink: s.buttonLink || "/catalog",
+              hideText: s.hideText ?? (!s.headline && !s.subheading),
+              variant: s.variant || "dark",
+              align: s.align || "left",
+            }));
+          }
+        }
+      }
+    } catch {}
+    return defaultSlides;
+  });
+
   const [active, setActive] = useState(0);
 
   const goTo = useCallback((i) => setActive((i + slides.length) % slides.length), []);

@@ -107,9 +107,18 @@ const ShopMain = () => {
 
       {/* ─── CATEGORIES ──────────────────────────────────────── */}
       <section className="max-w-[1200px] mx-auto px-4 md:px-12 py-12">
-        <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 font-dmsans">
-          Categories
-        </h2>
+        <div className="flex items-center justify-between mb-8 pb-2 border-b border-gray-100">
+          <h2 className="text-2xl md:text-3xl font-bold font-dmsans">
+            Categories
+          </h2>
+          <button
+            onClick={() => navigate("/catalog")}
+            className="text-xs md:text-sm font-bold text-[#DD1215] hover:text-red-700 uppercase tracking-wider flex items-center gap-1 cursor-pointer transition py-1.5 px-3 rounded hover:bg-red-50 border border-red-200 font-dmsans"
+          >
+            <span>View All</span>
+            <ChevronRight size={16} />
+          </button>
+        </div>
 
         {!catsLoaded ? (
           <p className="text-center text-gray-500">Loading categories…</p>

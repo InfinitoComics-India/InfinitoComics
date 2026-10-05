@@ -92,14 +92,6 @@ const Header = () => {
                     Hi, {user?.name?.split(" ")[0] || "Guest"}!
                   </span>
                 </div>
-                <button
-                  onClick={() => navigate("/dashboard?tab=orders")}
-                  className="border border-gray-600 hover:border-[#DD1215] px-2.5 py-1.5 uppercase text-xs font-semibold text-gray-300 hover:text-white hover:bg-gray-800 transition flex items-center gap-1.5"
-                  title="My Orders"
-                >
-                  <Package size={14} className="text-[#DD1215]" />
-                  <span>Orders</span>
-                </button>
               </div>
             ) : (
               <button
@@ -185,9 +177,6 @@ const Header = () => {
             <div className="pb-3 border-b border-gray-800 space-y-2">
               <Link to="/dashboard" className="block font-bold text-white flex items-center gap-2" onClick={() => setMenuOpen(false)}>
                 <img src={UserIcon} alt="User" className="w-4 h-4" /> My Account ({user?.name?.split(" ")[0] || "Profile"})
-              </Link>
-              <Link to="/dashboard?tab=orders" className="block font-bold text-[#DD1215] flex items-center gap-2" onClick={() => setMenuOpen(false)}>
-                <Package size={15} /> My Orders
               </Link>
             </div>
           ) : (
