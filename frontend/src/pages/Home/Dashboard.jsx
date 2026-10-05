@@ -200,7 +200,7 @@ const MyAccountPage = () => {
         });
         setNewsLetter(user.newsLetter !== undefined ? user.newsLetter : true);
       }
-    } catch {}
+    } catch { }
 
     // 2. Load Orders
     const allOrders = getAllOrders();
@@ -474,13 +474,6 @@ const MyAccountPage = () => {
                 }}
               />
 
-              <button
-                onClick={() => navigate("/signup?step=3")}
-                className="mt-3 w-full text-xs text-[#DD1215] hover:text-red-700 font-bold tracking-wider text-center transition flex items-center justify-center gap-1.5 py-2 border border-red-200 rounded-lg hover:bg-red-50"
-              >
-                <Sparkles size={13} /> Customise Avatar
-              </button>
-
               <hr className="w-full my-6 border-gray-200" />
 
               {/* Quick links inside profile */}
@@ -512,48 +505,39 @@ const MyAccountPage = () => {
             {/* Right Overview Dashboard Section */}
             <div className="flex-1 flex flex-col gap-6 w-full">
 
-              {/* 1. Subscription Status Banner */}
-              <div className={`rounded-xl border p-5 sm:p-6 transition-all ${isPaid ? "bg-amber-50/60 border-amber-200" : "bg-gradient-to-r from-red-50 to-pink-50 border-red-100"}`}>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-[#DD1215]">
-                      <FaLeaf className="text-lg" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-black text-sm uppercase tracking-widest">{planLabel} PASS</span>
-                        {isPaid && (
+              {/* 1. Paid Membership Status Banner (Only shown if user has an active paid subscription) */}
+              {isPaid && (
+                <div className="rounded-xl border p-5 sm:p-6 transition-all bg-amber-50/60 border-amber-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-[#DD1215]">
+                        <FaLeaf className="text-lg" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-black text-sm uppercase tracking-widest">{planLabel} PLAN</span>
                           <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full uppercase">
                             Active
                           </span>
-                        )}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {expiry
+                            ? `Valid through ${new Date(expiry).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}`
+                            : "Enjoy digital comic reader access & exclusive member merch discounts"
+                          }
+                        </p>
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {isPaid && expiry
-                          ? `Valid through ${new Date(expiry).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}`
-                          : "Enjoy digital comic reader access & exclusive member merch discounts"
-                        }
-                      </p>
                     </div>
-                  </div>
 
-                  {!isPaid ? (
-                    <button
-                      onClick={() => navigate("/ultimate")}
-                      className="bg-[#DD1215] hover:bg-red-700 text-white px-5 py-2.5 text-xs font-bold uppercase tracking-widest rounded-lg flex items-center justify-center gap-2 transition shadow-sm"
-                    >
-                      UPGRADE PLAN <FaArrowRight className="text-xs" />
-                    </button>
-                  ) : (
                     <button
                       onClick={() => handleTabChange("subscription")}
                       className="border border-amber-300 bg-white text-amber-900 hover:bg-amber-100 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition"
                     >
                       View Perks
                     </button>
-                  )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* 2. Recent Active Order Card */}
               {orders.length > 0 ? (
@@ -644,33 +628,9 @@ const MyAccountPage = () => {
                 </div>
               )}
 
-              {/* 3. Account Settings (Preserved) */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-4">
-                  Communication Preferences
-                </h2>
-                <ToggleRow
-                  label={savingNewsletter ? "Subscriptions & comic updates email (saving…)" : "Subscriptions & comic updates email"}
-                  enabled={newsLetter}
-                  onChange={handleNewsletterToggle}
-                />
-              </div>
-
-              {/* 4. Action & Support Buttons */}
+              {/* 3. Account Actions */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-2">
                 <div className="flex flex-wrap gap-3">
-                  <button
-                    className="border border-gray-300 bg-white px-4 py-2 text-xs tracking-wider font-bold uppercase rounded-lg hover:bg-gray-50 flex items-center group transition"
-                    onClick={() => navigate("/feedback")}
-                  >
-                    GIVE FEEDBACK <FaArrowRight className="ml-2 text-xs group-hover:translate-x-1 transition-transform" />
-                  </button>
-                  <button
-                    className="border border-gray-300 bg-white px-4 py-2 text-xs tracking-wider font-bold uppercase rounded-lg hover:bg-gray-50 flex items-center group transition"
-                    onClick={() => navigate("/ErrorReport")}
-                  >
-                    SUPPORT US <FaArrowRight className="ml-2 text-xs group-hover:translate-x-1 transition-transform" />
-                  </button>
                   <button
                     className="border border-red-200 bg-red-50 text-[#DD1215] px-4 py-2 text-xs tracking-wider font-bold uppercase rounded-lg hover:bg-red-600 hover:text-white flex items-center group transition"
                     onClick={handleLogout}
@@ -913,11 +873,10 @@ const MyAccountPage = () => {
               {addresses.map((addr) => (
                 <div
                   key={addr.id}
-                  className={`bg-white rounded-xl border p-6 flex flex-col justify-between transition-all relative ${
-                    addr.isDefault
+                  className={`bg-white rounded-xl border p-6 flex flex-col justify-between transition-all relative ${addr.isDefault
                       ? "border-[#DD1215] ring-2 ring-red-100 shadow-md"
                       : "border-gray-200 shadow-sm hover:border-gray-300"
-                  }`}
+                    }`}
                 >
                   {/* Top row */}
                   <div>

@@ -14,6 +14,7 @@ const ShopCatalog = () => {
   const [activeSlide, setActiveSlide] = useState(0);
   const [categories, setCategories] = useState([]);
   const [trendingProducts, setTrendingProducts] = useState([]);
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -178,12 +179,21 @@ const ShopCatalog = () => {
 
       {/* 3. CATEGORIES SECTION */}
       <section className="max-w-6xl mx-auto py-10 px-4">
-        <h2 className="text-2xl md:text-3xl font-extrabold text-center text-black tracking-tight mb-8">
-          Categories
-        </h2>
+        <div className="flex items-center justify-between mb-8 pb-2 border-b border-gray-100">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-black tracking-tight">
+            Categories
+          </h2>
+          <button
+            onClick={() => setShowAllCategories((prev) => !prev)}
+            className="text-xs md:text-sm font-bold text-red-600 hover:text-red-700 uppercase tracking-wider flex items-center gap-1 cursor-pointer transition py-1.5 px-3 rounded hover:bg-red-50 border border-red-200"
+          >
+            <span>{showAllCategories ? 'View Less' : 'View All'}</span>
+            <ChevronRight size={16} className={`transition-transform duration-200 ${showAllCategories ? 'rotate-90' : ''}`} />
+          </button>
+        </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 md:gap-6">
-          {categories.map((cat) => (
+          {(showAllCategories ? categories : categories.slice(0, 5)).map((cat) => (
             <div
               key={cat.id || cat._id}
               onClick={() => handleCategoryClick(cat)}
