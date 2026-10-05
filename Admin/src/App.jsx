@@ -92,10 +92,10 @@ function App() {
           <Route path="/employee-portal" element={
             <ProtectedRoute allowedRoles={EMP}><EmployeePortal /></ProtectedRoute>
           } />
-          {/* Employee portal sections — each sidebar link renders EmployeePortal with correct tab */}
+          {/* Employee portal sections — sidebar links render EmployeePortal with correct tab */}
           {["/hr/attendance","/hr/worklog","/hr/leaves","/hr/goals","/hr/documents","/hr/self-service"].map(path => (
-            <Route key={path} path={path} element={
-              <ProtectedRoute allowedRoles={HR_VIEW}><EmployeePortal /></ProtectedRoute>
+            <Route key={`emp-${path}`} path={path} element={
+              <ProtectedRoute allowedRoles={[...HR_VIEW,"employee"]}><EmployeePortal /></ProtectedRoute>
             } />
           ))}
 
@@ -271,7 +271,7 @@ function App() {
             <ProtectedRoute allowedRoles={HR_VIEW}><DailyWorkLog /></ProtectedRoute>
           } />
           <Route path="/messages" element={
-            <ProtectedRoute allowedRoles={HR_VIEW}><DirectMessages /></ProtectedRoute>
+            <ProtectedRoute allowedRoles={[...HR_VIEW,"employee"]}><DirectMessages /></ProtectedRoute>
           } />
 
           {/* ── Shop System ────────────────────────────────── */}
