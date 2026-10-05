@@ -10,10 +10,25 @@ const getOrCreateDM   = async (req,res) => { try { const {targetUserId,targetUse
 const addMember = async (req, res) => {
   try {
     const { userId, memberId } = req.body;
-    const targetId = userId || memberId;
-    if (!targetId) return res.status(400).json({ success: false, message: "userId or memberId required." });
+    const employeeId = userId || memberId;
+    if (!employeeId) return res.status(400).json({ success: false, message: "userId or memberId required." });
 
-    const d = await svc.addMember(req.params.id, targetId);
+    // The employee ID passed is from the Employee collection.
+    // We need the Admin account ID (login account) — look it up by matching email.
+    let adminId = employeeId; // default fallback
+    try {
+      const Employee = (await import('../models/Employee.js')).default;
+      const Admin    = (await import('../models/Admin.js')).default;
+      const emp = await Employee.findById(employeeId).select('email');
+      if (emp?.email) {
+        const admin = await Admin.findOne({ email: emp.email }).select('_id');
+        if (admin) adminId = admin._id;
+      }
+    } catch (lookupErr) {
+      console.warn("Admin lookup warning:", lookupErr.message);
+    }
+
+    const d = await svc.addMember(req.params.id, adminId);
 
     // Send notification to the added member
     try {
@@ -21,7 +36,7 @@ const addMember = async (req, res) => {
       const Channel = (await import('../models/Channel.js')).default;
       const channel = await Channel.findById(req.params.id).select('name');
       await Notification.create({
-        recipientId:    targetId,
+        recipientId:    adminId,
         recipientModel: "Admin",
         type:           "announcement",
         title:          `Added to #${channel?.name || 'channel'}`,
