@@ -525,6 +525,13 @@ const PayrollManager = () => {
                 <p className="font-black text-green-800 uppercase tracking-widest text-sm">Net Salary</p>
                 <p className="font-black text-green-800 text-xl">{INR(slipModal.netSalary)}</p>
               </div>
+              {/* Calculation notes */}
+              {slipModal.remarks && (
+                <div className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 text-xs text-blue-700">
+                  <p className="font-bold mb-1">Calculation Breakdown</p>
+                  <p className="font-mono text-[11px]">{slipModal.remarks}</p>
+                </div>
+              )}
               {/* Remarks */}
               {slipModal.status === "draft" && (
                 <div>
