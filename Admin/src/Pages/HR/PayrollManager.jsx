@@ -556,8 +556,9 @@ const PayrollManager = () => {
 
       {/* Set Salary Modal */}
       {salaryModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4 py-8 overflow-y-auto">
-          <div className="bg-white rounded-xl p-8 max-w-lg w-full shadow-2xl">
+        <div className="fixed inset-0 bg-black/50 z-50 overflow-y-auto">
+          <div className="flex min-h-full items-start justify-center px-4 py-6">
+            <div className="bg-white rounded-xl p-8 max-w-lg w-full shadow-2xl mt-4 mb-4">
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h3 className="text-lg font-black uppercase tracking-widest">Set Salary</h3>
@@ -618,6 +619,7 @@ const PayrollManager = () => {
                 {saving ? "Saving..." : "Save Salary"}
               </button>
             </div>
+          </div>
           </div>
         </div>
       )}
