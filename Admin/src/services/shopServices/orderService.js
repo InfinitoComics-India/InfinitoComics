@@ -27,8 +27,9 @@ export const formatDateTime = (dateOrIso) => {
   });
 };
 
-// Realistic mock orders across all lifecycle statuses
-const SEED_ORDERS = [
+// Realistic mock orders disabled - only real orders are shown
+const SEED_ORDERS = [];
+/* DEPRECATED MOCK ORDERS REMOVED - ONLY REAL ORDERS SHOWN
   {
     orderId: '#4721',
     id: '4721',
@@ -437,6 +438,145 @@ const SEED_ORDERS = [
     },
   },
 ];
+*/
+
+// Fictitious mock/seed orders blacklist to ensure ONLY real customer orders appear
+export const FAKE_SEED_IDS = new Set([
+  '4721', '4720', '4719', '4718', '4717',
+  '#4721', '#4720', '#4719', '#4718', '#4717'
+]);
+
+export const isRealOrder = (order) => {
+  if (!order) return false;
+  const idStr = String(order.id || order.orderId || '').replace(/^#/, '').trim();
+  if (!idStr) return false;
+  if (FAKE_SEED_IDS.has(idStr) || FAKE_SEED_IDS.has(`#${idStr}`)) return false;
+  return true;
+};
+
+// ── Cross-Origin Bridge & Real-Time Sync Bus ──────────────────────────
+const CANDIDATE_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'https://infinitohq.com',
+  'https://infinitocomicsfronted.netlify.app',
+  'https://shop.infinitohq.com'
+];
+
+let bridgeIframes = [];
+let broadcastBus = null;
+let bridgeInitialized = false;
+
+export const initCrossTabBridge = () => {
+  if (typeof window === 'undefined' || bridgeInitialized) return;
+  bridgeInitialized = true;
+
+  // 1. Same-origin / BroadcastChannel bus
+  try {
+    if (window.BroadcastChannel) {
+      broadcastBus = new BroadcastChannel('infinito_orders_bus');
+      broadcastBus.onmessage = (e) => {
+        if (e.data?.type === 'infinito_orders_sync' && Array.isArray(e.data.orders)) {
+          mergeExternalOrders(e.data.orders);
+        }
+      };
+    }
+  } catch {}
+
+  // 2. Cross-port/cross-origin iframe bridge to pull orders from Frontend (e.g. localhost:5173)
+  const currentOrigin = window.location.origin;
+  CANDIDATE_ORIGINS.forEach((orig) => {
+    if (orig !== currentOrigin) {
+      try {
+        const ifr = document.createElement('iframe');
+        ifr.src = `${orig}/auth-bridge.html`;
+        ifr.style.cssText = 'display:none;width:0;height:0;border:none;position:absolute;visibility:hidden;';
+        document.body.appendChild(ifr);
+        bridgeIframes.push(ifr);
+      } catch {}
+    }
+  });
+
+  // Listen for orders sent back from the iframe bridge
+  window.addEventListener('message', (event) => {
+    if ((event.data?.type === 'auth-bridge' || event.data?.type === 'orders-response') && event.data.orders) {
+      try {
+        const raw = event.data.orders;
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          mergeExternalOrders(parsed);
+        }
+      } catch {}
+    }
+  });
+};
+
+// Merge orders pulled from Frontend/Shop and purge all static seeds
+export const mergeExternalOrders = (incoming) => {
+  try {
+    const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
+    const existing = raw ? JSON.parse(raw) : [];
+    const validExisting = Array.isArray(existing) ? existing.filter(isRealOrder) : [];
+
+    const orderMap = new Map();
+    validExisting.forEach((o) => {
+      const key = String(o.id || o.orderId).replace(/^#/, '').trim();
+      if (key) orderMap.set(key, o);
+    });
+
+    let hasNew = false;
+    (Array.isArray(incoming) ? incoming : []).filter(isRealOrder).forEach((rawOrd) => {
+      const norm = normalizeCustomerOrder(rawOrd);
+      if (norm) {
+        const key = String(norm.id || norm.orderId).replace(/^#/, '').trim();
+        if (key && !orderMap.has(key)) {
+          hasNew = true;
+          orderMap.set(key, norm);
+        }
+      }
+    });
+
+    const merged = Array.from(orderMap.values());
+    merged.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(merged));
+
+    if (hasNew) {
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('infinito_order_placed', { detail: merged[0] }));
+      window.dispatchEvent(new CustomEvent('infinito_orders_updated', { detail: merged }));
+    }
+  } catch {}
+};
+
+// Sync orders outbound to all connected apps/iframes
+export const broadcastOrdersToBridge = (ordersList) => {
+  const valid = (ordersList || []).filter(isRealOrder);
+  try {
+    if (broadcastBus) {
+      broadcastBus.postMessage({ type: 'infinito_orders_sync', orders: valid });
+    }
+  } catch {}
+
+  bridgeIframes.forEach((ifr) => {
+    try {
+      ifr.contentWindow?.postMessage({
+        type: 'sync-orders',
+        orders: JSON.stringify(valid)
+      }, '*');
+    } catch {}
+  });
+};
+
+// Self-initialize bridge in browser
+if (typeof window !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCrossTabBridge);
+  } else {
+    setTimeout(initCrossTabBridge, 100);
+  }
+}
 
 // Helper to normalize orders loaded from customer-facing shop format or backend
 export const normalizeCustomerOrder = (raw) => {
@@ -497,7 +637,7 @@ export const normalizeCustomerOrder = (raw) => {
 
   return {
     orderId,
-    id: orderNum || '4721',
+    id: orderNum || (raw._id ? String(raw._id).slice(-4) : `${Date.now()}`.slice(-4)),
     createdAt: raw.createdAt || new Date().toISOString(),
     customer: {
       name: raw.customer?.name || addr.name || 'Valued Customer',
@@ -564,17 +704,26 @@ export const normalizeCustomerOrder = (raw) => {
   };
 };
 
-// Retrieve all stored orders, syncing with backend and merging local/seed orders
+// Retrieve all stored orders, syncing with live backend and cross-app storage (no static seed orders)
 export const getAllOrders = async () => {
   try {
+    initCrossTabBridge();
+
     let backendOrders = [];
+    // 1. Try primary backend
     try {
       const res = await axios.get(`${BACKEND_URL}/shop/orders?limit=200`, { timeout: 3500 });
       if (res.data?.success && Array.isArray(res.data?.data)) {
         backendOrders = res.data.data;
       }
     } catch {
-      // Backend unavailable or offline, continue with cached/seed data
+      // 2. Try local dev backend on port 5000 if primary is unreachable or 404
+      try {
+        const localRes = await axios.get(`http://localhost:5000/shop/orders?limit=200`, { timeout: 2000 });
+        if (localRes.data?.success && Array.isArray(localRes.data?.data)) {
+          backendOrders = localRes.data.data;
+        }
+      } catch {}
     }
 
     const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
@@ -590,31 +739,27 @@ export const getAllOrders = async () => {
 
     const orderMap = new Map();
 
-    // 1. Seed base orders
-    for (const seed of SEED_ORDERS) {
-      const key = String(seed.id || seed.orderId).replace(/^#/, '');
-      orderMap.set(key, seed);
-    }
-
-    // 2. Local customer orders
+    // 1. Local customer orders (purge fake seeds)
     for (const ord of localOrders) {
+      if (!isRealOrder(ord)) continue;
       const norm = normalizeCustomerOrder(ord);
-      if (norm) {
-        const key = String(norm.id || norm.orderId).replace(/^#/, '');
-        orderMap.set(key, norm);
+      if (norm && isRealOrder(norm)) {
+        const key = String(norm.id || norm.orderId).replace(/^#/, '').trim();
+        if (key) orderMap.set(key, norm);
       }
     }
 
-    // 3. Database orders (authoritative live truth)
+    // 2. Database orders (authoritative live truth)
     for (const ord of backendOrders) {
+      if (!isRealOrder(ord)) continue;
       const norm = normalizeCustomerOrder(ord);
-      if (norm) {
-        const key = String(norm.id || norm.orderId).replace(/^#/, '');
-        orderMap.set(key, norm);
+      if (norm && isRealOrder(norm)) {
+        const key = String(norm.id || norm.orderId).replace(/^#/, '').trim();
+        if (key) orderMap.set(key, norm);
       }
     }
 
-    const merged = Array.from(orderMap.values());
+    const merged = Array.from(orderMap.values()).filter(isRealOrder);
     merged.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     try {
@@ -624,7 +769,7 @@ export const getAllOrders = async () => {
     return merged;
   } catch (error) {
     console.error('Failed to get all orders:', error);
-    return SEED_ORDERS;
+    return [];
   }
 };
 
@@ -677,12 +822,14 @@ export const updateOrder = async (orderId, updates) => {
     localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(all));
   } catch {}
 
-  // Sync with backend API
+  // Sync with backend API (Render + local 5000 fallback)
   try {
-    await axios.patch(`${BACKEND_URL}/shop/orders/${clean}`, updates, { timeout: 3500 });
-  } catch (e) {
-    console.warn('Backend update sync note:', e.message);
-  }
+    axios.patch(`${BACKEND_URL}/shop/orders/${clean}`, updates, { timeout: 3500 }).catch(() => {});
+    axios.patch(`http://localhost:5000/shop/orders/${clean}`, updates, { timeout: 2000 }).catch(() => {});
+  } catch {}
+
+  // Broadcast to all connected app bridges
+  broadcastOrdersToBridge(all);
 
   window.dispatchEvent(new Event('storage'));
   window.dispatchEvent(new CustomEvent('infinito_orders_updated', { detail: updated }));
