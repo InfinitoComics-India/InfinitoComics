@@ -19,6 +19,7 @@ const EMP_ITEMS = [
   { label: "Self Service", to: "/employee-portal?tab=requests",      icon: LifeBuoy,      roles: EMP_ALL  },
   { label: "Work Log",     to: "/employee-portal?tab=worklog",       icon: ClipboardList, roles: EMP_ALL  },
   { label: "Chat",         to: "/hr/chat",                            icon: MessagesSquare,roles: EMP_ALL  },
+  { label: "My Profile",   to: "/employee-portal?tab=profile",       icon: User,          roles: ["employee"] },
 ];
 
 // ── Regular nav items (above HR section) ────────────────────

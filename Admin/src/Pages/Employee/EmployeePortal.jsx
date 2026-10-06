@@ -51,6 +51,7 @@ const TABS = [
   { key:"requests",    label:"Requests",     icon:Headphones     },
   { key:"performance", label:"Performance",  icon:TrendingUp     },
   { key:"messages",    label:"Messages",     icon:MessageCircle  },
+  { key:"profile",     label:"My Profile",   icon:User           },
 ];
 
 const EmployeePortal = () => {
@@ -126,6 +127,15 @@ const EmployeePortal = () => {
   const [msgSending, setMsgSending] = useState(false);
   const [dropOpen,   setDropOpen]   = useState(false);
 
+  // Profile state
+  const [profile,      setProfile]      = useState(null);
+  const [profileForm,  setProfileForm]  = useState({
+    phone:"", dateOfBirth:"", gender:"", address:"",
+    bankName:"", accountHolder:"", accountNumber:"", ifscCode:"",
+    emergencyContact: { name:"", phone:"", relation:"" }
+  });
+  const [profileSaving, setProfileSaving] = useState(false);
+
   useEffect(() => {
     const t = setInterval(() => setCountdown(getCountdown()), 30000);
     return () => clearInterval(t);
@@ -142,6 +152,7 @@ const EmployeePortal = () => {
     if (tab === "requests")    loadRequests();
     if (tab === "performance") loadPerformance();
     if (tab === "messages")    { loadInbox(); loadSentMsgs(); loadContacts(); loadMsgUnread(); }
+    if (tab === "profile")     loadProfile();
   }, [tab]);
 
   useEffect(() => { if (tab === "attendance") loadMonthlyAttd(); }, [attdMonth, attdYear]);
@@ -208,6 +219,40 @@ const EmployeePortal = () => {
       await axios.post(`${BASE}/messages/send`, { receiverId:toId, subject:msgSubject, body:msgBody }, auth());
       setSuccess("✅ Sent!"); setComposing(false); setToId(""); setToSearch(""); setMsgSubject(""); setMsgBody(""); loadSentMsgs();
     } catch(e) { setError(e.response?.data?.message||"Failed."); } finally { setMsgSending(false); }
+  };
+
+  const loadProfile = async () => {
+    try {
+      const r = await axios.get(`${BASE}/hr/employees/me/profile`, auth());
+      const d = r.data.data || {};
+      setProfile(d);
+      setProfileForm({
+        phone:        d.phone || "",
+        dateOfBirth:  d.dateOfBirth ? d.dateOfBirth.split("T")[0] : "",
+        gender:       d.gender || "",
+        address:      d.address || "",
+        bankName:     d.bankName || "",
+        accountHolder:d.accountHolder || "",
+        accountNumber:d.accountNumber || "",
+        ifscCode:     d.ifscCode || "",
+        emergencyContact: {
+          name:     d.emergencyContact?.name || "",
+          phone:    d.emergencyContact?.phone || "",
+          relation: d.emergencyContact?.relation || "",
+        },
+      });
+    } catch {}
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    try {
+      setProfileSaving(true); setError(""); setSuccess("");
+      await axios.patch(`${BASE}/hr/employees/me/profile`, profileForm, auth());
+      setSuccess("✅ Profile updated successfully!");
+      loadProfile();
+    } catch (e) { setError(e.response?.data?.message || "Failed to save profile."); }
+    finally { setProfileSaving(false); }
   };
 
   // ── Actions ──────────────────────────────────────────────────
@@ -872,6 +917,124 @@ const EmployeePortal = () => {
               )}
             </div>
           </div>
+        )}
+
+        {/* ── PROFILE ── */}
+        {tab === "profile" && (
+          <form onSubmit={handleSaveProfile} className="space-y-5 max-w-2xl">
+
+            {/* Personal Info */}
+            <div className="bg-white border rounded-xl p-6 space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <User size={18} className="text-[#DD1215]"/>
+                <h3 className="font-black text-gray-900 uppercase tracking-widest text-sm">Personal Information</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Full Name</label>
+                  <input value={myName} disabled className="w-full border border-gray-200 px-3 py-2.5 text-sm bg-gray-50 text-gray-400 rounded-lg cursor-not-allowed"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Email</label>
+                  <input value={myEmail} disabled className="w-full border border-gray-200 px-3 py-2.5 text-sm bg-gray-50 text-gray-400 rounded-lg cursor-not-allowed"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Phone Number</label>
+                  <input type="tel" value={profileForm.phone} onChange={e=>setProfileForm(f=>({...f,phone:e.target.value}))}
+                    placeholder="e.g. 9876543210" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Date of Birth</label>
+                  <input type="date" value={profileForm.dateOfBirth} onChange={e=>setProfileForm(f=>({...f,dateOfBirth:e.target.value}))}
+                    className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Gender</label>
+                  <select value={profileForm.gender} onChange={e=>setProfileForm(f=>({...f,gender:e.target.value}))}
+                    className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg bg-white">
+                    <option value="">Select gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                    <option value="prefer_not_to_say">Prefer not to say</option>
+                  </select>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Address</label>
+                  <textarea value={profileForm.address} onChange={e=>setProfileForm(f=>({...f,address:e.target.value}))}
+                    rows={2} placeholder="Your full address..."
+                    className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg resize-none"/>
+                </div>
+              </div>
+            </div>
+
+            {/* Bank Details */}
+            <div className="bg-white border rounded-xl p-6 space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <IndianRupee size={18} className="text-[#DD1215]"/>
+                <h3 className="font-black text-gray-900 uppercase tracking-widest text-sm">Bank Details</h3>
+              </div>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-2.5 text-xs text-yellow-800">
+                ⚠️ Your bank details are used for salary disbursement. Please ensure they are accurate.
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Account Holder Name *</label>
+                  <input type="text" value={profileForm.accountHolder} onChange={e=>setProfileForm(f=>({...f,accountHolder:e.target.value}))}
+                    placeholder="As on bank account" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Bank Name *</label>
+                  <input type="text" value={profileForm.bankName} onChange={e=>setProfileForm(f=>({...f,bankName:e.target.value}))}
+                    placeholder="e.g. HDFC Bank" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Account Number *</label>
+                  <input type="text" value={profileForm.accountNumber} onChange={e=>setProfileForm(f=>({...f,accountNumber:e.target.value}))}
+                    placeholder="e.g. 1234567890" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">IFSC Code *</label>
+                  <input type="text" value={profileForm.ifscCode} onChange={e=>setProfileForm(f=>({...f,ifscCode:e.target.value.toUpperCase()}))}
+                    placeholder="e.g. HDFC0001234" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg font-mono"/>
+                </div>
+              </div>
+            </div>
+
+            {/* Emergency Contact */}
+            <div className="bg-white border rounded-xl p-6 space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle size={18} className="text-[#DD1215]"/>
+                <h3 className="font-black text-gray-900 uppercase tracking-widest text-sm">Emergency Contact</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Contact Name</label>
+                  <input type="text" value={profileForm.emergencyContact.name}
+                    onChange={e=>setProfileForm(f=>({...f,emergencyContact:{...f.emergencyContact,name:e.target.value}}))}
+                    placeholder="e.g. Parent / Spouse" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Phone</label>
+                  <input type="tel" value={profileForm.emergencyContact.phone}
+                    onChange={e=>setProfileForm(f=>({...f,emergencyContact:{...f.emergencyContact,phone:e.target.value}}))}
+                    placeholder="9876543210" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Relation</label>
+                  <input type="text" value={profileForm.emergencyContact.relation}
+                    onChange={e=>setProfileForm(f=>({...f,emergencyContact:{...f.emergencyContact,relation:e.target.value}}))}
+                    placeholder="e.g. Father, Mother" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+              </div>
+            </div>
+
+            {/* Save button */}
+            <button type="submit" disabled={profileSaving}
+              className="flex items-center justify-center gap-2 w-full bg-[#DD1215] text-white py-3 text-xs font-black uppercase tracking-widest hover:bg-red-700 transition disabled:opacity-50 rounded-xl">
+              <Send size={14}/> {profileSaving ? "Saving..." : "Save Profile"}
+            </button>
+          </form>
         )}
       </div>
 
