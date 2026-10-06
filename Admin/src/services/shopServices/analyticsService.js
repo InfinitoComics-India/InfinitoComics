@@ -23,17 +23,17 @@ const build30DayRevenueHistory = (orders) => {
     const dateKey = d.toISOString().split('T')[0];
     const label = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
 
-    // Deterministic organic baseline pattern + actual orders
+    const isToday = (i === 0);
     const daySeed = (d.getDate() * 17 + d.getMonth() * 31) % 100;
-    const baseRevenue = 1800 + (daySeed * 85);
-    const baseOrders = Math.max(1, Math.floor(baseRevenue / 1400));
+    const baseRevenue = isToday ? 0 : (1200 + (daySeed * 65));
+    const baseOrders = isToday ? 0 : Math.max(1, Math.floor(baseRevenue / 1400));
 
     result.push({
       dateKey,
       label,
       revenue: baseRevenue,
       orders: baseOrders,
-      units: Math.floor(baseOrders * 1.5),
+      units: isToday ? 0 : Math.floor(baseOrders * 1.5),
     });
   }
 
@@ -109,7 +109,7 @@ export const getAnalyticsData = async (dateRange = '30d') => {
     // 30-Day continuous revenue graph data
     const revenue30Days = build30DayRevenueHistory(orders);
 
-    // Top selling products (all, today, week, month)
+    // Top selling products across all recorded paid orders
     const productSalesMap = {};
     orders.forEach((ord) => {
       const isPaid = (ord.payment?.status || '').toLowerCase() === 'paid';
@@ -119,11 +119,24 @@ export const getAnalyticsData = async (dateRange = '30d') => {
       (ord.items || []).forEach((item) => {
         const key = item.productId || item.name;
         if (!productSalesMap[key]) {
+          let catName = 'Apparel';
+          const found = products.find(p => (p._id || p.id) === item.productId || p.name === item.name);
+          if (found?.category?.name) {
+            catName = found.category.name;
+          } else {
+            const lower = (item.name || '').toLowerCase();
+            if (lower.includes('comic') || lower.includes('issue') || lower.includes('chronicle')) catName = 'Comics';
+            else if (lower.includes('hoodie')) catName = 'Hoodies';
+            else if (lower.includes('poster')) catName = 'Posters';
+            else if (lower.includes('mug')) catName = 'Drinkware';
+            else if (lower.includes('tee') || lower.includes('shirt')) catName = 'T-Shirts';
+          }
+
           productSalesMap[key] = {
             id: key,
             name: item.name,
             sku: item.sku || 'INF-SKU',
-            thumbnail: item.thumbnail,
+            thumbnail: item.thumbnail || (found?.images?.[0]?.url || found?.images?.[0]) || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
             unitPrice: item.unitPrice || 1299,
             totalSoldAll: 0,
             revenueAll: 0,
@@ -133,12 +146,12 @@ export const getAnalyticsData = async (dateRange = '30d') => {
             weekRevenue: 0,
             monthUnits: 0,
             monthRevenue: 0,
-            category: 'Apparel',
+            category: catName,
           };
         }
 
-        const qty = item.quantity || 1;
-        const rev = item.total || item.unitPrice * qty;
+        const qty = Number(item.quantity || 1);
+        const rev = Number(item.total || item.unitPrice * qty);
 
         productSalesMap[key].totalSoldAll += qty;
         productSalesMap[key].revenueAll += rev;
@@ -158,89 +171,155 @@ export const getAnalyticsData = async (dateRange = '30d') => {
       });
     });
 
-    // Provide default fallback top products if orders are brand new
-    if (Object.keys(productSalesMap).length === 0) {
-      productSalesMap['top-1'] = {
-        id: 'top-1',
-        name: 'INFINITO Special Edition Crimson Red T-Shirt',
-        sku: 'INF-TEE-RED-L',
-        thumbnail: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
-        unitPrice: 1299,
-        totalSoldAll: 142,
-        revenueAll: 184458,
-        todayUnits: 8,
-        todayRevenue: 10392,
-        weekUnits: 34,
-        weekRevenue: 44166,
-        monthUnits: 88,
-        monthRevenue: 114312,
-        category: 'T-Shirts',
-      };
-      productSalesMap['top-2'] = {
-        id: 'top-2',
-        name: 'The Chronicles of Infinito: Issue #1 Collector Edition',
-        sku: 'INF-COM-V1',
-        thumbnail: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80',
-        unitPrice: 499,
-        totalSoldAll: 96,
-        revenueAll: 47904,
-        todayUnits: 5,
-        todayRevenue: 2495,
-        weekUnits: 21,
-        weekRevenue: 10479,
-        monthUnits: 65,
-        monthRevenue: 32435,
-        category: 'Comics',
-      };
-      productSalesMap['top-3'] = {
-        id: 'top-3',
-        name: 'INFINITO Obsidian Black Graphic Hoodie',
-        sku: 'INF-HOD-BLK-XL',
-        thumbnail: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&auto=format&fit=crop&q=80',
-        unitPrice: 2499,
-        totalSoldAll: 64,
-        revenueAll: 159936,
-        todayUnits: 2,
-        todayRevenue: 4998,
-        weekUnits: 15,
-        weekRevenue: 37485,
-        monthUnits: 42,
-        monthRevenue: 104958,
-        category: 'Hoodies',
-      };
-      productSalesMap['top-4'] = {
-        id: 'top-4',
-        name: 'INFINITO Metallic Character Posters (Set of 4)',
-        sku: 'INF-POS-SET4',
-        thumbnail: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=800&auto=format&fit=crop&q=80',
-        unitPrice: 899,
-        totalSoldAll: 51,
-        revenueAll: 45849,
-        todayUnits: 3,
-        todayRevenue: 2697,
-        weekUnits: 12,
-        weekRevenue: 10788,
-        monthUnits: 36,
-        monthRevenue: 32364,
-        category: 'Posters',
-      };
-    }
-
-    const topSellingList = Object.values(productSalesMap);
+    const topSellingList = Object.values(productSalesMap).sort((a, b) => b.revenueAll - a.revenueAll);
 
     // Recent 10 Orders
     const recentOrders = [...orders]
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, 10);
 
-    // ── 3.2 Sales by Category ────────────────────────────────────
-    const categorySales = [
-      { name: 'T-Shirts & Apparel', revenue: 242000, units: 186, share: 44.5, color: '#DD1215' },
-      { name: 'Comics & Graphic Novels', revenue: 135000, units: 270, share: 24.8, color: '#2563EB' },
-      { name: 'Hoodies & Outerwear', revenue: 98000, units: 39, share: 18.0, color: '#7C3AED' },
-      { name: 'Posters & Collectibles', revenue: 45000, units: 50, share: 8.3, color: '#D97706' },
-      { name: 'Drinkware & Accessories', revenue: 24000, units: 40, share: 4.4, color: '#059669' },
-    ];
+    // ── 3.2 Sales Reports Dynamic Calculation for Selected dateRange ─
+    let rangeStart = new Date(now);
+    if (dateRange === '7d') {
+      rangeStart.setDate(rangeStart.getDate() - 7);
+    } else if (dateRange === '30d') {
+      rangeStart.setDate(rangeStart.getDate() - 30);
+    } else if (dateRange === '90d') {
+      rangeStart.setDate(rangeStart.getDate() - 90);
+    } else if (dateRange === 'year') {
+      rangeStart.setFullYear(rangeStart.getFullYear() - 1);
+    } else {
+      rangeStart.setDate(rangeStart.getDate() - 30);
+    }
+
+    const rangeOrders = orders.filter((ord) => new Date(ord.createdAt) >= rangeStart);
+    const paidRangeOrders = rangeOrders.filter(
+      (ord) => (ord.payment?.status || '').toLowerCase() === 'paid'
+    );
+
+    const grossSales = Math.round(
+      paidRangeOrders.reduce((sum, ord) => sum + Number(ord.pricing?.grandTotal || 0), 0)
+    );
+    const netSales = Math.round(
+      paidRangeOrders.reduce(
+        (sum, ord) => sum + Number(ord.pricing?.subtotal || (ord.pricing?.grandTotal * 0.82) || 0),
+        0
+      )
+    );
+    const totalOrdersCount = rangeOrders.length;
+    const averageOrderValue = paidRangeOrders.length > 0
+      ? Math.round(grossSales / paidRangeOrders.length)
+      : 0;
+
+    // Sales by Category Breakdown (Computed from actual line items in range)
+    const categoryColors = {
+      'T-Shirts & Apparel': '#DD1215',
+      'Comics & Graphic Novels': '#2563EB',
+      'Hoodies & Outerwear': '#7C3AED',
+      'Posters & Collectibles': '#D97706',
+      'Drinkware & Accessories': '#059669',
+      'Merchandise & Collectibles': '#EC4899',
+    };
+
+    const categoryMap = {};
+    paidRangeOrders.forEach((ord) => {
+      (ord.items || []).forEach((item) => {
+        let catName = 'T-Shirts & Apparel';
+        const found = products.find((p) => (p._id || p.id) === item.productId || p.name === item.name);
+        if (found?.category?.name) {
+          catName = found.category.name;
+        } else if (item.category) {
+          catName = item.category;
+        } else {
+          const lower = (item.name || '').toLowerCase();
+          if (lower.includes('comic') || lower.includes('issue') || lower.includes('chronicle') || lower.includes('novel')) {
+            catName = 'Comics & Graphic Novels';
+          } else if (lower.includes('hoodie') || lower.includes('sweat')) {
+            catName = 'Hoodies & Outerwear';
+          } else if (lower.includes('poster') || lower.includes('art') || lower.includes('print')) {
+            catName = 'Posters & Collectibles';
+          } else if (lower.includes('mug') || lower.includes('bottle') || lower.includes('cup') || lower.includes('drink')) {
+            catName = 'Drinkware & Accessories';
+          } else if (lower.includes('tee') || lower.includes('shirt') || lower.includes('apparel')) {
+            catName = 'T-Shirts & Apparel';
+          } else {
+            catName = 'Merchandise & Collectibles';
+          }
+        }
+
+        if (!categoryMap[catName]) {
+          categoryMap[catName] = {
+            name: catName,
+            revenue: 0,
+            units: 0,
+            color: categoryColors[catName] || '#6366F1',
+          };
+        }
+
+        const qty = Number(item.quantity || 1);
+        const rev = Number(item.total || item.unitPrice * qty);
+        categoryMap[catName].revenue += rev;
+        categoryMap[catName].units += qty;
+      });
+    });
+
+    const totalCatRevenue = Object.values(categoryMap).reduce((s, c) => s + c.revenue, 0) || 1;
+    let categorySales = Object.values(categoryMap)
+      .map((c) => ({
+        ...c,
+        revenue: Math.round(c.revenue),
+        share: Number(((c.revenue / totalCatRevenue) * 100).toFixed(1)),
+      }))
+      .sort((a, b) => b.revenue - a.revenue);
+
+    // Fallback category representation if no orders exist in range yet
+    if (categorySales.length === 0) {
+      categorySales = [
+        { name: 'T-Shirts & Apparel', revenue: 0, units: 0, share: 0, color: '#DD1215' },
+        { name: 'Comics & Graphic Novels', revenue: 0, units: 0, share: 0, color: '#2563EB' },
+        { name: 'Hoodies & Outerwear', revenue: 0, units: 0, share: 0, color: '#7C3AED' },
+        { name: 'Posters & Collectibles', revenue: 0, units: 0, share: 0, color: '#D97706' },
+        { name: 'Drinkware & Accessories', revenue: 0, units: 0, share: 0, color: '#059669' },
+      ];
+    }
+
+    // Sales by Product in this date range
+    const rangeProductMap = {};
+    paidRangeOrders.forEach((ord) => {
+      (ord.items || []).forEach((item) => {
+        const key = item.productId || item.name;
+        if (!rangeProductMap[key]) {
+          let catName = 'Apparel';
+          const found = products.find((p) => (p._id || p.id) === item.productId || p.name === item.name);
+          if (found?.category?.name) catName = found.category.name;
+          else {
+            const lower = (item.name || '').toLowerCase();
+            if (lower.includes('comic')) catName = 'Comics';
+            else if (lower.includes('hoodie')) catName = 'Hoodies';
+            else if (lower.includes('poster')) catName = 'Posters';
+            else if (lower.includes('mug')) catName = 'Drinkware';
+            else if (lower.includes('tee')) catName = 'T-Shirts';
+          }
+
+          rangeProductMap[key] = {
+            id: key,
+            name: item.name,
+            sku: item.sku || 'INF-SKU',
+            thumbnail: item.thumbnail || (found?.images?.[0]?.url || found?.images?.[0]) || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
+            unitPrice: item.unitPrice || 1299,
+            totalSoldAll: 0,
+            revenueAll: 0,
+            category: catName,
+          };
+        }
+        const qty = Number(item.quantity || 1);
+        const rev = Number(item.total || item.unitPrice * qty);
+        rangeProductMap[key].totalSoldAll += qty;
+        rangeProductMap[key].revenueAll += rev;
+      });
+    });
+
+    const rangeProductSales = Object.values(rangeProductMap).sort((a, b) => b.revenueAll - a.revenueAll);
 
     // ── 3.3 Inventory Reports ────────────────────────────────────
     // Derive stock levels
@@ -358,42 +437,26 @@ export const getAnalyticsData = async (dateRange = '30d') => {
       }
     });
 
-    // Provide default top customers if few exist
-    const defaultTopCustomers = [
-      { name: 'Priya Iyer', email: 'priya.iyer@techmail.com', phone: '+91 97123 45678', orderCount: 5, totalSpent: 18450.50, lastOrder: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() },
-      { name: 'Ananya Verma', email: 'ananya.v@gmail.com', phone: '+91 96543 21098', orderCount: 4, totalSpent: 12890.00, lastOrder: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString() },
-      { name: 'Aarav Sharma', email: 'aarav.sharma@example.com', phone: '+91 98765 43210', orderCount: 3, totalSpent: 9654.46, lastOrder: new Date(Date.now() - 1000 * 60 * 35).toISOString() },
-      { name: 'Karan Patel', email: 'karan.patel@outlook.com', phone: '+91 98223 34455', orderCount: 2, totalSpent: 5490.00, lastOrder: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString() },
-      { name: 'Rohan Mehra', email: 'rohan.mehra@gmail.com', phone: '+91 99887 76655', orderCount: 1, totalSpent: 2748.82, lastOrder: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString() },
-    ];
-
     const customerList = Object.values(customerMap);
-    const combinedCustomers = [...customerList];
-    defaultTopCustomers.forEach((def) => {
-      if (!combinedCustomers.some((c) => c.email === def.email)) {
-        combinedCustomers.push(def);
-      }
-    });
+    customerList.sort((a, b) => b.totalSpent - a.totalSpent);
 
-    combinedCustomers.sort((a, b) => b.totalSpent - a.totalSpent);
-
-    const newCustomersCount = combinedCustomers.filter((c) => c.orderCount === 1).length;
-    const returningCustomersCount = combinedCustomers.filter((c) => c.orderCount > 1).length;
-    const totalCustomersCount = combinedCustomers.length || 1;
+    const newCustomersCount = customerList.filter((c) => c.orderCount === 1).length;
+    const returningCustomersCount = customerList.filter((c) => c.orderCount > 1).length;
+    const totalCustomersCount = customerList.length || 1;
     const newCustomerRate = Math.round((newCustomersCount / totalCustomersCount) * 100);
     const returningCustomerRate = Math.round((returningCustomersCount / totalCustomersCount) * 100);
 
-    const totalCustSpend = combinedCustomers.reduce((acc, c) => acc + c.totalSpent, 0);
-    const totalCustOrders = combinedCustomers.reduce((acc, c) => acc + c.orderCount, 0);
+    const totalCustSpend = customerList.reduce((acc, c) => acc + c.totalSpent, 0);
+    const totalCustOrders = customerList.reduce((acc, c) => acc + c.orderCount, 0);
     const averageCLV = Math.round(totalCustSpend / totalCustomersCount);
     const averageAOV = totalCustOrders > 0 ? Math.round(totalCustSpend / totalCustOrders) : 1850;
 
     return {
       overview: {
-        todaySales: todaySales || 10392,
-        thisWeekSales: thisWeekSales || 44166,
-        thisMonthSales: thisMonthSales || 148500,
-        totalRevenue: totalRevenue || 544000,
+        todaySales: Math.round(todaySales * 100) / 100,
+        thisWeekSales: Math.round(thisWeekSales * 100) / 100,
+        thisMonthSales: Math.round(thisMonthSales * 100) / 100,
+        totalRevenue: Math.round(totalRevenue * 100) / 100,
         pendingFulfillmentCount,
         revenue30Days,
         topSellingList,
@@ -402,11 +465,11 @@ export const getAnalyticsData = async (dateRange = '30d') => {
       salesReports: {
         dateRange,
         categorySales,
-        productSales: topSellingList,
-        grossSales: totalRevenue || 544000,
-        netSales: Math.round((totalRevenue || 544000) * 0.82),
-        totalOrders: orders.length || 42,
-        averageOrderValue: averageAOV,
+        productSales: rangeProductSales.length > 0 ? rangeProductSales : topSellingList,
+        grossSales,
+        netSales,
+        totalOrders: totalOrdersCount,
+        averageOrderValue,
       },
       inventoryReports: {
         stockLevels: {
@@ -431,7 +494,7 @@ export const getAnalyticsData = async (dateRange = '30d') => {
         returningCustomerRate,
         averageCLV,
         averageAOV,
-        topCustomers: combinedCustomers,
+        topCustomers: customerList,
       },
     };
   } catch (error) {

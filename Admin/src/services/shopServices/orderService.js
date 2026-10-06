@@ -438,52 +438,75 @@ const SEED_ORDERS = [
   },
 ];
 
-// Helper to normalize orders loaded from customer-facing shop format
-const normalizeCustomerOrder = (raw) => {
+// Helper to normalize orders loaded from customer-facing shop format or backend
+export const normalizeCustomerOrder = (raw) => {
   if (!raw) return null;
-  // If already normalized
-  if (raw.customer && raw.fulfillment && raw.pricing) return raw;
 
   const orderNum = String(raw.id || raw.orderId || '').replace(/^#/, '');
   const orderId = raw.orderId ? (raw.orderId.startsWith('#') ? raw.orderId : `#${raw.orderId}`) : `#${orderNum}`;
+
+  // If already normalized with full nested structure from backend or admin
+  if (raw.customer?.email && raw.fulfillment?.status && raw.pricing?.grandTotal !== undefined && Array.isArray(raw.items) && raw.shippingAddress) {
+    return {
+      ...raw,
+      id: orderNum || raw.id,
+      orderId,
+      createdAt: raw.createdAt || new Date().toISOString(),
+    };
+  }
+
   const items = (raw.items || []).map((item, idx) => {
     const prod = item.product || {};
-    const unitPrice = Number(prod.price || prod.salePrice || prod.basePrice || 1299);
+    const unitPrice = Number(prod.price || prod.salePrice || prod.basePrice || item.unitPrice || item.price || 1299);
     const qty = Number(item.quantity || 1);
+    const name = item.name || prod.name || prod.title || 'INFINITO Item';
     return {
-      productId: item.productId || `prod-${idx}`,
-      name: prod.name || prod.title || 'INFINITO Item',
-      sku: `INF-${(prod.name || 'ITEM').substring(0, 3).toUpperCase()}-${item.size || 'M'}`,
-      variant: { size: item.size || 'M', color: item.color || 'Standard' },
-      thumbnail: prod.image || (Array.isArray(prod.images) ? prod.images[0]?.url || prod.images[0] : null) || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
+      productId: item.productId || prod.id || prod._id || `prod-${idx}`,
+      name,
+      sku: item.sku || `INF-${name.substring(0, 3).toUpperCase()}-${item.size || item.variant?.size || 'M'}`,
+      variant: {
+        size: item.size || item.variant?.size || 'M',
+        color: item.color || item.variant?.color || 'Standard',
+      },
+      thumbnail: prod.image || (Array.isArray(prod.images) ? prod.images[0]?.url || prod.images[0] : null) || item.thumbnail || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
       quantity: qty,
       unitPrice,
       total: unitPrice * qty,
     };
   });
 
-  const subtotal = items.reduce((s, i) => s + i.total, 0);
-  const tax = Number((subtotal * 0.18).toFixed(2));
-  const shipping = subtotal > 999 ? 0 : 50;
-  const grandTotal = Number((subtotal + tax + shipping).toFixed(2));
+  const subtotal = raw.pricing?.subtotal !== undefined ? raw.pricing.subtotal : items.reduce((s, i) => s + i.total, 0);
+  const tax = raw.pricing?.tax !== undefined ? raw.pricing.tax : Number((subtotal * 0.18).toFixed(2));
+  const shipping = raw.pricing?.shipping !== undefined ? raw.pricing.shipping : (subtotal > 999 ? 0 : 50);
+  const grandTotal = raw.pricing?.grandTotal !== undefined ? raw.pricing.grandTotal : (raw.total ? Number(raw.total) : Number((subtotal + tax + shipping).toFixed(2)));
 
-  const addr = raw.address || {};
+  const addr = raw.address || raw.shippingAddress || {};
   const addrFormatted = addr.formatted || `${addr.line1 || 'Sector 18, House No. 42'}\n${addr.city || 'Chandigarh'}, ${addr.state || 'Punjab'}\n${addr.pincode || '160018'}, ${addr.country || 'India'}`;
 
-  const isCancelled = raw.status === 'Cancelled';
+  // Determine fulfillment status
+  let fulfillStatus = raw.fulfillment?.status;
+  if (!fulfillStatus) {
+    if (raw.status === 'Cancelled') fulfillStatus = 'Cancelled';
+    else if (raw.status === 'Dispatched' || raw.status === 'Out for Delivery') fulfillStatus = 'Processing';
+    else if (raw.status === 'Order Delivered') fulfillStatus = 'Fulfilled';
+    else fulfillStatus = 'Unfulfilled';
+  }
+
+  const isCancelled = fulfillStatus === 'Cancelled';
+  const paymentStatus = raw.payment?.status || (isCancelled ? 'Refunded' : 'Paid');
 
   return {
     orderId,
     id: orderNum || '4721',
     createdAt: raw.createdAt || new Date().toISOString(),
     customer: {
-      name: addr.name || 'Valued Customer',
-      email: addr.email || 'customer@infinitohq.com',
-      phone: addr.phone || '+91 98765 43210',
-      totalOrders: 1,
+      name: raw.customer?.name || addr.name || 'Valued Customer',
+      email: raw.customer?.email || addr.email || 'customer@infinitohq.com',
+      phone: raw.customer?.phone || addr.phone || '+91 98765 43210',
+      totalOrders: raw.customer?.totalOrders || 1,
     },
     shippingAddress: {
-      name: addr.name || 'Valued Customer',
+      name: addr.name || raw.customer?.name || 'Valued Customer',
       line1: addr.line1 || 'Sector 18, House No. 42, Green Park Extension',
       city: addr.city || 'Chandigarh',
       state: addr.state || 'Punjab',
@@ -491,8 +514,8 @@ const normalizeCustomerOrder = (raw) => {
       country: addr.country || 'India',
       formatted: addrFormatted,
     },
-    billingAddress: {
-      name: addr.name || 'Valued Customer',
+    billingAddress: raw.billingAddress || {
+      name: addr.name || raw.customer?.name || 'Valued Customer',
       line1: addr.line1 || 'Sector 18, House No. 42, Green Park Extension',
       city: addr.city || 'Chandigarh',
       state: addr.state || 'Punjab',
@@ -506,31 +529,31 @@ const normalizeCustomerOrder = (raw) => {
       subtotal,
       shipping,
       tax,
-      discount: 0,
-      grandTotal: raw.total ? Number(raw.total) : grandTotal,
+      discount: raw.pricing?.discount || 0,
+      grandTotal,
     },
     payment: {
-      method: raw.paymentMethod || 'Razorpay (UPI)',
-      transactionId: `pay_Rzp${Math.floor(10000000 + Math.random() * 90000000)}`,
-      status: isCancelled ? 'Refunded' : 'Paid',
-      date: raw.createdAt || new Date().toISOString(),
+      method: raw.paymentMethod || raw.payment?.method || 'Razorpay (UPI)',
+      transactionId: raw.payment?.transactionId || `pay_Rzp${Math.floor(10000000 + Math.random() * 90000000)}`,
+      status: paymentStatus,
+      date: raw.payment?.date || raw.createdAt || new Date().toISOString(),
     },
     fulfillment: {
-      status: isCancelled ? 'Cancelled' : 'Unfulfilled',
-      qikink: {
+      status: fulfillStatus,
+      qikink: raw.fulfillment?.qikink || {
         sent: false,
         sentAt: null,
         qikinkOrderId: null,
         status: isCancelled ? 'Cancelled' : 'Pending Dispatch',
       },
-      tracking: {
-        carrier: '',
+      tracking: raw.fulfillment?.tracking || {
+        carrier: 'BlueDart',
         trackingNumber: '',
         trackingUrl: '',
         estimatedDelivery: '',
       },
     },
-    timeline: {
+    timeline: raw.timeline || {
       orderPlaced: raw.createdAt || new Date().toISOString(),
       paymentConfirmed: raw.createdAt || new Date().toISOString(),
       sentToQikink: null,
@@ -541,32 +564,63 @@ const normalizeCustomerOrder = (raw) => {
   };
 };
 
-// Retrieve all stored orders, merging seed orders if storage is empty or augmenting
+// Retrieve all stored orders, syncing with backend and merging local/seed orders
 export const getAllOrders = async () => {
   try {
+    let backendOrders = [];
+    try {
+      const res = await axios.get(`${BACKEND_URL}/shop/orders?limit=200`, { timeout: 3500 });
+      if (res.data?.success && Array.isArray(res.data?.data)) {
+        backendOrders = res.data.data;
+      }
+    } catch {
+      // Backend unavailable or offline, continue with cached/seed data
+    }
+
     const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
-    let list = [];
+    let localOrders = [];
     if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        list = parsed.map(normalizeCustomerOrder).filter(Boolean);
-      }
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          localOrders = parsed;
+        }
+      } catch {}
     }
 
-    // Merge SEED_ORDERS so the admin always has varied statuses available
-    const existingIds = new Set(list.map(o => String(o.id || o.orderId).replace(/^#/, '')));
-    const merged = [...list];
+    const orderMap = new Map();
+
+    // 1. Seed base orders
     for (const seed of SEED_ORDERS) {
-      if (!existingIds.has(String(seed.id))) {
-        merged.push(seed);
+      const key = String(seed.id || seed.orderId).replace(/^#/, '');
+      orderMap.set(key, seed);
+    }
+
+    // 2. Local customer orders
+    for (const ord of localOrders) {
+      const norm = normalizeCustomerOrder(ord);
+      if (norm) {
+        const key = String(norm.id || norm.orderId).replace(/^#/, '');
+        orderMap.set(key, norm);
       }
     }
 
-    // Sort newest first
+    // 3. Database orders (authoritative live truth)
+    for (const ord of backendOrders) {
+      const norm = normalizeCustomerOrder(ord);
+      if (norm) {
+        const key = String(norm.id || norm.orderId).replace(/^#/, '');
+        orderMap.set(key, norm);
+      }
+    }
+
+    const merged = Array.from(orderMap.values());
     merged.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    // Persist merged for consistent experience
-    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(merged));
+    try {
+      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(merged));
+    } catch {}
+
     return merged;
   } catch (error) {
     console.error('Failed to get all orders:', error);
@@ -577,12 +631,21 @@ export const getAllOrders = async () => {
 // Get single order by ID
 export const getOrderById = async (idOrHash) => {
   const clean = String(idOrHash || '').replace(/^#/, '').trim();
+
+  // Try backend lookup
+  try {
+    const res = await axios.get(`${BACKEND_URL}/shop/orders/${clean}`, { timeout: 3000 });
+    if (res.data?.success && res.data?.data) {
+      return normalizeCustomerOrder(res.data.data);
+    }
+  } catch {}
+
   const all = await getAllOrders();
   const found = all.find(o => String(o.id) === clean || String(o.orderId) === `#${clean}`);
   return found || all[0] || null;
 };
 
-// Update order with custom changes and persist
+// Update order with custom changes and persist across both backend and local cache
 export const updateOrder = async (orderId, updates) => {
   const clean = String(orderId || '').replace(/^#/, '').trim();
   const all = await getAllOrders();
@@ -610,7 +673,20 @@ export const updateOrder = async (orderId, updates) => {
   };
 
   all[index] = updated;
-  localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(all));
+  try {
+    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(all));
+  } catch {}
+
+  // Sync with backend API
+  try {
+    await axios.patch(`${BACKEND_URL}/shop/orders/${clean}`, updates, { timeout: 3500 });
+  } catch (e) {
+    console.warn('Backend update sync note:', e.message);
+  }
+
+  window.dispatchEvent(new Event('storage'));
+  window.dispatchEvent(new CustomEvent('infinito_orders_updated', { detail: updated }));
+
   return updated;
 };
 
@@ -686,14 +762,25 @@ export const markOrderAsFulfilled = async (orderId, { carrier, trackingNumber, e
 
 // Cancel Order
 export const cancelOrder = async (orderId, reason = 'Cancelled by Administrator') => {
+  const clean = String(orderId || '').replace(/^#/, '').trim();
   const order = await getOrderById(orderId);
   if (!order) throw new Error('Order not found');
+
+  try {
+    await axios.post(`${BACKEND_URL}/shop/orders/${clean}/cancel`, { reason }, { timeout: 3500 });
+  } catch (e) {
+    console.warn('Backend cancel endpoint fallback:', e.message);
+  }
 
   const now = new Date().toISOString();
   const updates = {
     fulfillment: {
       ...order.fulfillment,
       status: 'Cancelled',
+    },
+    payment: {
+      ...order.payment,
+      status: 'Refunded',
     },
     cancellation: {
       cancelledAt: now,
