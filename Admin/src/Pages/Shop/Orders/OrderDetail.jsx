@@ -51,15 +51,29 @@ const OrderDetail = () => {
 
   useEffect(() => {
     loadOrder();
+
+    const handleUpdate = () => {
+      loadOrder(true);
+    };
+
+    window.addEventListener('storage', handleUpdate);
+    window.addEventListener('infinito_orders_updated', handleUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleUpdate);
+      window.removeEventListener('infinito_orders_updated', handleUpdate);
+    };
   }, [orderId]);
 
-  const loadOrder = async () => {
+  const loadOrder = async (isBackground = false) => {
     try {
-      setLoading(true);
+      if (!isBackground) setLoading(true);
       const data = await getOrderById(orderId);
       if (!data) {
-        message.error(`Order #${orderId} not found`);
-        navigate('/shop/orders');
+        if (!isBackground) {
+          message.error(`Order #${orderId} not found`);
+          navigate('/shop/orders');
+        }
         return;
       }
       setOrder(data);
@@ -68,9 +82,9 @@ const OrderDetail = () => {
       setFulfillDeliveryDate(data.fulfillment?.tracking?.estimatedDelivery || formatOrderDate(new Date(), 3));
     } catch (err) {
       console.error(err);
-      message.error('Failed to load order details');
+      if (!isBackground) message.error('Failed to load order details');
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
 

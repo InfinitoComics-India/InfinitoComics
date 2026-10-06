@@ -1,3 +1,6 @@
+import axios from "axios";
+import { BACKEND_URL } from "../utils/constants";
+
 // Service for managing Shop orders, delivery addresses, and invoice generation
 
 const ORDERS_KEY = "infinito_orders";
@@ -5,6 +8,8 @@ const ADDRESS_KEY = "infinito_delivery_address";
 const CURRENT_ORDER_KEY = "infinito_current_order";
 
 export const DEFAULT_ADDRESS = {
+  name: "Valued Customer",
+  phone: "+91 98765 43210",
   line1: "Sector 18, House No. 42, Green Park Extension, Sector 18",
   city: "Chandigarh",
   state: "Punjab",
@@ -73,12 +78,35 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
   const cancellationFee = 199;
   const refundAmount = Number(Math.max(0, finalTotal - cancellationFee).toFixed(2));
 
+  // Pull customer profile if logged in
+  let customerInfo = {
+    name: "Valued Customer",
+    email: "customer@infinitohq.com",
+    phone: "+91 98765 43210",
+  };
+  try {
+    const userRaw = localStorage.getItem("user");
+    if (userRaw) {
+      const u = JSON.parse(userRaw);
+      customerInfo = {
+        name: u.name || customerInfo.name,
+        email: u.email || customerInfo.email,
+        phone: u.phone || customerInfo.phone,
+      };
+    }
+  } catch {}
+
+  const activeAddr = address || getDeliveryAddress();
+  if (activeAddr.name) customerInfo.name = activeAddr.name;
+  if (activeAddr.phone) customerInfo.phone = activeAddr.phone;
+
   const newOrder = {
     orderId,
     id: orderNumber.toString(),
     createdAt: now.toISOString(),
+    customer: customerInfo,
     items,
-    address: address || getDeliveryAddress(),
+    address: activeAddr,
     paymentMethod,
     subtotal,
     taxPercent: 18,
@@ -94,15 +122,25 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
     },
   };
 
+  // 1. Optimistic Local Storage save
   try {
     const raw = localStorage.getItem(ORDERS_KEY);
     const list = raw ? JSON.parse(raw) : [];
     list.unshift(newOrder);
     localStorage.setItem(ORDERS_KEY, JSON.stringify(list));
     localStorage.setItem(CURRENT_ORDER_KEY, JSON.stringify(newOrder));
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new CustomEvent("infinito_order_placed", { detail: newOrder }));
   } catch (e) {
-    console.error("Failed to store order:", e);
+    console.error("Failed to store order locally:", e);
   }
+
+  // 2. Persist to MongoDB backend so Admin and Analytics update dynamically
+  try {
+    axios.post(`${BACKEND_URL}/shop/orders`, newOrder).catch((err) => {
+      console.warn("Backend order sync fallback:", err.message);
+    });
+  } catch {}
 
   return newOrder;
 };
