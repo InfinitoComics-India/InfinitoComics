@@ -28,22 +28,41 @@ const AllOrders = () => {
 
   useEffect(() => {
     fetchOrders();
+
+    const handleUpdate = () => {
+      fetchOrders(true);
+    };
+
+    window.addEventListener('storage', handleUpdate);
+    window.addEventListener('infinito_order_placed', handleUpdate);
+    window.addEventListener('infinito_orders_updated', handleUpdate);
+
+    const interval = setInterval(() => {
+      fetchOrders(true);
+    }, 15000);
+
+    return () => {
+      window.removeEventListener('storage', handleUpdate);
+      window.removeEventListener('infinito_order_placed', handleUpdate);
+      window.removeEventListener('infinito_orders_updated', handleUpdate);
+      clearInterval(interval);
+    };
   }, []);
 
   useEffect(() => {
     applyFilters();
   }, [orders, searchTerm, activeFilter]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (isBackground = false) => {
     try {
-      setLoading(true);
+      if (!isBackground) setLoading(true);
       const data = await getAllOrders();
       setOrders(data);
     } catch (error) {
       console.error('Failed to load orders:', error);
-      message.error('Failed to load orders');
+      if (!isBackground) message.error('Failed to load orders');
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
 
