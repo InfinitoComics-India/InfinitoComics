@@ -30,10 +30,19 @@ const EMPTY_SALARY = { basic:0, hra:0, ta:0, medical:0, special:0, otherAllowanc
 
 const PayrollManager = () => {
   const now = new Date();
-  // Days passed in current month (today's date)
-  const daysPassed = now.getDate();
-  // Earned so far = (daysPassed / 30) * netSalary
-  const earnedSoFar = (sal) => sal ? Math.round((daysPassed / 30) * sal.netSalary) : 0;
+  // Days passed in current month (today's date) — fallback when no joining date
+  const daysPassedDefault = now.getDate();
+
+  // Earned so far — counts from joining date if employee joined THIS month, else from day 1
+  const daysPassedFor = (emp) => {
+    if (!emp?.joiningDate) return daysPassedDefault;
+    const joinDate = new Date(emp.joiningDate);
+    const sameMonth = joinDate.getFullYear() === now.getFullYear() && joinDate.getMonth() === now.getMonth();
+    if (!sameMonth) return daysPassedDefault; // joined in a previous month — count whole days passed this month
+    // Joined this month — count from joining day to today (inclusive)
+    return Math.max(1, now.getDate() - joinDate.getDate() + 1);
+  };
+  const earnedSoFar = (sal, emp) => sal ? Math.round((daysPassedFor(emp) / 30) * sal.netSalary) : 0;
   const [tab,    setTab]    = useState("payroll");
   const [month,  setMonth]  = useState(now.getMonth() + 1);
   const [year,   setYear]   = useState(now.getFullYear());
@@ -455,8 +464,8 @@ const PayrollManager = () => {
                           <td className="px-4 py-3 whitespace-nowrap bg-blue-50/40">
                             {sal ? (
                               <div>
-                                <p className="text-xs font-black text-blue-700">{INR(earnedSoFar(sal))}</p>
-                                <p className="text-[10px] text-blue-400">{daysPassed} of 30 days</p>
+                                <p className="text-xs font-black text-blue-700">{INR(earnedSoFar(sal, emp))}</p>
+                                <p className="text-[10px] text-blue-400">{daysPassedFor(emp)} of 30 days</p>
                               </div>
                             ) : <span className="text-gray-300">—</span>}
                           </td>
