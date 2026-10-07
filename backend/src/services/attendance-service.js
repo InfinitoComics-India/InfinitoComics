@@ -50,8 +50,17 @@ class AttendanceService {
           { new: true }
         );
       } else {
+        // Look up employee name from Admin account
+        let eName = "", eEmpId = "";
+        try {
+          const Admin = (await import('../models/Admin.js')).default;
+          const adm = await Admin.findById(employeeId).select("name employeeId");
+          if (adm) { eName = adm.name || ""; eEmpId = adm.employeeId || ""; }
+        } catch {}
+
         record = await Attendance.create({
           employeeId, date: start, sessions,
+          employeeName: eName, employeeEmpId: eEmpId,
           clockIn: now, status: isLate ? "late" : "present", isLate, lateByMinutes,
         });
       }

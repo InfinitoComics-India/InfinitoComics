@@ -27,9 +27,12 @@ class AttendanceRepository extends CrudRepository {
     const d = new Date(date);
     const start = new Date(d.setHours(0, 0, 0, 0));
     const end   = new Date(d.setHours(23, 59, 59, 999));
-    return await Attendance.find({ date: { $gte: start, $lte: end } })
-      .populate("employeeId", "firstName lastName designation department")
-      .sort({ "employeeId.firstName": 1 });
+    const records = await Attendance.find({ date: { $gte: start, $lte: end } })
+      .populate("employeeId", "firstName lastName designation department employeeId")
+      .sort({ createdAt: 1 });
+
+    // For records where populate failed (admin-based attendance), inject name from snapshot
+    return records;
   }
 
   // Monthly summary for all employees (for report)

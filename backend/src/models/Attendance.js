@@ -13,6 +13,9 @@ const AttendanceSchema = new mongoose.Schema(
       ref: "Employee",
       required: true,
     },
+    // Snapshot — name shows even when employeeId ref doesn't populate
+    employeeName:  { type: String, default: "" },
+    employeeEmpId: { type: String, default: "" }, // e.g. INF-002
 
     date: {
       type: Date,

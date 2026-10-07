@@ -175,16 +175,20 @@ const AttendanceManager = () => {
                       {todayRecords.map(rec => {
                         const s = STATUS_STYLE[rec.status] || STATUS_STYLE.absent;
                         const emp = rec.employeeId;
+                        // Fallback to snapshot name if populate didn't work
+                        const displayName = (emp?.firstName ? `${emp.firstName} ${emp.lastName}` : null) || rec.employeeName || "Unknown";
+                        const displayEmpId = emp?.employeeId || rec.employeeEmpId || "";
+                        const initials = displayName !== "Unknown" ? displayName.split(" ").map(w=>w[0]).join("").substring(0,2).toUpperCase() : "?";
                         return (
                           <tr key={rec._id} className="hover:bg-gray-50 transition-colors">
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2">
                                 <div className="w-7 h-7 rounded-full bg-[#DD1215] text-white flex items-center justify-center text-xs font-bold">
-                                  {emp?.firstName?.[0]}{emp?.lastName?.[0]}
+                                  {initials}
                                 </div>
                                 <div>
-                                  <p className="font-semibold text-gray-900 text-xs">{emp?.firstName} {emp?.lastName}</p>
-                                  <p className="text-[10px] text-gray-400">{emp?.designation}</p>
+                                  <p className="font-semibold text-gray-900 text-xs">{displayName}</p>
+                                  <p className="text-[10px] text-gray-400">{displayEmpId}{emp?.designation ? ` · ${emp.designation}` : ""}</p>
                                 </div>
                               </div>
                             </td>
