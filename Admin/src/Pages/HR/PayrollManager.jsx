@@ -596,6 +596,10 @@ const PayrollManager = () => {
                   <span className="text-xs font-bold text-gray-700">Net Salary</span>
                   <span className="text-base font-black text-green-700">{INR(["basic","hra","ta","medical","special","otherAllowances"].reduce((s,k)=>s+(salaryForm[k]||0),0) - ["pf","esic","tds","otherDeductions"].reduce((s,k)=>s+(salaryForm[k]||0),0))}</span>
                 </div>
+                <div className="flex items-center justify-between border-t pt-2 bg-blue-50 rounded px-2 py-1.5">
+                  <span className="text-xs font-bold text-blue-700">Per Day Rate <span className="font-normal text-blue-500">(Gross ÷ 30)</span></span>
+                  <span className="text-sm font-black text-blue-700">{INR(Math.round(["basic","hra","ta","medical","special","otherAllowances"].reduce((s,k)=>s+(salaryForm[k]||0),0) / 30))}</span>
+                </div>
               </div>
               <p className="text-xs font-bold uppercase text-gray-400 pt-2">Bank Details</p>
               {[["bankName","Bank Name"],["accountHolder","Account Holder"],["accountNumber","Account Number"],["ifscCode","IFSC Code"]].map(([k,l])=>(
