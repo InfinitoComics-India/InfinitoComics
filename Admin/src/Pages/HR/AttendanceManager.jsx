@@ -28,7 +28,7 @@ const AttendanceManager = () => {
   const [month, setMonth]       = useState(now.getMonth() + 1);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
-  const [markModal, setMarkModal] = useState(null); // { employeeId }
+  const [markModal, setMarkModal] = useState(null); // { recordId }
   const [markForm, setMarkForm] = useState({ date: "", status: "present", note: "" });
   const [marking, setMarking]   = useState(false);
 
@@ -67,7 +67,7 @@ const AttendanceManager = () => {
     if (!markForm.date || !markForm.status) return;
     try {
       setMarking(true);
-      await axios.patch(`${BASE}/hr/attendance/mark/${markModal.employeeId}`, markForm, auth());
+      await axios.patch(`${BASE}/hr/attendance/correct/${markModal.recordId}`, markForm, auth());
       setMarkModal(null);
       if (tab === "today") loadToday();
       else loadMonthly();
@@ -200,7 +200,7 @@ const AttendanceManager = () => {
                             <td className="px-4 py-3 text-xs font-semibold text-gray-700">{rec.hoursWorked > 0 ? `${rec.hoursWorked}h` : "—"}</td>
                             <td className="px-4 py-3 text-xs text-yellow-600">{rec.isLate ? `${rec.lateByMinutes} mins` : "—"}</td>
                             <td className="px-4 py-3">
-                              <button onClick={() => { setMarkModal({ employeeId: rec.employeeId?._id || rec.employeeId }); setMarkForm({ date: new Date().toISOString().split("T")[0], status: rec.status, note: rec.note || "" }); }}
+                              <button onClick={() => { setMarkModal({ recordId: rec._id }); setMarkForm({ date: new Date().toISOString().split("T")[0], status: rec.status, note: rec.note || "" }); }}
                                 className="text-xs text-blue-600 hover:underline font-semibold">Correct</button>
                             </td>
                           </tr>

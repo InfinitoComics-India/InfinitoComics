@@ -28,6 +28,22 @@ router.post("/clockout/:employeeId",    adminauthenticate, checkRole(HR_ALL),   
 // PATCH manual mark (HR/manager only)
 router.patch("/mark/:employeeId",       adminauthenticate, checkRole(HR_MANAGE), AttendanceController.markAttendance);
 
+// PATCH correct attendance by record ID directly (avoids employeeId cast issue)
+router.patch("/correct/:recordId", adminauthenticate, checkRole(HR_MANAGE), async (req, res) => {
+  try {
+    const Attendance = (await import('../models/Attendance.js')).default;
+    const { status, note } = req.body;
+    if (!status) return res.status(400).json({ success: false, message: "status is required." });
+    const updated = await Attendance.findByIdAndUpdate(
+      req.params.recordId,
+      { $set: { status, note: note || "", markedBy: req.user._id, isCorrected: true } },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ success: false, message: "Record not found." });
+    res.status(200).json({ success: true, message: "Attendance corrected.", data: updated });
+  } catch (e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
 export default router;
 
 // ── Employee self-service (uses req.user._id automatically) ──
