@@ -173,7 +173,32 @@ const EmployeePortal = () => {
     } catch {}
   };
   const loadWorkHistory = async () => {
-    try { const r = await axios.get(`${BASE}/hr/worklog/my/history`, auth()); setWorkHistory(r.data.data||[]); } catch {}
+    let list = [];
+    try {
+      const r = await axios.get(`${BASE}/hr/worklog/my/history`, auth());
+      list = r.data.data || [];
+    } catch {}
+
+    try {
+      const raw = localStorage.getItem("infinito_daily_worklogs_store");
+      if (raw) {
+        const stored = JSON.parse(raw);
+        if (Array.isArray(stored)) {
+          stored.forEach(s => {
+            const sDateStr = s.date ? new Date(s.date).toDateString() : '';
+            const existingIdx = list.findIndex(item => item._id === s._id || (item.date && new Date(item.date).toDateString() === sDateStr));
+            if (existingIdx === -1) {
+              list.push(s);
+            } else if (!list[existingIdx].workDescription || list[existingIdx].status === "auto_leave") {
+              list[existingIdx] = { ...list[existingIdx], ...s };
+            }
+          });
+        }
+      }
+    } catch {}
+
+    list.sort((a,b) => new Date(b.date) - new Date(a.date));
+    setWorkHistory(list);
   };
   const loadLeaves = async () => {
     try { const r = await axios.get(`${BASE}/hr/leaves/employee/${myId}`, auth()); setLeaves(r.data.data||[]); } catch {}
