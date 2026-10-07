@@ -30,6 +30,10 @@ const EMPTY_SALARY = { basic:0, hra:0, ta:0, medical:0, special:0, otherAllowanc
 
 const PayrollManager = () => {
   const now = new Date();
+  // Days passed in current month (today's date)
+  const daysPassed = now.getDate();
+  // Earned so far = (daysPassed / 30) * netSalary
+  const earnedSoFar = (sal) => sal ? Math.round((daysPassed / 30) * sal.netSalary) : 0;
   const [tab,    setTab]    = useState("payroll");
   const [month,  setMonth]  = useState(now.getMonth() + 1);
   const [year,   setYear]   = useState(now.getFullYear());
@@ -422,8 +426,8 @@ const PayrollManager = () => {
                 <table className="min-w-full divide-y divide-gray-100 text-sm">
                   <thead className="bg-gray-50">
                     <tr>
-                      {["Employee","Designation","Dept","Basic","HRA","PF","Gross","Net","Bank","Pay Day","Actions"].map(h => (
-                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                      {["Employee","Designation","Dept","Basic","HRA","PF","Gross","Net","Earned So Far","Bank","Pay Day","Actions"].map(h => (
+                        <th key={h} className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap ${h==="Earned So Far"?"text-blue-600 bg-blue-50":"text-gray-500"}`}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -448,6 +452,14 @@ const PayrollManager = () => {
                           <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{sal ? INR(sal.pf) : <span className="text-gray-300">—</span>}</td>
                           <td className="px-4 py-3 text-xs font-semibold text-gray-800 whitespace-nowrap">{sal ? INR(sal.grossSalary) : <span className="text-gray-300">—</span>}</td>
                           <td className="px-4 py-3 text-xs font-black text-green-700 whitespace-nowrap">{sal ? INR(sal.netSalary) : <span className="text-gray-300">—</span>}</td>
+                          <td className="px-4 py-3 whitespace-nowrap bg-blue-50/40">
+                            {sal ? (
+                              <div>
+                                <p className="text-xs font-black text-blue-700">{INR(earnedSoFar(sal))}</p>
+                                <p className="text-[10px] text-blue-400">{daysPassed} of 30 days</p>
+                              </div>
+                            ) : <span className="text-gray-300">—</span>}
+                          </td>
                           <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{sal?.bankName || <span className="text-gray-300">Not set</span>}</td>
                           <td className="px-4 py-3 text-xs text-gray-500 text-center">{sal?.payDay || <span className="text-gray-300">—</span>}</td>
                           <td className="px-4 py-3 whitespace-nowrap">
