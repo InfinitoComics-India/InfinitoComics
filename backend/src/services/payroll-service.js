@@ -3,6 +3,7 @@ import SalaryRepository from "../repository/salary-repository.js";
 import AttendanceRepository from "../repository/attendance-repository.js";
 import AuditLogRepository from "../repository/auditLog-repository.js";
 import NotificationRepository from "../repository/notification-repository.js";
+import EmployeeRepository from "../repository/employee-repository.js";
 import DailyWorkLog from "../models/DailyWorkLog.js";
 
 const WORKING_DAYS = 30; // Fixed 30 working days per month
@@ -14,6 +15,7 @@ class PayrollService {
     this.attendanceRepo   = new AttendanceRepository();
     this.auditRepo        = new AuditLogRepository();
     this.notificationRepo = new NotificationRepository();
+    this.employeeRepo     = new EmployeeRepository();
   }
 
   // ── Generate payslip for one employee for a month ─────────
@@ -72,8 +74,42 @@ class PayrollService {
       const presentDays = presentDates.size;
       const leaveDays   = leaveDates.size;
 
-      // Absent = 30 - present - leave (can't go below 0)
-      const absentDays  = Math.max(0, WORKING_DAYS - presentDays - leaveDays);
+      // ── Determine how many days should actually be counted ───
+      // Days that haven't happened yet (future days in the current month) and days
+      // before the employee's joining date must NOT be treated as absent — otherwise
+      // a brand-new employee or an employee with no attendance marked yet gets the
+      // full month counted as absent, wiping out their net pay.
+      const employee = await this.employeeRepo.getById(employeeId);
+      const today    = new Date();
+      const monthEnd = new Date(year, month, 0); // last calendar day of the payroll month
+      const isCurrentOrFutureMonth =
+        year > today.getFullYear() ||
+        (year === today.getFullYear() && month - 1 >= today.getMonth());
+
+      // Last day of the period that has actually elapsed (inclusive).
+      let lastElapsedDay = monthEnd.getDate(); // default: whole month has elapsed (past period)
+      if (isCurrentOrFutureMonth) {
+        const sameMonth = today.getFullYear() === year && today.getMonth() === month - 1;
+        lastElapsedDay = sameMonth ? today.getDate() : 0; // future month → nothing elapsed yet
+      }
+
+      // First day of the period the employee was actually employed (inclusive).
+      let firstEmployedDay = 1;
+      if (employee?.joiningDate) {
+        const join = new Date(employee.joiningDate);
+        if (join.getFullYear() === year && join.getMonth() === month - 1) {
+          firstEmployedDay = join.getDate();
+        } else if (join.getFullYear() > year || (join.getFullYear() === year && join.getMonth() > month - 1)) {
+          // Employee joins after this payroll period entirely — no days to count.
+          firstEmployedDay = monthEnd.getDate() + 1;
+        }
+      }
+
+      // Days in this period that count toward attendance (elapsed AND employed).
+      const countableDays = Math.max(0, lastElapsedDay - firstEmployedDay + 1);
+
+      // Absent = countable days - present - leave (can't go below 0)
+      const absentDays = Math.max(0, countableDays - presentDays - leaveDays);
 
       // ── Salary calculation ──────────────────────────────────
       // Per day rate based on gross / 30
@@ -110,7 +146,7 @@ class PayrollService {
         status: "draft",
         generatedBy: performedBy,
         // Store extra info in remarks for transparency
-        remarks: `PerDay:₹${Math.round(perDayRate)} | Present:${presentDays} | Absent:${absentDays} | Leave:${leaveDays} | SundayBonus(${sundayWorkedDays}days):₹${sundayBonus}`,
+        remarks: `PerDay:₹${Math.round(perDayRate)} | Countable:${countableDays} | Present:${presentDays} | Absent:${absentDays} | Leave:${leaveDays} | SundayBonus(${sundayWorkedDays}days):₹${sundayBonus}`,
       });
 
       await this.auditRepo.create({ performedBy, performedByName, action: "CREATE", entity: "Payroll", entityId: payslip._id, description: `Generated payslip for ${month}/${year}. Present:${presentDays}/30, Sunday:${sundayWorkedDays}days, Net:₹${netSalary}` });
