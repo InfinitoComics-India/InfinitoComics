@@ -229,4 +229,4 @@ export const processMidnightAutoLeave = async () => {
   return { autoLeaveCount, date: yesterday.toDateString() };
 };
 
-export default { submitWorkLog, getMyTodayLog, getMyHistory, getLogsForDate, getSummaryForDate, reviewLog, runMidnightCron };
+export default { submitWorkLog, getMyTodayLog, getMyHistory, getLogsForDate, getSummaryForDate, reviewLog, overrideStatus, runMidnightCron };
