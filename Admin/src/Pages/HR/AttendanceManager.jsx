@@ -200,7 +200,7 @@ const AttendanceManager = () => {
                             <td className="px-4 py-3 text-xs font-semibold text-gray-700">{rec.hoursWorked > 0 ? `${rec.hoursWorked}h` : "—"}</td>
                             <td className="px-4 py-3 text-xs text-yellow-600">{rec.isLate ? `${rec.lateByMinutes} mins` : "—"}</td>
                             <td className="px-4 py-3">
-                              <button onClick={() => { setMarkModal({ employeeId: emp?._id }); setMarkForm({ date: new Date().toISOString().split("T")[0], status: rec.status, note: rec.note || "" }); }}
+                              <button onClick={() => { setMarkModal({ employeeId: rec.employeeId?._id || rec.employeeId }); setMarkForm({ date: new Date().toISOString().split("T")[0], status: rec.status, note: rec.note || "" }); }}
                                 className="text-xs text-blue-600 hover:underline font-semibold">Correct</button>
                             </td>
                           </tr>
