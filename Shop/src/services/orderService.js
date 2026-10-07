@@ -131,15 +131,22 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
     localStorage.setItem(CURRENT_ORDER_KEY, JSON.stringify(newOrder));
     window.dispatchEvent(new Event("storage"));
     window.dispatchEvent(new CustomEvent("infinito_order_placed", { detail: newOrder }));
+
+    // Broadcast across same-origin tabs and dev ports
+    try {
+      if (typeof window !== "undefined" && window.BroadcastChannel) {
+        const bus = new BroadcastChannel("infinito_orders_bus");
+        bus.postMessage({ type: "infinito_orders_sync", orders: list });
+      }
+    } catch {}
   } catch (e) {
     console.error("Failed to store order locally:", e);
   }
 
-  // 2. Persist to MongoDB backend so Admin and Analytics update dynamically
+  // 2. Persist to MongoDB backend (Render + local 5000)
   try {
-    axios.post(`${BACKEND_URL}/shop/orders`, newOrder).catch((err) => {
-      console.warn("Backend order sync fallback:", err.message);
-    });
+    axios.post(`${BACKEND_URL}/shop/orders`, newOrder).catch(() => {});
+    axios.post("http://localhost:5000/shop/orders", newOrder).catch(() => {});
   } catch {}
 
   return newOrder;
