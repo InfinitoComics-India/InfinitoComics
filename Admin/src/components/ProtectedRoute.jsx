@@ -20,9 +20,40 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/login" replace state={{ from: location, expired: true }} />;
   }
 
-  // Check role access — admin passes if any of their roles is in allowedRoles
+  const roles = getRoles();
+  const isShopOnly = roles.length > 0 && roles.every(r => r === "shop_admin");
+  const isEmp = roles.includes("employee");
+  const currentPath = location.pathname;
+  const normalizedPath = currentPath.replace(/^\/admin/, "") || "/";
+
+  // Root landing page: direct shop_admin and employee to shop management
+  if (normalizedPath === "/" || normalizedPath === "") {
+    if (roles.includes("shop_admin") || (isEmp && !roles.includes("superadmin"))) {
+      return <Navigate to="/shop/products" replace />;
+    }
+  }
+
+  // Shop admin trying to visit outside of /shop
+  if (isShopOnly && !normalizedPath.startsWith("/shop")) {
+    return <Navigate to="/shop/products" replace />;
+  }
+
+  // Employee-allowed pages (HR self-service + Shop section)
+  const EMPLOYEE_ALLOWED = [
+    "/shop",
+    "/employee-portal",
+    "/hr/worklog",
+    "/hr/attendance",
+    "/hr/leaves",
+    "/hr/goals",
+    "/hr/documents",
+    "/hr/self-service",
+  ];
+  if (isEmp && !roles.includes("superadmin") && !EMPLOYEE_ALLOWED.some(a => normalizedPath.startsWith(a))) {
+    return <Navigate to="/shop/products" replace />;
+  }
+
   if (allowedRoles) {
-    const roles = getRoles();
     const hasAccess = roles.some((r) => allowedRoles.includes(r));
     if (!hasAccess) {
       return <Navigate to="/unauthorized" replace />;
