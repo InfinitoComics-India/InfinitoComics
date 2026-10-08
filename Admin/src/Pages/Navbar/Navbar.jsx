@@ -7,7 +7,7 @@ import { getRoles } from '../../Utils/auth.js';
 
 const HR_ALL   = ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin"];
 const HR_AUDIT = ["superadmin","hr_manager"];
-const SHOP_ALL = ["superadmin","shop_admin","admin","comics_admin","character_admin","research_admin","blog_admin","career_admin","manager","team_lead"]; // Shop access roles
+const SHOP_ALL = ["superadmin","shop_admin","employee","admin","comics_admin","character_admin","research_admin","blog_admin","career_admin","manager","team_lead"]; // Shop access roles
 
 // ── Regular nav items (above HR section) ────────────────────
 const NAV_ITEMS = [
@@ -22,6 +22,7 @@ const NAV_ITEMS = [
   { label: "Users",           to: "/users",            icon: Users,       roles: ["superadmin"] },
   { label: "Admin Mgmt",      to: "/admin-management", icon: ShieldCheck, roles: ["superadmin"] },
   { label: "Contact Queries", to: "/contact-queries",  icon: Mail,        roles: ["superadmin"] },
+  { label: "Employee Portal", to: "/employee-portal",  icon: UserCheck,   roles: ["employee"] },
 ];
 
 // ── HR sub-items (shown inside collapsible accordion) ────────
