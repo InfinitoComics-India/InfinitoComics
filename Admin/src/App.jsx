@@ -42,6 +42,10 @@ import InternalChat      from './Pages/HR/InternalChat.jsx';
 import KnowledgeBase     from './Pages/HR/KnowledgeBase.jsx';
 import SelfServicePortal from './Pages/HR/SelfServicePortal.jsx';
 import AIAssistant       from './Pages/HR/AIAssistant.jsx';
+import DailyWorkLog      from './Pages/HR/DailyWorkLog.jsx';
+import DirectMessages    from './Pages/Messages/DirectMessages.jsx';
+import EmployeePortal    from './Pages/Employee/EmployeePortal.jsx';
+import { isEmployee }    from './Utils/auth.js';
 
 // ── Shop imports ──────────────────────────────────────────────
 import AllProducts       from './Pages/Shop/AllProducts.jsx';
@@ -61,16 +65,16 @@ const CHARS   = ["superadmin", "character_admin"];
 const RESEARCH= ["superadmin", "research_admin"];
 const BLOG    = ["superadmin", "blog_admin"];
 const CAREER  = ["superadmin", "career_admin"];
-const ALL_AUTH= ["superadmin", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin"];
+const ALL_AUTH= ["superadmin", "shop_admin", "employee", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin"];
 
 // ── HR Role constants ─────────────────────────────────────────
 const HR      = ["superadmin", "hr_manager"];
-const HR_VIEW = ["superadmin", "hr_manager", "manager", "team_lead",
-                 "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin"];
+const HR_VIEW = ["superadmin", "hr_manager", "manager", "team_lead"];
 const AUDIT   = ["superadmin", "hr_manager"];
+const EMP     = ["employee", "superadmin"];
 
 // ── Shop Role constants ───────────────────────────────────────
-const SHOP    = ["superadmin", "shop_admin", "admin", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin", "manager", "team_lead"];
+const SHOP    = ["superadmin", "shop_admin", "employee", "admin", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin", "manager", "team_lead"];
 
 function App() {
   const basename = import.meta.env.MODE === 'production' ? '/admin' : '';
@@ -83,6 +87,11 @@ function App() {
           {/* Public */}
           <Route path="/login" element={<Login />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
+
+          {/* Employee Portal — for employees only */}
+          <Route path="/employee-portal" element={
+            <ProtectedRoute allowedRoles={EMP}><EmployeePortal /></ProtectedRoute>
+          } />
 
           {/* Dashboard — any logged-in admin */}
           <Route path="/" element={
@@ -237,7 +246,7 @@ function App() {
             <ProtectedRoute allowedRoles={HR_VIEW}><RecruitmentPipeline /></ProtectedRoute>
           } />
           <Route path="/hr/chat" element={
-            <ProtectedRoute allowedRoles={HR_VIEW}><InternalChat /></ProtectedRoute>
+            <ProtectedRoute allowedRoles={[...HR_VIEW,"employee"]}><InternalChat /></ProtectedRoute>
           } />
 
           {/* ── HR Phase 7 ─────────────────────────────────── */}
@@ -251,6 +260,12 @@ function App() {
           {/* ── HR Phase 8 ─────────────────────────────────── */}
           <Route path="/hr/ai" element={
             <ProtectedRoute allowedRoles={HR_VIEW}><AIAssistant /></ProtectedRoute>
+          } />
+          <Route path="/hr/worklog" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><DailyWorkLog /></ProtectedRoute>
+          } />
+          <Route path="/messages" element={
+            <ProtectedRoute allowedRoles={[...HR_VIEW,"employee"]}><DirectMessages /></ProtectedRoute>
           } />
 
           {/* ── Shop System ────────────────────────────────── */}
