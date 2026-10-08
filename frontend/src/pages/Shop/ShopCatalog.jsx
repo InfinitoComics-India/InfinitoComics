@@ -86,8 +86,8 @@ const ShopCatalog = () => {
     <div className="w-full bg-white text-black min-h-screen font-sans">
       
       {/* 1. HERO SLIDER CAROUSEL SECTION */}
-      <section className="relative w-full bg-[#0a0a0a] text-white py-12 px-6 md:px-16 overflow-hidden">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-center min-h-[420px]">
+      <section className="relative w-full bg-[#0a0a0a] text-white py-12 px-4 md:px-8 overflow-hidden">
+        <div className="max-w-[1240px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-center min-h-[420px]">
           
           {/* Left Text */}
           <div className="space-y-4 z-10">
@@ -136,7 +136,7 @@ const ShopCatalog = () => {
       </section>
 
       {/* 2. PROMO BANNER BOX SECTION */}
-      <section className="max-w-5xl mx-auto my-10 px-4">
+      <section className="max-w-[1240px] mx-auto my-10 px-4 md:px-8">
         <div className="relative border-2 border-cyan-400 bg-gradient-to-r from-[#800000] via-[#a00000] to-[#600000] rounded-sm text-white p-6 md:p-8 flex flex-col md:flex-row items-center justify-between shadow-xl">
           {/* Navigation arrow left */}
           <button className="hidden md:flex absolute -left-5 top-12 w-9 h-9 bg-white text-black border border-gray-300 rounded-sm items-center justify-center shadow-md hover:bg-gray-100">
@@ -178,7 +178,7 @@ const ShopCatalog = () => {
       </section>
 
       {/* 3. CATEGORIES SECTION */}
-      <section className="max-w-6xl mx-auto py-10 px-4">
+      <section className="max-w-[1240px] mx-auto py-10 px-4 md:px-8">
         <div className="flex items-center justify-between mb-8 pb-2 border-b border-gray-100">
           <h2 className="text-2xl md:text-3xl font-extrabold text-black tracking-tight">
             Categories
@@ -217,7 +217,7 @@ const ShopCatalog = () => {
       </section>
 
       {/* 4. TOP TRENDING SECTION */}
-      <section className="max-w-6xl mx-auto py-10 px-4 relative">
+      <section className="max-w-[1240px] mx-auto py-10 px-4 md:px-8 relative">
         <h2 className="text-2xl md:text-3xl font-extrabold text-center text-black tracking-tight mb-8">
           Top Trending
         </h2>
@@ -271,7 +271,7 @@ const ShopCatalog = () => {
       </section>
 
       {/* 5. ULTIMATE KIT SECTION */}
-      <section className="max-w-5xl mx-auto my-12 px-4">
+      <section className="max-w-[1240px] mx-auto my-12 px-4 md:px-8">
         <h2 className="text-2xl md:text-3xl font-extrabold text-center text-black tracking-tight mb-8">
           ULTIMATE KIT
         </h2>
