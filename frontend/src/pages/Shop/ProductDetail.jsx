@@ -162,7 +162,7 @@ const ProductDetail = () => {
         <h2 className="text-2xl font-bold mb-2">Product Not Found</h2>
         <p className="text-gray-500 mb-6">The product you are looking for does not exist or has been moved.</p>
         <button
-          onClick={() => navigate('/shop')}
+          onClick={() => { window.location.href = "https://shop.infinitohq.com/"; }}
           className="px-6 py-2.5 bg-red-600 text-white font-bold uppercase tracking-wide hover:bg-red-700 transition"
         >
           Return to Store
@@ -172,8 +172,8 @@ const ProductDetail = () => {
   }
 
   return (
-    <div className="w-full bg-white text-black min-h-screen font-sans py-8 px-4 md:px-8 lg:px-16">
-      <div className="max-w-6xl mx-auto">
+    <div className="w-full bg-white text-black min-h-screen font-sans py-8">
+      <div className="max-w-[1240px] mx-auto px-4 md:px-8">
         {/* Main Product Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-start">
           
