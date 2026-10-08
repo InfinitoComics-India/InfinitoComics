@@ -38,71 +38,104 @@ const OrderDetails = () => {
         
         {/* Back Link */}
         <button
-          onClick={() => navigate("/shop")}
-          className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-black mb-6 cursor-pointer"
+          onClick={() => { window.location.href = "https://shop.infinitohq.com/"; }}
+          className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-[#DD1215] mb-6 cursor-pointer transition"
         >
           <ChevronLeft className="w-4 h-4" />
           <span>Back to Shop</span>
         </button>
 
         {/* ─── PAGE TITLE: ORDER DETAILS (MATCHING SS4) ─── */}
-        <h1 className="text-3xl md:text-4xl font-black text-black tracking-wide uppercase font-dmsans mb-8">
-          ORDER DETAILS
-        </h1>
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+          <h1 className="text-3xl md:text-4xl font-black text-black tracking-wide uppercase font-dmsans">
+            ORDER DETAILS
+          </h1>
+          <span className="text-xs font-mono font-bold text-gray-400 uppercase tracking-widest bg-gray-100 px-3 py-1.5 rounded">
+            {order.orderId || (order.id ? `#${order.id}` : "")} · {order.items?.length || 1} Item{order.items?.length !== 1 ? "s" : ""}
+          </span>
+        </div>
 
-        {/* ─── PRODUCT SUMMARY CARD (MATCHING SS4 BLUE-BORDER BOX) ─── */}
-        <div className="border-2 border-[#1E88E5] p-5 md:p-6 bg-white mb-10 shadow-sm flex flex-col md:flex-row gap-6 md:gap-8 items-start">
-          {/* Image */}
-          <div className="w-full md:w-[240px] h-[240px] bg-black flex-shrink-0 flex items-center justify-center overflow-hidden">
-            <img
-              src={primaryProd.image || "/products/crimson_tshirt.jpg"}
-              alt={primaryProd.title || primaryProd.name || "INFINITO"}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.target.src = "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80";
-              }}
-            />
-          </div>
+        {/* ─── PRODUCT SUMMARY CARDS (SHOWING ALL ORDER ITEMS) ─── */}
+        <div className="space-y-6 mb-10">
+          {(order.items && order.items.length > 0 ? order.items : [primaryItem]).map((item, idx) => {
+            const prod = item.product || {};
+            const itemPrice = Number(prod.price || prod.salePrice || item.unitPrice || item.price || 1299);
+            const itemMrp = Number(prod.mrp || Math.round(itemPrice * 1.6));
+            const itemSize = item.size || item.variant?.size || "M";
+            const itemQty = Number(item.quantity || 1);
+            const itemImage = prod.image || (Array.isArray(prod.images) ? prod.images[0]?.url || prod.images[0] : null) || item.thumbnail || "/products/crimson_tshirt.jpg";
+            const itemName = prod.name || prod.title || item.name || "INFINITO Product";
+            const itemDesc = prod.description || "Official INFINITO Special Edition merchandise crafted with premium materials and signature styling.";
 
-          {/* Details */}
-          <div className="flex-1 flex flex-col justify-between w-full h-full min-h-[240px]">
-            <div>
-              <div className="flex items-start justify-between gap-4">
-                <h2 className="text-2xl md:text-3xl font-extrabold text-black uppercase tracking-tight font-dmsans">
-                  {primaryProd.name || "INFINITO"}
-                </h2>
-                <span className="bg-[#DD1215] text-white text-xs font-bold px-2.5 py-1 flex items-center gap-1 shadow-sm">
-                  ★ {primaryProd.rating || 4.5}
-                </span>
+            return (
+              <div
+                key={`order-detail-item-${idx}`}
+                className="border-2 border-[#1E88E5] p-5 md:p-6 bg-white shadow-sm flex flex-col md:flex-row gap-6 md:gap-8 items-start"
+              >
+                {/* Image */}
+                <div className="w-full md:w-[220px] h-[220px] bg-black flex-shrink-0 flex items-center justify-center overflow-hidden">
+                  <img
+                    src={itemImage}
+                    alt={itemName}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.src = "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80";
+                    }}
+                  />
+                </div>
+
+                {/* Details */}
+                <div className="flex-1 flex flex-col justify-between w-full h-full min-h-[220px]">
+                  <div>
+                    <div className="flex items-start justify-between gap-4">
+                      <h2 className="text-2xl md:text-3xl font-extrabold text-black uppercase tracking-tight font-dmsans">
+                        {itemName}
+                      </h2>
+                      <span className="bg-[#DD1215] text-white text-xs font-bold px-2.5 py-1 flex items-center gap-1 shadow-sm shrink-0">
+                        ★ {prod.rating || 4.5}
+                      </span>
+                    </div>
+
+                    <p className="text-xs md:text-sm text-gray-600 line-clamp-2 mt-2 leading-relaxed">
+                      {itemDesc}
+                    </p>
+
+                    <div className="flex items-baseline gap-3 mt-4">
+                      <span className="text-2xl md:text-3xl font-black text-black">
+                        ₹{itemPrice}
+                      </span>
+                      <span className="text-sm md:text-base text-gray-500 line-through font-normal">
+                        MRP ₹{itemMrp}
+                      </span>
+                      {itemQty > 1 && (
+                        <span className="text-xs font-bold bg-gray-100 text-gray-800 px-2.5 py-1 rounded">
+                          Qty: {itemQty}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="mt-4 text-sm font-semibold text-gray-900 flex items-center gap-6">
+                      <div>
+                        <span className="text-gray-500">Selected Size : </span>
+                        <span className="font-bold ml-1 text-black">{itemSize}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Quantity : </span>
+                        <span className="font-bold ml-1 text-black">{itemQty}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {isCancelled && idx === 0 && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                      <XCircle className="w-4 h-4 shrink-0" />
+                      <span>Order Cancelled — Refund of ₹{order.refundAmount || (order.total - 199).toFixed(2)} in process (7-14 days)</span>
+                    </div>
+                  )}
+                </div>
               </div>
-
-              <p className="text-xs md:text-sm text-gray-600 line-clamp-2 mt-2 leading-relaxed">
-                {primaryProd.description ||
-                  "The Special Edition Crimson Red T-Shirt is designed to capture the energy, passion, and spirit of INFINITO. Featuring a deep crimson red color with a clean, statement-driven d..."}
-              </p>
-
-              <div className="flex items-baseline gap-3 mt-4">
-                <span className="text-2xl md:text-3xl font-black text-black">
-                  ₹{primaryPrice}
-                </span>
-                <span className="text-sm md:text-base text-gray-500 line-through font-normal">
-                  MRP ₹{primaryMrp}
-                </span>
-              </div>
-
-              <div className="mt-4 text-sm font-semibold text-gray-900">
-                <span>Select Size : </span>
-                <span className="font-bold ml-1">{primarySize}</span>
-              </div>
-            </div>
-
-            {isCancelled && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                <XCircle className="w-4 h-4" />
-                <span>Order Cancelled — Refund of ₹{order.refundAmount || (order.total - 199).toFixed(2)} in process (7-14 days)</span>
-              </div>
-            )}
-          </div>
+            );
+          })}
         </div>
 
         {/* ─── SECTION 2: DELIVERY STATUS (MATCHING SS4) ─── */}
