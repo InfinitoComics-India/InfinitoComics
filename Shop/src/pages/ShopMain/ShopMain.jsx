@@ -91,7 +91,7 @@ const ShopMain = () => {
         const currentPromo = promoList[promoIndex % promoList.length] || promoList[0];
 
         return (
-          <section className="max-w-[1240px] mx-auto px-4 md:px-8 py-10">
+          <section className="max-w-[1200px] mx-auto px-4 md:px-12 py-10">
             <div className="relative w-full overflow-hidden rounded-sm shadow-md">
               <img
                 src={currentPromo?.bgImageUrl || promoBanner}

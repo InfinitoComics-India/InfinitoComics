@@ -34,7 +34,7 @@ const OrderDetails = () => {
 
   return (
     <div className="bg-white min-h-screen text-black font-sans pb-24">
-      <div className="max-w-[1240px] mx-auto px-4 md:px-8 pt-8">
+      <div className="max-w-[1200px] mx-auto px-4 md:px-12 pt-8">
         
         {/* Back Link */}
         <button
