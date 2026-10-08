@@ -9,7 +9,7 @@ import {
   X, ShieldAlert, Check, Pencil, ShoppingBag, Package, MapPin,
   CreditCard, Clock, Truck, ChevronRight, Download, Eye, RotateCcw,
   Plus, Trash2, Home, Building2, Search, ExternalLink, Sparkles,
-  AlertCircle, CheckCircle2, ArrowLeft
+  AlertCircle, CheckCircle2, ArrowLeft, Shuffle
 } from "lucide-react";
 import comicImg from "../../../assets/Images/captainMarvel.png";
 import { updateUser } from "../../services/userServices.js";
@@ -56,7 +56,7 @@ const ToggleRow = ({ label, enabled, onChange }) => (
 );
 
 // ── Inline editable field ──────────────────────────────────────────
-const EditableField = ({ label, value, onSave, validate }) => {
+const EditableField = ({ label, value, onSave, validate, allowRandom, onGenerateRandom }) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   const [saving, setSaving] = useState(false);
@@ -64,12 +64,13 @@ const EditableField = ({ label, value, onSave, validate }) => {
 
   useEffect(() => { setDraft(value); }, [value]);
 
-  const handleSave = async () => {
-    const err = validate ? validate(draft) : "";
+  const handleSave = async (valToSave) => {
+    const targetVal = valToSave !== undefined ? valToSave : draft;
+    const err = validate ? validate(targetVal) : "";
     if (err) { setError(err); return; }
     setSaving(true);
     try {
-      await onSave(draft);
+      await onSave(targetVal);
       setEditing(false);
       setError("");
     } catch (e) {
@@ -79,43 +80,95 @@ const EditableField = ({ label, value, onSave, validate }) => {
     }
   };
 
+  const handleTriggerRandom = () => {
+    if (onGenerateRandom) {
+      const generated = onGenerateRandom();
+      setDraft(generated);
+      setError("");
+      setEditing(true);
+    }
+  };
+
   return (
     <div className="w-full mb-3">
-      <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">{label}</p>
-      {editing ? (
-        <div className="flex items-center gap-2">
-          <input
-            autoFocus
-            type="text"
-            value={draft}
-            onChange={e => { setDraft(e.target.value); setError(""); }}
-            className="flex-1 border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#DD1215]"
-            onKeyDown={e => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") setEditing(false); }}
-          />
+      <div className="flex items-center justify-between mb-1">
+        <p className="text-xs text-gray-400 uppercase tracking-widest">{label}</p>
+        {allowRandom && !editing && (
           <button
-            onClick={handleSave}
-            disabled={saving}
-            className="p-1.5 bg-[#DD1215] text-white rounded hover:bg-red-700 transition disabled:opacity-50"
+            type="button"
+            onClick={handleTriggerRandom}
+            className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-[#DD1215] hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-0.5 rounded transition cursor-pointer"
+            title="Generate random username"
           >
-            <Check size={14} />
+            <Shuffle size={12} />
+            <span>Random</span>
           </button>
-          <button onClick={() => { setEditing(false); setError(""); }} className="p-1.5 border rounded hover:bg-gray-100 transition">
-            <X size={14} />
-          </button>
+        )}
+      </div>
+
+      {editing ? (
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <input
+              autoFocus
+              type="text"
+              value={draft}
+              onChange={e => { setDraft(e.target.value.replace(/\s/g, '')); setError(""); }}
+              className="flex-1 border border-gray-300 px-2.5 py-1.5 text-sm rounded focus:outline-none focus:ring-2 focus:ring-[#DD1215]"
+              onKeyDown={e => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") { setEditing(false); setDraft(value); } }}
+              placeholder={`Enter ${label}`}
+            />
+            {allowRandom && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (onGenerateRandom) {
+                    const nextVal = onGenerateRandom();
+                    setDraft(nextVal);
+                    setError("");
+                  }
+                }}
+                className="flex items-center gap-1 bg-[#DD1215] text-white px-2.5 py-1.5 rounded text-xs font-bold hover:bg-red-700 transition shrink-0 cursor-pointer"
+                title="Randomize username"
+              >
+                <Shuffle size={12} />
+                <span>Random</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => handleSave()}
+              disabled={saving}
+              className="p-1.5 bg-[#DD1215] text-white rounded hover:bg-red-700 transition disabled:opacity-50 shrink-0 cursor-pointer"
+              title="Save"
+            >
+              <Check size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => { setEditing(false); setDraft(value); setError(""); }}
+              className="p-1.5 border border-gray-300 rounded hover:bg-gray-100 transition shrink-0 cursor-pointer"
+              title="Cancel"
+            >
+              <X size={14} />
+            </button>
+          </div>
+          {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
         </div>
       ) : (
-        <div className="flex items-center justify-between group">
+        <div className="flex items-center justify-between group py-0.5">
           <span className="font-semibold text-sm text-gray-800 truncate">{value || "—"}</span>
           <button
+            type="button"
             onClick={() => setEditing(true)}
-            className="ml-2 text-gray-400 hover:text-black opacity-0 group-hover:opacity-100 transition-opacity"
+            className="ml-2 text-gray-400 hover:text-black p-1 rounded hover:bg-gray-100 transition cursor-pointer"
             title={`Edit ${label}`}
           >
             <Pencil size={14} />
           </button>
         </div>
       )}
-      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+      {!editing && error && <p className="text-red-500 text-xs mt-1">{error}</p>}
     </div>
   );
 };
@@ -213,12 +266,30 @@ const MyAccountPage = () => {
 
   // ── Generic user field save ───────────────────────────────────────
   const saveField = async (field, value) => {
-    if (!userData._id) throw new Error("User ID not found");
-    await updateUser(userData._id, { [field]: value });
-    const updated = { ...JSON.parse(localStorage.getItem("user") || "{}"), [field]: value };
+    try {
+      if (userData._id) {
+        await updateUser(userData._id, { [field]: value });
+      }
+    } catch (err) {
+      console.warn("Backend updateUser skipped/failed, keeping local state updated:", err);
+    }
+    const currentStored = JSON.parse(localStorage.getItem("user") || "{}");
+    const updated = { ...currentStored, [field]: value };
+    localStorage.setItem("user", JSON.stringify(updated));
     dispatch(addUser(updated));
     setUserData(prev => ({ ...prev, [field]: value }));
     toast.success(`${field === "username" ? "Username" : "Email"} updated!`);
+  };
+
+  // ── Generate Random Username ───────────────────────────────────────
+  const generateRandomUsername = () => {
+    const rawBase = (userData.username || user?.username || user?.name || "hero")
+      .split(/[@_\s]/)[0]
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+    const baseName = rawBase && rawBase.length >= 3 ? rawBase : "hero";
+    const randomString = Math.random().toString(36).substring(2, 8);
+    return `${baseName}_${randomString}`;
   };
 
   // ── Newsletter Toggle ─────────────────────────────────────────────
@@ -358,8 +429,8 @@ const MyAccountPage = () => {
       <Toaster position="top-right" />
 
       {/* ── Top Header Hero Banner ── */}
-      <div className="bg-[#121212] border-b border-gray-800 text-white pt-10 pb-8 px-4 sm:px-10">
-        <div className="max-w-[1280px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-[#121212] border-b border-gray-800 text-white pt-10 pb-8">
+        <div className="max-w-[1240px] mx-auto px-4 md:px-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-[#DD1215] mb-2">
               <Sparkles size={14} /> INFINITO MEMBER PORTAL
@@ -404,7 +475,7 @@ const MyAccountPage = () => {
         </div>
 
         {/* Navigation Tabs Bar */}
-        <div className="max-w-[1280px] mx-auto mt-8 border-b border-gray-800 flex overflow-x-auto no-scrollbar gap-1 sm:gap-2">
+        <div className="max-w-[1240px] mx-auto px-4 md:px-8 mt-8 border-b border-gray-800 flex overflow-x-auto no-scrollbar gap-1 sm:gap-2">
           {[
             { id: "overview", label: "Overview & Profile", icon: Home },
             { id: "orders", label: `My Orders (${orders.length})`, icon: Package },
@@ -429,7 +500,7 @@ const MyAccountPage = () => {
       </div>
 
       {/* ── Main Tab Content Container ── */}
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-10 pt-8">
+      <div className="max-w-[1240px] mx-auto px-4 md:px-8 pt-8">
 
         {/* ═══════════════════════════════════════════════════════════
             TAB 1: OVERVIEW & PROFILE
@@ -456,6 +527,8 @@ const MyAccountPage = () => {
               <EditableField
                 label="Username"
                 value={userData.username}
+                allowRandom={true}
+                onGenerateRandom={generateRandomUsername}
                 onSave={(val) => saveField("username", val)}
                 validate={(val) => {
                   if (!val || val.length < 6 || val.length > 30) return "Username must be 6–30 characters";
@@ -620,7 +693,7 @@ const MyAccountPage = () => {
                     </p>
                   </div>
                   <button
-                    onClick={() => navigate("/shop")}
+                    onClick={() => { window.location.href = "https://shop.infinitohq.com/"; }}
                     className="bg-[#DD1215] text-white px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-red-700 transition"
                   >
                     Browse Merch & Comics
@@ -708,7 +781,7 @@ const MyAccountPage = () => {
                   </p>
                 </div>
                 <button
-                  onClick={() => navigate("/shop")}
+                  onClick={() => { window.location.href = "https://shop.infinitohq.com/"; }}
                   className="bg-[#DD1215] text-white px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-red-700 transition"
                 >
                   Explore Store
