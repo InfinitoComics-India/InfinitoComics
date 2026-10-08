@@ -36,6 +36,10 @@ const EmployeeSchema = new mongoose.Schema(
       enum: ["employee", "team_lead", "manager", "hr_manager", "finance", "superadmin"],
       default: "employee",
     },
+    shopAccess: {
+      type: Boolean,
+      default: false,
+    },
 
     // ── Status ────────────────────────────────────────────────
     status: {

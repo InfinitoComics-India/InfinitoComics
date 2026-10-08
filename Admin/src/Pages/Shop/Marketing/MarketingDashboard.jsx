@@ -812,36 +812,65 @@ const MarketingDashboard = () => {
 
                   return (
                     <div
-                      className="relative w-full rounded-xl overflow-hidden border border-gray-300 shadow-md bg-gray-950 min-h-[220px] md:min-h-[260px] flex items-center p-6 md:p-8 text-white bg-cover bg-center transition-all"
+                      className="relative w-full rounded-xl overflow-hidden border border-gray-300 shadow-md bg-gray-950 aspect-[1024/380] min-h-[340px] sm:min-h-[400px] md:min-h-[460px] flex items-center p-6 md:p-12 text-white bg-cover bg-center transition-all group"
                       style={bg ? { backgroundImage: `url(${bg})` } : undefined}
                     >
-                      {/* Dark overlay only if in overlay mode or bright image */}
-                      {!isArtworkMode && <div className="absolute inset-0 bg-black/40"></div>}
+                      {/* Left Navigation Arrow */}
+                      <button
+                        type="button"
+                        onClick={() => setPreviewSlideIdx((previewSlideIdx - 1 + heroSlides.length) % heroSlides.length)}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/40 hover:bg-black/65 backdrop-blur border border-white/30 flex items-center justify-center text-white transition cursor-pointer"
+                        title="Previous slide"
+                      >
+                        <ChevronLeft size={18} />
+                      </button>
 
-                      {/* When in artwork mode with full slide graphic */}
-                      {isArtworkMode ? (
-                        <div className="absolute bottom-4 right-4 z-20">
-                          <span className="inline-block px-4 py-1.5 bg-[#DD1215] text-white text-[11px] font-bold uppercase tracking-widest shadow-md rounded-full">
-                            {currentSlide?.buttonText || 'Shop Now'} →
-                          </span>
-                        </div>
-                      ) : (
+                      {/* Right Navigation Arrow */}
+                      <button
+                        type="button"
+                        onClick={() => setPreviewSlideIdx((previewSlideIdx + 1) % heroSlides.length)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/40 hover:bg-black/65 backdrop-blur border border-white/30 flex items-center justify-center text-white transition cursor-pointer"
+                        title="Next slide"
+                      >
+                        <ChevronRight size={18} />
+                      </button>
+
+                      {/* Bottom Dots Indicator matching storefront in SS1 */}
+                      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+                        {heroSlides.map((_, dotIdx) => (
+                          <button
+                            key={dotIdx}
+                            type="button"
+                            onClick={() => setPreviewSlideIdx(dotIdx)}
+                            className={`transition-all rounded-full cursor-pointer ${
+                              previewSlideIdx === dotIdx ? 'w-3 h-3 bg-white' : 'w-2 h-2 bg-white/40 hover:bg-white/70'
+                            }`}
+                            title={`Slide ${dotIdx + 1}`}
+                          />
+                        ))}
+                      </div>
+
+                      {/* Dark overlay only if in text overlay mode */}
+                      {!isArtworkMode && <div className="absolute inset-0 bg-black/50"></div>}
+
+                      {/* When not in artwork mode, render custom text overlays */}
+                      {!isArtworkMode && (
                         <div
-                          className={`relative z-10 max-w-[75%] space-y-2 ${
+                          className={`relative z-10 max-w-[65%] space-y-3 ${
                             currentSlide?.alignment === 'right' ? 'ml-auto text-right' : currentSlide?.alignment === 'center' ? 'mx-auto text-center' : 'text-left'
                           }`}
                         >
                           <span className="text-[10px] font-black uppercase tracking-widest text-[#DD1215] bg-black/60 px-2.5 py-0.5 rounded">
                             Slide #{previewSlideIdx + 1} {currentSlide?.isActive ? '• Active' : '• Inactive'}
                           </span>
-                          <h2 className="text-2xl md:text-4xl font-black uppercase tracking-wider drop-shadow-md text-white font-dmsans">
+                          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-wider drop-shadow-md text-white font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] leading-tight">
                             {currentSlide?.headline || 'Hero Headline'}
                           </h2>
-                          <p className="text-xs md:text-sm uppercase tracking-wide text-gray-200">
+                          <p className="text-xs sm:text-sm uppercase tracking-wide text-gray-200 font-semibold max-w-md">
                             {currentSlide?.subheading || 'Subheading description text'}
                           </p>
                           <div className="pt-2">
-                            <span className="inline-block px-5 py-2 bg-[#DD1215] text-white text-xs font-bold uppercase tracking-widest shadow-sm rounded-sm">
+                            <span className="inline-block px-7 py-2.5 bg-[#DD1215] text-white text-xs font-bold uppercase tracking-widest shadow-md transition font-dmsans">
                               {currentSlide?.buttonText || 'Shop Now'}
                             </span>
                           </div>
@@ -1137,31 +1166,59 @@ const MarketingDashboard = () => {
                 {(() => {
                   const currentPromo = promoBanners[previewPromoIdx] || promoBanners[0];
                   return (
-                    <div
-                      className="relative w-full rounded-xl overflow-hidden border border-gray-300 shadow-md min-h-[160px] flex items-center p-6 text-white bg-cover bg-center"
-                      style={{
-                        backgroundColor: currentPromo?.bgColor || '#800000',
-                        backgroundImage: currentPromo?.bgImageUrl ? `url(${currentPromo.bgImageUrl})` : undefined,
-                        color: currentPromo?.textColor || '#ffffff',
-                      }}
-                    >
-                      <div className="relative z-10 max-w-[70%] space-y-1">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[#DD1215] bg-black/60 px-2 py-0.5 rounded">
-                          {currentPromo?.discountCode || currentPromo?.badgeText || 'SPECIAL OFFER'}
-                        </span>
-                        <h2 className="text-3xl md:text-4xl font-black uppercase tracking-wider drop-shadow-md">
-                          {currentPromo?.headline || '35% off'}
-                        </h2>
-                        <p className="text-xs uppercase tracking-wide text-gray-200 font-semibold">
-                          {currentPromo?.subtitle || 'on The Crimson Bloodline'}
-                        </p>
-                        <div className="pt-2">
-                          <span className="inline-block px-4 py-1.5 bg-[#DD1215] text-white text-xs font-bold uppercase tracking-wide shadow-sm rounded-sm">
-                            {currentPromo?.buttonText || 'Buy Now'}
-                          </span>
+                    <div className="flex items-center justify-center gap-3 md:gap-5 py-4 bg-gray-50/60 rounded-xl border border-gray-200">
+                      {/* Left Arrow Button */}
+                      <button
+                        type="button"
+                        onClick={() => setPreviewPromoIdx((prev) => (prev - 1 + promoBanners.length) % promoBanners.length)}
+                        className="w-9 h-9 bg-white border border-gray-300 rounded hover:border-gray-500 hover:text-black text-gray-500 flex items-center justify-center transition shadow-sm shrink-0 cursor-pointer"
+                        title="Previous Banner"
+                      >
+                        <ChevronLeft size={18} />
+                      </button>
+
+                      {/* Exact SS2 Sized Banner Preview */}
+                      <div
+                        className="relative w-full max-w-[780px] h-[160px] sm:h-[175px] md:h-[180px] rounded-xl overflow-hidden border border-gray-300 shadow-md flex items-center bg-black bg-cover bg-center shrink-0"
+                        style={{
+                          backgroundColor: currentPromo?.bgColor || '#800000',
+                          backgroundImage: currentPromo?.bgImageUrl ? `url(${currentPromo.bgImageUrl})` : undefined,
+                          color: currentPromo?.textColor || '#ffffff',
+                        }}
+                      >
+                        {/* Gradient overlay to maintain text readability while artwork remains bright */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/25 to-transparent pointer-events-none" />
+
+                        {/* Content matching SS2 */}
+                        <div className="relative z-10 pl-6 sm:pl-8 md:pl-10 max-w-[65%] sm:max-w-[55%] space-y-1 text-white">
+                          {(currentPromo?.badgeText || currentPromo?.discountCode) && (
+                            <span className="inline-block bg-black/70 text-[#DD1215] text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded">
+                              {currentPromo.badgeText || currentPromo.discountCode}
+                            </span>
+                          )}
+                          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight text-white drop-shadow">
+                            {currentPromo?.headline || '35% off'}
+                          </h2>
+                          <p className="text-[11px] sm:text-xs md:text-sm font-semibold tracking-wide text-gray-200 uppercase drop-shadow">
+                            {currentPromo?.subtitle || 'on The Crimson Bloodline'}
+                          </p>
+                          <div className="pt-2">
+                            <span className="inline-block px-4 sm:px-5 py-1.5 sm:py-2 bg-[#DD1215] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm">
+                              {currentPromo?.buttonText || 'Buy Now'}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      <div className="absolute right-0 top-0 bottom-0 w-1/2 bg-gradient-to-l from-red-600/30 to-transparent pointer-events-none"></div>
+
+                      {/* Right Arrow Button */}
+                      <button
+                        type="button"
+                        onClick={() => setPreviewPromoIdx((prev) => (prev + 1) % promoBanners.length)}
+                        className="w-9 h-9 bg-white border border-gray-300 rounded hover:border-gray-500 hover:text-black text-gray-500 flex items-center justify-center transition shadow-sm shrink-0 cursor-pointer"
+                        title="Next Banner"
+                      >
+                        <ChevronRight size={18} />
+                      </button>
                     </div>
                   );
                 })()}
