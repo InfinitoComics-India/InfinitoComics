@@ -26,7 +26,7 @@ const OrderSuccess = () => {
 
   return (
     <div className="bg-white min-h-[85vh] text-black font-sans pb-20">
-      <div className="max-w-[1240px] mx-auto px-4 md:px-8 pt-8">
+      <div className="max-w-[1200px] mx-auto px-4 md:px-12 pt-8">
         
         {/* Top Header Actions (Back to Shop & Share) */}
         <div className="flex items-center justify-between pb-6">
