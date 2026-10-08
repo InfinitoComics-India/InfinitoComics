@@ -1,56 +1,64 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-import slide1 from "../../assets/hero/slide1.svg";
-import slide2 from "../../assets/hero/slide2.svg";
-// slide4.svg belongs to the 35% off promo banner section (rendered in
-// ShopMain.jsx), not to this hero carousel.
-
 const defaultSlides = [
   {
-    // Slide 1 uses the artwork as-is — baked into the SVG, no text overlay.
-    id: 1,
-    image: slide1,
+    id: "slide-1",
+    title: "Monthly Drop Incoming",
+    image: "/banners/hero_monthly_drop.png",
     hideText: true,
-    variant: "dark",
-    align: "left",
-  },
-  {
-    // Slide 2: text overlay removed as requested; image only.
-    id: 2,
-    image: slide2,
-    hideText: true,
+    heading: "MONTHLY DROP INCOMING",
+    subtext: "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
+    cta: "Shop Now",
+    ctaLink: "https://shop.infinitohq.com/",
     variant: "light",
     align: "right",
   },
+  {
+    id: "slide-2",
+    title: "Become Infinito",
+    image: "/banners/hero_become_infinito.png",
+    hideText: true,
+    heading: "BECOME ONE OF US BECOME INFINITO",
+    highlightText: "ONE OF US",
+    subtext: "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
+    cta: "Shop Now",
+    ctaLink: "https://shop.infinitohq.com/",
+    variant: "dark",
+    align: "left",
+  },
 ];
 
-const HeroSlider = () => {
-  const [slides, setSlides] = useState(() => {
-    try {
-      const raw = localStorage.getItem("infinito_shop_banners");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed.heroSlider) && parsed.heroSlider.length > 0) {
-          const enabled = parsed.heroSlider.filter((s) => s.isActive !== false);
-          if (enabled.length > 0) {
-            return enabled.map((s, idx) => ({
-              id: s.id || idx + 1,
-              image: s.imageUrl || s.image || (idx === 0 ? slide1 : slide2),
-              heading: s.headline,
-              subtext: s.subheading,
-              cta: s.buttonText || "Shop Now",
-              ctaLink: s.buttonLink || "/catalog",
-              hideText: s.hideText ?? (!s.headline && !s.subheading),
-              variant: s.variant || "dark",
-              align: s.align || "left",
-            }));
-          }
+const loadSlidesFromStorage = () => {
+  try {
+    const raw = localStorage.getItem("infinito_shop_banners");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed.heroSlider) && parsed.heroSlider.length > 0) {
+        const enabled = parsed.heroSlider.filter((s) => s.isActive !== false);
+        if (enabled.length > 0) {
+          return enabled.map((s, idx) => ({
+            id: s.id || `slide-${idx + 1}`,
+            title: s.title,
+            image: s.imageUrl || s.image || (idx === 0 ? "/banners/hero_monthly_drop.png" : "/banners/hero_become_infinito.png"),
+            heading: s.headline,
+            highlightText: s.highlightText,
+            subtext: s.subheading,
+            cta: s.buttonText || "Shop Now",
+            ctaLink: s.buttonLink || "https://shop.infinitohq.com/",
+            hideText: s.displayMode === "banner_image" || s.hideText === true,
+            variant: s.variant || (idx === 0 ? "light" : "dark"),
+            align: s.alignment || s.align || (idx === 0 ? "right" : "left"),
+          }));
         }
       }
-    } catch {}
-    return defaultSlides;
-  });
+    }
+  } catch {}
+  return defaultSlides;
+};
+
+const HeroSlider = () => {
+  const [slides, setSlides] = useState(loadSlidesFromStorage);
 
   const [active, setActive] = useState(0);
 
@@ -63,6 +71,23 @@ const HeroSlider = () => {
     const t = setInterval(next, 6000);
     return () => clearInterval(t);
   }, [next]);
+
+  // Live synchronization across Admin tab and Shop tab
+  useEffect(() => {
+    const reload = () => setSlides(loadSlidesFromStorage());
+    let bc;
+    try {
+      bc = new BroadcastChannel("infinito_banners_channel");
+      bc.onmessage = (e) => {
+        if (e.data?.type === "banners_updated") reload();
+      };
+    } catch {}
+    window.addEventListener("storage", reload);
+    return () => {
+      if (bc) bc.close();
+      window.removeEventListener("storage", reload);
+    };
+  }, []);
 
   return (
     <section className="relative w-full overflow-hidden">
