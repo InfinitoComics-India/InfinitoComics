@@ -100,7 +100,7 @@ const Navbar = () => {
   const [collapsed, setCollapsed]   = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hrOpen, setHrOpen]         = useState(false); // HR accordion open/closed
-  const [shopOpen, setShopOpen]     = useState(true); // Shop accordion open/closed (defaults to open)
+  const [shopOpen, setShopOpen]     = useState(false); // Shop accordion open/closed (defaults to closed)
   const [parentSectionsOpen, setParentSectionsOpen] = useState({
     Products: true,
     Orders: true,
@@ -227,15 +227,15 @@ const Navbar = () => {
             {!collapsed ? (
               <button
                 onClick={() => setShopOpen(o => !o)}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-150 group
-                  ${isShopActive ? "bg-gray-800 text-white" : "text-gray-200 hover:bg-gray-700 hover:text-white"}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-150 group cursor-pointer
+                  ${shopOpen ? "bg-gray-800 text-white" : "text-gray-200 hover:bg-gray-700 hover:text-white"}
                 `}
               >
                 <div className="flex items-center gap-3">
                   <ShoppingBag size={20} className="shrink-0 text-[#DD1215]" />
                   <span className="text-sm font-black uppercase tracking-widest text-[#DD1215]">Shop</span>
                 </div>
-                <div className={`transition-transform duration-200 ${(shopOpen || isShopActive) ? "rotate-180" : ""}`}>
+                <div className={`transition-transform duration-200 ${shopOpen ? "rotate-180" : ""}`}>
                   <ChevronDown size={16} className="text-[#DD1215]" />
                 </div>
               </button>
@@ -244,14 +244,14 @@ const Navbar = () => {
               <button
                 onClick={() => setShopOpen(o => !o)}
                 title="Shop"
-                className="flex items-center justify-center w-full py-2.5 rounded-lg text-[#DD1215] hover:bg-gray-700 transition"
+                className="flex items-center justify-center w-full py-2.5 rounded-lg text-[#DD1215] hover:bg-gray-700 transition cursor-pointer"
               >
                 <ShoppingBag size={20} />
               </button>
             )}
 
             {/* Shop Sub-items — animated dropdown */}
-            {(shopOpen || isShopActive) && (
+            {shopOpen && (
               <div className={`mt-1 space-y-0.5 overflow-hidden ${!collapsed ? "pl-2" : ""}`}>
                 {visibleShop.map((item) => {
                   if (item.isParent && item.subItems) {
