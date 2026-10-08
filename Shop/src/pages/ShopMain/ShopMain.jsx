@@ -19,6 +19,33 @@ const ShopMain = () => {
   const [products, setProducts] = useState([]);
   const [catsLoaded, setCatsLoaded] = useState(false);
   const [productsLoaded, setProductsLoaded] = useState(false);
+  const [promoIndex, setPromoIndex] = useState(0);
+  const [promoBannersList, setPromoBannersList] = useState(() => {
+    try {
+      const raw = localStorage.getItem("infinito_shop_banners");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.promoBanners) && parsed.promoBanners.length > 0) {
+          const enabled = parsed.promoBanners.filter((b) => b && b.isActive !== false);
+          if (enabled.length > 0) return enabled;
+        } else if (parsed.promoBanner && parsed.promoBanner.isActive !== false) {
+          return [parsed.promoBanner];
+        }
+      }
+    } catch {}
+    return [
+      {
+        id: "default-promo",
+        headline: "35% off",
+        subtitle: "on The Crimson Bloodline",
+        buttonText: "Buy Now",
+        buttonLink: "/catalog",
+        bgImageUrl: promoBanner,
+        bgColor: "#800000",
+        isActive: true,
+      },
+    ];
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -50,6 +77,46 @@ const ShopMain = () => {
     };
   }, []);
 
+  // Auto rotate promo banners every 7 seconds
+  useEffect(() => {
+    if (promoBannersList.length <= 1) return;
+    const timer = setInterval(() => {
+      setPromoIndex((prev) => (prev + 1) % promoBannersList.length);
+    }, 7000);
+    return () => clearInterval(timer);
+  }, [promoBannersList.length]);
+
+  // Sync banners across tabs & Admin BroadcastChannel
+  useEffect(() => {
+    const reloadBanners = () => {
+      try {
+        const raw = localStorage.getItem("infinito_shop_banners");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed.promoBanners) && parsed.promoBanners.length > 0) {
+            const enabled = parsed.promoBanners.filter((b) => b && b.isActive !== false);
+            if (enabled.length > 0) {
+              setPromoBannersList(enabled);
+              return;
+            }
+          }
+        }
+      } catch {}
+    };
+
+    window.addEventListener("storage", reloadBanners);
+    let bc;
+    try {
+      bc = new BroadcastChannel("infinito_banners_channel");
+      bc.onmessage = () => reloadBanners();
+    } catch {}
+
+    return () => {
+      window.removeEventListener("storage", reloadBanners);
+      if (bc) bc.close();
+    };
+  }, []);
+
   const scroll = (ref, dir) => {
     if (!ref.current) return;
     ref.current.scrollBy({ left: dir * 320, behavior: "smooth" });
@@ -62,32 +129,7 @@ const ShopMain = () => {
 
       {/* ─── PROMO BANNERS (Multiple supported from Admin Marketing Management) ── */}
       {(() => {
-        let promoList = [];
-        try {
-          const raw = localStorage.getItem("infinito_shop_banners");
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed.promoBanners) && parsed.promoBanners.length > 0) {
-              promoList = parsed.promoBanners.filter((b) => b.isActive !== false);
-            } else if (parsed.promoBanner && parsed.promoBanner.isActive !== false) {
-              promoList = [parsed.promoBanner];
-            }
-          }
-        } catch {}
-
-        if (promoList.length === 0) {
-          promoList = [
-            {
-              id: "default-promo",
-              headline: "35% off",
-              subtitle: "on The Crimson Bloodline",
-              buttonText: "Buy Now",
-              buttonLink: "/catalog",
-              bgImageUrl: promoBanner,
-            },
-          ];
-        }
-
+        const promoList = promoBannersList;
         const currentPromo = promoList[promoIndex % promoList.length] || promoList[0];
 
         return (
