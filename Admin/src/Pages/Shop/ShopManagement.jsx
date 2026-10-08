@@ -2,15 +2,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Users, ShoppingBag, ShieldCheck, ShieldAlert, Search, Filter, 
   RefreshCw, CheckCircle2, XCircle, Mail, Building, UserCheck, 
-  ArrowUpDown, ExternalLink, Sparkles, Cloud
+  ArrowUpDown, ExternalLink, Sparkles
 } from 'lucide-react';
 import { Table, Switch, message, Popconfirm, Tag, Input, Select, Tooltip, Spin } from 'antd';
 import { 
   fetchAllEmployeesWithShopStatus, 
   toggleEmployeeShopAccess,
   setShopAllowedEmployees,
-  getShopAllowedEmployees,
-  checkCloudinaryStatus
+  getShopAllowedEmployees
 } from '../../services/shopServices/shopAccessService';
 
 const { Search: AntSearch } = Input;
@@ -19,22 +18,17 @@ const { Option } = Select;
 const ShopManagement = () => {
   const [loading, setLoading] = useState(true);
   const [employees, setEmployees] = useState([]);
-  const [cloudinaryStatus, setCloudinaryStatus] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('ALL');
   const [accessFilter, setAccessFilter] = useState('ALL');
   const [togglingEmail, setTogglingEmail] = useState(null);
 
-  // Load all employees and Cloudinary status on mount
+  // Load all employees on mount
   const loadEmployees = async () => {
     try {
       setLoading(true);
-      const [list, cStatus] = await Promise.all([
-        fetchAllEmployeesWithShopStatus(),
-        checkCloudinaryStatus().catch(() => null),
-      ]);
+      const list = await fetchAllEmployeesWithShopStatus();
       setEmployees(list);
-      if (cStatus) setCloudinaryStatus(cStatus);
     } catch (err) {
       console.error('Failed to load employees:', err);
       message.error('Failed to load employee list');
@@ -320,7 +314,7 @@ const ShopManagement = () => {
       </div>
 
       {/* ── Overview Stat Cards ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs flex items-center justify-between">
           <div>
             <p className="text-xs uppercase tracking-wider text-gray-500 font-bold">Total Company Staff</p>
@@ -351,37 +345,6 @@ const ShopManagement = () => {
           </div>
           <div className="w-12 h-12 rounded-xl bg-gray-50 text-gray-500 flex items-center justify-center">
             <ShieldAlert size={22} />
-          </div>
-        </div>
-
-        <div className={`p-4 rounded-xl border shadow-xs flex items-center justify-between ${
-          cloudinaryStatus?.configured
-            ? 'bg-sky-50/50 border-sky-200'
-            : 'bg-amber-50/50 border-amber-200'
-        }`}>
-          <div>
-            <p className={`text-xs uppercase tracking-wider font-bold ${
-              cloudinaryStatus?.configured ? 'text-sky-700' : 'text-amber-700'
-            }`}>
-              Cloudinary Media CDN
-            </p>
-            <h3 className={`text-sm font-black mt-1 ${
-              cloudinaryStatus?.configured ? 'text-sky-900' : 'text-amber-900'
-            }`}>
-              {cloudinaryStatus?.configured ? 'Connected & Permanent' : 'Awaiting Env Keys'}
-            </h3>
-            <p className={`text-[11px] mt-0.5 ${
-              cloudinaryStatus?.configured ? 'text-sky-600' : 'text-amber-600'
-            }`}>
-              {cloudinaryStatus?.configured 
-                ? (cloudinaryStatus?.cloudName ? `Cloud: ${cloudinaryStatus.cloudName}` : 'Permanent CDN active')
-                : 'Set in Render / hosting env'}
-            </p>
-          </div>
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-            cloudinaryStatus?.configured ? 'bg-sky-100 text-sky-600' : 'bg-amber-100 text-amber-600'
-          }`}>
-            <Cloud size={24} />
           </div>
         </div>
       </div>
