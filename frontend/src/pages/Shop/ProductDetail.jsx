@@ -173,7 +173,7 @@ const ProductDetail = () => {
 
   return (
     <div className="w-full bg-white text-black min-h-screen font-sans py-8">
-      <div className="max-w-[1240px] mx-auto px-4 md:px-8">
+      <div className="max-w-[1200px] mx-auto px-4 md:px-12">
         {/* Main Product Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-start">
           
