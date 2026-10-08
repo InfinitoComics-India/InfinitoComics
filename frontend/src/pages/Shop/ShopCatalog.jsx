@@ -239,7 +239,7 @@ const ShopCatalog = () => {
 
           {/* If custom overlay is selected or text overlay requested */}
           {currentSlide?.displayMode === "custom_overlay" ? (
-            <div className="relative z-10 max-w-[1240px] w-full mx-auto px-4 md:px-8 py-12 flex items-center">
+            <div className="relative z-10 max-w-[1200px] w-full mx-auto px-4 md:px-12 py-12 flex items-center">
               <div
                 className={`max-w-xl space-y-4 ${
                   currentSlide.alignment === "right" ? "ml-auto text-right" : "mr-auto text-left"
@@ -320,7 +320,7 @@ const ShopCatalog = () => {
       </section>
 
       {/* 2. PROMO BANNER BOX SECTION (MULTIPLE PROMOS SUPPORTED) */}
-      <section className="max-w-[1240px] mx-auto my-10 px-4 md:px-8">
+      <section className="max-w-[1200px] mx-auto my-10 px-4 md:px-12">
         <div
           className="relative border-2 border-red-500/40 rounded-sm text-white p-6 md:p-8 flex flex-col md:flex-row items-center justify-between shadow-2xl overflow-hidden transition-all duration-500"
           style={{
@@ -415,7 +415,7 @@ const ShopCatalog = () => {
       </section>
 
       {/* 3. CATEGORIES SECTION */}
-      <section className="max-w-[1240px] mx-auto py-10 px-4 md:px-8">
+      <section className="max-w-[1200px] mx-auto py-10 px-4 md:px-12">
         <div className="flex items-center justify-between mb-8 pb-2 border-b border-gray-100">
           <h2 className="text-2xl md:text-3xl font-extrabold text-black tracking-tight">
             Categories
@@ -454,7 +454,7 @@ const ShopCatalog = () => {
       </section>
 
       {/* 4. TOP TRENDING SECTION */}
-      <section className="max-w-[1240px] mx-auto py-10 px-4 md:px-8 relative">
+      <section className="max-w-[1200px] mx-auto py-10 px-4 md:px-12 relative">
         <h2 className="text-2xl md:text-3xl font-extrabold text-center text-black tracking-tight mb-8">
           Top Trending
         </h2>
