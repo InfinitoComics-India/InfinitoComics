@@ -16,7 +16,7 @@ const OrderCancelled = () => {
 
   return (
     <div className="bg-white min-h-[85vh] text-black font-sans pb-20">
-      <div className="max-w-[1240px] mx-auto px-4 md:px-8 pt-12">
+      <div className="max-w-[1200px] mx-auto px-4 md:px-12 pt-12">
         
         {/* Center Graphic & Cancellation Message */}
         <div className="flex flex-col items-center justify-center text-center mt-6 md:mt-12">

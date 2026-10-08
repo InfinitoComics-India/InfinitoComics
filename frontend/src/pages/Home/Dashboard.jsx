@@ -253,7 +253,7 @@ const MyAccountPage = () => {
         });
         setNewsLetter(user.newsLetter !== undefined ? user.newsLetter : true);
       }
-    } catch { }
+    } catch {}
 
     // 2. Load Orders
     const allOrders = getAllOrders();
@@ -430,7 +430,7 @@ const MyAccountPage = () => {
 
       {/* ── Top Header Hero Banner ── */}
       <div className="bg-[#121212] border-b border-gray-800 text-white pt-10 pb-8">
-        <div className="max-w-[1240px] mx-auto px-4 md:px-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="max-w-[1200px] mx-auto px-4 md:px-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-[#DD1215] mb-2">
               <Sparkles size={14} /> INFINITO MEMBER PORTAL
@@ -475,7 +475,7 @@ const MyAccountPage = () => {
         </div>
 
         {/* Navigation Tabs Bar */}
-        <div className="max-w-[1240px] mx-auto px-4 md:px-8 mt-8 border-b border-gray-800 flex overflow-x-auto no-scrollbar gap-1 sm:gap-2">
+        <div className="max-w-[1200px] mx-auto px-4 md:px-12 mt-8 border-b border-gray-800 flex overflow-x-auto no-scrollbar gap-1 sm:gap-2">
           {[
             { id: "overview", label: "Overview & Profile", icon: Home },
             { id: "orders", label: `My Orders (${orders.length})`, icon: Package },
@@ -500,7 +500,7 @@ const MyAccountPage = () => {
       </div>
 
       {/* ── Main Tab Content Container ── */}
-      <div className="max-w-[1240px] mx-auto px-4 md:px-8 pt-8">
+      <div className="max-w-[1200px] mx-auto px-4 md:px-12 pt-8">
 
         {/* ═══════════════════════════════════════════════════════════
             TAB 1: OVERVIEW & PROFILE
@@ -946,10 +946,11 @@ const MyAccountPage = () => {
               {addresses.map((addr) => (
                 <div
                   key={addr.id}
-                  className={`bg-white rounded-xl border p-6 flex flex-col justify-between transition-all relative ${addr.isDefault
+                  className={`bg-white rounded-xl border p-6 flex flex-col justify-between transition-all relative ${
+                    addr.isDefault
                       ? "border-[#DD1215] ring-2 ring-red-100 shadow-md"
                       : "border-gray-200 shadow-sm hover:border-gray-300"
-                    }`}
+                  }`}
                 >
                   {/* Top row */}
                   <div>
