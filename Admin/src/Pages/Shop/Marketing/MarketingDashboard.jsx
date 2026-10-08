@@ -4,7 +4,8 @@ import {
   Tag as TagIcon, Plus, Search, Edit3, Trash2, Copy, Check,
   Sparkles, Sliders, Image as ImageIcon, ExternalLink, RefreshCw,
   Eye, CheckCircle2, Clock, XCircle, AlertCircle, Percent,
-  DollarSign, Truck, Gift, Palette, ArrowRight
+  DollarSign, Truck, Gift, Palette, ArrowRight, ArrowUp, ArrowDown,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { message, Modal, Spin, Tag, Switch, Radio, Input, InputNumber, Select, Tooltip } from 'antd';
 import {
@@ -17,6 +18,8 @@ import {
   updatePromoBanner,
   updateHeroSlider,
   updatePromoBar,
+  updatePromoBanners,
+  updatePromoBars,
 } from '../../../services/shopServices/marketingService';
 
 const MarketingDashboard = () => {
@@ -48,12 +51,14 @@ const MarketingDashboard = () => {
     neverExpires: true,
   });
 
-  // Banner Edit State
-  const [promoBannerForm, setPromoBannerForm] = useState(null);
+  // Banner & Promotion Multi-Item State
+  const [promoBanners, setPromoBanners] = useState([]);
   const [heroSlides, setHeroSlides] = useState([]);
-  const [promoBarForm, setPromoBarForm] = useState(null);
+  const [promoBars, setPromoBars] = useState([]);
   const [savingBanners, setSavingBanners] = useState(false);
   const [previewSlideIdx, setPreviewSlideIdx] = useState(0);
+  const [previewPromoIdx, setPreviewPromoIdx] = useState(0);
+  const [previewBarIdx, setPreviewBarIdx] = useState(0);
 
   // Sync activeTab when URL search params change (e.g. clicking sidebar menu items)
   useEffect(() => {
@@ -76,9 +81,27 @@ const MarketingDashboard = () => {
       ]);
       setDiscountCodes(discounts);
       setBannersConfig(banners);
-      setPromoBannerForm({ ...banners.promoBanner });
-      setHeroSlides([...banners.heroSlider]);
-      setPromoBarForm({ ...banners.promoBar });
+
+      // Hero Slider (multiple slides)
+      setHeroSlides(Array.isArray(banners.heroSlider) ? [...banners.heroSlider] : []);
+
+      // Homepage Promo Banners (multiple banners)
+      if (Array.isArray(banners.promoBanners) && banners.promoBanners.length > 0) {
+        setPromoBanners([...banners.promoBanners]);
+      } else if (banners.promoBanner) {
+        setPromoBanners([{ ...banners.promoBanner, id: 'promo-1' }]);
+      } else {
+        setPromoBanners([]);
+      }
+
+      // Top Promo Bars (multiple announcements)
+      if (Array.isArray(banners.promoBars) && banners.promoBars.length > 0) {
+        setPromoBars([...banners.promoBars]);
+      } else if (banners.promoBar) {
+        setPromoBars([{ ...banners.promoBar, id: 'bar-1' }]);
+      } else {
+        setPromoBars([]);
+      }
     } catch (err) {
       console.error('Failed to load marketing data:', err);
       message.error('Failed to load marketing data');
@@ -212,24 +235,12 @@ const MarketingDashboard = () => {
     });
   };
 
-  // ── Banner Save Handlers ─────────────────────────────────────
-  const handleSavePromoBanner = async () => {
-    try {
-      setSavingBanners(true);
-      await updatePromoBanner(promoBannerForm);
-      message.success('Homepage Promo Banner saved and integrated with Shop frontend!');
-    } catch (err) {
-      message.error('Failed to save banner');
-    } finally {
-      setSavingBanners(false);
-    }
-  };
-
+  // ── Multi-Banner / Slider Save Handlers ───────────────────────
   const handleSaveHeroSlider = async () => {
     try {
       setSavingBanners(true);
       await updateHeroSlider(heroSlides);
-      message.success('Hero Slider content saved and synced with Shop frontend!');
+      message.success('Hero Slider slides saved and synced with Shop frontend!');
     } catch (err) {
       message.error('Failed to save hero slider');
     } finally {
@@ -237,16 +248,169 @@ const MarketingDashboard = () => {
     }
   };
 
-  const handleSavePromoBar = async () => {
+  const handleSavePromoBanners = async () => {
     try {
       setSavingBanners(true);
-      await updatePromoBar(promoBarForm);
-      message.success('Announcement Bar saved and live on Shop frontend!');
+      await updatePromoBanners(promoBanners);
+      message.success('Homepage Promo Banners saved and integrated with Shop frontend!');
     } catch (err) {
-      message.error('Failed to save promo bar');
+      message.error('Failed to save promo banners');
     } finally {
       setSavingBanners(false);
     }
+  };
+
+  const handleSavePromoBars = async () => {
+    try {
+      setSavingBanners(true);
+      await updatePromoBars(promoBars);
+      message.success('Announcement Bars saved and live on Shop frontend!');
+    } catch (err) {
+      message.error('Failed to save promo bars');
+    } finally {
+      setSavingBanners(false);
+    }
+  };
+
+  // ── Hero Slide Actions ─────────────────────────────────────────
+  const handleAddSlide = () => {
+    const newSlide = {
+      id: `slide-${Date.now()}`,
+      title: `Slide #${heroSlides.length + 1}`,
+      headline: 'NEW HERO COLLECTION',
+      highlightText: 'NEW HERO',
+      subheading: 'Book the exclusive INFINITO merchandise right now.',
+      buttonText: 'Shop Now',
+      buttonLink: 'https://shop.infinitohq.com/',
+      imageUrl: '/banners/hero_monthly_drop.png',
+      displayMode: 'banner_image', // 'banner_image' | 'custom_overlay'
+      alignment: 'left',
+      variant: 'dark',
+      isActive: true,
+    };
+    const updated = [...heroSlides, newSlide];
+    setHeroSlides(updated);
+    setPreviewSlideIdx(updated.length - 1);
+    message.info('New slide added! Click "Save Hero Slider" to publish.');
+  };
+
+  const handleDeleteSlide = (idx) => {
+    if (heroSlides.length <= 1) {
+      return message.warning('You must keep at least 1 hero slide');
+    }
+    const updated = heroSlides.filter((_, i) => i !== idx);
+    setHeroSlides(updated);
+    if (previewSlideIdx >= updated.length) {
+      setPreviewSlideIdx(Math.max(0, updated.length - 1));
+    }
+  };
+
+  const handleMoveSlide = (idx, dir) => {
+    const targetIdx = idx + dir;
+    if (targetIdx < 0 || targetIdx >= heroSlides.length) return;
+    const updated = [...heroSlides];
+    const [moved] = updated.splice(idx, 1);
+    updated.splice(targetIdx, 0, moved);
+    setHeroSlides(updated);
+    setPreviewSlideIdx(targetIdx);
+  };
+
+  const handleRestoreUploadedPresets = () => {
+    setHeroSlides([
+      {
+        id: "slide-1",
+        title: "Monthly Drop Incoming",
+        headline: "MONTHLY DROP INCOMING",
+        highlightText: "MONTHLY DROP",
+        subheading: "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
+        buttonText: "Shop Now",
+        buttonLink: "https://shop.infinitohq.com/",
+        imageUrl: "/banners/hero_monthly_drop.png",
+        displayMode: "banner_image",
+        alignment: "right",
+        variant: "light",
+        isActive: true,
+      },
+      {
+        id: "slide-2",
+        title: "Become Infinito",
+        headline: "BECOME ONE OF US BECOME INFINITO",
+        highlightText: "ONE OF US",
+        subheading: "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
+        buttonText: "Shop Now",
+        buttonLink: "https://shop.infinitohq.com/",
+        imageUrl: "/banners/hero_become_infinito.png",
+        displayMode: "banner_image",
+        alignment: "left",
+        variant: "dark",
+        isActive: true,
+      },
+    ]);
+    setPreviewSlideIdx(0);
+    message.success('Default uploaded hero slides restored! Click "Save Hero Slider" to save.');
+  };
+
+  // ── Promo Banner Actions (Multiple!) ───────────────────────────
+  const handleAddPromoBanner = () => {
+    const newBanner = {
+      id: `promo-${Date.now()}`,
+      headline: '20% off',
+      subtitle: 'on New Comic Drops',
+      badgeText: 'SPECIAL OFFER',
+      discountCode: 'SPECIAL20',
+      buttonText: 'Shop Now',
+      buttonLink: 'https://shop.infinitohq.com/',
+      bgImageUrl: '/products/crimson_tshirt.jpg',
+      bgColor: '#111827',
+      textColor: '#ffffff',
+      isActive: true,
+    };
+    const updated = [...promoBanners, newBanner];
+    setPromoBanners(updated);
+    setPreviewPromoIdx(updated.length - 1);
+    message.info('New promo banner added! Click "Save Promo Banners" to publish.');
+  };
+
+  const handleDeletePromoBanner = (idx) => {
+    if (promoBanners.length <= 1) {
+      return message.warning('You must keep at least 1 promo banner');
+    }
+    const updated = promoBanners.filter((_, i) => i !== idx);
+    setPromoBanners(updated);
+    if (previewPromoIdx >= updated.length) {
+      setPreviewPromoIdx(Math.max(0, updated.length - 1));
+    }
+  };
+
+  const handleMovePromoBanner = (idx, dir) => {
+    const targetIdx = idx + dir;
+    if (targetIdx < 0 || targetIdx >= promoBanners.length) return;
+    const updated = [...promoBanners];
+    const [moved] = updated.splice(idx, 1);
+    updated.splice(targetIdx, 0, moved);
+    setPromoBanners(updated);
+    setPreviewPromoIdx(targetIdx);
+  };
+
+  // ── Promo Bar Actions (Multiple!) ──────────────────────────────
+  const handleAddPromoBar = () => {
+    const newBar = {
+      id: `bar-${Date.now()}`,
+      text: '🔥 NEW PROMO: FLASH SALE ON ALL APPAREL — USE CODE FLASH20 FOR EXTRA 20% OFF',
+      link: 'https://shop.infinitohq.com/',
+      bgColor: '#DD1215',
+      textColor: '#ffffff',
+      isActive: true,
+    };
+    setPromoBars(prev => [...prev, newBar]);
+    message.info('New announcement added! Click "Save Announcement Bars" to publish.');
+  };
+
+  const handleDeletePromoBar = (idx) => {
+    if (promoBars.length <= 1) {
+      return message.warning('You must keep at least 1 announcement bar');
+    }
+    setPromoBars(prev => prev.filter((_, i) => i !== idx));
   };
 
   // Filtered discount codes
@@ -558,166 +722,9 @@ const MarketingDashboard = () => {
       {/* ══════════════════════════════════════════════════════════ */}
       {activeTab === 'banners' && (
         <div className="space-y-8">
-          {/* Sub-section 1: Manage Homepage Promo Banner (35% off on The Crimson Bloodline) */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 gap-3">
-              <div>
-                <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wide flex items-center gap-2">
-                  <Sparkles className="text-[#DD1215]" size={17} />
-                  Homepage Promo Banner (e.g. 35% Off Banner)
-                </h3>
-                <p className="text-xs text-gray-500">
-                  Controls the prominent full-width banner between hero and categories on the Shop homepage
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-gray-600">Active on Shop:</span>
-                  <Switch
-                    checked={promoBannerForm?.isActive}
-                    onChange={(checked) => setPromoBannerForm({ ...promoBannerForm, isActive: checked })}
-                  />
-                </div>
-                <button
-                  onClick={handleSavePromoBanner}
-                  disabled={savingBanners}
-                  className="px-4 py-2 bg-[#DD1215] hover:bg-red-700 text-white text-xs font-bold rounded-lg transition shadow-xs cursor-pointer"
-                >
-                  Save Promo Banner
-                </button>
-              </div>
-            </div>
-
-            {/* Two-column layout: Form settings + Live preview card */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-              {/* Settings Form */}
-              <div className="space-y-4 text-xs">
-                <div>
-                  <label className="block font-bold text-gray-700 uppercase mb-1">Headline Text</label>
-                  <Input
-                    value={promoBannerForm?.headline}
-                    onChange={(e) => setPromoBannerForm({ ...promoBannerForm, headline: e.target.value })}
-                    placeholder="e.g. 35% off"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-gray-700 uppercase mb-1">Subtitle / Target Collection</label>
-                  <Input
-                    value={promoBannerForm?.subtitle}
-                    onChange={(e) => setPromoBannerForm({ ...promoBannerForm, subtitle: e.target.value })}
-                    placeholder="e.g. on The Crimson Bloodline"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-bold text-gray-700 uppercase mb-1">CTA Button Text</label>
-                    <Input
-                      value={promoBannerForm?.buttonText}
-                      onChange={(e) => setPromoBannerForm({ ...promoBannerForm, buttonText: e.target.value })}
-                      placeholder="e.g. Buy Now"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-gray-700 uppercase mb-1">CTA Link URL</label>
-                    <Input
-                      value={promoBannerForm?.buttonLink}
-                      onChange={(e) => setPromoBannerForm({ ...promoBannerForm, buttonLink: e.target.value })}
-                      placeholder="/shop/catalog"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block font-bold text-gray-700 uppercase mb-1">Attached Discount Code</label>
-                  <Select
-                    value={promoBannerForm?.discountCode}
-                    onChange={(val) => setPromoBannerForm({ ...promoBannerForm, discountCode: val })}
-                    className="w-full"
-                    options={discountCodes.map((d) => ({
-                      value: d.code,
-                      label: `${d.code} (${d.type === 'Percentage' ? `${d.value}% Off` : d.type})`,
-                    }))}
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-gray-700 uppercase mb-1">Background Picture (Image URL or Upload)</label>
-                  <div className="flex gap-2 items-center">
-                    <Input
-                      value={promoBannerForm?.bgImageUrl || ''}
-                      onChange={(e) => setPromoBannerForm({ ...promoBannerForm, bgImageUrl: e.target.value })}
-                      placeholder="e.g. /products/banner.jpg or https://... or pick file"
-                    />
-                    <label className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded text-gray-700 font-bold text-xs cursor-pointer whitespace-nowrap">
-                      Browse
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                              setPromoBannerForm({ ...promoBannerForm, bgImageUrl: reader.result });
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                      />
-                    </label>
-                  </div>
-                  {promoBannerForm?.bgImageUrl && (
-                    <div className="mt-2 h-16 w-32 rounded border border-gray-300 overflow-hidden bg-gray-100 shadow-xs">
-                      <img
-                        src={promoBannerForm.bgImageUrl}
-                        alt="Hero Banner Background"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Live Preview Card */}
-              <div className="space-y-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 block">
-                  Live Shop Homepage Preview
-                </span>
-                <div
-                  className="relative w-full rounded-xl overflow-hidden border border-gray-300 shadow-md bg-gray-900 min-h-[170px] flex items-center p-6 text-white bg-cover bg-center"
-                  style={promoBannerForm?.bgImageUrl ? { backgroundImage: `url(${promoBannerForm.bgImageUrl})` } : undefined}
-                >
-                  <div className="relative z-10 max-w-[70%] space-y-1">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#DD1215] bg-black/40 px-2 py-0.5 rounded">
-                      {promoBannerForm?.discountCode || 'PROMO'}
-                    </span>
-                    <h2 className="text-3xl font-black uppercase tracking-wider drop-shadow-md">
-                      {promoBannerForm?.headline || '35% off'}
-                    </h2>
-                    <p className="text-xs uppercase tracking-wide text-gray-200">
-                      {promoBannerForm?.subtitle || 'on The Crimson Bloodline'}
-                    </p>
-                    <div className="pt-2">
-                      <span className="inline-block px-4 py-1.5 bg-[#DD1215] text-white text-xs font-bold uppercase tracking-wide shadow-sm">
-                        {promoBannerForm?.buttonText || 'Buy Now'}
-                      </span>
-                    </div>
-                  </div>
-                  {/* Background graphic simulation */}
-                  <div className="absolute right-0 top-0 bottom-0 w-1/2 bg-gradient-to-l from-red-600/30 to-transparent pointer-events-none"></div>
-                </div>
-                <p className="text-[11px] text-gray-400 text-center">
-                  Preview mirrors exact CSS, fonts, and responsiveness from <code>ShopMain.jsx</code>
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Sub-section 2: Hero Slider Content */}
+          {/* ══════════════════════════════════════════════════════════ */}
+          {/* 1. HERO SLIDER CONTENT (MAIN CAROUSEL)                      */}
+          {/* ══════════════════════════════════════════════════════════ */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 gap-3">
               <div>
@@ -726,17 +733,36 @@ const MarketingDashboard = () => {
                   Hero Slider Content (Main Carousel)
                 </h3>
                 <p className="text-xs text-gray-500">
-                  Manage headline slides on the Shop landing page
+                  Manage full-width responsive slides on the Shop landing page. Supports uploaded visual artwork and text/CTA overlays.
                 </p>
               </div>
 
-              <button
-                onClick={handleSaveHeroSlider}
-                disabled={savingBanners}
-                className="px-4 py-2 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-lg transition shadow-xs cursor-pointer"
-              >
-                Save Hero Slider
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleRestoreUploadedPresets}
+                  className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition cursor-pointer"
+                  title="Reset to the 2 uploaded hero slides"
+                >
+                  <RefreshCw size={13} className="inline mr-1 text-[#DD1215]" />
+                  Uploaded Presets
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddSlide}
+                  className="px-3 py-1.5 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <Plus size={14} /> Add New Slide
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveHeroSlider}
+                  disabled={savingBanners}
+                  className="px-4 py-1.5 bg-[#DD1215] hover:bg-red-700 text-white text-xs font-bold rounded-lg transition shadow-xs cursor-pointer"
+                >
+                  Save Hero Slider ({heroSlides.length} Slides)
+                </button>
+              </div>
             </div>
 
             {/* Live Slider Preview Card */}
@@ -744,124 +770,263 @@ const MarketingDashboard = () => {
               <div className="space-y-2 pb-4 border-b border-gray-100">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 block">
-                    Live Hero Slider Preview (Slide #{previewSlideIdx + 1} of {heroSlides.length})
+                    Live Carousel Preview (Slide #{previewSlideIdx + 1} of {heroSlides.length})
                   </span>
-                  <div className="flex items-center gap-1.5">
-                    {heroSlides.map((_, dotIdx) => (
-                      <button
-                        key={dotIdx}
-                        type="button"
-                        onClick={() => setPreviewSlideIdx(dotIdx)}
-                        className={`h-2 rounded-full transition-all cursor-pointer ${
-                          previewSlideIdx === dotIdx ? 'w-5 bg-[#DD1215]' : 'w-2 bg-gray-300 hover:bg-gray-400'
-                        }`}
-                        title={`Preview slide ${dotIdx + 1}`}
-                      />
-                    ))}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewSlideIdx((previewSlideIdx - 1 + heroSlides.length) % heroSlides.length)}
+                      className="p-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 transition"
+                      title="Previous preview slide"
+                    >
+                      <ChevronLeft size={14} />
+                    </button>
+                    <div className="flex items-center gap-1.5">
+                      {heroSlides.map((_, dotIdx) => (
+                        <button
+                          key={dotIdx}
+                          type="button"
+                          onClick={() => setPreviewSlideIdx(dotIdx)}
+                          className={`h-2 rounded-full transition-all cursor-pointer ${
+                            previewSlideIdx === dotIdx ? 'w-5 bg-[#DD1215]' : 'w-2 bg-gray-300 hover:bg-gray-400'
+                          }`}
+                          title={`Preview slide ${dotIdx + 1}`}
+                        />
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewSlideIdx((previewSlideIdx + 1) % heroSlides.length)}
+                      className="p-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 transition"
+                      title="Next preview slide"
+                    >
+                      <ChevronRight size={14} />
+                    </button>
                   </div>
                 </div>
 
                 {(() => {
                   const currentSlide = heroSlides[previewSlideIdx] || heroSlides[0];
                   const bg = currentSlide?.imageUrl || currentSlide?.image;
+                  const isArtworkMode = currentSlide?.displayMode === 'banner_image';
+
                   return (
                     <div
-                      className="relative w-full rounded-xl overflow-hidden border border-gray-300 shadow-md bg-gray-950 min-h-[190px] flex items-center p-8 text-white bg-cover bg-center transition-all"
+                      className="relative w-full rounded-xl overflow-hidden border border-gray-300 shadow-md bg-gray-950 min-h-[220px] md:min-h-[260px] flex items-center p-6 md:p-8 text-white bg-cover bg-center transition-all"
                       style={bg ? { backgroundImage: `url(${bg})` } : undefined}
                     >
-                      {/* Dark overlay so text is readable if image is bright */}
-                      <div className="absolute inset-0 bg-black/45"></div>
+                      {/* Dark overlay only if in overlay mode or bright image */}
+                      {!isArtworkMode && <div className="absolute inset-0 bg-black/40"></div>}
 
-                      <div className="relative z-10 max-w-[75%] space-y-2">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[#DD1215] bg-black/60 px-2.5 py-0.5 rounded">
-                          Slide #{previewSlideIdx + 1} {currentSlide?.isActive ? '• Active' : '• Inactive'}
-                        </span>
-                        <h2 className="text-2xl md:text-3xl font-black uppercase tracking-wider drop-shadow-md text-white">
-                          {currentSlide?.headline || 'Hero Headline'}
-                        </h2>
-                        <p className="text-xs md:text-sm uppercase tracking-wide text-gray-200">
-                          {currentSlide?.subheading || 'Subheading description text'}
-                        </p>
-                        <div className="pt-2">
-                          <span className="inline-block px-5 py-2 bg-[#DD1215] text-white text-xs font-bold uppercase tracking-widest shadow-sm rounded-sm">
-                            {currentSlide?.buttonText || 'Explore Now'}
+                      {/* When in artwork mode with full slide graphic */}
+                      {isArtworkMode ? (
+                        <div className="absolute bottom-4 right-4 z-20">
+                          <span className="inline-block px-4 py-1.5 bg-[#DD1215] text-white text-[11px] font-bold uppercase tracking-widest shadow-md rounded-full">
+                            {currentSlide?.buttonText || 'Shop Now'} →
                           </span>
                         </div>
-                      </div>
+                      ) : (
+                        <div
+                          className={`relative z-10 max-w-[75%] space-y-2 ${
+                            currentSlide?.alignment === 'right' ? 'ml-auto text-right' : currentSlide?.alignment === 'center' ? 'mx-auto text-center' : 'text-left'
+                          }`}
+                        >
+                          <span className="text-[10px] font-black uppercase tracking-widest text-[#DD1215] bg-black/60 px-2.5 py-0.5 rounded">
+                            Slide #{previewSlideIdx + 1} {currentSlide?.isActive ? '• Active' : '• Inactive'}
+                          </span>
+                          <h2 className="text-2xl md:text-4xl font-black uppercase tracking-wider drop-shadow-md text-white font-dmsans">
+                            {currentSlide?.headline || 'Hero Headline'}
+                          </h2>
+                          <p className="text-xs md:text-sm uppercase tracking-wide text-gray-200">
+                            {currentSlide?.subheading || 'Subheading description text'}
+                          </p>
+                          <div className="pt-2">
+                            <span className="inline-block px-5 py-2 bg-[#DD1215] text-white text-xs font-bold uppercase tracking-widest shadow-sm rounded-sm">
+                              {currentSlide?.buttonText || 'Shop Now'}
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
               </div>
             )}
 
+            {/* Slide Cards List */}
             <div className="space-y-4">
               {heroSlides.map((slide, idx) => (
-                <div key={slide.id} className="p-4 border border-gray-200 rounded-xl bg-gray-50/60 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-black text-xs text-gray-800 uppercase">
-                      Slide #{idx + 1}
-                    </span>
+                <div key={slide.id || idx} className="p-5 border border-gray-200 rounded-xl bg-gray-50/70 space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-3">
+                    <div className="flex items-center gap-3">
+                      <span className="w-6 h-6 rounded-full bg-[#DD1215] text-white flex items-center justify-center font-bold text-xs">
+                        {idx + 1}
+                      </span>
+                      <span className="font-extrabold text-sm text-gray-900 uppercase">
+                        {slide.title || slide.headline || `Slide #${idx + 1}`}
+                      </span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${slide.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-600'}`}>
+                        {slide.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] text-gray-500">Active:</span>
-                      <Switch
-                        checked={slide.isActive}
-                        onChange={(chk) => {
-                          const updated = [...heroSlides];
-                          updated[idx].isActive = chk;
-                          setHeroSlides(updated);
-                        }}
-                      />
+                      <button
+                        type="button"
+                        onClick={() => handleMoveSlide(idx, -1)}
+                        disabled={idx === 0}
+                        className="p-1 rounded bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-40 transition"
+                        title="Move slide up"
+                      >
+                        <ArrowUp size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMoveSlide(idx, 1)}
+                        disabled={idx === heroSlides.length - 1}
+                        className="p-1 rounded bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-40 transition"
+                        title="Move slide down"
+                      >
+                        <ArrowDown size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSlide(idx)}
+                        className="p-1 rounded bg-white border border-red-200 text-red-600 hover:bg-red-50 transition"
+                        title="Delete slide"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                      <div className="flex items-center gap-1.5 ml-2 border-l border-gray-200 pl-3">
+                        <span className="text-xs text-gray-600 font-semibold">Active:</span>
+                        <Switch
+                          checked={slide.isActive}
+                          onChange={(chk) => {
+                            const updated = [...heroSlides];
+                            updated[idx].isActive = chk;
+                            setHeroSlides(updated);
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                     <div>
-                      <label className="block font-semibold text-gray-600 mb-1">Headline</label>
+                      <label className="block font-bold text-gray-700 uppercase mb-1">Slide Title / Name</label>
                       <Input
-                        value={slide.headline}
+                        value={slide.title || ''}
+                        onChange={(e) => {
+                          const updated = [...heroSlides];
+                          updated[idx].title = e.target.value;
+                          setHeroSlides(updated);
+                        }}
+                        placeholder="e.g. Monthly Drop Incoming"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-gray-700 uppercase mb-1">Display Mode</label>
+                      <Select
+                        value={slide.displayMode || 'banner_image'}
+                        onChange={(val) => {
+                          const updated = [...heroSlides];
+                          updated[idx].displayMode = val;
+                          setHeroSlides(updated);
+                        }}
+                        className="w-full"
+                        options={[
+                          { value: 'banner_image', label: 'Full Banner Artwork (Uploaded image direct)' },
+                          { value: 'custom_overlay', label: 'Custom Text & CTA Button Overlay' },
+                        ]}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-gray-700 uppercase mb-1">Text Alignment</label>
+                      <Select
+                        value={slide.alignment || 'left'}
+                        onChange={(val) => {
+                          const updated = [...heroSlides];
+                          updated[idx].alignment = val;
+                          setHeroSlides(updated);
+                        }}
+                        className="w-full"
+                        options={[
+                          { value: 'left', label: 'Left Aligned' },
+                          { value: 'center', label: 'Centered' },
+                          { value: 'right', label: 'Right Aligned' },
+                        ]}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-gray-700 uppercase mb-1">Headline Text</label>
+                      <Input
+                        value={slide.headline || ''}
                         onChange={(e) => {
                           const updated = [...heroSlides];
                           updated[idx].headline = e.target.value;
                           setHeroSlides(updated);
                         }}
+                        placeholder="e.g. BECOME ONE OF US BECOME INFINITO"
                       />
                     </div>
+
                     <div>
-                      <label className="block font-semibold text-gray-600 mb-1">Subheading</label>
+                      <label className="block font-bold text-gray-700 uppercase mb-1">Highlight Words (In Brand Red)</label>
                       <Input
-                        value={slide.subheading}
+                        value={slide.highlightText || ''}
+                        onChange={(e) => {
+                          const updated = [...heroSlides];
+                          updated[idx].highlightText = e.target.value;
+                          setHeroSlides(updated);
+                        }}
+                        placeholder="e.g. ONE OF US or MONTHLY DROP"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-gray-700 uppercase mb-1">Subheading / Description</label>
+                      <Input
+                        value={slide.subheading || ''}
                         onChange={(e) => {
                           const updated = [...heroSlides];
                           updated[idx].subheading = e.target.value;
                           setHeroSlides(updated);
                         }}
+                        placeholder="Only 500 pieces. Book the exclusive merchandise right now."
                       />
                     </div>
+
                     <div>
-                      <label className="block font-semibold text-gray-600 mb-1">Button Text</label>
+                      <label className="block font-bold text-gray-700 uppercase mb-1">Button Text</label>
                       <Input
-                        value={slide.buttonText}
+                        value={slide.buttonText || 'Shop Now'}
                         onChange={(e) => {
                           const updated = [...heroSlides];
                           updated[idx].buttonText = e.target.value;
                           setHeroSlides(updated);
                         }}
+                        placeholder="e.g. Shop Now"
                       />
                     </div>
-                    <div>
-                      <label className="block font-semibold text-gray-600 mb-1">Button Link</label>
+
+                    <div className="md:col-span-2">
+                      <label className="block font-bold text-gray-700 uppercase mb-1">Button Redirect Link</label>
                       <Input
-                        value={slide.buttonLink}
+                        value={slide.buttonLink || 'https://shop.infinitohq.com/'}
                         onChange={(e) => {
                           const updated = [...heroSlides];
                           updated[idx].buttonLink = e.target.value;
                           setHeroSlides(updated);
                         }}
+                        placeholder="https://shop.infinitohq.com/ or /shop/catalog"
                       />
                     </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block font-semibold text-gray-600 mb-1">Background Picture (Image URL or Upload)</label>
+                    <div className="md:col-span-3">
+                      <label className="block font-bold text-gray-700 uppercase mb-1">Banner Slide Image (URL or Upload)</label>
                       <div className="flex gap-2 items-center">
                         <Input
                           value={slide.imageUrl || slide.image || ''}
@@ -871,7 +1036,7 @@ const MarketingDashboard = () => {
                             updated[idx].image = e.target.value;
                             setHeroSlides(updated);
                           }}
-                          placeholder="e.g. /products/hero-slide.jpg or https://... or pick file"
+                          placeholder="e.g. /banners/hero_monthly_drop.png or /banners/hero_become_infinito.png or upload"
                         />
                         <label className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded text-gray-700 font-bold text-xs cursor-pointer whitespace-nowrap">
                           Browse
@@ -895,11 +1060,12 @@ const MarketingDashboard = () => {
                           />
                         </label>
                       </div>
+
                       {(slide.imageUrl || slide.image) && (
-                        <div className="mt-2 h-16 w-32 rounded border border-gray-300 overflow-hidden bg-gray-100">
+                        <div className="mt-2 h-20 w-48 rounded border border-gray-300 overflow-hidden bg-gray-900 shadow-xs flex items-center justify-center">
                           <img
                             src={slide.imageUrl || slide.image}
-                            alt={`Slide ${idx + 1} background`}
+                            alt={`Slide ${idx + 1} artwork`}
                             className="w-full h-full object-cover"
                           />
                         </div>
@@ -911,8 +1077,290 @@ const MarketingDashboard = () => {
             </div>
           </div>
 
-          {/* Sub-section 3: Promo Banner Content (Announcement Bar) */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+          {/* ══════════════════════════════════════════════════════════ */}
+          {/* 2. HOMEPAGE PROMO BANNERS (MULTIPLE ALLOWED!)               */}
+          {/* ══════════════════════════════════════════════════════════ */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 gap-3">
+              <div>
+                <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wide flex items-center gap-2">
+                  <Sparkles className="text-[#DD1215]" size={17} />
+                  Homepage Promo Banners (e.g. 35% Off Banner)
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Controls promotional campaign banners placed between hero and categories. You can create multiple banners!
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleAddPromoBanner}
+                  className="px-3 py-1.5 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <Plus size={14} /> Add Promo Banner
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSavePromoBanners}
+                  disabled={savingBanners}
+                  className="px-4 py-1.5 bg-[#DD1215] hover:bg-red-700 text-white text-xs font-bold rounded-lg transition shadow-xs cursor-pointer"
+                >
+                  Save Promo Banners ({promoBanners.length} Total)
+                </button>
+              </div>
+            </div>
+
+            {/* Live Promo Banner Preview */}
+            {promoBanners.length > 0 && (
+              <div className="space-y-2 pb-4 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 block">
+                    Live Preview (Banner #{previewPromoIdx + 1} of {promoBanners.length})
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {promoBanners.map((_, pIdx) => (
+                      <button
+                        key={pIdx}
+                        type="button"
+                        onClick={() => setPreviewPromoIdx(pIdx)}
+                        className={`px-2.5 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
+                          previewPromoIdx === pIdx ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        #{pIdx + 1}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {(() => {
+                  const currentPromo = promoBanners[previewPromoIdx] || promoBanners[0];
+                  return (
+                    <div
+                      className="relative w-full rounded-xl overflow-hidden border border-gray-300 shadow-md min-h-[160px] flex items-center p-6 text-white bg-cover bg-center"
+                      style={{
+                        backgroundColor: currentPromo?.bgColor || '#800000',
+                        backgroundImage: currentPromo?.bgImageUrl ? `url(${currentPromo.bgImageUrl})` : undefined,
+                        color: currentPromo?.textColor || '#ffffff',
+                      }}
+                    >
+                      <div className="relative z-10 max-w-[70%] space-y-1">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[#DD1215] bg-black/60 px-2 py-0.5 rounded">
+                          {currentPromo?.discountCode || currentPromo?.badgeText || 'SPECIAL OFFER'}
+                        </span>
+                        <h2 className="text-3xl md:text-4xl font-black uppercase tracking-wider drop-shadow-md">
+                          {currentPromo?.headline || '35% off'}
+                        </h2>
+                        <p className="text-xs uppercase tracking-wide text-gray-200 font-semibold">
+                          {currentPromo?.subtitle || 'on The Crimson Bloodline'}
+                        </p>
+                        <div className="pt-2">
+                          <span className="inline-block px-4 py-1.5 bg-[#DD1215] text-white text-xs font-bold uppercase tracking-wide shadow-sm rounded-sm">
+                            {currentPromo?.buttonText || 'Buy Now'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="absolute right-0 top-0 bottom-0 w-1/2 bg-gradient-to-l from-red-600/30 to-transparent pointer-events-none"></div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* Promo Banner Cards */}
+            <div className="space-y-4">
+              {promoBanners.map((promo, idx) => (
+                <div key={promo.id || idx} className="p-5 border border-gray-200 rounded-xl bg-gray-50/70 space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-3">
+                    <div className="flex items-center gap-3">
+                      <span className="w-6 h-6 rounded-full bg-[#DD1215] text-white flex items-center justify-center font-bold text-xs">
+                        {idx + 1}
+                      </span>
+                      <span className="font-extrabold text-sm text-gray-900 uppercase">
+                        {promo.headline} {promo.subtitle}
+                      </span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${promo.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-600'}`}>
+                        {promo.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleMovePromoBanner(idx, -1)}
+                        disabled={idx === 0}
+                        className="p-1 rounded bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-40 transition"
+                        title="Move banner up"
+                      >
+                        <ArrowUp size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMovePromoBanner(idx, 1)}
+                        disabled={idx === promoBanners.length - 1}
+                        className="p-1 rounded bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-40 transition"
+                        title="Move banner down"
+                      >
+                        <ArrowDown size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePromoBanner(idx)}
+                        className="p-1 rounded bg-white border border-red-200 text-red-600 hover:bg-red-50 transition"
+                        title="Delete banner"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                      <div className="flex items-center gap-1.5 ml-2 border-l border-gray-200 pl-3">
+                        <span className="text-xs text-gray-600 font-semibold">Active:</span>
+                        <Switch
+                          checked={promo.isActive}
+                          onChange={(chk) => {
+                            const updated = [...promoBanners];
+                            updated[idx].isActive = chk;
+                            setPromoBanners(updated);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                    <div>
+                      <label className="block font-bold text-gray-700 uppercase mb-1">Headline Text</label>
+                      <Input
+                        value={promo.headline || ''}
+                        onChange={(e) => {
+                          const updated = [...promoBanners];
+                          updated[idx].headline = e.target.value;
+                          setPromoBanners(updated);
+                        }}
+                        placeholder="e.g. 35% off"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-gray-700 uppercase mb-1">Subtitle / Target Collection</label>
+                      <Input
+                        value={promo.subtitle || ''}
+                        onChange={(e) => {
+                          const updated = [...promoBanners];
+                          updated[idx].subtitle = e.target.value;
+                          setPromoBanners(updated);
+                        }}
+                        placeholder="e.g. on The Crimson Bloodline"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-gray-700 uppercase mb-1">Badge / Discount Code</label>
+                      <Input
+                        value={promo.discountCode || promo.badgeText || ''}
+                        onChange={(e) => {
+                          const updated = [...promoBanners];
+                          updated[idx].discountCode = e.target.value;
+                          updated[idx].badgeText = e.target.value;
+                          setPromoBanners(updated);
+                        }}
+                        placeholder="e.g. CRIMSON35"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-gray-700 uppercase mb-1">CTA Button Text</label>
+                      <Input
+                        value={promo.buttonText || 'Buy Now'}
+                        onChange={(e) => {
+                          const updated = [...promoBanners];
+                          updated[idx].buttonText = e.target.value;
+                          setPromoBanners(updated);
+                        }}
+                        placeholder="e.g. Buy Now"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block font-bold text-gray-700 uppercase mb-1">CTA Link URL</label>
+                      <Input
+                        value={promo.buttonLink || 'https://shop.infinitohq.com/'}
+                        onChange={(e) => {
+                          const updated = [...promoBanners];
+                          updated[idx].buttonLink = e.target.value;
+                          setPromoBanners(updated);
+                        }}
+                        placeholder="https://shop.infinitohq.com/ or /shop/catalog"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block font-bold text-gray-700 uppercase mb-1">Background Image (URL or Upload)</label>
+                      <div className="flex gap-2 items-center">
+                        <Input
+                          value={promo.bgImageUrl || ''}
+                          onChange={(e) => {
+                            const updated = [...promoBanners];
+                            updated[idx].bgImageUrl = e.target.value;
+                            setPromoBanners(updated);
+                          }}
+                          placeholder="e.g. /products/crimson_tshirt.jpg or pick file"
+                        />
+                        <label className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded text-gray-700 font-bold text-xs cursor-pointer whitespace-nowrap">
+                          Browse
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = () => {
+                                  const updated = [...promoBanners];
+                                  updated[idx].bgImageUrl = reader.result;
+                                  setPromoBanners(updated);
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-gray-700 uppercase mb-1">Theme Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={promo.bgColor || '#800000'}
+                          onChange={(e) => {
+                            const updated = [...promoBanners];
+                            updated[idx].bgColor = e.target.value;
+                            setPromoBanners(updated);
+                          }}
+                          className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
+                        />
+                        <Input
+                          value={promo.bgColor || '#800000'}
+                          onChange={(e) => {
+                            const updated = [...promoBanners];
+                            updated[idx].bgColor = e.target.value;
+                            setPromoBanners(updated);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ══════════════════════════════════════════════════════════ */}
+          {/* 3. TOP PROMO / ANNOUNCEMENT BAR (MULTIPLE ALLOWED!)         */}
+          {/* ══════════════════════════════════════════════════════════ */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-gray-100 gap-3">
               <div>
                 <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wide flex items-center gap-2">
@@ -920,50 +1368,174 @@ const MarketingDashboard = () => {
                   Top Promo / Announcement Bar
                 </h3>
                 <p className="text-xs text-gray-500">
-                  Global header ticker displayed at the very top of the customer store
+                  Global header ticker displayed at the very top of the customer website. You can create multiple announcements that rotate on the frontend!
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
-                <Switch
-                  checked={promoBarForm?.isActive}
-                  onChange={(chk) => setPromoBarForm({ ...promoBarForm, isActive: chk })}
-                />
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={handleSavePromoBar}
-                  className="px-4 py-1.5 bg-[#DD1215] text-white text-xs font-bold rounded-lg hover:bg-red-700 transition"
+                  type="button"
+                  onClick={handleAddPromoBar}
+                  className="px-3 py-1.5 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5"
                 >
-                  Save Promo Bar
+                  <Plus size={14} /> Add Announcement
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSavePromoBars}
+                  disabled={savingBanners}
+                  className="px-4 py-1.5 bg-[#DD1215] text-white text-xs font-bold rounded-lg hover:bg-red-700 transition cursor-pointer"
+                >
+                  Save Announcement Bars ({promoBars.length} Total)
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-              <div className="md:col-span-2">
-                <label className="block font-bold text-gray-700 uppercase mb-1">Announcement Text</label>
-                <Input
-                  value={promoBarForm?.text}
-                  onChange={(e) => setPromoBarForm({ ...promoBarForm, text: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block font-bold text-gray-700 uppercase mb-1">Target Link</label>
-                <Input
-                  value={promoBarForm?.link}
-                  onChange={(e) => setPromoBarForm({ ...promoBarForm, link: e.target.value })}
-                />
-              </div>
-            </div>
-
             {/* Live Preview Ticker */}
-            <div className="mt-2">
-              <span className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Live Header Preview</span>
-              <div
-                style={{ backgroundColor: promoBarForm?.bgColor || '#DD1215', color: promoBarForm?.textColor || '#ffffff' }}
-                className="w-full py-2 px-4 text-center text-xs font-bold uppercase tracking-wider rounded-lg shadow-xs"
-              >
-                {promoBarForm?.text || 'Announcement text here'}
+            {promoBars.length > 0 && (
+              <div className="space-y-2 pb-3 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase text-gray-400 block">
+                    Live Header Preview (Announcement #{previewBarIdx + 1} of {promoBars.length})
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {promoBars.map((_, bIdx) => (
+                      <button
+                        key={bIdx}
+                        type="button"
+                        onClick={() => setPreviewBarIdx(bIdx)}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
+                          previewBarIdx === bIdx ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        #{bIdx + 1}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {(() => {
+                  const currentBar = promoBars[previewBarIdx] || promoBars[0];
+                  return (
+                    <div
+                      style={{
+                        backgroundColor: currentBar?.bgColor || '#DD1215',
+                        color: currentBar?.textColor || '#ffffff',
+                      }}
+                      className="w-full py-2.5 px-4 text-center text-xs font-bold uppercase tracking-wider rounded-lg shadow-xs transition-colors flex items-center justify-center gap-2"
+                    >
+                      <span>{currentBar?.text || 'Announcement text here'}</span>
+                      <ExternalLink size={12} className="opacity-70" />
+                    </div>
+                  );
+                })()}
               </div>
+            )}
+
+            {/* Announcement Bars List */}
+            <div className="space-y-3">
+              {promoBars.map((bar, idx) => (
+                <div key={bar.id || idx} className="p-4 border border-gray-200 rounded-xl bg-gray-50/70 space-y-3">
+                  <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                    <span className="font-bold text-xs text-gray-800 uppercase flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-gray-900 text-white flex items-center justify-center text-[10px]">
+                        {idx + 1}
+                      </span>
+                      Announcement #{idx + 1}
+                    </span>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePromoBar(idx)}
+                        className="p-1 rounded bg-white border border-red-200 text-red-600 hover:bg-red-50 transition"
+                        title="Delete announcement"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                      <div className="flex items-center gap-1.5 border-l border-gray-200 pl-2">
+                        <span className="text-xs text-gray-600 font-semibold">Active:</span>
+                        <Switch
+                          checked={bar.isActive}
+                          onChange={(chk) => {
+                            const updated = [...promoBars];
+                            updated[idx].isActive = chk;
+                            setPromoBars(updated);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+                    <div className="md:col-span-2">
+                      <label className="block font-bold text-gray-700 uppercase mb-1">Announcement Text</label>
+                      <Input
+                        value={bar.text || ''}
+                        onChange={(e) => {
+                          const updated = [...promoBars];
+                          updated[idx].text = e.target.value;
+                          setPromoBars(updated);
+                        }}
+                        placeholder="e.g. FREE EXPRESS SHIPPING ON ORDERS ABOVE ₹999 | USE CODE INFINITO"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-gray-700 uppercase mb-1">Target Link URL</label>
+                      <Input
+                        value={bar.link || 'https://shop.infinitohq.com/'}
+                        onChange={(e) => {
+                          const updated = [...promoBars];
+                          updated[idx].link = e.target.value;
+                          setPromoBars(updated);
+                        }}
+                        placeholder="https://shop.infinitohq.com/"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-gray-700 uppercase mb-1">Background Color</label>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="color"
+                          value={bar.bgColor || '#DD1215'}
+                          onChange={(e) => {
+                            const updated = [...promoBars];
+                            updated[idx].bgColor = e.target.value;
+                            setPromoBars(updated);
+                          }}
+                          className="w-7 h-7 rounded border border-gray-300 cursor-pointer shrink-0"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = [...promoBars];
+                            updated[idx].bgColor = '#DD1215';
+                            setPromoBars(updated);
+                          }}
+                          className="px-2 py-1 bg-red-600 text-white rounded text-[10px] font-bold"
+                          title="Infinito Red"
+                        >
+                          Red
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = [...promoBars];
+                            updated[idx].bgColor = '#0f172a';
+                            setPromoBars(updated);
+                          }}
+                          className="px-2 py-1 bg-slate-900 text-white rounded text-[10px] font-bold"
+                          title="Dark Slate"
+                        >
+                          Dark
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
