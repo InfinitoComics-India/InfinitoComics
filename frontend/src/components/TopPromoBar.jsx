@@ -119,7 +119,7 @@ const TopPromoBar = () => {
       style={{ backgroundColor: bgStyle, color: textStyle }}
       className="relative z-50 w-full transition-colors duration-500 text-xs sm:text-sm font-medium tracking-wide shadow-sm select-none"
     >
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 flex items-center justify-between min-h-[36px]">
+      <div className="w-full max-w-[1200px] mx-auto px-4 md:px-12 py-2 flex items-center justify-between min-h-[36px]">
         {/* Previous Button (if multiple) */}
         {bars.length > 1 ? (
           <button
