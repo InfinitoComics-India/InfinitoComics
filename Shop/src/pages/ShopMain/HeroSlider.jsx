@@ -181,10 +181,10 @@ const Slide = ({ slide }) => {
 
       {slide.hideText ? (
         // Artwork already carries heading, subtext and CTA — reserve
-        // the same vertical space and stay out of the way.
-        <div className="min-h-[420px] md:min-h-[560px]" />
+        // the same vertical space and stay out of the way matching SS1 aspect ratio.
+        <div className="w-full aspect-[1024/380] min-h-[340px] sm:min-h-[420px] md:min-h-[500px]" />
       ) : (
-        <div className="relative max-w-[1200px] mx-auto px-4 md:px-12 min-h-[420px] md:min-h-[560px] flex items-center">
+        <div className="relative max-w-[1200px] mx-auto px-4 md:px-12 w-full aspect-[1024/380] min-h-[340px] sm:min-h-[420px] md:min-h-[500px] flex items-center">
           <div
             className={`w-full md:w-1/2 py-14 md:py-20 ${
               isRight ? "md:ml-auto md:text-right" : "md:mr-auto md:text-left"
