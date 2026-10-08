@@ -251,7 +251,7 @@ const Cart = () => {
               Looks like you haven't added anything yet. Explore our latest official merch and streetwear below!
             </p>
             <button
-              onClick={() => navigate("/shop")}
+              onClick={() => { window.location.href = "https://shop.infinitohq.com/"; }}
               className="px-8 py-3 bg-[#DD1215] hover:bg-red-700 text-white font-bold text-xs uppercase tracking-widest transition cursor-pointer"
             >
               Continue Shopping

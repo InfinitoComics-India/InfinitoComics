@@ -21,11 +21,26 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   const roles = getRoles();
-  const empOnly = roles.length > 0 && roles.every(r => r === "employee");
+  const isShopOnly = roles.length > 0 && roles.every(r => r === "shop_admin");
+  const isEmp = roles.includes("employee");
   const currentPath = location.pathname;
+  const normalizedPath = currentPath.replace(/^\/admin/, "") || "/";
 
-  // Employee-allowed HR pages (everything else → Employee Portal)
+  // Root landing page: direct shop_admin and employee to shop management
+  if (normalizedPath === "/" || normalizedPath === "") {
+    if (roles.includes("shop_admin") || (isEmp && !roles.includes("superadmin"))) {
+      return <Navigate to="/shop/products" replace />;
+    }
+  }
+
+  // Shop admin trying to visit outside of /shop
+  if (isShopOnly && !normalizedPath.startsWith("/shop")) {
+    return <Navigate to="/shop/products" replace />;
+  }
+
+  // Employee-allowed pages (HR self-service + Shop section)
   const EMPLOYEE_ALLOWED = [
+    "/shop",
     "/employee-portal",
     "/hr/worklog",
     "/hr/attendance",
@@ -33,12 +48,9 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     "/hr/goals",
     "/hr/documents",
     "/hr/self-service",
-    "/hr/chat",
-    "/messages",
   ];
-  const normalizedPath = currentPath.replace(/^\/admin/, "") || "/";
-  if (empOnly && !EMPLOYEE_ALLOWED.some(a => normalizedPath.startsWith(a))) {
-    return <Navigate to="/employee-portal" replace />;
+  if (isEmp && !roles.includes("superadmin") && !EMPLOYEE_ALLOWED.some(a => normalizedPath.startsWith(a))) {
+    return <Navigate to="/shop/products" replace />;
   }
 
   if (allowedRoles) {

@@ -36,19 +36,19 @@ const OrderCancelled = () => {
             You Order has been cancelled and Refund has been initiated and the process will take 7-14 business days.
           </p>
 
-          {/* Action Buttons: View Orders / Go to Home (Matching SS6) */}
+          {/* Action Buttons: View Orders / Explore Store */}
           <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xl mt-12">
             <button
               onClick={() => navigate(`/order-details/${targetId}`)}
               className="flex-1 py-3.5 border border-[#DD1215] text-[#DD1215] hover:bg-red-50 font-bold uppercase text-xs md:text-sm tracking-wider transition cursor-pointer text-center"
             >
-              View Orders
+              View Order Details
             </button>
             <button
-              onClick={() => navigate("/shop")}
+              onClick={() => { window.location.href = "https://shop.infinitohq.com/"; }}
               className="flex-1 py-3.5 bg-[#DD1215] hover:bg-red-700 text-white font-bold uppercase text-xs md:text-sm tracking-wider transition cursor-pointer text-center shadow-md"
             >
-              Go to Home
+              Back to Shop
             </button>
           </div>
         </div>

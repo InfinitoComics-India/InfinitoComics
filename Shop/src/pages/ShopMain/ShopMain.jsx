@@ -60,46 +60,108 @@ const ShopMain = () => {
       {/* ─── HERO SLIDER (3 slides) ─────────────────────────── */}
       <HeroSlider />
 
-      {/* ─── PROMO BANNER (Dynamic from Admin Marketing Management) ── */}
+      {/* ─── PROMO BANNERS (Multiple supported from Admin Marketing Management) ── */}
       {(() => {
-        let dynamicPromo = null;
+        let promoList = [];
         try {
           const raw = localStorage.getItem("infinito_shop_banners");
           if (raw) {
             const parsed = JSON.parse(raw);
-            if (parsed.promoBanner && parsed.promoBanner.isActive !== false) {
-              dynamicPromo = parsed.promoBanner;
+            if (Array.isArray(parsed.promoBanners) && parsed.promoBanners.length > 0) {
+              promoList = parsed.promoBanners.filter((b) => b.isActive !== false);
+            } else if (parsed.promoBanner && parsed.promoBanner.isActive !== false) {
+              promoList = [parsed.promoBanner];
             }
           }
         } catch {}
 
-        if (dynamicPromo && dynamicPromo.isActive === false) return null;
+        if (promoList.length === 0) {
+          promoList = [
+            {
+              id: "default-promo",
+              headline: "35% off",
+              subtitle: "on The Crimson Bloodline",
+              buttonText: "Buy Now",
+              buttonLink: "/catalog",
+              bgImageUrl: promoBanner,
+            },
+          ];
+        }
+
+        const currentPromo = promoList[promoIndex % promoList.length] || promoList[0];
 
         return (
-          <section className="max-w-[1200px] mx-auto px-4 md:px-12 py-10">
-            <div className="relative w-full">
+          <section className="max-w-[1240px] mx-auto px-4 md:px-8 py-10">
+            <div className="relative w-full overflow-hidden rounded-sm shadow-md">
               <img
-                src={dynamicPromo?.bgImageUrl || promoBanner}
+                src={currentPromo?.bgImageUrl || promoBanner}
                 alt=""
                 aria-hidden="true"
-                className="block w-full h-auto"
+                className="block w-full h-[220px] md:h-[300px] object-cover"
               />
-              <div className="absolute inset-0 flex items-center pl-[5%] pr-[50%] text-white">
+              <div
+                className="absolute inset-0 flex items-center pl-[6%] pr-[40%] text-white"
+                style={{
+                  backgroundColor: currentPromo?.bgImageUrl ? "rgba(0,0,0,0.35)" : (currentPromo?.bgColor || "#800000"),
+                }}
+              >
                 <div>
-                  <h2 className="text-2xl sm:text-3xl md:text-5xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] drop-shadow-lg">
-                    {dynamicPromo?.headline || "35% off"}
+                  {currentPromo?.badgeText && (
+                    <span className="inline-block bg-black/60 text-[#DD1215] text-[10px] md:text-xs font-bold uppercase tracking-widest px-2.5 py-0.5 rounded mb-2">
+                      {currentPromo.badgeText}
+                    </span>
+                  )}
+                  <h2 className="text-3xl sm:text-4xl md:text-6xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] drop-shadow-lg leading-none">
+                    {currentPromo?.headline || "35% off"}
                   </h2>
-                  <p className="mt-1 md:mt-2 text-[10px] sm:text-xs md:text-sm uppercase tracking-wide font-dmsans">
-                    {dynamicPromo?.subtitle || "on The Crimson Bloodline"}
+                  <p className="mt-1 md:mt-2 text-xs sm:text-sm md:text-base uppercase tracking-wide font-dmsans text-gray-200 font-semibold">
+                    {currentPromo?.subtitle || "on The Crimson Bloodline"}
                   </p>
                   <button
-                    onClick={() => navigate(dynamicPromo?.buttonLink || "/shop/catalog")}
-                    className="mt-3 md:mt-5 px-4 md:px-8 py-1.5 md:py-2.5 bg-[#DD1215] hover:bg-red-700 text-white text-[10px] sm:text-xs md:text-sm font-semibold uppercase tracking-wide transition font-dmsans cursor-pointer"
+                    onClick={() => {
+                      if (currentPromo?.buttonLink?.startsWith("http")) {
+                        window.location.href = currentPromo.buttonLink;
+                      } else {
+                        navigate(currentPromo?.buttonLink || "/catalog");
+                      }
+                    }}
+                    className="mt-4 md:mt-6 px-6 md:px-8 py-2 md:py-3 bg-[#DD1215] hover:bg-red-700 text-white text-xs md:text-sm font-bold uppercase tracking-widest transition font-dmsans cursor-pointer shadow-md"
                   >
-                    {dynamicPromo?.buttonText || "Buy Now"}
+                    {currentPromo?.buttonText || "Buy Now"}
                   </button>
                 </div>
               </div>
+
+              {/* Navigation controls if multiple promo banners exist */}
+              {promoList.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setPromoIndex((prev) => (prev - 1 + promoList.length) % promoList.length)}
+                    aria-label="Previous promo"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center transition cursor-pointer"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <button
+                    onClick={() => setPromoIndex((prev) => (prev + 1) % promoList.length)}
+                    aria-label="Next promo"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center transition cursor-pointer"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+                    {promoList.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setPromoIndex(i)}
+                        className={`h-1.5 rounded-full transition-all ${
+                          promoIndex % promoList.length === i ? "w-6 bg-white" : "w-1.5 bg-white/40"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </section>
         );

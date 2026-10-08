@@ -83,50 +83,106 @@ const DEFAULT_DISCOUNT_CODES = [
 
 // Default Shop Banners & Promotions configuration
 const DEFAULT_BANNERS_CONFIG = {
-  // 4.2 Homepage Promo Banner (like the 35% off on The Crimson Bloodline)
-  promoBanner: {
-    headline: '35% off',
-    subtitle: 'on The Crimson Bloodline',
-    buttonText: 'Buy Now',
-    buttonLink: '/shop/catalog',
-    badgeText: 'LIMITED EDITION DROP',
-    discountCode: 'CRIMSON35',
-    bgImageUrl: '', // Fallback to slide4.svg in frontend
-    bgColor: '#111827',
-    textColor: '#ffffff',
-    isActive: true,
-  },
-  // 4.2 Hero Slider Content
+  // 1. Hero Slider Content (Main Carousel with user's uploaded images as default slides)
   heroSlider: [
     {
-      id: 1,
-      headline: 'INFINITO PRIME COLLECTIBLES',
-      subheading: 'Where Imagination Breaks Boundaries — Officially Licensed',
-      buttonText: 'Explore Universe',
-      buttonLink: '/shop/catalog',
-      variant: 'dark', // 'dark' | 'light'
-      hideText: false,
-      imageUrl: '',
+      id: "slide-1",
+      title: "Monthly Drop Incoming",
+      headline: "MONTHLY DROP INCOMING",
+      highlightText: "MONTHLY DROP",
+      subheading: "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
+      buttonText: "Shop Now",
+      buttonLink: "https://shop.infinitohq.com/",
+      imageUrl: "/banners/hero_monthly_drop.png",
+      displayMode: "banner_image", // 'banner_image' | 'custom_overlay'
+      alignment: "right",
+      variant: "light",
       isActive: true,
     },
     {
-      id: 2,
-      headline: 'PREMIUM APPAREL & GRAPHIC NOVELS',
-      subheading: 'Heavyweight Cotton Tees, Oversized Hoodies & Foil-Embossed Comic Prints',
-      buttonText: 'Shop New Arrivals',
-      buttonLink: '/shop/catalog',
-      variant: 'light',
-      hideText: false,
-      imageUrl: '',
+      id: "slide-2",
+      title: "Become Infinito",
+      headline: "BECOME ONE OF US BECOME INFINITO",
+      highlightText: "ONE OF US",
+      subheading: "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
+      buttonText: "Shop Now",
+      buttonLink: "https://shop.infinitohq.com/",
+      imageUrl: "/banners/hero_become_infinito.png",
+      displayMode: "banner_image", // 'banner_image' | 'custom_overlay'
+      alignment: "left",
+      variant: "dark",
       isActive: true,
     },
   ],
-  // 4.2 Top Announcement / Promo Bar Content
+
+  // 2. Homepage Promo Banners (Multiple allowed!)
+  promoBanners: [
+    {
+      id: "promo-1",
+      badgeText: "LIMITED EDITION DROP",
+      discountCode: "CRIMSON35",
+      headline: "35% off",
+      subtitle: "on The Crimson Bloodline",
+      buttonText: "Buy Now",
+      buttonLink: "https://shop.infinitohq.com/",
+      bgImageUrl: "/products/crimson_tshirt.jpg",
+      bgColor: "#800000",
+      textColor: "#ffffff",
+      isActive: true,
+    },
+    {
+      id: "promo-2",
+      badgeText: "GRAPHIC NOVEL SPECIAL",
+      discountCode: "INFINITOVIP",
+      headline: "FLAT 25% OFF",
+      subtitle: "on ALL COMIC BOOKS & PRINTS",
+      buttonText: "Explore Now",
+      buttonLink: "https://shop.infinitohq.com/",
+      bgImageUrl: "",
+      bgColor: "#111827",
+      textColor: "#ffffff",
+      isActive: true,
+    },
+  ],
+
+  // 3. Top Announcement / Promo Bar Content (Multiple allowed!)
+  promoBars: [
+    {
+      id: "bar-1",
+      text: "⚡ SPECIAL LAUNCH OFFER: GET 35% OFF ON SELECTED MERCH WITH CODE CRIMSON35 | FREE SHIPPING ON ORDERS ABOVE ₹999",
+      link: "https://shop.infinitohq.com/",
+      bgColor: "#DD1215",
+      textColor: "#ffffff",
+      isActive: true,
+    },
+    {
+      id: "bar-2",
+      text: "🔥 NEW DROP ALERT: THE CRIMSON BLOODLINE IS NOW LIVE — ONLY 500 PIECES WORLDWIDE",
+      link: "https://shop.infinitohq.com/",
+      bgColor: "#0f172a",
+      textColor: "#ffffff",
+      isActive: true,
+    },
+  ],
+
+  // Legacy single references for backward compatibility
+  promoBanner: {
+    headline: "35% off",
+    subtitle: "on The Crimson Bloodline",
+    buttonText: "Buy Now",
+    buttonLink: "https://shop.infinitohq.com/",
+    badgeText: "LIMITED EDITION DROP",
+    discountCode: "CRIMSON35",
+    bgImageUrl: "/products/crimson_tshirt.jpg",
+    bgColor: "#800000",
+    textColor: "#ffffff",
+    isActive: true,
+  },
   promoBar: {
-    text: '⚡ SPECIAL LAUNCH OFFER: GET 35% OFF ON SELECTED MERCH WITH CODE CRIMSON35 | FREE SHIPPING ON ORDERS ABOVE ₹999',
-    bgColor: '#DD1215',
-    textColor: '#ffffff',
-    link: '/shop/catalog',
+    text: "⚡ SPECIAL LAUNCH OFFER: GET 35% OFF ON SELECTED MERCH WITH CODE CRIMSON35 | FREE SHIPPING ON ORDERS ABOVE ₹999",
+    bgColor: "#DD1215",
+    textColor: "#ffffff",
+    link: "https://shop.infinitohq.com/",
     isActive: true,
   },
 };
@@ -199,32 +255,42 @@ export const toggleDiscountCodeStatus = async (id) => {
 
 // ── BANNERS & PROMOTIONS API ───────────────────────────────────
 
+const broadcastBanners = (data) => {
+  try {
+    const channel = new BroadcastChannel('infinito_banners_channel');
+    channel.postMessage({ type: 'banners_updated', data });
+    channel.close();
+  } catch {}
+};
+
 export const getMarketingBanners = async () => {
   try {
     const raw = localStorage.getItem(BANNERS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed.promoBanner && parsed.heroSlider) return parsed;
+      // Migrate or merge missing multi-item collections
+      const merged = {
+        ...DEFAULT_BANNERS_CONFIG,
+        ...parsed,
+        heroSlider: Array.isArray(parsed.heroSlider) && parsed.heroSlider.length > 0 && parsed.heroSlider[0].imageUrl
+          ? parsed.heroSlider
+          : DEFAULT_BANNERS_CONFIG.heroSlider,
+        promoBanners: Array.isArray(parsed.promoBanners) && parsed.promoBanners.length > 0
+          ? parsed.promoBanners
+          : DEFAULT_BANNERS_CONFIG.promoBanners,
+        promoBars: Array.isArray(parsed.promoBars) && parsed.promoBars.length > 0
+          ? parsed.promoBars
+          : DEFAULT_BANNERS_CONFIG.promoBars,
+      };
+      return merged;
     }
     localStorage.setItem(BANNERS_KEY, JSON.stringify(DEFAULT_BANNERS_CONFIG));
+    broadcastBanners(DEFAULT_BANNERS_CONFIG);
     return DEFAULT_BANNERS_CONFIG;
   } catch (e) {
     console.error('Failed to get banners config:', e);
     return DEFAULT_BANNERS_CONFIG;
   }
-};
-
-export const updatePromoBanner = async (bannerData) => {
-  const current = await getMarketingBanners();
-  const updated = {
-    ...current,
-    promoBanner: {
-      ...current.promoBanner,
-      ...bannerData,
-    },
-  };
-  localStorage.setItem(BANNERS_KEY, JSON.stringify(updated));
-  return updated;
 };
 
 export const updateHeroSlider = async (slides) => {
@@ -234,18 +300,44 @@ export const updateHeroSlider = async (slides) => {
     heroSlider: slides,
   };
   localStorage.setItem(BANNERS_KEY, JSON.stringify(updated));
+  broadcastBanners(updated);
   return updated;
+};
+
+export const updatePromoBanners = async (banners) => {
+  const current = await getMarketingBanners();
+  const updated = {
+    ...current,
+    promoBanners: banners,
+    promoBanner: banners[0] || current.promoBanner,
+  };
+  localStorage.setItem(BANNERS_KEY, JSON.stringify(updated));
+  broadcastBanners(updated);
+  return updated;
+};
+
+export const updatePromoBars = async (bars) => {
+  const current = await getMarketingBanners();
+  const updated = {
+    ...current,
+    promoBars: bars,
+    promoBar: bars[0] || current.promoBar,
+  };
+  localStorage.setItem(BANNERS_KEY, JSON.stringify(updated));
+  broadcastBanners(updated);
+  return updated;
+};
+
+export const updatePromoBanner = async (bannerData) => {
+  const current = await getMarketingBanners();
+  const list = Array.isArray(current.promoBanners) && current.promoBanners.length > 0 ? [...current.promoBanners] : [{ ...DEFAULT_BANNERS_CONFIG.promoBanners[0] }];
+  list[0] = { ...list[0], ...bannerData };
+  return updatePromoBanners(list);
 };
 
 export const updatePromoBar = async (barData) => {
   const current = await getMarketingBanners();
-  const updated = {
-    ...current,
-    promoBar: {
-      ...current.promoBar,
-      ...barData,
-    },
-  };
-  localStorage.setItem(BANNERS_KEY, JSON.stringify(updated));
-  return updated;
+  const list = Array.isArray(current.promoBars) && current.promoBars.length > 0 ? [...current.promoBars] : [{ ...DEFAULT_BANNERS_CONFIG.promoBars[0] }];
+  list[0] = { ...list[0], ...barData };
+  return updatePromoBars(list);
 };

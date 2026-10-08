@@ -7,7 +7,7 @@ import { checkRole } from "../middleware/roleCheck.js";
 // All inventory routes are admin-protected
 const adminGuard = [
   adminauthenticate,
-  checkRole(["superadmin", "shop_admin"]),
+  checkRole(["superadmin", "shop_admin", "employee"]),
 ];
 
 // -----------------------------------------------------------------------------

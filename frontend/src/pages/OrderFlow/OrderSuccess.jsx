@@ -28,14 +28,14 @@ const OrderSuccess = () => {
     <div className="bg-white min-h-[85vh] text-black font-sans pb-20">
       <div className="max-w-[1240px] mx-auto px-4 md:px-8 pt-8">
         
-        {/* Top Header Actions (Go Back & Share) */}
+        {/* Top Header Actions (Back to Shop & Share) */}
         <div className="flex items-center justify-between pb-6">
           <button
-            onClick={() => navigate("/shop")}
-            className="flex items-center gap-1 px-4 py-2 border border-black/80 hover:bg-black hover:text-white transition text-xs font-bold uppercase tracking-wider cursor-pointer"
+            onClick={() => { window.location.href = "https://shop.infinitohq.com/"; }}
+            className="flex items-center gap-1.5 px-4 py-2 border border-black/80 hover:bg-black hover:text-white transition text-xs font-bold uppercase tracking-wider cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4" />
-            <span>Go Back</span>
+            <span>Back to Shop</span>
           </button>
 
           <button
@@ -65,7 +65,7 @@ const OrderSuccess = () => {
             Your Order ({idText}) has been placed.
           </p>
 
-          {/* Action Buttons: View Order Details / Go to Home */}
+          {/* Action Buttons: View Order Details / Continue Shopping */}
           <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xl mt-12">
             <button
               onClick={() => navigate(`/order-details/${order?.id || "4721"}`)}
@@ -74,10 +74,10 @@ const OrderSuccess = () => {
               View Order Details
             </button>
             <button
-              onClick={() => navigate("/shop")}
+              onClick={() => { window.location.href = "https://shop.infinitohq.com/"; }}
               className="flex-1 py-3.5 bg-[#DD1215] hover:bg-red-700 text-white font-bold uppercase text-xs md:text-sm tracking-wider transition cursor-pointer text-center shadow-md"
             >
-              Go to Home
+              Continue Shopping
             </button>
           </div>
         </div>

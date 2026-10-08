@@ -31,13 +31,14 @@ export const logoutAdmin = (redirectUrl = "/login") => {
 
 // Role definitions — maps each role to the routes it can access
 export const ROLE_ROUTES = {
-  superadmin:       ["*"],
-  shop_admin:       ["/shop"],
-  comics_admin:     ["/comic", "/comicChap"],
-  character_admin:  ["/characters"],
-  research_admin:   ["/research"],
-  blog_admin:       ["/createblog", "/createfaq", "/timeline"],
-  career_admin:     ["/career"],
+  superadmin: ["*"],
+  shop_admin: ["/shop"],
+  employee: ["/employee-portal", "/hr", "/shop"],
+  comics_admin: ["/comic", "/comicChap"],
+  character_admin: ["/characters"],
+  research_admin: ["/research"],
+  blog_admin: ["/createblog", "/createfaq", "/timeline"],
+  career_admin: ["/career"],
 };
 
 // Get the admin object stored at login
@@ -94,6 +95,12 @@ export const isSuperAdmin = () => getRoles().includes("superadmin");
 
 // Check if user has employee role
 export const isEmployee = () => getRoles().includes("employee");
+
+// Check if user has shop management role
+export const isShopAdmin = () => {
+  const roles = getRoles();
+  return roles.some((r) => ["superadmin", "shop_admin", "employee"].includes(r));
+};
 
 // Check if the current admin can access a given path prefix
 export const canAccess = (path) => {

@@ -10,42 +10,42 @@ import { checkRole } from "../middleware/roleCheck.js";
 router.post(
   "/",
   adminauthenticate,
-  checkRole(["superadmin", "shop_admin"]),
+  checkRole(["superadmin", "shop_admin", "employee"]),
   productController.createProduct
 );
 
 router.get(
   "/admin/all",
   adminauthenticate,
-  checkRole(["superadmin", "shop_admin"]),
+  checkRole(["superadmin", "shop_admin", "employee"]),
   productController.getAllProducts
 );
 
 router.get(
   "/:id",
   adminauthenticate,
-  checkRole(["superadmin", "shop_admin"]),
+  checkRole(["superadmin", "shop_admin", "employee"]),
   productController.getProductById
 );
 
 router.put(
   "/:id",
   adminauthenticate,
-  checkRole(["superadmin", "shop_admin"]),
+  checkRole(["superadmin", "shop_admin", "employee"]),
   productController.updateProduct
 );
 
 router.delete(
   "/:id",
   adminauthenticate,
-  checkRole(["superadmin", "shop_admin"]),
+  checkRole(["superadmin", "shop_admin", "employee"]),
   productController.deleteProduct
 );
 
 router.patch(
   "/bulk-update",
   adminauthenticate,
-  checkRole(["superadmin", "shop_admin"]),
+  checkRole(["superadmin", "shop_admin", "employee"]),
   productController.bulkUpdateProducts
 );
 
@@ -59,7 +59,7 @@ router.get("/public/category/:categorySlug", productController.getProductsByCate
 router.post(
   "/upload-images",
   adminauthenticate,
-  checkRole(["superadmin", "shop_admin"]),
+  checkRole(["superadmin", "shop_admin", "employee"]),
   upload.array('images', 10),
   async (req, res) => {
     try {
