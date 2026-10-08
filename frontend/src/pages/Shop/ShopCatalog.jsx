@@ -8,14 +8,140 @@ import { addToCart } from '../../redux/cartSlice';
 
 import heroTshirt from '../../../assets/Images/merch/MerchModel.png';
 
+const DEFAULT_HERO_SLIDES = [
+  {
+    id: "slide-1",
+    title: "Monthly Drop Incoming",
+    headline: "MONTHLY DROP INCOMING",
+    highlightText: "MONTHLY DROP",
+    subheading: "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
+    buttonText: "Shop Now",
+    buttonLink: "https://shop.infinitohq.com/",
+    imageUrl: "/banners/hero_monthly_drop.png",
+    displayMode: "banner_image",
+    variant: "light",
+    alignment: "right",
+    isActive: true,
+  },
+  {
+    id: "slide-2",
+    title: "Become Infinito",
+    headline: "BECOME ONE OF US BECOME INFINITO",
+    highlightText: "ONE OF US",
+    subheading: "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
+    buttonText: "Shop Now",
+    buttonLink: "https://shop.infinitohq.com/",
+    imageUrl: "/banners/hero_become_infinito.png",
+    displayMode: "banner_image",
+    variant: "dark",
+    alignment: "left",
+    isActive: true,
+  },
+];
+
+const DEFAULT_PROMO_BANNERS = [
+  {
+    id: "promo-1",
+    badgeText: "LIMITED EDITION DROP",
+    discountCode: "CRIMSON35",
+    headline: "35% off",
+    subtitle: "on THE CRIMSON BLOODLINE",
+    buttonText: "Buy Now",
+    buttonLink: "https://shop.infinitohq.com/",
+    bgImageUrl: "/products/crimson_tshirt.jpg",
+    bgColor: "#800000",
+    isActive: true,
+  },
+  {
+    id: "promo-2",
+    badgeText: "GRAPHIC NOVEL SPECIAL",
+    discountCode: "INFINITOVIP",
+    headline: "FLAT 25% OFF",
+    subtitle: "on ALL COMIC BOOKS & PRINTS",
+    buttonText: "Explore Now",
+    buttonLink: "https://shop.infinitohq.com/",
+    bgImageUrl: "",
+    bgColor: "#111827",
+    isActive: true,
+  },
+];
+
 const ShopCatalog = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [activeSlide, setActiveSlide] = useState(0);
+  const [activePromoIndex, setActivePromoIndex] = useState(0);
+  const [heroSlides, setHeroSlides] = useState(DEFAULT_HERO_SLIDES);
+  const [promoBanners, setPromoBanners] = useState(DEFAULT_PROMO_BANNERS);
   const [categories, setCategories] = useState([]);
   const [trendingProducts, setTrendingProducts] = useState([]);
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const loadMarketingBanners = () => {
+    try {
+      const stored = localStorage.getItem("infinito_shop_banners");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed.heroSlider) && parsed.heroSlider.length > 0) {
+          const activeSlides = parsed.heroSlider.filter((s) => s.isActive !== false);
+          if (activeSlides.length > 0) {
+            setHeroSlides(activeSlides);
+          }
+        }
+        if (Array.isArray(parsed.promoBanners) && parsed.promoBanners.length > 0) {
+          const activePromos = parsed.promoBanners.filter((b) => b.isActive !== false);
+          if (activePromos.length > 0) {
+            setPromoBanners(activePromos);
+          }
+        } else if (parsed.promoBanner && parsed.promoBanner.isActive !== false) {
+          setPromoBanners([parsed.promoBanner]);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to parse infinito_shop_banners in ShopCatalog", e);
+    }
+  };
+
+  useEffect(() => {
+    loadMarketingBanners();
+
+    const handleStorage = (e) => {
+      if (e.key === "infinito_shop_banners") loadMarketingBanners();
+    };
+    window.addEventListener("storage", handleStorage);
+
+    let channel;
+    if (typeof BroadcastChannel !== "undefined") {
+      try {
+        channel = new BroadcastChannel("infinito_banners_channel");
+        channel.onmessage = () => loadMarketingBanners();
+      } catch (err) {}
+    }
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      if (channel) channel.close();
+    };
+  }, []);
+
+  // Auto rotate hero slides every 6s
+  useEffect(() => {
+    if (heroSlides.length <= 1) return;
+    const interval = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [heroSlides.length]);
+
+  // Auto rotate promo banners every 7s
+  useEffect(() => {
+    if (promoBanners.length <= 1) return;
+    const interval = setInterval(() => {
+      setActivePromoIndex((prev) => (prev + 1) % promoBanners.length);
+    }, 7000);
+    return () => clearInterval(interval);
+  }, [promoBanners.length]);
 
   useEffect(() => {
     let isMounted = true;
@@ -82,98 +208,209 @@ const ShopCatalog = () => {
     navigate(`/product/${prod.slug || prod.id}`);
   };
 
+  const currentSlide = heroSlides[activeSlide % heroSlides.length] || heroSlides[0];
+  const currentPromo = promoBanners[activePromoIndex % promoBanners.length] || promoBanners[0];
+
+  const handleCtaClick = (link) => {
+    if (!link) return;
+    if (link.startsWith('http')) {
+      window.location.href = link;
+    } else {
+      navigate(link);
+    }
+  };
+
   return (
     <div className="w-full bg-white text-black min-h-screen font-sans">
       
       {/* 1. HERO SLIDER CAROUSEL SECTION */}
-      <section className="relative w-full bg-[#0a0a0a] text-white py-12 px-4 md:px-8 overflow-hidden">
-        <div className="max-w-[1240px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-center min-h-[420px]">
-          
-          {/* Left Text */}
-          <div className="space-y-4 z-10">
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-none">
-              BECOME <br />
-              <span className="text-red-600">ONE OF US</span> <br />
-              BECOME <br />
-              <span className="text-red-600">INFINITO</span>
-            </h1>
-            <p className="text-gray-300 text-xs md:text-sm max-w-md font-normal leading-relaxed">
-              Only 500 RED BOXES. Be part of the 1st 500 INFINITO fans to receive high-value merchandise rights.
-            </p>
-            <div className="pt-2">
-              <button
-                onClick={() => navigate('/product/crimson-red-tshirt')}
-                className="px-8 py-3 bg-red-600 hover:bg-red-700 text-white font-bold text-sm tracking-wider uppercase transition shadow-lg cursor-pointer"
-              >
-                Buy Now
-              </button>
-            </div>
-          </div>
-
-          {/* Right Product Spotlight Image */}
-          <div className="relative w-full h-[320px] md:h-[400px] flex items-center justify-center z-10">
-            <div className="absolute w-[260px] h-[260px] md:w-[340px] md:h-[340px] rounded-full border-4 border-red-600/40 shadow-[0_0_50px_rgba(225,29,72,0.4)] animate-pulse"></div>
+      <section className="relative w-full bg-[#0a0a0a] text-white overflow-hidden select-none">
+        {/* Full Artwork / Visual Slide */}
+        <div className="relative w-full min-h-[380px] sm:min-h-[460px] md:min-h-[540px] flex items-center justify-center">
+          {currentSlide?.imageUrl ? (
             <img
-              src={heroTshirt}
-              alt="Infinito Hero Merch"
-              className="w-full h-full object-contain z-10 filter drop-shadow-[0_15px_30px_rgba(0,0,0,0.8)]"
+              src={currentSlide.imageUrl}
+              alt={currentSlide.title || "Infinito Hero Slide"}
+              className="absolute inset-0 w-full h-full object-cover object-center transition-all duration-700"
             />
-          </div>
-        </div>
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-[#1c0205] to-black" />
+          )}
 
-        {/* Carousel Dots */}
-        <div className="flex justify-center items-center gap-2 mt-6 relative z-10">
-          {[0, 1, 2, 3].map((dot) => (
-            <button
-              key={dot}
-              onClick={() => setActiveSlide(dot)}
-              className={`w-2 h-2 rounded-full transition-all ${
-                activeSlide === dot ? 'bg-red-600 w-4' : 'bg-gray-600'
-              }`}
+          {/* If custom overlay is selected or text overlay requested */}
+          {currentSlide?.displayMode === "custom_overlay" ? (
+            <div className="relative z-10 max-w-[1240px] w-full mx-auto px-4 md:px-8 py-12 flex items-center">
+              <div
+                className={`max-w-xl space-y-4 ${
+                  currentSlide.alignment === "right" ? "ml-auto text-right" : "mr-auto text-left"
+                }`}
+              >
+                <h1 className="text-3xl md:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-none drop-shadow-md">
+                  {currentSlide.headline || "BECOME ONE OF US BECOME INFINITO"}
+                </h1>
+                <p className="text-gray-200 text-xs md:text-sm font-normal leading-relaxed drop-shadow">
+                  {currentSlide.subheading || "Only 500 pieces. Book the exclusive merchandise right now."}
+                </p>
+                <div className={`pt-2 flex ${currentSlide.alignment === "right" ? "justify-end" : "justify-start"}`}>
+                  <button
+                    onClick={() => handleCtaClick(currentSlide.buttonLink || "https://shop.infinitohq.com/")}
+                    className="px-8 py-3 bg-red-600 hover:bg-red-700 text-white font-bold text-sm tracking-wider uppercase transition shadow-xl cursor-pointer"
+                  >
+                    {currentSlide.buttonText || "Shop Now"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Banner image mode: full clickable overlay with action button */
+            <div
+              onClick={() => handleCtaClick(currentSlide?.buttonLink || "https://shop.infinitohq.com/")}
+              className="absolute inset-0 z-10 cursor-pointer"
             />
-          ))}
+          )}
+
+          {/* Carousel Prev/Next Arrows */}
+          {heroSlides.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+                }}
+                className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/50 hover:bg-black/80 backdrop-blur text-white flex items-center justify-center transition border border-white/20 cursor-pointer shadow-lg"
+                aria-label="Previous Hero Slide"
+              >
+                <ChevronLeft size={22} />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveSlide((prev) => (prev + 1) % heroSlides.length);
+                }}
+                className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/50 hover:bg-black/80 backdrop-blur text-white flex items-center justify-center transition border border-white/20 cursor-pointer shadow-lg"
+                aria-label="Next Hero Slide"
+              >
+                <ChevronRight size={22} />
+              </button>
+            </>
+          )}
+
+          {/* Carousel Dots */}
+          {heroSlides.length > 1 && (
+            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20">
+              {heroSlides.map((_, dot) => (
+                <button
+                  key={dot}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveSlide(dot);
+                  }}
+                  className={`h-2.5 rounded-full transition-all cursor-pointer ${
+                    activeSlide === dot ? "bg-red-600 w-8" : "bg-white/50 hover:bg-white/80 w-2.5"
+                  }`}
+                  aria-label={`Slide ${dot + 1}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* 2. PROMO BANNER BOX SECTION */}
+      {/* 2. PROMO BANNER BOX SECTION (MULTIPLE PROMOS SUPPORTED) */}
       <section className="max-w-[1240px] mx-auto my-10 px-4 md:px-8">
-        <div className="relative border-2 border-cyan-400 bg-gradient-to-r from-[#800000] via-[#a00000] to-[#600000] rounded-sm text-white p-6 md:p-8 flex flex-col md:flex-row items-center justify-between shadow-xl">
-          {/* Navigation arrow left */}
-          <button className="hidden md:flex absolute -left-5 top-12 w-9 h-9 bg-white text-black border border-gray-300 rounded-sm items-center justify-center shadow-md hover:bg-gray-100">
-            <ChevronLeft size={20} />
-          </button>
+        <div
+          className="relative border-2 border-red-500/40 rounded-sm text-white p-6 md:p-8 flex flex-col md:flex-row items-center justify-between shadow-2xl overflow-hidden transition-all duration-500"
+          style={{
+            backgroundColor: currentPromo?.bgColor || "#800000",
+            backgroundImage: currentPromo?.bgImageUrl ? `url(${currentPromo.bgImageUrl})` : "none",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        >
+          {/* Subtle dark tint over background for readability */}
+          <div className="absolute inset-0 bg-black/45 pointer-events-none" />
 
-          {/* Left Text */}
-          <div className="space-y-2 text-center md:text-left z-10">
-            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
-              35% off
+          {/* Navigation arrow left (if multiple promo banners) */}
+          {promoBanners.length > 1 && (
+            <button
+              type="button"
+              onClick={() => setActivePromoIndex((prev) => (prev - 1 + promoBanners.length) % promoBanners.length)}
+              className="absolute left-2 md:-left-4 top-1/2 -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 bg-white text-black border border-gray-300 rounded-full flex items-center justify-center shadow-lg hover:bg-gray-100 z-20 cursor-pointer"
+              aria-label="Previous promo"
+            >
+              <ChevronLeft size={20} />
+            </button>
+          )}
+
+          {/* Left Promo Text */}
+          <div className="space-y-2 text-center md:text-left z-10 max-w-lg">
+            {currentPromo?.badgeText && (
+              <span className="inline-block bg-black/60 text-red-400 text-[10px] md:text-xs font-bold uppercase tracking-widest px-2.5 py-0.5 rounded border border-red-500/30">
+                {currentPromo.badgeText}
+              </span>
+            )}
+            <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight leading-none drop-shadow-md">
+              {currentPromo?.headline || "35% off"}
             </h2>
-            <p className="text-sm md:text-base font-bold tracking-wider uppercase text-gray-200">
-              on THE CRIMSON BLOODLINE
+            <p className="text-xs md:text-sm font-bold tracking-wider uppercase text-gray-200 drop-shadow">
+              {currentPromo?.subtitle || "on THE CRIMSON BLOODLINE"}
             </p>
+            {currentPromo?.discountCode && (
+              <p className="text-[11px] font-mono bg-white/20 inline-block px-2 py-0.5 rounded text-white tracking-wider">
+                Code: <span className="font-bold text-yellow-300">{currentPromo.discountCode}</span>
+              </p>
+            )}
             <div className="pt-2">
               <button
-                onClick={() => navigate('/product/crimson-red-tshirt')}
-                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-widest shadow-md cursor-pointer"
+                onClick={() => handleCtaClick(currentPromo?.buttonLink || "https://shop.infinitohq.com/")}
+                className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-widest shadow-md cursor-pointer transition"
               >
-                Buy Now
+                {currentPromo?.buttonText || "Buy Now"}
               </button>
             </div>
           </div>
 
-          {/* Right Banner Product Image */}
-          <div className="relative w-48 h-36 md:w-64 md:h-44 mt-4 md:mt-0 flex items-center justify-center">
-            <img
-              src="/products/crimson_tshirt.jpg"
-              alt="Crimson Bloodline Offer"
-              className="w-full h-full object-contain filter drop-shadow-lg"
-            />
-          </div>
+          {/* Right Banner Spotlight Image if available */}
+          {currentPromo?.bgImageUrl && (
+            <div className="relative w-48 h-36 md:w-64 md:h-44 mt-4 md:mt-0 flex items-center justify-center z-10">
+              <img
+                src={currentPromo.bgImageUrl}
+                alt={currentPromo.headline || "Promo Offer"}
+                className="w-full h-full object-contain filter drop-shadow-2xl"
+              />
+            </div>
+          )}
 
-          {/* Navigation arrow right */}
-          <button className="hidden md:flex absolute -right-5 top-12 w-9 h-9 bg-white text-black border border-gray-300 rounded-sm items-center justify-center shadow-md hover:bg-gray-100">
-            <ChevronRight size={20} />
-          </button>
+          {/* Navigation arrow right (if multiple promo banners) */}
+          {promoBanners.length > 1 && (
+            <button
+              type="button"
+              onClick={() => setActivePromoIndex((prev) => (prev + 1) % promoBanners.length)}
+              className="absolute right-2 md:-right-4 top-1/2 -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 bg-white text-black border border-gray-300 rounded-full flex items-center justify-center shadow-lg hover:bg-gray-100 z-20 cursor-pointer"
+              aria-label="Next promo"
+            >
+              <ChevronRight size={20} />
+            </button>
+          )}
+
+          {/* Promo dots indicator */}
+          {promoBanners.length > 1 && (
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
+              {promoBanners.map((_, pIdx) => (
+                <button
+                  key={pIdx}
+                  onClick={() => setActivePromoIndex(pIdx)}
+                  className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                    activePromoIndex === pIdx ? "bg-white w-5" : "bg-white/40 w-1.5"
+                  }`}
+                  aria-label={`Promo ${pIdx + 1}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
