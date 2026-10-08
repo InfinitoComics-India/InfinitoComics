@@ -31,7 +31,7 @@ const resolveImageUrl = (url) => {
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
     return url;
   }
-  const base = BACKEND_URL?.replace(/\/$/, '') || '';
+  const base = (BACKEND_URL || 'https://infinitocomics-68cr.onrender.com').replace(/\/$/, '');
   const path = url.startsWith('/') ? url : `/${url}`;
   return `${base}${path}`;
 };
@@ -71,6 +71,7 @@ const ProductForm = () => {
 
   // Images & Drag-and-drop state
   const [images, setImages] = useState([]);
+  const [imageUrlInput, setImageUrlInput] = useState('');
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
 
@@ -186,20 +187,26 @@ const ProductForm = () => {
         return;
       }
 
-      // 1. Upload any newly added image files to Cloudinary
+      // 1. Upload any newly added image files to Cloudinary / storage
       const newItems = images.filter((img) => img.isNew && img.file);
       const uploadedUrlMap = new Map();
 
       if (newItems.length > 0) {
         const filesToUpload = newItems.map((item) => item.file);
-        const uploadResponse = await uploadProductImages(filesToUpload);
-        const uploadedData = extractList(uploadResponse);
+        try {
+          const uploadResponse = await uploadProductImages(filesToUpload);
+          const uploadedData = extractList(uploadResponse);
 
-        newItems.forEach((item, idx) => {
-          if (uploadedData[idx]?.url) {
-            uploadedUrlMap.set(item, uploadedData[idx].url);
-          }
-        });
+          newItems.forEach((item, idx) => {
+            if (uploadedData[idx]?.url) {
+              uploadedUrlMap.set(item, uploadedData[idx].url);
+            }
+          });
+        } catch (uploadErr) {
+          console.warn('Backend image upload returned error, falling back to local Data URIs:', uploadErr);
+          // If server upload fails, newItems already have item.url as reader.result (data URI)
+          // so uploadedUrlMap won't override them, and finalImages safely uses item.url!
+        }
       }
 
       // 2. Build final uploadedImages array in the EXACT dragged order with isPrimary preserved
@@ -265,6 +272,27 @@ const ProductForm = () => {
 
     // Reset input so re-selecting the same file works
     e.target.value = '';
+  };
+
+  const handleAddImageUrl = () => {
+    const trimmed = imageUrlInput.trim();
+    if (!trimmed) return;
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://') && !trimmed.startsWith('data:')) {
+      Swal.fire('Invalid URL', 'Please enter a valid image URL starting with https://', 'warning');
+      return;
+    }
+    const isFirst = images.length === 0;
+    setImages((prev) => [
+      ...prev,
+      {
+        url: trimmed,
+        isNew: false, // Hosted directly (e.g. on Cloudinary)
+        alt: formData.name || 'Product Image',
+        isPrimary: isFirst,
+        id: `url-${Date.now()}-${Math.random()}`,
+      },
+    ]);
+    setImageUrlInput('');
   };
 
   const handleRemoveImage = (index) => {
@@ -801,6 +829,25 @@ const ProductForm = () => {
                   className="hidden"
                 />
               </label>
+
+              {/* Paste Direct Image / Cloudinary URL */}
+              <div className="flex gap-2 items-center mt-3">
+                <input
+                  type="url"
+                  value={imageUrlInput}
+                  onChange={(e) => setImageUrlInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddImageUrl(); } }}
+                  placeholder="Or paste Cloudinary image URL (https://res.cloudinary.com/...)"
+                  className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddImageUrl}
+                  className="px-3 py-1.5 bg-gray-800 hover:bg-black text-white text-xs font-semibold rounded-lg transition whitespace-nowrap cursor-pointer"
+                >
+                  + Add URL
+                </button>
+              </div>
             </div>
 
             {/* Image Preview Grid with Drag & Drop */}
