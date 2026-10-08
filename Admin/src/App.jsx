@@ -57,6 +57,7 @@ import AllOrders from './Pages/Shop/Orders/AllOrders.jsx';
 import OrderDetail from './Pages/Shop/Orders/OrderDetail.jsx';
 import AnalyticsDashboard from './Pages/Shop/Analytics/AnalyticsDashboard.jsx';
 import MarketingDashboard from './Pages/Shop/Marketing/MarketingDashboard.jsx';
+import ShopManagement from './Pages/Shop/ShopManagement.jsx';
 
 // Role constants
 const SUPER = ["superadmin"];
@@ -319,6 +320,11 @@ function App() {
           } />
           <Route path="/shop/marketing/:subTab" element={
             <ProtectedRoute allowedRoles={SHOP}><MarketingDashboard /></ProtectedRoute>
+          } />
+
+          {/* Shop Staff Access Management (Super Admin only) */}
+          <Route path="/shop/management" element={
+            <ProtectedRoute allowedRoles={SUPER}><ShopManagement /></ProtectedRoute>
           } />
 
         </Route>

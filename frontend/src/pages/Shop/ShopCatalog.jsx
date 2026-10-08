@@ -116,7 +116,7 @@ const ShopCatalog = () => {
       try {
         channel = new BroadcastChannel("infinito_banners_channel");
         channel.onmessage = () => loadMarketingBanners();
-      } catch (err) {}
+      } catch (err) { }
     }
 
     return () => {
@@ -222,7 +222,7 @@ const ShopCatalog = () => {
 
   return (
     <div className="w-full bg-white text-black min-h-screen font-sans">
-      
+
       {/* 1. HERO SLIDER CAROUSEL SECTION */}
       <section className="relative w-full bg-[#0a0a0a] text-white overflow-hidden select-none">
         {/* Full Artwork / Visual Slide */}
@@ -241,9 +241,8 @@ const ShopCatalog = () => {
           {currentSlide?.displayMode === "custom_overlay" ? (
             <div className="relative z-10 max-w-[1200px] w-full mx-auto px-4 md:px-12 py-12 flex items-center">
               <div
-                className={`max-w-xl space-y-4 ${
-                  currentSlide.alignment === "right" ? "ml-auto text-right" : "mr-auto text-left"
-                }`}
+                className={`max-w-xl space-y-4 ${currentSlide.alignment === "right" ? "ml-auto text-right" : "mr-auto text-left"
+                  }`}
               >
                 <h1 className="text-3xl md:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-none drop-shadow-md">
                   {currentSlide.headline || "BECOME ONE OF US BECOME INFINITO"}
@@ -308,9 +307,8 @@ const ShopCatalog = () => {
                     e.stopPropagation();
                     setActiveSlide(dot);
                   }}
-                  className={`h-2.5 rounded-full transition-all cursor-pointer ${
-                    activeSlide === dot ? "bg-red-600 w-8" : "bg-white/50 hover:bg-white/80 w-2.5"
-                  }`}
+                  className={`h-2.5 rounded-full transition-all cursor-pointer ${activeSlide === dot ? "bg-red-600 w-8" : "bg-white/50 hover:bg-white/80 w-2.5"
+                    }`}
                   aria-label={`Slide ${dot + 1}`}
                 />
               ))}
@@ -319,98 +317,62 @@ const ShopCatalog = () => {
         </div>
       </section>
 
-      {/* 2. PROMO BANNER BOX SECTION (MULTIPLE PROMOS SUPPORTED) */}
-      <section className="max-w-[1200px] mx-auto my-10 px-4 md:px-12">
-        <div
-          className="relative border-2 border-red-500/40 rounded-sm text-white p-6 md:p-8 flex flex-col md:flex-row items-center justify-between shadow-2xl overflow-hidden transition-all duration-500"
-          style={{
-            backgroundColor: currentPromo?.bgColor || "#800000",
-            backgroundImage: currentPromo?.bgImageUrl ? `url(${currentPromo.bgImageUrl})` : "none",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        >
-          {/* Subtle dark tint over background for readability */}
-          <div className="absolute inset-0 bg-black/45 pointer-events-none" />
+      {/* 2. PROMO BANNER BOX SECTION (MULTIPLE PROMOS SUPPORTED - MATCHING SS2) */}
+      <section className="my-8 md:my-10">
+        <div className="max-w-[1200px] mx-auto px-4 md:px-12 flex items-center justify-center gap-3 md:gap-5">
+          {/* Left Arrow Button */}
+          <button
+            type="button"
+            onClick={() => setActivePromoIndex((prev) => (prev - 1 + promoBanners.length) % promoBanners.length)}
+            className="w-8 h-8 md:w-9 md:h-9 bg-white border border-gray-300 rounded hover:border-gray-500 hover:text-black text-gray-500 flex items-center justify-center transition shadow-sm shrink-0 cursor-pointer"
+            aria-label="Previous promo"
+          >
+            <ChevronLeft size={18} />
+          </button>
 
-          {/* Navigation arrow left (if multiple promo banners) */}
-          {promoBanners.length > 1 && (
-            <button
-              type="button"
-              onClick={() => setActivePromoIndex((prev) => (prev - 1 + promoBanners.length) % promoBanners.length)}
-              className="absolute left-2 md:-left-4 top-1/2 -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 bg-white text-black border border-gray-300 rounded-full flex items-center justify-center shadow-lg hover:bg-gray-100 z-20 cursor-pointer"
-              aria-label="Previous promo"
-            >
-              <ChevronLeft size={20} />
-            </button>
-          )}
+          {/* Exact SS2 Sized Banner Card */}
+          <div
+            className="relative w-full max-w-[780px] h-[160px] sm:h-[175px] md:h-[180px] rounded-xl overflow-hidden shadow-md flex items-center bg-black bg-cover bg-center shrink-0"
+            style={{
+              backgroundColor: currentPromo?.bgColor || "#800000",
+              backgroundImage: currentPromo?.bgImageUrl ? `url(${currentPromo.bgImageUrl})` : "none",
+            }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/25 to-transparent pointer-events-none" />
 
-          {/* Left Promo Text */}
-          <div className="space-y-2 text-center md:text-left z-10 max-w-lg">
-            {currentPromo?.badgeText && (
-              <span className="inline-block bg-black/60 text-red-400 text-[10px] md:text-xs font-bold uppercase tracking-widest px-2.5 py-0.5 rounded border border-red-500/30">
-                {currentPromo.badgeText}
-              </span>
-            )}
-            <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight leading-none drop-shadow-md">
-              {currentPromo?.headline || "35% off"}
-            </h2>
-            <p className="text-xs md:text-sm font-bold tracking-wider uppercase text-gray-200 drop-shadow">
-              {currentPromo?.subtitle || "on THE CRIMSON BLOODLINE"}
-            </p>
-            {currentPromo?.discountCode && (
-              <p className="text-[11px] font-mono bg-white/20 inline-block px-2 py-0.5 rounded text-white tracking-wider">
-                Code: <span className="font-bold text-yellow-300">{currentPromo.discountCode}</span>
+            <div className="relative z-10 pl-6 sm:pl-8 md:pl-10 max-w-[65%] sm:max-w-[55%] space-y-1 text-white">
+              {(currentPromo?.badgeText || currentPromo?.discountCode) && (
+                <span className="inline-block bg-black/70 text-[#DD1215] text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded">
+                  {currentPromo.badgeText || currentPromo.discountCode}
+                </span>
+              )}
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight text-white drop-shadow">
+                {currentPromo?.headline || "35% off"}
+              </h2>
+              <p className="text-[11px] sm:text-xs md:text-sm font-semibold tracking-wide text-gray-200 uppercase drop-shadow">
+                {currentPromo?.subtitle || "on THE CRIMSON BLOODLINE"}
               </p>
-            )}
-            <div className="pt-2">
-              <button
-                onClick={() => handleCtaClick(currentPromo?.buttonLink || "https://shop.infinitohq.com/")}
-                className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-widest shadow-md cursor-pointer transition"
-              >
-                {currentPromo?.buttonText || "Buy Now"}
-              </button>
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => handleCtaClick(currentPromo?.buttonLink || "https://shop.infinitohq.com/")}
+                  className="px-4 sm:px-5 py-1.5 sm:py-2 bg-[#DD1215] hover:bg-red-700 text-white text-xs font-bold uppercase tracking-wider rounded transition cursor-pointer shadow-sm"
+                >
+                  {currentPromo?.buttonText || "Buy Now"}
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Right Banner Spotlight Image if available */}
-          {currentPromo?.bgImageUrl && (
-            <div className="relative w-48 h-36 md:w-64 md:h-44 mt-4 md:mt-0 flex items-center justify-center z-10">
-              <img
-                src={currentPromo.bgImageUrl}
-                alt={currentPromo.headline || "Promo Offer"}
-                className="w-full h-full object-contain filter drop-shadow-2xl"
-              />
-            </div>
-          )}
-
-          {/* Navigation arrow right (if multiple promo banners) */}
-          {promoBanners.length > 1 && (
-            <button
-              type="button"
-              onClick={() => setActivePromoIndex((prev) => (prev + 1) % promoBanners.length)}
-              className="absolute right-2 md:-right-4 top-1/2 -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 bg-white text-black border border-gray-300 rounded-full flex items-center justify-center shadow-lg hover:bg-gray-100 z-20 cursor-pointer"
-              aria-label="Next promo"
-            >
-              <ChevronRight size={20} />
-            </button>
-          )}
-
-          {/* Promo dots indicator */}
-          {promoBanners.length > 1 && (
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
-              {promoBanners.map((_, pIdx) => (
-                <button
-                  key={pIdx}
-                  onClick={() => setActivePromoIndex(pIdx)}
-                  className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                    activePromoIndex === pIdx ? "bg-white w-5" : "bg-white/40 w-1.5"
-                  }`}
-                  aria-label={`Promo ${pIdx + 1}`}
-                />
-              ))}
-            </div>
-          )}
+          {/* Right Arrow Button */}
+          <button
+            type="button"
+            onClick={() => setActivePromoIndex((prev) => (prev + 1) % promoBanners.length)}
+            className="w-8 h-8 md:w-9 md:h-9 bg-white border border-gray-300 rounded hover:border-gray-500 hover:text-black text-gray-500 flex items-center justify-center transition shadow-sm shrink-0 cursor-pointer"
+            aria-label="Next promo"
+          >
+            <ChevronRight size={18} />
+          </button>
         </div>
       </section>
 

@@ -1,141 +1,134 @@
-import React, { useState, useRef, useLayoutEffect } from 'react';
+import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import URLs from '../../Utils/utils.js';
-import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, ChevronDown, Mail, UserCog, Bell, ScrollText, CalendarDays, CalendarOff, Kanban, UserCheck, FolderKanban, TrendingUp, Target, Award as AwardIcon, Building2, IndianRupee, UserPlus, FileArchive, UserSearch, MessagesSquare, BookMarked, LifeBuoy, Sparkles, ShoppingBag, Package, FolderOpen, BarChart3, ClipboardList } from "lucide-react";
+import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, ChevronDown, Mail, UserCog, Bell, ScrollText, CalendarDays, CalendarOff, Kanban, UserCheck, FolderKanban, TrendingUp, Target, Award as AwardIcon, Building2, IndianRupee, UserPlus, FileArchive, UserSearch, MessagesSquare, BookMarked, LifeBuoy, Sparkles, ShoppingBag, Package, FolderOpen, BarChart3, ClipboardList, Plus } from "lucide-react";
 import { message, Popconfirm } from "antd";
-import { getRoles } from '../../Utils/auth.js';
+import { getRoles, getAdmin } from '../../Utils/auth.js';
+import { isEmployeeShopAllowed } from '../../services/shopServices/shopAccessService.js';
 
-const HR_ALL   = ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin","shop_admin"];
-const HR_AUDIT = ["superadmin","hr_manager"];
-const SHOP_ALL = ["superadmin","shop_admin","employee","admin","comics_admin","character_admin","research_admin","blog_admin","career_admin","manager","team_lead"]; // Shop access roles
-const EMP_ALL  = [...HR_ALL, "employee"];
+const HR_ALL = ["superadmin", "hr_manager", "manager", "team_lead", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin", "shop_admin"];
+const HR_AUDIT = ["superadmin", "hr_manager"];
+const SHOP_ALL = ["superadmin", "shop_admin", "employee", "admin", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin", "manager", "team_lead"]; // Shop access roles
+const EMP_ALL = [...HR_ALL, "employee"];
 
 // ── Employee-facing standalone items (shown outside HR accordion) ───
 const EMP_ITEMS = [
-  { label: "Attendance",   to: "/employee-portal?tab=attendance",   icon: Clock,         roles: EMP_ALL  },
-  { label: "Leaves",       to: "/employee-portal?tab=leave",         icon: CalendarOff,   roles: EMP_ALL  },
-  { label: "Goals",        to: "/employee-portal?tab=goals",         icon: Target,        roles: EMP_ALL  },
-  { label: "Documents",    to: "/employee-portal?tab=documents",     icon: FileArchive,   roles: EMP_ALL  },
-  { label: "Self Service", to: "/employee-portal?tab=requests",      icon: LifeBuoy,      roles: EMP_ALL  },
-  { label: "Work Log",     to: "/employee-portal?tab=worklog",       icon: ClipboardList, roles: EMP_ALL  },
-  { label: "Chat",         to: "/hr/chat",                            icon: MessagesSquare,roles: EMP_ALL  },
-  { label: "My Profile",   to: "/employee-portal?tab=profile",       icon: User,          roles: ["employee"] },
+  { label: "Attendance", to: "/employee-portal?tab=attendance", icon: Clock, roles: EMP_ALL },
+  { label: "Leaves", to: "/employee-portal?tab=leave", icon: CalendarOff, roles: EMP_ALL },
+  { label: "Goals", to: "/employee-portal?tab=goals", icon: Target, roles: EMP_ALL },
+  { label: "Documents", to: "/employee-portal?tab=documents", icon: FileArchive, roles: EMP_ALL },
+  { label: "Self Service", to: "/employee-portal?tab=requests", icon: LifeBuoy, roles: EMP_ALL },
+  { label: "Work Log", to: "/employee-portal?tab=worklog", icon: ClipboardList, roles: EMP_ALL },
+  { label: "Chat", to: "/hr/chat", icon: MessagesSquare, roles: EMP_ALL },
+  { label: "My Profile", to: "/employee-portal?tab=profile", icon: User, roles: ["employee"] },
 ];
 
 // ── Regular nav items (above HR section) ────────────────────
 const NAV_ITEMS = [
-  { label: "Home",            to: "/",                 icon: Home,        roles: ["superadmin","comics_admin","character_admin","research_admin","blog_admin","career_admin"] },
-  { label: "Comics",          to: "/comic",            icon: BookOpen,    roles: ["superadmin","comics_admin"] },
-  { label: "Characters",      to: "/characters",       icon: User,        roles: ["superadmin","character_admin"] },
-  { label: "Research",        to: "/research",         icon: FlaskConical,roles: ["superadmin","research_admin"] },
-  { label: "Blogs",           to: "/createblog",       icon: FileText,    roles: ["superadmin","blog_admin"] },
-  { label: "FAQs",            to: "/createfaq",        icon: HelpCircle,  roles: ["superadmin","blog_admin"] },
-  { label: "Timeline",        to: "/timeline",         icon: Clock,       roles: ["superadmin","blog_admin"] },
-  { label: "Career",          to: "/career",           icon: Briefcase,   roles: ["superadmin","career_admin"] },
-  { label: "Users",           to: "/users",            icon: Users,       roles: ["superadmin"] },
-  { label: "Admin Mgmt",      to: "/admin-management", icon: ShieldCheck, roles: ["superadmin"] },
-  { label: "Contact Queries", to: "/contact-queries",  icon: Mail,        roles: ["superadmin"] },
-  { label: "Employee Portal", to: "/employee-portal",  icon: UserCheck,   roles: ["employee"] },
+  { label: "Home", to: "/", icon: Home, roles: ["superadmin", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin"] },
+  { label: "Comics", to: "/comic", icon: BookOpen, roles: ["superadmin", "comics_admin"] },
+  { label: "Characters", to: "/characters", icon: User, roles: ["superadmin", "character_admin"] },
+  { label: "Research", to: "/research", icon: FlaskConical, roles: ["superadmin", "research_admin"] },
+  { label: "Blogs", to: "/createblog", icon: FileText, roles: ["superadmin", "blog_admin"] },
+  { label: "FAQs", to: "/createfaq", icon: HelpCircle, roles: ["superadmin", "blog_admin"] },
+  { label: "Timeline", to: "/timeline", icon: Clock, roles: ["superadmin", "blog_admin"] },
+  { label: "Career", to: "/career", icon: Briefcase, roles: ["superadmin", "career_admin"] },
+  { label: "Users", to: "/users", icon: Users, roles: ["superadmin"] },
+  { label: "Admin Mgmt", to: "/admin-management", icon: ShieldCheck, roles: ["superadmin"] },
+  { label: "Contact Queries", to: "/contact-queries", icon: Mail, roles: ["superadmin"] },
+  { label: "Employee Portal", to: "/employee-portal", icon: UserCheck, roles: ["employee"] },
 ];
 
 // ── HR sub-items (shown inside collapsible accordion) ────────
 const HR_ITEMS = [
-  { label: "Employees",       to: "/hr/employees",    icon: UserCog,      roles: HR_ALL   },
-  { label: "Notifications",   to: "/hr/notifications",icon: Bell,         roles: HR_ALL   },
-  { label: "Audit Log",       to: "/hr/audit",        icon: ScrollText,   roles: HR_AUDIT },
-  { label: "Attendance",      to: "/hr/attendance",   icon: Clock,        roles: HR_ALL   },
-  { label: "Leaves",          to: "/hr/leaves",       icon: CalendarOff,  roles: HR_ALL   },
-  { label: "Calendar",        to: "/hr/calendar",     icon: CalendarDays, roles: HR_ALL   },
-  { label: "Task Board",      to: "/hr/tasks",        icon: Kanban,       roles: HR_ALL   },
-  { label: "Work Assignment", to: "/hr/assignments",  icon: UserCheck,    roles: HR_ALL   },
-  { label: "Projects",        to: "/hr/projects",     icon: FolderKanban, roles: HR_ALL   },
-  { label: "Performance",     to: "/hr/performance",  icon: TrendingUp,   roles: HR_ALL   },
-  { label: "Goals",           to: "/hr/goals",        icon: Target,       roles: HR_ALL   },
-  { label: "Recognition",     to: "/hr/recognition",  icon: AwardIcon,    roles: HR_ALL   },
-  { label: "Payroll",         to: "/hr/payroll",      icon: IndianRupee,  roles: HR_ALL   },
-  { label: "Onboarding",      to: "/hr/onboarding",   icon: UserPlus,     roles: HR_ALL   },
-  { label: "Documents",       to: "/hr/documents",    icon: FileArchive,  roles: HR_ALL   },
-  { label: "Recruitment",     to: "/hr/recruitment",  icon: UserSearch,    roles: HR_ALL   },
-  { label: "Chat",            to: "/hr/chat",          icon: MessagesSquare, roles: HR_ALL  },
-  { label: "Wiki",            to: "/hr/wiki",          icon: BookMarked,    roles: HR_ALL   },
-  { label: "Self Service",    to: "/hr/self-service",  icon: LifeBuoy,      roles: HR_ALL   },
-  { label: "Infinito AI",     to: "/hr/ai",            icon: Sparkles,      roles: HR_ALL   },
+  { label: "Employees", to: "/hr/employees", icon: UserCog, roles: HR_ALL },
+  { label: "Notifications", to: "/hr/notifications", icon: Bell, roles: HR_ALL },
+  { label: "Audit Log", to: "/hr/audit", icon: ScrollText, roles: HR_AUDIT },
+  { label: "Attendance", to: "/hr/attendance", icon: Clock, roles: HR_ALL },
+  { label: "Leaves", to: "/hr/leaves", icon: CalendarOff, roles: HR_ALL },
+  { label: "Calendar", to: "/hr/calendar", icon: CalendarDays, roles: HR_ALL },
+  { label: "Task Board", to: "/hr/tasks", icon: Kanban, roles: HR_ALL },
+  { label: "Work Assignment", to: "/hr/assignments", icon: UserCheck, roles: HR_ALL },
+  { label: "Projects", to: "/hr/projects", icon: FolderKanban, roles: HR_ALL },
+  { label: "Performance", to: "/hr/performance", icon: TrendingUp, roles: HR_ALL },
+  { label: "Goals", to: "/hr/goals", icon: Target, roles: HR_ALL },
+  { label: "Recognition", to: "/hr/recognition", icon: AwardIcon, roles: HR_ALL },
+  { label: "Payroll", to: "/hr/payroll", icon: IndianRupee, roles: HR_ALL },
+  { label: "Onboarding", to: "/hr/onboarding", icon: UserPlus, roles: HR_ALL },
+  { label: "Documents", to: "/hr/documents", icon: FileArchive, roles: HR_ALL },
+  { label: "Recruitment", to: "/hr/recruitment", icon: UserSearch, roles: HR_ALL },
+  { label: "Chat", to: "/hr/chat", icon: MessagesSquare, roles: HR_ALL },
+  { label: "Wiki", to: "/hr/wiki", icon: BookMarked, roles: HR_ALL },
+  { label: "Self Service", to: "/hr/self-service", icon: LifeBuoy, roles: HR_ALL },
+  { label: "Infinito AI", to: "/hr/ai", icon: Sparkles, roles: HR_ALL },
 ];
 
 // ── Shop sub-items (shown inside collapsible accordion) ────────
 const SHOP_ITEMS = [
-  { 
-    label: "Products", 
-    icon: Package, 
-    roles: SHOP_ALL,
-    isParent: true,
-    subItems: [
-      { label: "All Products",   to: "/shop/products",    icon: Package,     roles: SHOP_ALL },
-      { label: "Add Product",    to: "/shop/products/new", icon: Package,    roles: SHOP_ALL },
-      { label: "Categories",     to: "/shop/categories",  icon: FolderOpen,  roles: SHOP_ALL },
-      { label: "Inventory",      to: "/shop/inventory",   icon: BarChart3,   roles: SHOP_ALL },
-    ]
-  },
-  { 
-    label: "Orders", 
-    icon: ClipboardList, 
-    roles: SHOP_ALL,
-    isParent: true,
-    subItems: [
-      { label: "All Orders",     to: "/shop/orders",      icon: ClipboardList, roles: SHOP_ALL },
-    ]
-  },
-  { 
-    label: "Analytics & Reports", 
-    icon: TrendingUp, 
-    roles: SHOP_ALL,
-    isParent: true,
-    subItems: [
-      { label: "Overview",          to: "/shop/analytics?tab=overview",  icon: BarChart3,   roles: SHOP_ALL },
-      { label: "Sales Reports",     to: "/shop/analytics?tab=sales",     icon: TrendingUp,  roles: SHOP_ALL },
-      { label: "Inventory Reports", to: "/shop/analytics?tab=inventory", icon: Package,     roles: SHOP_ALL },
-      { label: "Customer Reports",  to: "/shop/analytics?tab=customers", icon: Users,       roles: SHOP_ALL },
-    ]
-  },
-  { 
-    label: "Marketing & Promotions", 
-    icon: Sparkles, 
-    roles: SHOP_ALL,
-    isParent: true,
-    subItems: [
-      { label: "Discount Codes",      to: "/shop/marketing?tab=discounts", icon: Sparkles,  roles: SHOP_ALL },
-      { label: "Banners & Promotions",to: "/shop/marketing?tab=banners",   icon: Sparkles,  roles: SHOP_ALL },
-    ]
-  },
+  { label: "All Products", to: "/shop/products", icon: Package, roles: SHOP_ALL },
+  { label: "Add Product", to: "/shop/products/new", icon: Plus, roles: SHOP_ALL },
+  { label: "Categories", to: "/shop/categories", icon: FolderOpen, roles: SHOP_ALL },
+  { label: "Inventory", to: "/shop/inventory", icon: BarChart3, roles: SHOP_ALL },
+  { label: "Orders", to: "/shop/orders", icon: ClipboardList, roles: SHOP_ALL },
+  { label: "Analytics & Reports", to: "/shop/analytics", icon: TrendingUp, roles: SHOP_ALL },
+  { label: "Marketing & Promotions", to: "/shop/marketing", icon: Sparkles, roles: SHOP_ALL },
+  { label: "Management", to: "/shop/management", icon: Users, roles: ["superadmin"] },
 ];
 
 const Navbar = () => {
-  const [collapsed, setCollapsed]   = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [hrOpen, setHrOpen]         = useState(false); // HR accordion open/closed
-  const [shopOpen, setShopOpen]     = useState(false); // Shop accordion open/closed (defaults to closed)
-  const [parentSectionsOpen, setParentSectionsOpen] = useState({
-    Products: true,
-    Orders: true,
-    "Analytics & Reports": true,
-    "Marketing & Promotions": true,
-  });
+  const [hrOpen, setHrOpen] = useState(false); // HR accordion open/closed
   const desktopNavRef = useRef(null);
   const location = useLocation();
   const token = localStorage.getItem("authToken");
   const roles = getRoles();
+  const admin = getAdmin();
 
-  const visibleNav  = NAV_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
-  const visibleHR   = HR_ITEMS.filter(item  => roles.some(r => item.roles.includes(r)));
-  const visibleShop = SHOP_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
-  const visibleEmp  = EMP_ITEMS.filter(item  => roles.some(r => item.roles.includes(r)));
-  const isEmpOnly   = roles.length > 0 && roles.every(r => r === "employee");
-  const showHRSection   = visibleHR.length > 0 && !isEmpOnly;
-  const showShopSection = visibleShop.length > 0;
+  const isSuperOrShopAdmin = roles.includes('superadmin') || roles.includes('shop_admin');
+  const [empShopAllowed, setEmpShopAllowed] = useState(() => {
+    return isEmployeeShopAllowed(admin?.email, admin);
+  });
 
-  // If any HR/Shop route is currently active, keep accordion open
-  const isHRActive   = visibleHR.some(item => location.pathname.startsWith(`/admin${item.to}`) || location.pathname.startsWith(item.to));
+  // Listen for shop access changes in real-time across tabs / storage events
+  useEffect(() => {
+    const checkAccess = () => {
+      const curAdmin = getAdmin();
+      setEmpShopAllowed(isEmployeeShopAllowed(curAdmin?.email, curAdmin));
+    };
+
+    window.addEventListener('storage', checkAccess);
+
+    let bc;
+    try {
+      bc = new BroadcastChannel('infinito_shop_access_channel');
+      bc.onmessage = checkAccess;
+    } catch { }
+
+    return () => {
+      window.removeEventListener('storage', checkAccess);
+      if (bc) bc.close();
+    };
+  }, []);
+
+  const canViewShop = isSuperOrShopAdmin || empShopAllowed;
+
+  // If on a shop route or user has shop access, shop opens by default
   const isShopActive = location.pathname.startsWith('/admin/shop') || location.pathname.startsWith('/shop');
+  const [shopOpen, setShopOpen] = useState(() => {
+    return canViewShop && (isShopActive || roles.includes('shop_admin') || roles.includes('employee'));
+  });
+
+  const visibleNav = NAV_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
+  const visibleHR = HR_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
+  const visibleShop = SHOP_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
+  const visibleEmp = EMP_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
+  const isEmpOnly = roles.length > 0 && roles.every(r => r === "employee");
+  const showHRSection = visibleHR.length > 0 && !isEmpOnly;
+  const showShopSection = visibleShop.length > 0 && canViewShop;
+
+  // If any HR route is currently active, keep accordion open
+  const isHRActive = visibleHR.some(item => location.pathname.startsWith(`/admin${item.to}`) || location.pathname.startsWith(item.to));
 
   // Track and persist scroll position of the sidebar navigation
   const handleNavScroll = (e) => {
@@ -149,12 +142,6 @@ const Navbar = () => {
     }
   }, [location.pathname, location.search]);
 
-  const toggleParentSection = (label) => {
-    setParentSectionsOpen((prev) => ({
-      ...prev,
-      [label]: prev[label] !== undefined ? !prev[label] : false,
-    }));
-  };
 
   const handleLogout = () => {
     localStorage.clear();
@@ -223,7 +210,7 @@ const Navbar = () => {
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold transition-all duration-150
               ${isActive("/employee-portal") ? "bg-[#DD1215] text-white" : "text-gray-300 hover:bg-gray-700 hover:text-white"}
               ${collapsed ? "justify-center" : ""}`}>
-            <Users size={20} className="shrink-0"/>
+            <Users size={20} className="shrink-0" />
             {!collapsed && <span>My Portal</span>}
           </Link>
         )}
@@ -234,7 +221,7 @@ const Navbar = () => {
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150
               ${isActive(to) ? "bg-[#DD1215] text-white" : "text-gray-300 hover:bg-gray-700 hover:text-white"}
               ${collapsed ? "justify-center" : ""}`}>
-            <Icon size={20} className="shrink-0"/>
+            <Icon size={20} className="shrink-0" />
             {!collapsed && <span>{label}</span>}
           </Link>
         ))}
@@ -265,14 +252,14 @@ const Navbar = () => {
               <button
                 onClick={() => setShopOpen(o => !o)}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-150 group cursor-pointer
-                  ${shopOpen ? "bg-gray-800 text-white" : "text-gray-200 hover:bg-gray-700 hover:text-white"}
+                  ${(shopOpen || isShopActive) ? "bg-gray-800 text-white" : "text-gray-200 hover:bg-gray-700 hover:text-white"}
                 `}
               >
                 <div className="flex items-center gap-3">
                   <ShoppingBag size={20} className="shrink-0 text-[#DD1215]" />
                   <span className="text-sm font-black uppercase tracking-widest text-[#DD1215]">Shop</span>
                 </div>
-                <div className={`transition-transform duration-200 ${shopOpen ? "rotate-180" : ""}`}>
+                <div className={`transition-transform duration-200 ${(shopOpen || isShopActive) ? "rotate-180" : ""}`}>
                   <ChevronDown size={16} className="text-[#DD1215]" />
                 </div>
               </button>
@@ -287,93 +274,29 @@ const Navbar = () => {
               </button>
             )}
 
-            {/* Shop Sub-items — animated dropdown */}
-            {shopOpen && (
+            {/* Shop Sub-items — list of all shop pages directly */}
+            {(shopOpen || isShopActive) && (
               <div className={`mt-1 space-y-0.5 overflow-hidden ${!collapsed ? "pl-2" : ""}`}>
-                {visibleShop.map((item) => {
-                  if (item.isParent && item.subItems) {
-                    const Icon = item.icon;
-                    const isSectionActive = item.subItems.some((sub) => isActive(sub.to));
-                    const isSectionOpen = parentSectionsOpen[item.label] ?? isSectionActive;
-
-                    return (
-                      <div key={item.label}>
-                        {/* Parent item */}
-                        {!collapsed ? (
-                          <button
-                            onClick={() => toggleParentSection(item.label)}
-                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-150 cursor-pointer text-left
-                              ${isSectionActive ? "bg-gray-700 text-white font-medium" : "text-gray-400 hover:bg-gray-700 hover:text-white font-medium"}
-                            `}
-                          >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <Icon size={17} className="shrink-0" />
-                              <span className="text-xs whitespace-nowrap font-medium">{item.label}</span>
-                            </div>
-                            <div className={`transition-transform duration-200 shrink-0 ml-1.5 ${(isSectionOpen || isSectionActive) ? "rotate-180" : ""}`}>
-                              <ChevronDown size={14} />
-                            </div>
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => toggleParentSection(item.label)}
-                            title={item.label}
-                            className="flex items-center justify-center w-full py-2 rounded-lg text-gray-400 hover:bg-gray-700 transition"
-                          >
-                            <Icon size={17} />
-                          </button>
-                        )}
-
-                        {/* Sub-items */}
-                        {(isSectionOpen || isSectionActive) && (
-                          <div className={`mt-1 space-y-0.5 ${!collapsed ? "pl-4" : ""}`}>
-                            {item.subItems.map(({ label, to, icon: SubIcon }) => (
-                              <Link
-                                key={to}
-                                to={to}
-                                onClick={onNavClick}
-                                title={collapsed ? label : ""}
-                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all duration-150
-                                  ${isActive(to)
-                                    ? "bg-[#DD1215] text-white font-bold"
-                                    : "text-gray-500 hover:bg-gray-700 hover:text-white font-normal"
-                                  }
-                                  ${collapsed ? "justify-center" : ""}
-                                `}
-                              >
-                                <div className="w-1 h-1 rounded-full bg-current shrink-0"></div>
-                                {!collapsed && <span className="whitespace-nowrap">{label}</span>}
-                              </Link>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  }
-                  
-                  // Regular item (not parent)
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.to}
-                      to={item.to}
-                      onClick={onNavClick}
-                      title={collapsed ? item.label : ""}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150
-                        ${isActive(item.to)
-                          ? "bg-[#DD1215] text-white font-bold"
-                          : "text-gray-400 hover:bg-gray-700 hover:text-white font-medium"
-                        }
-                        ${collapsed ? "justify-center" : ""}
-                      `}
-                    >
-                      <Icon size={17} className="shrink-0" />
-                      {!collapsed && (
-                        <span className="text-xs">{item.label}</span>
-                      )}
-                    </Link>
-                  );
-                })}
+                {visibleShop.map(({ label, to, icon: Icon }) => (
+                  <Link
+                    key={to}
+                    to={to}
+                    onClick={onNavClick}
+                    title={collapsed ? label : ""}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150
+                      ${isActive(to)
+                        ? "bg-[#DD1215] text-white font-bold"
+                        : "text-gray-400 hover:bg-gray-700 hover:text-white font-medium"
+                      }
+                      ${collapsed ? "justify-center" : ""}
+                    `}
+                  >
+                    <Icon size={17} className="shrink-0" />
+                    {!collapsed && (
+                      <span className="text-xs">{label}</span>
+                    )}
+                  </Link>
+                ))}
               </div>
             )}
           </div>

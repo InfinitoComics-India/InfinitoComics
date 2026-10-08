@@ -1,23 +1,106 @@
 import { v2 as cloudinary } from 'cloudinary';
 import { Readable } from 'stream';
-import fs from 'fs';
 import path from 'path';
+import config from '../config/server-config.js';
 
-// Configure Cloudinary from environment variables if fully provided
-const isCloudinaryConfigured = Boolean(
-  process.env.CLOUDINARY_CLOUD_NAME &&
-  process.env.CLOUDINARY_API_KEY &&
-  process.env.CLOUDINARY_API_SECRET
-);
+/**
+ * Dynamically extract and normalize Cloudinary credentials
+ */
+export const getCloudinaryConfig = () => {
+  const url = (process.env.CLOUDINARY_URL || config?.CLOUDINARY_URL || '').trim();
 
-if (isCloudinaryConfigured) {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-  });
-}
+  const cloud_name = (
+    process.env.CLOUDINARY_CLOUD_NAME ||
+    config?.CLOUDINARY_CLOUD_NAME ||
+    process.env.CLOUD_NAME ||
+    process.env.CLOUDINARY_NAME ||
+    ''
+  ).trim().replace(/^["']|["']$/g, '');
 
+  const api_key = (
+    process.env.CLOUDINARY_API_KEY ||
+    config?.CLOUDINARY_API_KEY ||
+    process.env.CLOUDINARY_KEY ||
+    ''
+  ).trim().replace(/^["']|["']$/g, '');
+
+  const api_secret = (
+    process.env.CLOUDINARY_API_SECRET ||
+    config?.CLOUDINARY_API_SECRET ||
+    process.env.CLOUDINARY_SECRET ||
+    ''
+  ).trim().replace(/^["']|["']$/g, '');
+
+  const isConfigured = Boolean(url || (cloud_name && api_key && api_secret));
+
+  return {
+    isConfigured,
+    url,
+    cloud_name,
+    api_key,
+    api_secret,
+  };
+};
+
+/**
+ * Configure Cloudinary instance before upload
+ */
+export const initCloudinary = () => {
+  const cfg = getCloudinaryConfig();
+  if (!cfg.isConfigured) return false;
+
+  if (cfg.url) {
+    cloudinary.config({
+      cloudinary_url: cfg.url,
+      secure: true,
+    });
+  } else {
+    cloudinary.config({
+      cloud_name: cfg.cloud_name,
+      api_key: cfg.api_key,
+      api_secret: cfg.api_secret,
+      secure: true,
+    });
+  }
+  return true;
+};
+
+/**
+ * Health check / status for Cloudinary
+ */
+export const getCloudinaryStatus = async () => {
+  const cfg = getCloudinaryConfig();
+  if (!cfg.isConfigured) {
+    return {
+      configured: false,
+      status: 'missing_keys',
+      cloudName: null,
+      message: 'Cloudinary environment variables (CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET or CLOUDINARY_URL) are not set.',
+    };
+  }
+
+  try {
+    initCloudinary();
+    const ping = await cloudinary.api.ping();
+    return {
+      configured: true,
+      status: ping?.status || 'ok',
+      cloudName: cfg.cloud_name || 'configured via URL',
+      message: 'Cloudinary is connected and active for permanent image hosting.',
+    };
+  } catch (err) {
+    return {
+      configured: true,
+      status: 'connection_error',
+      cloudName: cfg.cloud_name || null,
+      message: `Cloudinary configured but ping failed: ${err.message}`,
+    };
+  }
+};
+
+/**
+ * Upload buffer to Cloudinary (or resilient fallback)
+ */
 export const uploadToS3 = async (fileBuffer, fileName, contentType) => {
   const sanitizedName = (fileName || 'image.png').replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
   const ext = path.extname(fileName || '').toLowerCase() || (contentType === 'image/svg+xml' ? '.svg' : '.png');
@@ -25,14 +108,17 @@ export const uploadToS3 = async (fileBuffer, fileName, contentType) => {
   const mimeType = contentType || (isSvg ? 'image/svg+xml' : 'image/png');
   const publicId = `${Date.now()}-${sanitizedName}`;
 
-  // 1. Try Cloudinary if fully configured
-  if (isCloudinaryConfigured) {
+  // 1. Try Cloudinary if configured
+  const hasCloudinary = initCloudinary();
+  if (hasCloudinary) {
     try {
       const uploadResult = await new Promise((resolve, reject) => {
         const uploadOptions = {
-          folder: 'infinito-comics',
+          folder: 'infinito-comics/shop',
           public_id: publicId,
           resource_type: isSvg ? 'auto' : 'image',
+          overwrite: true,
+          secure: true,
         };
 
         const uploadStream = cloudinary.uploader.upload_stream(
@@ -42,6 +128,8 @@ export const uploadToS3 = async (fileBuffer, fileName, contentType) => {
             resolve({
               Location: result.secure_url || result.url,
               Key: result.public_id || publicId,
+              format: result.format,
+              bytes: result.bytes,
             });
           }
         );
@@ -52,45 +140,21 @@ export const uploadToS3 = async (fileBuffer, fileName, contentType) => {
         readable.pipe(uploadStream);
       });
 
+      console.log(`[Cloudinary] Successfully uploaded ${fileName} -> ${uploadResult.Location}`);
       return uploadResult;
     } catch (cloudErr) {
-      console.warn('[uploadToS3] Cloudinary upload failed, falling back to data URI / local storage:', cloudErr.message);
+      console.error('[Cloudinary Upload Error]', cloudErr.message || cloudErr);
     }
+  } else {
+    console.warn('[uploadToS3] Cloudinary not configured in environment. Using Data URI fallback.');
   }
 
-  // 2. Fallback: For SVGs or images under 2MB, a base64 Data URI is permanent,
-  // self-contained, and never 404s or gets erased by Render ephemeral restarts.
-  if (isSvg || (fileBuffer && fileBuffer.length <= 2 * 1024 * 1024)) {
-    const base64Data = fileBuffer.toString('base64');
-    const dataUri = `data:${mimeType};base64,${base64Data}`;
-    return {
-      Location: dataUri,
-      Key: publicId,
-    };
-  }
-
-  // 3. Fallback: Save to local uploads folder on disk if larger than 2MB
-  try {
-    const uploadDir = path.resolve('uploads', 'shop');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    const diskFileName = `${publicId}${ext}`;
-    const filePath = path.join(uploadDir, diskFileName);
-    fs.writeFileSync(filePath, fileBuffer);
-
-    const backendBase = (process.env.BACKEND_URL || 'https://infinitocomics-68cr.onrender.com').replace(/\/$/, '');
-    return {
-      Location: `${backendBase}/uploads/shop/${diskFileName}`,
-      Key: diskFileName,
-    };
-  } catch (fsErr) {
-    console.warn('[uploadToS3] Local disk save failed:', fsErr.message);
-  }
-
-  // 4. Ultimate fallback placeholder (never throws 500)
+  // 2. Safe Fallback: Base64 Data URI
+  // Data URIs are stored directly in MongoDB, so they NEVER get deleted by Render ephemeral disk resets!
+  const base64Data = fileBuffer.toString('base64');
+  const dataUri = `data:${mimeType};base64,${base64Data}`;
   return {
-    Location: `https://placehold.co/400x400?text=${encodeURIComponent(fileName || 'image')}`,
+    Location: dataUri,
     Key: publicId,
   };
 };

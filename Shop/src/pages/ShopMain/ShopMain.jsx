@@ -32,7 +32,7 @@ const ShopMain = () => {
           return [parsed.promoBanner];
         }
       }
-    } catch {}
+    } catch { }
     return [
       {
         id: "default-promo",
@@ -101,7 +101,7 @@ const ShopMain = () => {
             }
           }
         }
-      } catch {}
+      } catch { }
     };
 
     window.addEventListener("storage", reloadBanners);
@@ -109,7 +109,7 @@ const ShopMain = () => {
     try {
       bc = new BroadcastChannel("infinito_banners_channel");
       bc.onmessage = () => reloadBanners();
-    } catch {}
+    } catch { }
 
     return () => {
       window.removeEventListener("storage", reloadBanners);
@@ -127,83 +127,76 @@ const ShopMain = () => {
       {/* ─── HERO SLIDER (3 slides) ─────────────────────────── */}
       <HeroSlider />
 
-      {/* ─── PROMO BANNERS (Multiple supported from Admin Marketing Management) ── */}
+      {/* ─── PROMO BANNERS (Multiple supported from Admin Marketing Management - Sized matching SS2) ── */}
       {(() => {
         const promoList = promoBannersList;
         const currentPromo = promoList[promoIndex % promoList.length] || promoList[0];
 
         return (
-          <section className="max-w-[1200px] mx-auto px-4 md:px-12 py-10">
-            <div className="relative w-full overflow-hidden rounded-sm shadow-md">
-              <img
-                src={currentPromo?.bgImageUrl || promoBanner}
-                alt=""
-                aria-hidden="true"
-                className="block w-full h-[220px] md:h-[300px] object-cover"
-              />
+          <section className="py-8 md:py-10">
+            <div className="max-w-[1200px] mx-auto px-4 md:px-12 flex items-center justify-center gap-3 md:gap-5">
+              {/* Navigation button left */}
+              <button
+                type="button"
+                onClick={() => setPromoIndex((prev) => (prev - 1 + promoList.length) % promoList.length)}
+                aria-label="Previous promo"
+                className="w-8 h-8 md:w-9 md:h-9 bg-white border border-gray-300 rounded hover:border-gray-500 hover:text-black text-gray-500 flex items-center justify-center transition shadow-sm shrink-0 cursor-pointer"
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              {/* Exact SS2 Sized Banner */}
               <div
-                className="absolute inset-0 flex items-center pl-[6%] pr-[40%] text-white"
+                className="relative w-full max-w-[780px] h-[160px] sm:h-[175px] md:h-[180px] rounded-xl overflow-hidden shadow-md flex items-center bg-black bg-cover bg-center shrink-0"
                 style={{
-                  backgroundColor: currentPromo?.bgImageUrl ? "rgba(0,0,0,0.35)" : (currentPromo?.bgColor || "#800000"),
+                  backgroundColor: currentPromo?.bgColor || "#800000",
+                  backgroundImage: currentPromo?.bgImageUrl ? `url(${currentPromo.bgImageUrl})` : `url(${promoBanner})`,
                 }}
               >
-                <div>
-                  {currentPromo?.badgeText && (
-                    <span className="inline-block bg-black/60 text-[#DD1215] text-[10px] md:text-xs font-bold uppercase tracking-widest px-2.5 py-0.5 rounded mb-2">
-                      {currentPromo.badgeText}
+                {/* Subtle gradient to keep left text readable while right side merch artwork stays clear */}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/25 to-transparent pointer-events-none" />
+
+                {/* Content aligned to left */}
+                <div className="relative z-10 pl-6 sm:pl-8 md:pl-10 max-w-[65%] sm:max-w-[55%] space-y-1 text-white">
+                  {(currentPromo?.badgeText || currentPromo?.discountCode) && (
+                    <span className="inline-block bg-black/70 text-[#DD1215] text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded">
+                      {currentPromo.badgeText || currentPromo.discountCode}
                     </span>
                   )}
-                  <h2 className="text-3xl sm:text-4xl md:text-6xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] drop-shadow-lg leading-none">
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight text-white drop-shadow">
                     {currentPromo?.headline || "35% off"}
                   </h2>
-                  <p className="mt-1 md:mt-2 text-xs sm:text-sm md:text-base uppercase tracking-wide font-dmsans text-gray-200 font-semibold">
+                  <p className="text-[11px] sm:text-xs md:text-sm font-semibold tracking-wide text-gray-200 uppercase drop-shadow">
                     {currentPromo?.subtitle || "on The Crimson Bloodline"}
                   </p>
-                  <button
-                    onClick={() => {
-                      if (currentPromo?.buttonLink?.startsWith("http")) {
-                        window.location.href = currentPromo.buttonLink;
-                      } else {
-                        navigate(currentPromo?.buttonLink || "/catalog");
-                      }
-                    }}
-                    className="mt-4 md:mt-6 px-6 md:px-8 py-2 md:py-3 bg-[#DD1215] hover:bg-red-700 text-white text-xs md:text-sm font-bold uppercase tracking-widest transition font-dmsans cursor-pointer shadow-md"
-                  >
-                    {currentPromo?.buttonText || "Buy Now"}
-                  </button>
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const link = currentPromo?.buttonLink || "/catalog";
+                        if (link.startsWith("http")) {
+                          window.location.href = link;
+                        } else {
+                          navigate(link);
+                        }
+                      }}
+                      className="px-4 sm:px-5 py-1.5 sm:py-2 bg-[#DD1215] hover:bg-red-700 text-white text-xs font-bold uppercase tracking-wider rounded transition cursor-pointer shadow-sm"
+                    >
+                      {currentPromo?.buttonText || "Buy Now"}
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              {/* Navigation controls if multiple promo banners exist */}
-              {promoList.length > 1 && (
-                <>
-                  <button
-                    onClick={() => setPromoIndex((prev) => (prev - 1 + promoList.length) % promoList.length)}
-                    aria-label="Previous promo"
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center transition cursor-pointer"
-                  >
-                    <ChevronLeft size={18} />
-                  </button>
-                  <button
-                    onClick={() => setPromoIndex((prev) => (prev + 1) % promoList.length)}
-                    aria-label="Next promo"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center transition cursor-pointer"
-                  >
-                    <ChevronRight size={18} />
-                  </button>
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
-                    {promoList.map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setPromoIndex(i)}
-                        className={`h-1.5 rounded-full transition-all ${
-                          promoIndex % promoList.length === i ? "w-6 bg-white" : "w-1.5 bg-white/40"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
+              {/* Navigation button right */}
+              <button
+                type="button"
+                onClick={() => setPromoIndex((prev) => (prev + 1) % promoList.length)}
+                aria-label="Next promo"
+                className="w-8 h-8 md:w-9 md:h-9 bg-white border border-gray-300 rounded hover:border-gray-500 hover:text-black text-gray-500 flex items-center justify-center transition shadow-sm shrink-0 cursor-pointer"
+              >
+                <ChevronRight size={18} />
+              </button>
             </div>
           </section>
         );

@@ -91,13 +91,13 @@ const EditableField = ({ label, value, onSave, validate, allowRandom, onGenerate
 
   return (
     <div className="w-full mb-3">
-      <div className="flex items-center justify-between mb-1">
-        <p className="text-xs text-gray-400 uppercase tracking-widest">{label}</p>
-        {allowRandom && !editing && (
+      <div className="flex items-center justify-between mb-1.5">
+        <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold">{label}</p>
+        {allowRandom && (
           <button
             type="button"
             onClick={handleTriggerRandom}
-            className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-[#DD1215] hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-0.5 rounded transition cursor-pointer"
+            className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-[#DD1215] hover:text-white bg-red-50 hover:bg-[#DD1215] border border-red-200 px-2.5 py-0.5 rounded transition cursor-pointer"
             title="Generate random username"
           >
             <Shuffle size={12} />
@@ -107,34 +107,17 @@ const EditableField = ({ label, value, onSave, validate, allowRandom, onGenerate
       </div>
 
       {editing ? (
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-1.5">
+        <div className="space-y-1.5 w-full">
+          <div className="flex items-center gap-1.5 w-full">
             <input
               autoFocus
               type="text"
               value={draft}
               onChange={e => { setDraft(e.target.value.replace(/\s/g, '')); setError(""); }}
-              className="flex-1 border border-gray-300 px-2.5 py-1.5 text-sm rounded focus:outline-none focus:ring-2 focus:ring-[#DD1215]"
+              className="flex-1 min-w-0 border border-gray-300 px-2.5 py-1.5 text-sm rounded focus:outline-none focus:ring-2 focus:ring-[#DD1215]"
               onKeyDown={e => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") { setEditing(false); setDraft(value); } }}
               placeholder={`Enter ${label}`}
             />
-            {allowRandom && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (onGenerateRandom) {
-                    const nextVal = onGenerateRandom();
-                    setDraft(nextVal);
-                    setError("");
-                  }
-                }}
-                className="flex items-center gap-1 bg-[#DD1215] text-white px-2.5 py-1.5 rounded text-xs font-bold hover:bg-red-700 transition shrink-0 cursor-pointer"
-                title="Randomize username"
-              >
-                <Shuffle size={12} />
-                <span>Random</span>
-              </button>
-            )}
             <button
               type="button"
               onClick={() => handleSave()}
@@ -147,7 +130,7 @@ const EditableField = ({ label, value, onSave, validate, allowRandom, onGenerate
             <button
               type="button"
               onClick={() => { setEditing(false); setDraft(value); setError(""); }}
-              className="p-1.5 border border-gray-300 rounded hover:bg-gray-100 transition shrink-0 cursor-pointer"
+              className="p-1.5 border border-gray-300 rounded hover:bg-gray-100 transition shrink-0 cursor-pointer text-gray-600"
               title="Cancel"
             >
               <X size={14} />
@@ -508,69 +491,89 @@ const MyAccountPage = () => {
         {activeTab === "overview" && (
           <div className="flex flex-col lg:flex-row gap-8 items-start w-full">
 
-            {/* Left Profile Panel (Original Identity Preserved) */}
-            <div className="border border-gray-200 rounded-xl p-6 flex flex-col items-center w-full lg:w-72 bg-white shadow-sm shrink-0">
-              <div className="text-xs uppercase font-mono tracking-widest text-gray-400 mb-4 font-bold">
-                MEMBER AVATAR
+            {/* Left Profile Panel (Member Avatar Box) */}
+            <div className="w-full lg:w-80 flex flex-col gap-3 shrink-0">
+              <div className="border border-gray-200 rounded-xl p-6 flex flex-col items-center w-full bg-white shadow-sm">
+                <div className="text-xs uppercase font-mono tracking-widest text-gray-400 mb-4 font-bold">
+                  MEMBER AVATAR
+                </div>
+
+                {userData.characterColors ? (
+                  <div className="mb-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <CharacterPreview colors={userData.characterColors} />
+                  </div>
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 flex items-center justify-center mb-4 text-3xl font-black text-gray-400 border border-gray-300">
+                    {userData.username?.[0]?.toUpperCase() || "I"}
+                  </div>
+                )}
+
+                <EditableField
+                  label="Username"
+                  value={userData.username}
+                  allowRandom={true}
+                  onGenerateRandom={generateRandomUsername}
+                  onSave={(val) => saveField("username", val)}
+                  validate={(val) => {
+                    if (!val || val.length < 6 || val.length > 30) return "Username must be 6–30 characters";
+                    if (!/^[0-9a-zA-Z._]+$/.test(val)) return "Only letters, numbers, _ and . allowed";
+                    return "";
+                  }}
+                />
+
+                <EditableField
+                  label="Email Address"
+                  value={userData.email}
+                  onSave={(val) => saveField("email", val)}
+                  validate={(val) => {
+                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) return "Enter a valid email";
+                    return "";
+                  }}
+                />
+
+                <hr className="w-full my-6 border-gray-200" />
+
+                {/* Quick links inside profile */}
+                <div className="w-full flex flex-col gap-2">
+                  <button
+                    onClick={() => handleTabChange("orders")}
+                    className="w-full text-left px-3 py-2 text-xs font-semibold text-gray-600 hover:text-black hover:bg-gray-50 rounded flex items-center justify-between transition cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2"><Package size={14} className="text-[#DD1215]" /> Orders & Shipments</span>
+                    <span className="text-gray-400 font-bold">{orders.length}</span>
+                  </button>
+                  <button
+                    onClick={() => handleTabChange("addresses")}
+                    className="w-full text-left px-3 py-2 text-xs font-semibold text-gray-600 hover:text-black hover:bg-gray-50 rounded flex items-center justify-between transition cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2"><MapPin size={14} className="text-[#DD1215]" /> Delivery Addresses</span>
+                    <span className="text-gray-400 font-bold">{addresses.length}</span>
+                  </button>
+                  <button
+                    onClick={() => handleTabChange("subscription")}
+                    className="w-full text-left px-3 py-2 text-xs font-semibold text-gray-600 hover:text-black hover:bg-gray-50 rounded flex items-center justify-between transition cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2"><Sparkles size={14} className="text-[#DD1215]" /> Membership Plan</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${isPaid ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600'}`}>{planLabel}</span>
+                  </button>
+                </div>
               </div>
 
-              {userData.characterColors ? (
-                <div className="mb-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                  <CharacterPreview colors={userData.characterColors} />
-                </div>
-              ) : (
-                <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 flex items-center justify-center mb-4 text-3xl font-black text-gray-400 border border-gray-300">
-                  {userData.username?.[0]?.toUpperCase() || "I"}
-                </div>
-              )}
-
-              <EditableField
-                label="Username"
-                value={userData.username}
-                allowRandom={true}
-                onGenerateRandom={generateRandomUsername}
-                onSave={(val) => saveField("username", val)}
-                validate={(val) => {
-                  if (!val || val.length < 6 || val.length > 30) return "Username must be 6–30 characters";
-                  if (!/^[0-9a-zA-Z._]+$/.test(val)) return "Only letters, numbers, _ and . allowed";
-                  return "";
-                }}
-              />
-
-              <EditableField
-                label="Email Address"
-                value={userData.email}
-                onSave={(val) => saveField("email", val)}
-                validate={(val) => {
-                  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) return "Enter a valid email";
-                  return "";
-                }}
-              />
-
-              <hr className="w-full my-6 border-gray-200" />
-
-              {/* Quick links inside profile */}
-              <div className="w-full flex flex-col gap-2">
+              {/* Below this box: LOG OUT & DELETE MY ACCOUNT (one in each line) */}
+              <div className="w-full flex flex-col gap-2 pt-1">
                 <button
-                  onClick={() => handleTabChange("orders")}
-                  className="w-full text-left px-3 py-2 text-xs font-semibold text-gray-600 hover:text-black hover:bg-gray-50 rounded flex items-center justify-between transition"
+                  className="w-full border border-red-200 bg-red-50 text-[#DD1215] py-2.5 px-4 text-xs tracking-wider font-bold uppercase rounded-lg hover:bg-red-600 hover:text-white flex items-center justify-center group transition cursor-pointer shadow-sm"
+                  onClick={handleLogout}
                 >
-                  <span className="flex items-center gap-2"><Package size={14} className="text-[#DD1215]" /> Orders & Shipments</span>
-                  <span className="text-gray-400 font-bold">{orders.length}</span>
+                  <span>LOG OUT</span>
+                  <FaArrowRight className="ml-2 text-xs group-hover:translate-x-1 transition-transform" />
                 </button>
+
                 <button
-                  onClick={() => handleTabChange("addresses")}
-                  className="w-full text-left px-3 py-2 text-xs font-semibold text-gray-600 hover:text-black hover:bg-gray-50 rounded flex items-center justify-between transition"
+                  onClick={() => setShowDeleteInfo(true)}
+                  className="w-full text-center py-2 text-[11px] tracking-widest text-gray-400 hover:text-red-600 font-bold uppercase transition cursor-pointer"
                 >
-                  <span className="flex items-center gap-2"><MapPin size={14} className="text-[#DD1215]" /> Delivery Addresses</span>
-                  <span className="text-gray-400 font-bold">{addresses.length}</span>
-                </button>
-                <button
-                  onClick={() => handleTabChange("subscription")}
-                  className="w-full text-left px-3 py-2 text-xs font-semibold text-gray-600 hover:text-black hover:bg-gray-50 rounded flex items-center justify-between transition"
-                >
-                  <span className="flex items-center gap-2"><Sparkles size={14} className="text-[#DD1215]" /> Membership Plan</span>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${isPaid ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600'}`}>{planLabel}</span>
+                  DELETE MY ACCOUNT
                 </button>
               </div>
             </div>
@@ -701,24 +704,7 @@ const MyAccountPage = () => {
                 </div>
               )}
 
-              {/* 3. Account Actions */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-2">
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    className="border border-red-200 bg-red-50 text-[#DD1215] px-4 py-2 text-xs tracking-wider font-bold uppercase rounded-lg hover:bg-red-600 hover:text-white flex items-center group transition"
-                    onClick={handleLogout}
-                  >
-                    LOG OUT <FaArrowRight className="ml-2 text-xs group-hover:translate-x-1 transition-transform" />
-                  </button>
-                </div>
 
-                <button
-                  onClick={() => setShowDeleteInfo(true)}
-                  className="text-xs tracking-widest text-gray-400 hover:text-red-600 font-bold uppercase transition"
-                >
-                  DELETE MY ACCOUNT
-                </button>
-              </div>
 
             </div>
           </div>
