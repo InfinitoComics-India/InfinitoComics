@@ -1,6 +1,7 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { getRoles, isTokenValid } from "../Utils/auth";
+import { getRoles, getAdmin, isTokenValid } from "../Utils/auth";
+import { isEmployeeShopAllowed } from "../services/shopServices/shopAccessService";
 
 /**
  * Wraps a route and redirects if:
@@ -21,15 +22,22 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   const roles = getRoles();
+  const admin = getAdmin();
   const isShopOnly = roles.length > 0 && roles.every(r => r === "shop_admin");
   const isEmp = roles.includes("employee");
   const currentPath = location.pathname;
   const normalizedPath = currentPath.replace(/^\/admin/, "") || "/";
 
-  // Root landing page: direct shop_admin and employee to shop management
+  const isSuperOrShopAdmin = roles.includes("superadmin") || roles.includes("shop_admin");
+  const empHasShopAccess = isSuperOrShopAdmin || isEmployeeShopAllowed(admin?.email, admin);
+
+  // Root landing page: direct shop_admin and employee to their primary section
   if (normalizedPath === "/" || normalizedPath === "") {
-    if (roles.includes("shop_admin") || (isEmp && !roles.includes("superadmin"))) {
+    if (roles.includes("shop_admin")) {
       return <Navigate to="/shop/products" replace />;
+    }
+    if (isEmp && !roles.includes("superadmin")) {
+      return <Navigate to={empHasShopAccess ? "/shop/products" : "/employee-portal"} replace />;
     }
   }
 
@@ -38,9 +46,14 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/shop/products" replace />;
   }
 
-  // Employee-allowed pages (HR self-service + Shop section)
+  // If employee without shop access tries to visit /shop/*, redirect to /employee-portal
+  if (isEmp && !isSuperOrShopAdmin && normalizedPath.startsWith("/shop") && !empHasShopAccess) {
+    return <Navigate to="/employee-portal" replace />;
+  }
+
+  // Employee-allowed pages (HR self-service + Shop section if allowed)
   const EMPLOYEE_ALLOWED = [
-    "/shop",
+    ...(empHasShopAccess ? ["/shop"] : []),
     "/employee-portal",
     "/hr/worklog",
     "/hr/attendance",
@@ -48,9 +61,11 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     "/hr/goals",
     "/hr/documents",
     "/hr/self-service",
+    "/hr/chat",
+    "/messages",
   ];
   if (isEmp && !roles.includes("superadmin") && !EMPLOYEE_ALLOWED.some(a => normalizedPath.startsWith(a))) {
-    return <Navigate to="/shop/products" replace />;
+    return <Navigate to={empHasShopAccess ? "/shop/products" : "/employee-portal"} replace />;
   }
 
   if (allowedRoles) {
