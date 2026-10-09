@@ -58,6 +58,7 @@ const HR_ITEMS = [
   { label: "Documents", to: "/hr/documents", icon: FileArchive, roles: HR_ALL },
   { label: "Recruitment", to: "/hr/recruitment", icon: UserSearch, roles: HR_ALL },
   { label: "Chat", to: "/hr/chat", icon: MessagesSquare, roles: HR_ALL },
+  { label: "Work Log", to: "/hr/worklog", icon: ClipboardList, roles: HR_ALL },
   { label: "Wiki", to: "/hr/wiki", icon: BookMarked, roles: HR_ALL },
   { label: "Self Service", to: "/hr/self-service", icon: LifeBuoy, roles: HR_ALL },
   { label: "Infinito AI", to: "/hr/ai", icon: Sparkles, roles: HR_ALL },
