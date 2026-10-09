@@ -242,6 +242,89 @@ class RecruitmentPipelineService {
       return { success: true };
     } catch (e) { console.error("RecruitmentPipelineService.deleteEntry:", e); throw e; }
   }
+
+  // ── Convert hired candidate → Employee + auto-trigger onboarding ──
+  async convertToEmployee(id, extraData, performedBy, performedByName) {
+    try {
+      const entry = await this.pipelineRepo.getById(id);
+      if (!entry) throw new Error("Pipeline entry not found.");
+      if (entry.stage !== "hired") throw new Error("Only hired candidates can be converted to employees.");
+      if (entry.convertedToEmployeeId) throw new Error("This candidate has already been converted to an employee.");
+
+      // Split candidateName into first + last
+      const nameParts = (entry.candidateName || "").trim().split(" ");
+      const firstName = nameParts[0] || "Unknown";
+      const lastName  = nameParts.slice(1).join(" ") || "-";
+
+      // Build employee payload — prefer extraData values over pipeline defaults
+      const joiningDate = extraData.joiningDate || entry.offerDetails?.joiningDate || new Date();
+
+      const employeeData = {
+        firstName,
+        lastName,
+        email:          entry.candidateEmail,
+        phone:          extraData.phone || entry.candidatePhone || "",
+        designation:    extraData.designation || entry.jobTitle,
+        department:     extraData.department  || "Engineering",
+        employmentType: extraData.employmentType || "full-time",
+        hrRole:         "employee",
+        status:         "active",
+        joiningDate:    new Date(joiningDate),
+        skills:         extraData.skills || [],
+        linkedIn:       extraData.linkedIn || "",
+        github:         extraData.github   || "",
+      };
+
+      const Employee = (await import("../models/Employee.js")).default;
+      const OnboardingService = (await import("./onboarding-service.js")).default;
+
+      // Create the employee record
+      const employee = await new Employee(employeeData).save();
+
+      // Auto-initiate onboarding checklist
+      const onboardingSvc = new OnboardingService();
+      await onboardingSvc.initiate(
+        employee._id,
+        "onboarding",
+        {
+          startDate:      new Date(joiningDate),
+          welcomeMessage: `Welcome to InfinitoComics, ${firstName}! You've been hired as ${employeeData.designation}.`,
+        },
+        performedBy,
+        performedByName
+      );
+
+      // Mark pipeline entry as converted
+      await this.pipelineRepo.findByIdandUpdate(id, {
+        convertedToEmployeeId: employee._id,
+        convertedAt:           new Date(),
+      });
+
+      await this.auditRepo.create({
+        performedBy, performedByName,
+        action:      "CREATE",
+        entity:      "Employee",
+        entityId:    employee._id,
+        description: `Converted hired candidate "${entry.candidateName}" (${entry.jobTitle}) to employee ${employee.employeeId}. Onboarding auto-initiated.`,
+      });
+
+      // Notify all HR managers
+      const hrs = await this.employeeRepo.getByRole("hr_manager");
+      for (const hr of hrs) {
+        await this.notificationRepo.create({
+          recipientId:    hr._id,
+          recipientModel: "Employee",
+          type:           "system",
+          title:          "New Employee Created",
+          message:        `${firstName} ${lastName} has been converted from candidate to employee (${employee.employeeId}). Onboarding checklist is live.`,
+          link:           "/hr/onboarding",
+          triggeredBy:    performedBy,
+        });
+      }
+
+      return { employee, message: `Employee ${employee.employeeId} created and onboarding initiated.` };
+    } catch (e) { console.error("RecruitmentPipelineService.convertToEmployee:", e); throw e; }
+  }
 }
 
 export default RecruitmentPipelineService;
