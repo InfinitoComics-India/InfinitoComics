@@ -10,6 +10,22 @@ const HR_MANAGE = ["superadmin","hr_manager","manager"];
 // GET today's attendance for all employees
 router.get("/today",                    adminauthenticate, checkRole(HR_ALL),    AttendanceController.getTodayAll);
 
+// GET last 7 days attendance for all employees
+router.get("/last7days",                adminauthenticate, checkRole(HR_ALL),    async (req, res) => {
+  try {
+    const Attendance = (await import('../models/Attendance.js')).default;
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+    const records = await Attendance.find({ date: { $gte: sevenDaysAgo, $lte: today } })
+      .populate("employeeId", "firstName lastName designation department employeeId")
+      .sort({ date: -1, "employeeId.firstName": 1 });
+    res.status(200).json({ success: true, data: records, count: records.length });
+  } catch (e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
 // GET today's attendance for one employee
 router.get("/today/:employeeId",        adminauthenticate, checkRole(HR_ALL),    AttendanceController.getTodayForEmployee);
 
@@ -18,6 +34,25 @@ router.get("/monthly/:employeeId",      adminauthenticate, checkRole(HR_ALL),   
 
 // GET monthly summary all employees     ?year=&month=
 router.get("/summary",                  adminauthenticate, checkRole(HR_MANAGE), AttendanceController.getMonthlySummary);
+
+// GET full monthly records all employees ?year=&month=
+router.get("/monthly-all",              adminauthenticate, checkRole(HR_MANAGE), async (req, res) => {
+  try {
+    const Attendance = (await import('../models/Attendance.js')).default;
+    const Employee   = (await import('../models/Employee.js')).default;
+    const { year, month } = req.query;
+    if (!year || !month) return res.status(400).json({ success: false, message: "year and month required." });
+    const start = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const end   = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
+    const [records, employees] = await Promise.all([
+      Attendance.find({ date: { $gte: start, $lte: end } })
+        .populate("employeeId", "firstName lastName designation department employeeId")
+        .sort({ date: 1 }),
+      Employee.find({ status: "active" }).select("firstName lastName designation department employeeId"),
+    ]);
+    res.status(200).json({ success: true, data: { records, employees } });
+  } catch (e) { res.status(500).json({ success: false, message: e.message }); }
+});
 
 // POST clock in
 router.post("/clockin/:employeeId",     adminauthenticate, checkRole(HR_ALL),    AttendanceController.clockIn);
