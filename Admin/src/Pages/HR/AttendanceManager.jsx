@@ -72,14 +72,21 @@ const AttendanceManager = () => {
   };
 
   // ── Week view helpers ─────────────────────────────────────
-  // Group records by employeeId key
+  // Group records by employeeId — handle both populated object and raw ObjectId string
   const weekByEmp = {};
   for (const rec of weekRecords) {
-    const empId = rec.employeeId?._id || rec.employeeId;
-    if (!empId) continue;
-    if (!weekByEmp[empId]) weekByEmp[empId] = { emp: rec.employeeId, rows: {} };
+    const rawId = rec.employeeId?._id ?? rec.employeeId;
+    if (!rawId) continue;
+    const empKey = rawId.toString();
+    if (!weekByEmp[empKey]) {
+      // emp is either the populated object or a stub with snapshot data
+      const empObj = typeof rec.employeeId === "object" && rec.employeeId !== null && rec.employeeId._id
+        ? rec.employeeId
+        : { _id: rawId, firstName: rec.employeeName?.split(" ")[0] || "Unknown", lastName: rec.employeeName?.split(" ").slice(1).join(" ") || "", employeeId: rec.employeeEmpId || "", designation: "" };
+      weekByEmp[empKey] = { emp: empObj, rows: {} };
+    }
     const key = isoDate(rec.date);
-    weekByEmp[empId].rows[key] = rec;
+    weekByEmp[empKey].rows[key] = rec;
   }
   const weekEmployees = Object.values(weekByEmp);
 
@@ -94,11 +101,12 @@ const AttendanceManager = () => {
   // Build map: empId → { day → record }
   const monthMap = {};
   for (const rec of mRecords) {
-    const empId = rec.employeeId?._id?.toString() || rec.employeeId?.toString();
-    if (!empId) continue;
-    if (!monthMap[empId]) monthMap[empId] = {};
+    const rawId = rec.employeeId?._id ?? rec.employeeId;
+    if (!rawId) continue;
+    const empKey = rawId.toString();
+    if (!monthMap[empKey]) monthMap[empKey] = {};
     const d = new Date(rec.date).getDate();
-    monthMap[empId][d] = rec;
+    monthMap[empKey][d] = rec;
   }
 
   // Per-employee monthly summary
