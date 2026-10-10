@@ -171,7 +171,7 @@ const CompanyCalendar = () => {
                   {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
                     const d = new Date(year, month - 1, day);
                     const isToday    = d.toDateString() === now.toDateString();
-                    const isWeekend  = d.getDay() === 0 || d.getDay() === 6;
+                    const isWeekend  = d.getDay() === 0; // Only Sunday is weekend
                     const isSelected = selectedDay?.toDateString() === d.toDateString();
                     const dayEvts    = getEventsForDay(day);
 
