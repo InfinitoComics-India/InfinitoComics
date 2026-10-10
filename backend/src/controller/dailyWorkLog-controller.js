@@ -101,6 +101,23 @@ export const getLogsForDate = async (req, res) => {
       date: { $gte: targetDate, $lt: nextDay },
     }).sort({ status: 1, adminName: 1 });
 
+    // For any log missing adminEmployeeId, try to look it up from Employee model by email
+    const missingIds = logs.filter(l => !l.adminEmployeeId && l.adminEmail);
+    if (missingIds.length > 0) {
+      const emails = missingIds.map(l => l.adminEmail.toLowerCase());
+      const employees = await Employee.find({ email: { $in: emails } }).select("email employeeId");
+      const empMap = {};
+      employees.forEach(e => { empMap[e.email.toLowerCase()] = e.employeeId || ""; });
+
+      const enriched = logs.map(l => {
+        if (!l.adminEmployeeId && l.adminEmail && empMap[l.adminEmail.toLowerCase()]) {
+          return { ...l.toObject(), adminEmployeeId: empMap[l.adminEmail.toLowerCase()] };
+        }
+        return l.toObject ? l.toObject() : l;
+      });
+      return res.status(200).json({ success: true, data: enriched, count: enriched.length });
+    }
+
     res.status(200).json({ success: true, data: logs, count: logs.length });
   } catch (e) { res.status(500).json({ success: false, message: e.message }); }
 };
@@ -192,7 +209,12 @@ export const processMidnightAutoLeave = async () => {
   );
 
   // Get all admins
-  const admins = await Admin.find().select("_id name email");
+  const admins = await Admin.find().select("_id name email employeeId");
+
+  // Build a map of admin email → Employee record for employeeId lookup
+  const employees = await Employee.find({}).select("email employeeId");
+  const empIdByEmail = {};
+  employees.forEach(e => { if (e.email) empIdByEmail[e.email.toLowerCase()] = e.employeeId || ""; });
 
   // Who submitted yesterday
   const submitted = await DailyWorkLog.find({
@@ -205,19 +227,22 @@ export const processMidnightAutoLeave = async () => {
 
   for (const admin of admins) {
     if (!submittedIds.has(admin._id.toString())) {
+      // Resolve employee ID: from Admin model first, then Employee model by email
+      const resolvedEmpId = admin.employeeId || empIdByEmail[admin.email?.toLowerCase()] || "";
       await DailyWorkLog.findOneAndUpdate(
         { adminId: admin._id, date: yesterday },
         {
-          adminId:         admin._id,
-          adminName:       admin.name,
-          adminEmail:      admin.email,
-          date:            yesterday,
-          workDescription: "Auto-marked as leave — no work log submitted.",
-          hoursWorked:     0,
-          status:          "auto_leave",
-          isAutoLeave:     true,
-          isLocked:        true,
-          lockedAt:        new Date(),
+          adminId:            admin._id,
+          adminName:          admin.name,
+          adminEmail:         admin.email,
+          adminEmployeeId:    resolvedEmpId,
+          date:               yesterday,
+          workDescription:    "Auto-marked as leave — no work log submitted.",
+          hoursWorked:        0,
+          status:             "auto_leave",
+          isAutoLeave:        true,
+          isLocked:           true,
+          lockedAt:           new Date(),
         },
         { upsert: true, new: true }
       );
