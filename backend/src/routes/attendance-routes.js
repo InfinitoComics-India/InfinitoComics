@@ -51,21 +51,49 @@ router.get("/monthly/:employeeId", adminauthenticate, checkRole(HR_ALL), Attenda
 router.get("/summary", adminauthenticate, checkRole(HR_MANAGE), AttendanceController.getMonthlySummary);
 
 // GET full monthly records all employees ?year=&month=
-router.get("/monthly-all", adminauthenticate, checkRole(HR_MANAGE), async (req, res) => {
+router.get("/monthly-all", adminauthenticate, checkRole(HR_ALL), async (req, res) => {
   try {
     const Attendance = (await import('../models/Attendance.js')).default;
     const Employee   = (await import('../models/Employee.js')).default;
+    const Admin      = (await import('../models/Admin.js')).default;
     const { year, month } = req.query;
     if (!year || !month) return res.status(400).json({ success: false, message: "year and month required." });
     const start = new Date(parseInt(year), parseInt(month) - 1, 1);
     const end   = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
-    const [records, employees] = await Promise.all([
-      Attendance.find({ date: { $gte: start, $lte: end } })
-        .populate("employeeId", "firstName lastName designation department employeeId")
-        .sort({ date: 1 }),
-      Employee.find({ status: "active" }).select("firstName lastName designation department employeeId"),
+
+    // Fetch all attendance records for the month
+    const records = await Attendance.find({ date: { $gte: start, $lte: end } }).sort({ date: 1 });
+
+    // Build unique employeeId set from records
+    const empIds = [...new Set(records.map(r => r.employeeId?.toString()).filter(Boolean))];
+
+    // Try to look up each id in both Employee and Admin models
+    const [empDocs, adminDocs] = await Promise.all([
+      Employee.find({ _id: { $in: empIds } }).select("firstName lastName designation department employeeId"),
+      Admin.find({ _id: { $in: empIds } }).select("name email employeeId designation department"),
     ]);
-    res.status(200).json({ success: true, data: { records, employees } });
+
+    // Build a unified employee map: id → { _id, firstName, lastName, employeeId, designation, department }
+    const empMap = {};
+    empDocs.forEach(e => { empMap[e._id.toString()] = { _id: e._id, firstName: e.firstName, lastName: e.lastName, employeeId: e.employeeId, designation: e.designation, department: e.department }; });
+    adminDocs.forEach(a => {
+      if (!empMap[a._id.toString()]) {
+        const parts = (a.name||"").trim().split(" ");
+        empMap[a._id.toString()] = { _id: a._id, firstName: parts[0]||a.email, lastName: parts.slice(1).join(" ")||"", employeeId: a.employeeId||"", designation: a.designation||"", department: a.department||"" };
+      }
+    });
+
+    // Attach employee info to records + fall back to snapshot
+    const enriched = records.map(r => {
+      const eid  = r.employeeId?.toString();
+      const info = empMap[eid] || { firstName: r.employeeName?.split(" ")[0]||"Unknown", lastName: r.employeeName?.split(" ").slice(1).join(" ")||"", employeeId: r.employeeEmpId||"", designation:"", department:"" };
+      return { ...r.toObject(), _empInfo: info };
+    });
+
+    // Build employee list from empMap (only those who have records this month)
+    const employees = empIds.map(id => empMap[id]).filter(Boolean);
+
+    res.status(200).json({ success: true, data: { records: enriched, employees } });
   } catch (e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
