@@ -41,27 +41,38 @@ const NAV_ITEMS = [
   { label: "Employee Portal", to: "/employee-portal", icon: UserCheck, roles: ["employee"] },
 ];
 
-// ── HR sub-items (shown inside collapsible accordion) ────────
+// ── HR sub-items — ordered by employee lifecycle flow ────────
 const HR_ITEMS = [
-  { label: "Employees", to: "/hr/employees", icon: UserCog, roles: HR_ALL },
-  { label: "Notifications", to: "/hr/notifications", icon: Bell, roles: HR_ALL },
-  { label: "Audit Log", to: "/hr/audit", icon: ScrollText, roles: HR_AUDIT },
-  { label: "Attendance", to: "/hr/attendance", icon: Clock, roles: HR_ALL },
-  { label: "Leaves", to: "/hr/leaves", icon: CalendarOff, roles: HR_ALL },
-  { label: "Calendar", to: "/hr/calendar", icon: CalendarDays, roles: HR_ALL },
-  { label: "Task Board", to: "/hr/tasks", icon: Kanban, roles: HR_ALL },
-  { label: "Work Assignment", to: "/hr/assignments", icon: UserCheck, roles: HR_ALL },
-  { label: "Projects", to: "/hr/projects", icon: FolderKanban, roles: HR_ALL },
-  { label: "Performance", to: "/hr/performance", icon: TrendingUp, roles: HR_ALL },
-  { label: "Goals", to: "/hr/goals", icon: Target, roles: HR_ALL },
-  { label: "Recognition", to: "/hr/recognition", icon: AwardIcon, roles: HR_ALL },
-  { label: "Payroll", to: "/hr/payroll", icon: IndianRupee, roles: HR_ALL },
-  { label: "Onboarding", to: "/hr/onboarding", icon: UserPlus, roles: HR_ALL },
-  { label: "Documents", to: "/hr/documents", icon: FileArchive, roles: HR_ALL },
-  { label: "Recruitment", to: "/hr/recruitment", icon: UserSearch, roles: HR_ALL },
-  { label: "Chat", to: "/hr/chat", icon: MessagesSquare, roles: HR_ALL },
-  { label: "Work Log", to: "/hr/worklog", icon: ClipboardList, roles: HR_ALL },
-  { label: "Self Service", to: "/hr/self-service", icon: LifeBuoy, roles: HR_ALL },
+  // ── People ────────────────────────────────────────────────
+  { label: "Employees",      to: "/hr/employees",   icon: UserCog,      roles: HR_ALL   },
+  { label: "Recruitment",    to: "/hr/recruitment", icon: UserSearch,   roles: HR_ALL   },
+  { label: "Onboarding",     to: "/hr/onboarding",  icon: UserPlus,     roles: HR_ALL   },
+
+  // ── Time & Attendance ─────────────────────────────────────
+  { label: "Attendance",     to: "/hr/attendance",  icon: Clock,        roles: HR_ALL   },
+  { label: "Leaves",         to: "/hr/leaves",      icon: CalendarOff,  roles: HR_ALL   },
+  { label: "Calendar",       to: "/hr/calendar",    icon: CalendarDays, roles: HR_ALL   },
+
+  // ── Work ──────────────────────────────────────────────────
+  { label: "Work Log",       to: "/hr/worklog",     icon: ClipboardList,roles: HR_ALL   },
+  { label: "Work Assignment",to: "/hr/assignments", icon: UserCheck,    roles: HR_ALL   },
+  { label: "Task Board",     to: "/hr/tasks",       icon: Kanban,       roles: HR_ALL   },
+  { label: "Projects",       to: "/hr/projects",    icon: FolderKanban, roles: HR_ALL   },
+
+  // ── Performance ───────────────────────────────────────────
+  { label: "Performance",    to: "/hr/performance", icon: TrendingUp,   roles: HR_ALL   },
+  { label: "Goals",          to: "/hr/goals",       icon: Target,       roles: HR_ALL   },
+  { label: "Recognition",    to: "/hr/recognition", icon: AwardIcon,    roles: HR_ALL   },
+
+  // ── Finance ───────────────────────────────────────────────
+  { label: "Payroll",        to: "/hr/payroll",     icon: IndianRupee,  roles: HR_ALL   },
+
+  // ── Admin ─────────────────────────────────────────────────
+  { label: "Documents",      to: "/hr/documents",   icon: FileArchive,  roles: HR_ALL   },
+  { label: "Self Service",   to: "/hr/self-service",icon: LifeBuoy,     roles: HR_ALL   },
+  { label: "Chat",           to: "/hr/chat",        icon: MessagesSquare,roles: HR_ALL  },
+  { label: "Notifications",  to: "/hr/notifications",icon: Bell,        roles: HR_ALL   },
+  { label: "Audit Log",      to: "/hr/audit",       icon: ScrollText,   roles: HR_AUDIT },
 ];
 
 // ── Shop sub-items (shown inside collapsible accordion) ────────
