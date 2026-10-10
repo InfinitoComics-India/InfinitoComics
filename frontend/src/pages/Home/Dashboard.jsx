@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { removeUser, addUser } from "../../redux/userSlice.js";
+import { updateQuantity, removeFromCart, clearCart } from "../../redux/cartSlice.js";
 import { FaLeaf, FaArrowRight } from "react-icons/fa";
 import { BASE_URL } from "../../utils/constants.js";
 import {
   X, ShieldAlert, Check, Pencil, ShoppingBag, Package, MapPin,
   CreditCard, Clock, Truck, ChevronRight, Download, Eye, RotateCcw,
   Plus, Trash2, Home, Building2, Search, ExternalLink, Sparkles,
-  AlertCircle, CheckCircle2, ArrowLeft, Shuffle
+  AlertCircle, CheckCircle2, ArrowLeft, Shuffle, ShoppingCart, Minus
 } from "lucide-react";
 import comicImg from "../../../assets/Images/captainMarvel.png";
 import { updateUser } from "../../services/userServices.js";
@@ -22,6 +23,8 @@ import {
   deleteSavedAddress,
   setDefaultSavedAddress,
   downloadInvoicePdf,
+  getOrderItemPrice,
+  getOrderTotal,
 } from "../../services/orderService.js";
 
 // ── Character preview (uses saved colors or defaults) ──────────────
@@ -180,9 +183,26 @@ const MyAccountPage = () => {
   const dispatch = useDispatch();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Tab state: 'overview' | 'orders' | 'addresses' | 'subscription'
+  // Tab state: 'overview' | 'orders' | 'addresses' | 'subscription' | 'cart'
   const activeTabParam = searchParams.get("tab") || "overview";
   const [activeTab, setActiveTab] = useState(activeTabParam);
+
+  // Cart Redux state & helpers
+  const cartItems = useSelector((state) => state.cart?.items || []);
+  const cartTotalCount = cartItems.reduce((acc, item) => acc + (item.quantity || 1), 0);
+  const cartSubtotal = cartItems.reduce((acc, item) => {
+    const price = Number(item.product?.salePrice || item.product?.price || item.price || 0);
+    return acc + price * (item.quantity || 1);
+  }, 0);
+
+  const handleProceedToCheckout = () => {
+    if (cartItems.length === 0) return;
+    try {
+      localStorage.setItem("checkout_items", JSON.stringify(cartItems));
+      localStorage.setItem("checkout_mode", "cart");
+    } catch {}
+    navigate("/checkout?mode=cart");
+  };
 
   const [userData, setUserData] = useState({ username: "", email: "", _id: "", characterColors: null });
   const [showDeleteInfo, setShowDeleteInfo] = useState(false);
@@ -213,7 +233,7 @@ const MyAccountPage = () => {
 
   useEffect(() => {
     const tab = searchParams.get("tab");
-    if (tab && ["overview", "orders", "addresses", "subscription"].includes(tab)) {
+    if (tab && ["overview", "orders", "addresses", "subscription", "cart"].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -454,6 +474,19 @@ const MyAccountPage = () => {
                 <p className="text-sm font-bold text-white">{addresses.length}</p>
               </div>
             </div>
+
+            <button
+              onClick={() => handleTabChange("cart")}
+              className="bg-[#1e1e1e] border border-gray-800 hover:border-gray-700 px-4 py-2.5 rounded-lg flex items-center gap-3 transition text-left cursor-pointer"
+            >
+              <div className="w-8 h-8 rounded-full bg-red-950/60 border border-red-800/40 flex items-center justify-center text-[#DD1215]">
+                <ShoppingCart size={16} />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase font-mono tracking-widest text-gray-400">My Cart</p>
+                <p className="text-sm font-bold text-white">{cartTotalCount} {cartTotalCount === 1 ? "Item" : "Items"}</p>
+              </div>
+            </button>
           </div>
         </div>
 
@@ -464,6 +497,7 @@ const MyAccountPage = () => {
             { id: "orders", label: `My Orders (${orders.length})`, icon: Package },
             { id: "addresses", label: `Saved Addresses (${addresses.length})`, icon: MapPin },
             { id: "subscription", label: "Membership & Perks", icon: Sparkles },
+            { id: "cart", label: `My Cart (${cartTotalCount})`, icon: ShoppingCart },
           ].map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -638,9 +672,10 @@ const MyAccountPage = () => {
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-16 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0">
                         <img
-                          src={orders[0].items?.[0]?.product?.image || orders[0].items?.[0]?.product?.images?.[0]?.url || comicImg}
+                          src={orders[0].items?.[0]?.product?.image || (Array.isArray(orders[0].items?.[0]?.product?.images) ? orders[0].items[0].product.images[0]?.url || orders[0].items[0].product.images[0] : null) || orders[0].items?.[0]?.thumbnail || comicImg}
                           alt="Product"
                           className="w-full h-full object-cover"
+                          onError={(e) => { e.currentTarget.src = comicImg; }}
                         />
                       </div>
                       <div>
@@ -659,10 +694,10 @@ const MyAccountPage = () => {
                           </span>
                         </div>
                         <p className="text-sm font-bold text-gray-900 line-clamp-1">
-                          {orders[0].items?.[0]?.product?.title || orders[0].items?.[0]?.product?.name || "INFINITO Merch"}
+                          {orders[0].items?.[0]?.product?.title || orders[0].items?.[0]?.product?.name || orders[0].items?.[0]?.name || "INFINITO Merch"}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {orders[0].items?.length || 1} item(s) • Total: ₹{Number(orders[0].total || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                          {orders[0].items?.length || 1} item(s) • Total: ₹{Number(getOrderTotal(orders[0])).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </p>
                       </div>
                     </div>
@@ -797,7 +832,7 @@ const MyAccountPage = () => {
                           <div>
                             <span className="text-gray-400 uppercase tracking-widest text-[10px] block">Total Amount</span>
                             <span className="font-bold text-gray-900">
-                              ₹{Number(ord.total || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                              ₹{Number(getOrderTotal(ord)).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                             </span>
                           </div>
                           <div>
@@ -825,28 +860,34 @@ const MyAccountPage = () => {
 
                           {/* Items Column (2/3) */}
                           <div className="lg:col-span-2 space-y-4">
-                            {(ord.items || []).map((item, idx) => (
-                              <div key={idx} className="flex items-center gap-4">
-                                <div className="w-16 h-16 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0">
-                                  <img
-                                    src={item.product?.image || item.product?.images?.[0]?.url || comicImg}
-                                    alt={item.product?.name || "Product"}
-                                    className="w-full h-full object-cover"
-                                  />
+                            {(ord.items || []).map((item, idx) => {
+                              const itemPrice = getOrderItemPrice(item);
+                              const itemName = item.product?.title || item.product?.name || item.name || item.title || "INFINITO Merch";
+                              const itemImage = item.product?.image || (Array.isArray(item.product?.images) ? item.product.images[0]?.url || item.product.images[0] : null) || item.thumbnail || comicImg;
+                              return (
+                                <div key={idx} className="flex items-center gap-4">
+                                  <div className="w-16 h-16 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0">
+                                    <img
+                                      src={itemImage}
+                                      alt={itemName}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => { e.currentTarget.src = comicImg; }}
+                                    />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="text-sm font-bold text-gray-900 truncate">
+                                      {itemName}
+                                    </h4>
+                                    <p className="text-xs text-gray-500 mt-0.5">
+                                      Size: <span className="font-semibold text-gray-700">{item.size || item.variant?.size || "Standard"}</span> • Qty: <span className="font-semibold text-gray-700">{item.quantity || 1}</span>
+                                    </p>
+                                    <p className="text-xs font-bold text-gray-900 mt-1">
+                                      ₹{Number(itemPrice).toLocaleString("en-IN")}
+                                    </p>
+                                  </div>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="text-sm font-bold text-gray-900 truncate">
-                                    {item.product?.title || item.product?.name || "INFINITO Merch"}
-                                  </h4>
-                                  <p className="text-xs text-gray-500 mt-0.5">
-                                    Size: <span className="font-semibold text-gray-700">{item.size || "Standard"}</span> • Qty: <span className="font-semibold text-gray-700">{item.quantity || 1}</span>
-                                  </p>
-                                  <p className="text-xs font-bold text-gray-900 mt-1">
-                                    ₹{Number(item.product?.price || 0).toLocaleString("en-IN")}
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
 
                           {/* Actions Column (1/3) */}
@@ -1068,6 +1109,250 @@ const MyAccountPage = () => {
               </div>
             </div>
 
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════
+            TAB 5: MY CART
+        ═══════════════════════════════════════════════════════════ */}
+        {activeTab === "cart" && (
+          <div className="space-y-6">
+            {/* Header info & Cart Actions */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-bold uppercase tracking-wider text-gray-900">
+                    My Shopping Bag
+                  </h2>
+                  <span className="bg-red-50 text-[#DD1215] text-[11px] font-bold px-2 py-0.5 rounded-full border border-red-200">
+                    {cartTotalCount} {cartTotalCount === 1 ? "Item" : "Items"}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Manage the items in your bag, update quantities, or proceed to secure checkout.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {cartItems.length > 0 && (
+                  <button
+                    onClick={() => {
+                      dispatch(clearCart());
+                      toast.success("Bag cleared");
+                    }}
+                    className="text-xs font-bold uppercase tracking-wider text-gray-600 hover:text-red-600 px-3 py-2 border border-gray-200 rounded-lg hover:border-red-200 hover:bg-red-50/50 transition flex items-center gap-1.5"
+                  >
+                    <Trash2 size={13} /> Clear Bag
+                  </button>
+                )}
+                <button
+                  onClick={() => navigate("/cart")}
+                  className="bg-gray-900 hover:bg-black text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition shadow-sm"
+                >
+                  <ExternalLink size={13} /> Open Full Cart Page
+                </button>
+              </div>
+            </div>
+
+            {/* Empty State */}
+            {cartItems.length === 0 ? (
+              <div className="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center flex flex-col items-center">
+                <div className="w-16 h-16 rounded-full bg-red-50 border border-red-100 flex items-center justify-center text-[#DD1215] mb-4">
+                  <ShoppingCart size={28} />
+                </div>
+                <h3 className="text-base font-bold text-gray-900 uppercase tracking-wide mb-1">
+                  Your Cart is Empty
+                </h3>
+                <p className="text-xs text-gray-500 max-w-sm mb-6">
+                  You haven't added any items to your shopping cart yet. Browse our exclusive comics, apparel, and collectibles!
+                </p>
+                <button
+                  onClick={() => navigate("/shop")}
+                  className="bg-[#DD1215] hover:bg-red-700 text-white px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition shadow-md"
+                >
+                  <ShoppingBag size={14} /> Explore Shop Catalog
+                </button>
+              </div>
+            ) : (
+              /* Populated Cart Layout */
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                {/* Left: Items list */}
+                <div className="lg:col-span-2 space-y-4">
+                  {cartItems.map((item, idx) => {
+                    const price = Number(item.product?.salePrice || item.product?.price || item.price || 0);
+                    const originalPrice = Number(item.product?.price || item.price || 0);
+                    const hasDiscount = item.product?.salePrice && originalPrice > price;
+                    const itemTotal = price * (item.quantity || 1);
+                    const thumbnail = item.product?.images?.[0] || item.product?.image || item.image || comicImg;
+
+                    return (
+                      <div
+                        key={`${item.productId}-${item.size || "default"}-${idx}`}
+                        className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm hover:border-gray-300 transition"
+                      >
+                        <div className="flex items-center gap-4 w-full sm:auto">
+                          {/* Image */}
+                          <div className="w-20 h-24 bg-gray-100 rounded-lg overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center">
+                            <img
+                              src={thumbnail}
+                              alt={item.product?.name || item.product?.title || "Item"}
+                              className="w-full h-full object-cover object-center"
+                              onError={(e) => {
+                                e.currentTarget.src = comicImg;
+                              }}
+                            />
+                          </div>
+
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <Link
+                              to={`/shop/${item.product?.slug || item.productId}`}
+                              className="text-sm font-bold text-gray-900 hover:text-[#DD1215] transition line-clamp-1 block uppercase tracking-wide"
+                            >
+                              {item.product?.name || item.product?.title || "Product"}
+                            </Link>
+
+                            <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                              {item.size && (
+                                <span className="text-[11px] font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 uppercase">
+                                  Size: {item.size}
+                                </span>
+                              )}
+                              {item.product?.category && (
+                                <span className="text-[11px] font-medium text-gray-500 bg-gray-50 px-2 py-0.5 rounded border border-gray-100 uppercase">
+                                  {item.product?.category}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-baseline gap-2 mt-2">
+                              <span className="text-sm font-black text-gray-900">
+                                ₹{price.toLocaleString()}
+                              </span>
+                              {hasDiscount && (
+                                <span className="text-xs text-gray-400 line-through">
+                                  ₹{originalPrice.toLocaleString()}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Controls & Line Total */}
+                        <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-100">
+                          {/* Quantity selector */}
+                          <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+                            <button
+                              onClick={() => {
+                                if ((item.quantity || 1) <= 1) {
+                                  dispatch(removeFromCart({ productId: item.productId, size: item.size }));
+                                  toast.success("Removed from bag");
+                                } else {
+                                  dispatch(updateQuantity({ productId: item.productId, size: item.size, quantity: item.quantity - 1 }));
+                                }
+                              }}
+                              className="p-1.5 hover:bg-gray-200 text-gray-600 transition"
+                              title="Decrease quantity"
+                            >
+                              <Minus size={13} />
+                            </button>
+                            <span className="w-8 text-center text-xs font-bold text-gray-900">
+                              {item.quantity || 1}
+                            </span>
+                            <button
+                              onClick={() =>
+                                dispatch(updateQuantity({ productId: item.productId, size: item.size, quantity: (item.quantity || 1) + 1 }))
+                              }
+                              className="p-1.5 hover:bg-gray-200 text-gray-600 transition"
+                              title="Increase quantity"
+                            >
+                              <Plus size={13} />
+                            </button>
+                          </div>
+
+                          {/* Line total */}
+                          <div className="text-right min-w-[70px]">
+                            <p className="text-[10px] uppercase font-mono tracking-wider text-gray-400">Total</p>
+                            <p className="text-sm font-black text-gray-900">₹{itemTotal.toLocaleString()}</p>
+                          </div>
+
+                          {/* Remove button */}
+                          <button
+                            onClick={() => {
+                              dispatch(removeFromCart({ productId: item.productId, size: item.size }));
+                              toast.success("Removed from bag");
+                            }}
+                            className="text-gray-400 hover:text-red-600 p-1.5 rounded-md hover:bg-red-50 transition"
+                            title="Remove item"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Right: Order Summary */}
+                <div className="lg:col-span-1">
+                  <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm space-y-5 sticky top-24">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 font-mono">
+                      Order Summary
+                    </h3>
+
+                    <div className="space-y-3 text-xs border-b border-gray-100 pb-4">
+                      <div className="flex justify-between text-gray-600">
+                        <span>Items Subtotal ({cartTotalCount})</span>
+                        <span className="font-bold text-gray-900">₹{cartSubtotal.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-gray-600">
+                        <span>Estimated Shipping</span>
+                        <span className="font-bold text-emerald-600 uppercase">Free</span>
+                      </div>
+                      <div className="flex justify-between text-gray-600">
+                        <span>Applicable Taxes</span>
+                        <span className="font-bold text-gray-500">Calculated at checkout</span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-baseline pt-1">
+                      <span className="text-sm font-bold uppercase tracking-wider text-gray-900">
+                        Estimated Total
+                      </span>
+                      <span className="text-xl font-black text-gray-900">
+                        ₹{cartSubtotal.toLocaleString()}
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={handleProceedToCheckout}
+                      className="w-full bg-[#DD1215] hover:bg-red-700 text-white py-3.5 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition shadow-md"
+                    >
+                      Proceed to Checkout <FaArrowRight size={12} />
+                    </button>
+
+                    <button
+                      onClick={() => navigate("/cart")}
+                      className="w-full border border-gray-300 hover:bg-gray-50 text-gray-700 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition"
+                    >
+                      <ShoppingCart size={13} /> View Full Cart Page
+                    </button>
+
+                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 text-[11px] text-gray-500 space-y-1.5">
+                      <div className="flex items-center gap-2 font-medium text-gray-700">
+                        <CheckCircle2 size={13} className="text-emerald-500" /> 100% Genuine Merchandise
+                      </div>
+                      <div className="flex items-center gap-2 font-medium text-gray-700">
+                        <CheckCircle2 size={13} className="text-emerald-500" /> Fast Insured Dispatch
+                      </div>
+                      <div className="flex items-center gap-2 font-medium text-gray-700">
+                        <CheckCircle2 size={13} className="text-emerald-500" /> Secure Encryption via Razorpay
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
