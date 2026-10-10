@@ -60,6 +60,7 @@ import directMessageRoutes from './routes/directMessage-routes.js';
 import productRoutes from './routes/product-routes.js';
 import categoryRoutes from './routes/category-routes.js';
 import inventoryRoutes from './routes/inventory-routes.js';
+import adsInquiryRoutes from './routes/adsInquiry-routes.js';
 
 
 const explicitOrigins = [
@@ -169,6 +170,9 @@ app.use('/messages',          directMessageRoutes);
 app.use('/shop/products',     productRoutes);
 app.use('/shop/categories',   categoryRoutes);
 app.use('/shop/inventory',    inventoryRoutes);
+
+// Ads Inquiry routes
+app.use('/api/ads-inquiry',   adsInquiryRoutes);
 
 app.get('/', (req, res) => {
   res.send('Backend is up and running!');

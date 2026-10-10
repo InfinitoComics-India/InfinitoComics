@@ -58,6 +58,8 @@ import OrderDetail       from './Pages/Shop/Orders/OrderDetail.jsx';
 import AnalyticsDashboard from './Pages/Shop/Analytics/AnalyticsDashboard.jsx';
 import MarketingDashboard from './Pages/Shop/Marketing/MarketingDashboard.jsx';
 
+// Ads imports 
+import AdsInquiriesTable from './Pages/InfinitoAds/AdsInquiriesTable.jsx';
 // Role constants
 const SUPER   = ["superadmin"];
 const COMICS  = ["superadmin", "comics_admin"];
@@ -76,6 +78,8 @@ const EMP     = ["employee"];
 // ── Shop Role constants ───────────────────────────────────────
 const SHOP    = ["superadmin", "shop_admin", "admin", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin", "manager", "team_lead"];
 
+//Ads constants
+const ADS = ["superadmin", "ads_admin"];
 function App() {
   const basename = import.meta.env.MODE === 'production' ? '/admin' : '';
   
@@ -326,6 +330,11 @@ function App() {
           <Route path="/shop/marketing/:subTab" element={
             <ProtectedRoute allowedRoles={SHOP}><MarketingDashboard /></ProtectedRoute>
           } />
+
+          {/*Section 5:Ads*/}
+          <Route path="/ads"
+          element={<ProtectedRoute allowedRoles={ADS}><AdsInquiriesTable/></ProtectedRoute>}
+          />
 
         </Route>
       </Routes>
