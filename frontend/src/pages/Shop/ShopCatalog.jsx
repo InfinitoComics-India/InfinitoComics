@@ -116,7 +116,7 @@ const ShopCatalog = () => {
       try {
         channel = new BroadcastChannel("infinito_banners_channel");
         channel.onmessage = () => loadMarketingBanners();
-      } catch (err) {}
+      } catch (err) { }
     }
 
     return () => {
@@ -186,8 +186,8 @@ const ShopCatalog = () => {
         quantity: 1,
         product: {
           id: product._id || product.id || product.slug,
-          name: product.title || product.name || 'INFINITO',
-          title: product.subtitle || product.title || product.name || 'INFINITO',
+          name: product.name || product.title || 'Special Edition Crimson Red T-Shirt',
+          title: product.name || product.title || 'Special Edition Crimson Red T-Shirt',
           price: cleanPrice,
           mrp: cleanMrp,
           image: primaryImg,
@@ -196,7 +196,7 @@ const ShopCatalog = () => {
         },
       })
     );
-    toast.success(`Added ${product.subtitle || product.title || 'item'} to cart!`);
+    toast.success(`Added ${product.name || product.title || 'item'} to cart!`);
   };
 
   const handleCategoryClick = (cat) => {
@@ -222,7 +222,7 @@ const ShopCatalog = () => {
 
   return (
     <div className="w-full bg-white text-black min-h-screen font-sans">
-      
+
       {/* 1. HERO SLIDER CAROUSEL SECTION */}
       <section className="relative w-full bg-[#0a0a0a] text-white overflow-hidden select-none">
         {/* Full Artwork / Visual Slide */}
@@ -241,9 +241,8 @@ const ShopCatalog = () => {
           {currentSlide?.displayMode === "custom_overlay" ? (
             <div className="relative z-10 max-w-[1200px] w-full mx-auto px-4 md:px-12 py-12 flex items-center">
               <div
-                className={`max-w-xl space-y-4 ${
-                  currentSlide.alignment === "right" ? "ml-auto text-right" : "mr-auto text-left"
-                }`}
+                className={`max-w-xl space-y-4 ${currentSlide.alignment === "right" ? "ml-auto text-right" : "mr-auto text-left"
+                  }`}
               >
                 <h1 className="text-3xl md:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-none drop-shadow-md">
                   {currentSlide.headline || "BECOME ONE OF US BECOME INFINITO"}
@@ -308,9 +307,8 @@ const ShopCatalog = () => {
                     e.stopPropagation();
                     setActiveSlide(dot);
                   }}
-                  className={`h-2.5 rounded-full transition-all cursor-pointer ${
-                    activeSlide === dot ? "bg-red-600 w-8" : "bg-white/50 hover:bg-white/80 w-2.5"
-                  }`}
+                  className={`h-2.5 rounded-full transition-all cursor-pointer ${activeSlide === dot ? "bg-red-600 w-8" : "bg-white/50 hover:bg-white/80 w-2.5"
+                    }`}
                   aria-label={`Slide ${dot + 1}`}
                 />
               ))}

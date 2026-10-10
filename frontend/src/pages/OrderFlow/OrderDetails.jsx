@@ -7,6 +7,8 @@ import {
   downloadInvoicePdf,
   getOrderItemPrice,
   getOrderTotal,
+  getOrderItemName,
+  getOrderItemImage,
 } from "../../services/orderService";
 
 const OrderDetails = () => {
@@ -61,12 +63,12 @@ const OrderDetails = () => {
         <div className="space-y-6 mb-10">
           {(order.items && order.items.length > 0 ? order.items : [primaryItem]).map((item, idx) => {
             const prod = item.product || {};
-            const itemPrice = Number(prod.price || prod.salePrice || item.unitPrice || item.price || 1299);
+            const itemPrice = getOrderItemPrice(item);
             const itemMrp = Number(prod.mrp || Math.round(itemPrice * 1.6));
-            const itemSize = item.size || item.variant?.size || "M";
+            const itemSize = item.size || item.variant?.size || "Standard";
             const itemQty = Number(item.quantity || 1);
-            const itemImage = prod.image || (Array.isArray(prod.images) ? prod.images[0]?.url || prod.images[0] : null) || item.thumbnail || "/products/crimson_tshirt.jpg";
-            const itemName = prod.name || prod.title || item.name || "INFINITO Product";
+            const itemImage = getOrderItemImage(item);
+            const itemName = getOrderItemName(item);
             const itemDesc = prod.description || "Official INFINITO Special Edition merchandise crafted with premium materials and signature styling.";
 
             return (
@@ -81,7 +83,8 @@ const OrderDetails = () => {
                     alt={itemName}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      e.target.src = "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80";
+                      e.target.onerror = null;
+                      e.target.src = "/products/crimson_tshirt.jpg";
                     }}
                   />
                 </div>
