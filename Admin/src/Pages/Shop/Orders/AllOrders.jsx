@@ -13,6 +13,7 @@ import {
   printPackingSlip,
   formatOrderDate,
   formatDateTime,
+  resolveCustomerDisplayName,
 } from '../../../services/shopServices/orderService';
 
 const AllOrders = () => {
@@ -98,7 +99,9 @@ const AllOrders = () => {
       const q = searchTerm.toLowerCase().trim();
       result = result.filter((order) => {
         const orderIdMatch = (order.orderId || '').toLowerCase().includes(q) || (order.id || '').toLowerCase().includes(q);
+        const resolvedName = resolveCustomerDisplayName(order.customer, order.shippingAddress, order.orderId);
         const customerMatch =
+          resolvedName.toLowerCase().includes(q) ||
           (order.customer?.name || '').toLowerCase().includes(q) ||
           (order.customer?.email || '').toLowerCase().includes(q) ||
           (order.customer?.phone || '').toLowerCase().includes(q);
@@ -214,7 +217,7 @@ const AllOrders = () => {
     return list.map((o) => ({
       'Order #': o.orderId,
       'Date': formatDateTime(o.createdAt),
-      'Customer Name': o.customer?.name || 'N/A',
+      'Customer Name': resolveCustomerDisplayName(o.customer, o.shippingAddress, o.orderId),
       'Customer Email': o.customer?.email || 'N/A',
       'Customer Phone': o.customer?.phone || 'N/A',
       'Items Count': (o.items || []).reduce((sum, i) => sum + (i.quantity || 1), 0),
@@ -556,7 +559,7 @@ const AllOrders = () => {
                       {/* Customer */}
                       <td className="py-3.5 px-4 max-w-xs">
                         <div className="font-semibold text-gray-900 truncate">
-                          {order.customer?.name || 'Customer'}
+                          {resolveCustomerDisplayName(order.customer, order.shippingAddress, order.orderId)}
                         </div>
                         <div className="text-xs text-gray-400 truncate">
                           {order.customer?.email || 'N/A'}

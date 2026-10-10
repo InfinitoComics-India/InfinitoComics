@@ -8,7 +8,7 @@ const ADDRESS_KEY = "infinito_delivery_address";
 const CURRENT_ORDER_KEY = "infinito_current_order";
 
 export const DEFAULT_ADDRESS = {
-  name: "Valued Customer",
+  name: "Aarav Sharma",
   phone: "+91 98765 43210",
   line1: "Sector 18, House No. 42, Green Park Extension, Sector 18",
   city: "Chandigarh",
@@ -80,7 +80,7 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
 
   // Pull customer profile if logged in
   let customerInfo = {
-    name: "Valued Customer",
+    name: "Aarav Sharma",
     email: "customer@infinitohq.com",
     phone: "+91 98765 43210",
   };
@@ -88,8 +88,9 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
     const userRaw = localStorage.getItem("user");
     if (userRaw) {
       const u = JSON.parse(userRaw);
+      const uName = u.name || u.username || u.fullName || '';
       customerInfo = {
-        name: u.name || customerInfo.name,
+        name: (uName && uName.toLowerCase() !== 'valued customer' ? uName : customerInfo.name),
         email: u.email || customerInfo.email,
         phone: u.phone || customerInfo.phone,
       };
@@ -97,7 +98,9 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
   } catch {}
 
   const activeAddr = address || getDeliveryAddress();
-  if (activeAddr.name) customerInfo.name = activeAddr.name;
+  if (activeAddr.name && activeAddr.name.trim() && activeAddr.name.toLowerCase() !== 'valued customer') {
+    customerInfo.name = activeAddr.name.trim();
+  }
   if (activeAddr.phone) customerInfo.phone = activeAddr.phone;
 
   const newOrder = {

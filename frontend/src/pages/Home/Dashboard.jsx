@@ -12,7 +12,6 @@ import {
   Plus, Trash2, Home, Building2, Search, ExternalLink, Sparkles,
   AlertCircle, CheckCircle2, ArrowLeft, Shuffle, ShoppingCart, Minus
 } from "lucide-react";
-import comicImg from "../../../assets/Images/captainMarvel.png";
 import { updateUser } from "../../services/userServices.js";
 import toast, { Toaster } from "react-hot-toast";
 import {
@@ -25,6 +24,8 @@ import {
   downloadInvoicePdf,
   getOrderItemPrice,
   getOrderTotal,
+  getOrderItemName,
+  getOrderItemImage,
 } from "../../services/orderService.js";
 
 // ── Character preview (uses saved colors or defaults) ──────────────
@@ -649,73 +650,97 @@ const MyAccountPage = () => {
                 </div>
               )}
 
-              {/* 2. Recent Active Order Card */}
+              {/* 2. Recent Active Orders Card (Showing up to 5 recent orders) */}
               {orders.length > 0 ? (
                 <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                  <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-5">
+                  <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-4">
                     <div className="flex items-center gap-2">
                       <Package size={18} className="text-[#DD1215]" />
                       <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800">
-                        Most Recent Order ({orders[0].orderId || `#${orders[0].id}`})
+                        Recent Orders ({Math.min(orders.length, 5)} of {orders.length})
                       </h2>
                     </div>
                     <button
                       onClick={() => handleTabChange("orders")}
-                      className="text-xs font-bold text-[#DD1215] hover:underline flex items-center gap-1"
+                      className="text-xs font-bold text-[#DD1215] hover:underline flex items-center gap-1 cursor-pointer"
                     >
                       View All Orders ({orders.length}) <ChevronRight size={14} />
                     </button>
                   </div>
 
-                  {/* Order Preview Content */}
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0">
-                        <img
-                          src={orders[0].items?.[0]?.product?.image || (Array.isArray(orders[0].items?.[0]?.product?.images) ? orders[0].items[0].product.images[0]?.url || orders[0].items[0].product.images[0] : null) || orders[0].items?.[0]?.thumbnail || comicImg}
-                          alt="Product"
-                          className="w-full h-full object-cover"
-                          onError={(e) => { e.currentTarget.src = comicImg; }}
-                        />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          {(() => {
-                            const badge = getStatusBadge(orders[0].status);
-                            return (
-                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${badge.bg}`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`}></span>
-                                {badge.label}
-                              </span>
-                            );
-                          })()}
-                          <span className="text-xs text-gray-400">
-                            {orders[0].createdAt ? new Date(orders[0].createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" }) : ""}
-                          </span>
-                        </div>
-                        <p className="text-sm font-bold text-gray-900 line-clamp-1">
-                          {orders[0].items?.[0]?.product?.title || orders[0].items?.[0]?.product?.name || orders[0].items?.[0]?.name || "INFINITO Merch"}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {orders[0].items?.length || 1} item(s) • Total: ₹{Number(getOrderTotal(orders[0])).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                        </p>
-                      </div>
-                    </div>
+                  {/* List of Recent Orders (up to 5) */}
+                  <div className="divide-y divide-gray-100">
+                    {orders.slice(0, 5).map((ord, oIdx) => {
+                      const firstItem = ord.items?.[0];
+                      const badge = getStatusBadge(ord.status);
+                      const totalAmt = getOrderTotal(ord);
+                      const itemName = getOrderItemName(firstItem);
+                      const itemImg = getOrderItemImage(firstItem);
+                      const totalItemsCount = (ord.items || []).reduce((sum, it) => sum + (it.quantity || 1), 0);
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => navigate(`/order-details/${orders[0].id || orders[0].orderId}`)}
-                        className="px-4 py-2 border border-gray-300 text-gray-800 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-gray-50 transition"
-                      >
-                        Details
-                      </button>
-                      <button
-                        onClick={() => downloadInvoicePdf(orders[0])}
-                        className="px-4 py-2 bg-gray-900 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-black transition flex items-center gap-1.5"
-                      >
-                        <Download size={13} /> Invoice
-                      </button>
-                    </div>
+                      return (
+                        <div
+                          key={ord.id || ord.orderId || oIdx}
+                          className={`flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                            oIdx === 0 ? "pb-4" : "py-4"
+                          }`}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-16 h-16 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0">
+                              <img
+                                src={itemImg}
+                                alt={itemName}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.onerror = null;
+                                  e.currentTarget.src = "/products/crimson_tshirt.jpg";
+                                }}
+                              />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${badge.bg}`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`}></span>
+                                  {badge.label}
+                                </span>
+                                <span className="font-mono text-xs font-bold text-gray-500">
+                                  {ord.orderId || `#${ord.id}`}
+                                </span>
+                                <span className="text-xs text-gray-400">
+                                  • {ord.createdAt ? new Date(ord.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" }) : ""}
+                                </span>
+                              </div>
+                              <p className="text-sm font-bold text-gray-900 line-clamp-1">
+                                {itemName}
+                                {ord.items?.length > 1 && (
+                                  <span className="text-xs font-normal text-gray-500 ml-1">
+                                    +{ord.items.length - 1} more
+                                  </span>
+                                )}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                {totalItemsCount} item(s) • Total: <span className="font-bold text-gray-900">₹{Number(totalAmt).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
+                            <button
+                              onClick={() => navigate(`/order-details/${ord.id || ord.orderId}`)}
+                              className="px-3.5 py-1.5 border border-gray-300 text-gray-800 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-gray-50 transition cursor-pointer"
+                            >
+                              Details
+                            </button>
+                            <button
+                              onClick={() => downloadInvoicePdf(ord)}
+                              className="px-3.5 py-1.5 bg-gray-900 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-black transition flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <Download size={13} /> Invoice
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               ) : (
@@ -862,8 +887,8 @@ const MyAccountPage = () => {
                           <div className="lg:col-span-2 space-y-4">
                             {(ord.items || []).map((item, idx) => {
                               const itemPrice = getOrderItemPrice(item);
-                              const itemName = item.product?.title || item.product?.name || item.name || item.title || "INFINITO Merch";
-                              const itemImage = item.product?.image || (Array.isArray(item.product?.images) ? item.product.images[0]?.url || item.product.images[0] : null) || item.thumbnail || comicImg;
+                              const itemName = getOrderItemName(item);
+                              const itemImage = getOrderItemImage(item);
                               return (
                                 <div key={idx} className="flex items-center gap-4">
                                   <div className="w-16 h-16 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0">
@@ -871,7 +896,10 @@ const MyAccountPage = () => {
                                       src={itemImage}
                                       alt={itemName}
                                       className="w-full h-full object-cover"
-                                      onError={(e) => { e.currentTarget.src = comicImg; }}
+                                      onError={(e) => {
+                                        e.currentTarget.onerror = null;
+                                        e.currentTarget.src = "/products/crimson_tshirt.jpg";
+                                      }}
                                     />
                                   </div>
                                   <div className="flex-1 min-w-0">
@@ -1183,7 +1211,8 @@ const MyAccountPage = () => {
                     const originalPrice = Number(item.product?.price || item.price || 0);
                     const hasDiscount = item.product?.salePrice && originalPrice > price;
                     const itemTotal = price * (item.quantity || 1);
-                    const thumbnail = item.product?.images?.[0] || item.product?.image || item.image || comicImg;
+                    const thumbnail = getOrderItemImage(item);
+                    const itemName = getOrderItemName(item);
 
                     return (
                       <div
@@ -1195,10 +1224,11 @@ const MyAccountPage = () => {
                           <div className="w-20 h-24 bg-gray-100 rounded-lg overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center">
                             <img
                               src={thumbnail}
-                              alt={item.product?.name || item.product?.title || "Item"}
+                              alt={itemName}
                               className="w-full h-full object-cover object-center"
                               onError={(e) => {
-                                e.currentTarget.src = comicImg;
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = "/products/crimson_tshirt.jpg";
                               }}
                             />
                           </div>

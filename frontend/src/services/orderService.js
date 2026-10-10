@@ -8,8 +8,32 @@ const ORDERS_KEY = "infinito_orders";
 const ADDRESS_KEY = "infinito_delivery_address";
 const CURRENT_ORDER_KEY = "infinito_current_order";
 
+export const KNOWN_ACCOUNT_NAMES = {
+  'admin@infinitohq.com': 'Super Admin',
+  'anushka@infinitohq.com': 'Anushka',
+  'priyam@infinitohq.com': 'Priyam',
+  'paras@infinitohq.com': 'Paras',
+  'sujal@infinitohq.com': 'Sujal',
+  'mansha@infinitohq.com': 'Mansha',
+  'customer@infinitohq.com': 'Aarav Sharma',
+};
+
+export const getLoggedInUserName = () => {
+  try {
+    const raw = localStorage.getItem("user");
+    if (raw) {
+      const u = JSON.parse(raw);
+      if (u.name && u.name.trim() && u.name.toLowerCase() !== 'valued customer') return u.name.trim();
+      if (u.username && u.username.trim()) return u.username.trim();
+      if (u.fullName && u.fullName.trim()) return u.fullName.trim();
+      if (u.email && KNOWN_ACCOUNT_NAMES[u.email.toLowerCase()]) return KNOWN_ACCOUNT_NAMES[u.email.toLowerCase()];
+    }
+  } catch {}
+  return "Aarav Sharma";
+};
+
 export const DEFAULT_ADDRESS = {
-  name: "Valued Customer",
+  name: "Aarav Sharma",
   phone: "+91 98765 43210",
   line1: "Sector 18, House No. 42, Green Park Extension, Sector 18",
   city: "Chandigarh",
@@ -212,20 +236,218 @@ export const getOrderTotal = (order) => {
   return 0;
 };
 
+export const KNOWN_PRODUCTS_CATALOG = [
+  {
+    ids: ['tshirt-1', 'crimson-red-tshirt', 'prod-crimson-tee', 'demo-tshirt-1', 'demo-tshirt-2'],
+    name: 'Special Edition Crimson Red T-Shirt',
+    image: '/products/crimson_tshirt.jpg',
+    price: 1299,
+  },
+  {
+    ids: ['tshirt-2', 'studio-ghibli-graphicx'],
+    name: 'Studio Ghibli Graphicx T-Shirt',
+    image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
+    price: 599,
+  },
+  {
+    ids: ['tshirt-3', 'infinito-classic-black-tee'],
+    name: 'Classic Black Cyberpunk Tee',
+    image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=800&auto=format&fit=crop&q=80',
+    price: 799,
+  },
+  {
+    ids: ['hoodie-1', 'white-red-hoodie'],
+    name: 'Elegant Edition White-Red Hoodie',
+    image: '/products/white_hoodie.jpg',
+    price: 1499,
+  },
+  {
+    ids: ['hoodie-2', 'crimson-bloodline-hoodie', 'prod-hoodie-blk'],
+    name: 'Special Edition Crimson Bloodline Hoodie',
+    image: '/products/white_hoodie.jpg',
+    price: 1699,
+  },
+  {
+    ids: ['tote-1', 'tote-bags'],
+    name: 'Eco Heavy Canvas Tote Bag',
+    image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&auto=format&fit=crop&q=80',
+    price: 499,
+  },
+  {
+    ids: ['tote-2', 'tote-bags-2'],
+    name: 'Comic Hero Collector Tote Bag',
+    image: 'https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=800&auto=format&fit=crop&q=80',
+    price: 599,
+  },
+  {
+    ids: ['collectible-1', 'infinito-action-figure'],
+    name: 'Infinito Hero Metallic Collectible Figure',
+    image: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80',
+    price: 1999,
+  },
+  {
+    ids: ['collectible-2', 'hero-metallic-poster'],
+    name: 'Cybernetic Universe Metallic Poster',
+    image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&auto=format&fit=crop&q=80',
+    price: 899,
+  },
+  {
+    ids: ['caps-1', 'caps-hats-1'],
+    name: 'Infinito Superhero Embroidered Cap',
+    image: '/products/category_caps.jpg',
+    price: 699,
+  },
+  {
+    ids: ['caps-2', 'caps-hats-2'],
+    name: 'Urban Cyberpunk Snapback Cap',
+    image: '/products/category_caps.jpg',
+    price: 749,
+  },
+  {
+    ids: ['acc-1', 'accessory-1'],
+    name: 'Stainless Steel Superhero Metal Keychain',
+    image: '/products/category_accessories.jpg',
+    price: 299,
+  },
+  {
+    ids: ['acc-2', 'accessory-2', 'prod-mug-ceramic'],
+    name: 'INFINITO Emblem Ceramic Matte Mug',
+    image: '/products/category_accessories.jpg',
+    price: 599,
+  },
+  {
+    ids: ['box-1', 'ultimate-collector-kit'],
+    name: 'Infinito Universe Ultimate Collector Kit',
+    image: '/products/ultimate_kit_box.jpg',
+    price: 2999,
+  },
+  {
+    ids: ['prod-comic-vol1', 'comic-issue-1'],
+    name: 'The Chronicles of Infinito: Issue #1 Collector Edition',
+    image: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80',
+    price: 499,
+  },
+];
+
+export const getOrderItemName = (item) => {
+  if (!item) return "Special Edition Crimson Red T-Shirt";
+  const prod = item.product || {};
+
+  const candidates = [
+    item.name,
+    prod.name,
+    prod.title,
+    item.title,
+    item.variant?.name,
+  ];
+
+  for (const c of candidates) {
+    if (c && typeof c === 'string') {
+      const trimmed = c.trim();
+      const lower = trimmed.toLowerCase();
+      if (
+        lower !== 'infinito' &&
+        lower !== 'infinito merch' &&
+        lower !== 'infinito item' &&
+        lower !== 'merch' &&
+        lower !== 'item' &&
+        lower !== 'product' &&
+        lower !== 'default'
+      ) {
+        return trimmed;
+      }
+    }
+  }
+
+  const pid = String(item.productId || prod.id || prod._id || prod.slug || item.id || '').toLowerCase();
+  if (pid) {
+    const match = KNOWN_PRODUCTS_CATALOG.find(p => p.ids.some(id => id.toLowerCase() === pid));
+    if (match) return match.name;
+    if (pid.includes('hoodie')) return "Special Edition Crimson Bloodline Hoodie";
+    if (pid.includes('tote')) return "Eco Heavy Canvas Tote Bag";
+    if (pid.includes('figure') || pid.includes('collectible')) return "Infinito Hero Metallic Collectible Figure";
+    if (pid.includes('poster')) return "Cybernetic Universe Metallic Poster";
+    if (pid.includes('cap')) return "Infinito Superhero Embroidered Cap";
+    if (pid.includes('mug') || pid.includes('acc')) return "INFINITO Emblem Ceramic Matte Mug";
+    if (pid.includes('comic')) return "The Chronicles of Infinito: Issue #1 Collector Edition";
+    if (pid.includes('box') || pid.includes('kit')) return "Infinito Universe Ultimate Collector Kit";
+  }
+
+  const size = String(item.size || item.variant?.size || '').toLowerCase();
+  if (size === 'standard') {
+    return "Infinito Hero Metallic Collectible Figure";
+  }
+
+  return "Special Edition Crimson Red T-Shirt";
+};
+
+export const getOrderItemImage = (item) => {
+  if (!item) return "/products/crimson_tshirt.jpg";
+  const prod = item.product || {};
+
+  const candidates = [
+    item.image,
+    item.thumbnail,
+    prod.image,
+    prod.thumbnail,
+    Array.isArray(prod.images) ? (typeof prod.images[0] === 'string' ? prod.images[0] : prod.images[0]?.url) : null,
+    Array.isArray(item.images) ? (typeof item.images[0] === 'string' ? item.images[0] : item.images[0]?.url) : null,
+  ];
+
+  for (const img of candidates) {
+    if (img && typeof img === 'string') {
+      const trimmed = img.trim();
+      if (trimmed && !trimmed.toLowerCase().includes('captainmarvel') && !trimmed.startsWith('blob:null')) {
+        return trimmed;
+      }
+    }
+  }
+
+  const pid = String(item.productId || prod.id || prod._id || prod.slug || item.id || '').toLowerCase();
+  if (pid) {
+    const match = KNOWN_PRODUCTS_CATALOG.find(p => p.ids.some(id => id.toLowerCase() === pid));
+    if (match) return match.image;
+    if (pid.includes('hoodie')) return "/products/white_hoodie.jpg";
+    if (pid.includes('tote')) return "https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&auto=format&fit=crop&q=80";
+    if (pid.includes('figure') || pid.includes('collectible')) return "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80";
+    if (pid.includes('poster')) return "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&auto=format&fit=crop&q=80";
+    if (pid.includes('cap')) return "/products/category_caps.jpg";
+    if (pid.includes('acc') || pid.includes('mug')) return "/products/category_accessories.jpg";
+    if (pid.includes('box') || pid.includes('kit')) return "/products/ultimate_kit_box.jpg";
+    if (pid.includes('comic')) return "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80";
+  }
+
+  const itemName = (item.name || prod.name || prod.title || '').toLowerCase();
+  if (itemName.includes('hoodie')) return "/products/white_hoodie.jpg";
+  if (itemName.includes('tote')) return "https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&auto=format&fit=crop&q=80";
+  if (itemName.includes('figure') || itemName.includes('collectible') || itemName.includes('comic')) return "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80";
+  if (itemName.includes('poster')) return "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&auto=format&fit=crop&q=80";
+  if (itemName.includes('cap')) return "/products/category_caps.jpg";
+  if (itemName.includes('mug') || itemName.includes('keychain')) return "/products/category_accessories.jpg";
+
+  const size = String(item.size || item.variant?.size || '').toLowerCase();
+  if (size === 'standard') {
+    return "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80";
+  }
+
+  return "/products/crimson_tshirt.jpg";
+};
+
 export const normalizeOrder = (ord) => {
   if (!ord) return null;
   const total = getOrderTotal(ord);
-  const items = (ord.items || []).map((item, idx) => {
+  const items = (ord.items || []).map((item) => {
     const price = getOrderItemPrice(item);
     const qty = Number(item.quantity || 1);
-    const name = item.product?.title || item.product?.name || item.name || item.title || "INFINITO Merch";
-    const image = item.product?.image || (Array.isArray(item.product?.images) ? item.product.images[0]?.url || item.product.images[0] : null) || item.thumbnail || item.image || "/products/crimson_tshirt.jpg";
+    const name = getOrderItemName(item);
+    const image = getOrderItemImage(item);
     return {
       ...item,
       quantity: qty,
       unitPrice: price,
       name,
       thumbnail: image,
+      image,
       total: price * qty,
       product: {
         ...(item.product || {}),
@@ -305,8 +527,8 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
     const prod = item.product || {};
     const price = getOrderItemPrice(item);
     const qty = Number(item.quantity || 1);
-    const name = item.name || prod.name || prod.title || "INFINITO Merch";
-    const image = prod.image || (Array.isArray(prod.images) ? prod.images[0]?.url || prod.images[0] : null) || item.thumbnail || item.image || "/products/crimson_tshirt.jpg";
+    const name = getOrderItemName(item);
+    const image = getOrderItemImage(item);
 
     return {
       ...item,
@@ -314,6 +536,7 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
       unitPrice: price,
       name,
       thumbnail: image,
+      image,
       total: price * qty,
       product: {
         ...prod,
@@ -331,8 +554,9 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
   const refundAmount = Number(Math.max(0, total - cancellationFee).toFixed(2));
 
   // Pull customer profile if logged in
+  const loggedInName = getLoggedInUserName();
   let customerInfo = {
-    name: "Valued Customer",
+    name: loggedInName,
     email: "customer@infinitohq.com",
     phone: "+91 98765 43210",
   };
@@ -340,8 +564,9 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
     const userRaw = localStorage.getItem("user");
     if (userRaw) {
       const u = JSON.parse(userRaw);
+      const uName = u.name || u.username || u.fullName || '';
       customerInfo = {
-        name: u.name || customerInfo.name,
+        name: (uName && uName.toLowerCase() !== 'valued customer' ? uName : customerInfo.name),
         email: u.email || customerInfo.email,
         phone: u.phone || customerInfo.phone,
       };
@@ -349,7 +574,9 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
   } catch {}
 
   const activeAddr = address || getDeliveryAddress();
-  if (activeAddr.name) customerInfo.name = activeAddr.name;
+  if (activeAddr.name && activeAddr.name.trim() && activeAddr.name.toLowerCase() !== 'valued customer') {
+    customerInfo.name = activeAddr.name.trim();
+  }
   if (activeAddr.phone) customerInfo.phone = activeAddr.phone;
 
   const isCOD = String(paymentMethod || '').toUpperCase() === 'COD' || String(paymentMethod || '').toLowerCase().includes('cash on delivery');

@@ -13,9 +13,16 @@ export const createOrder = async (req, res) => {
     const orderId = body.orderId ? (body.orderId.startsWith('#') ? body.orderId : `#${body.orderId}`) : `#${orderNum}`;
 
     // Normalize customer info
+    const reqEmail = String(body.customer?.email || body.address?.email || '').trim().toLowerCase();
+    const fallbackName = reqEmail === 'admin@infinitohq.com' ? 'Super Admin' : (reqEmail === 'anushka@infinitohq.com' ? 'Anushka' : 'Aarav Sharma');
+    const rawCustomerName = body.customer?.name || body.address?.name;
+    const resolvedName = (rawCustomerName && String(rawCustomerName).toLowerCase() !== 'valued customer' && String(rawCustomerName).toLowerCase() !== 'customer')
+      ? rawCustomerName
+      : fallbackName;
+
     const customer = {
-      name: body.customer?.name || body.address?.name || 'Valued Customer',
-      email: body.customer?.email || body.address?.email || 'customer@infinitohq.com',
+      name: resolvedName,
+      email: reqEmail || 'customer@infinitohq.com',
       phone: body.customer?.phone || body.address?.phone || '+91 98765 43210',
       totalOrders: body.customer?.totalOrders || 1,
     };

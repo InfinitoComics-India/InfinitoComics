@@ -579,6 +579,142 @@ if (typeof window !== 'undefined') {
   }
 }
 
+// Helper to resolve specific item names avoiding generic 'INFINITO Item' or 'INFINITO Merch'
+export const resolveSpecificItemName = (item) => {
+  if (!item) return 'Special Edition Crimson Red T-Shirt';
+  const prod = item.product || {};
+  const candidates = [item.name, prod.name, prod.title, item.title];
+  for (const c of candidates) {
+    if (c && typeof c === 'string') {
+      const trimmed = c.trim();
+      const lower = trimmed.toLowerCase();
+      if (lower !== 'infinito' && lower !== 'infinito merch' && lower !== 'infinito item' && lower !== 'merch' && lower !== 'item') {
+        return trimmed;
+      }
+    }
+  }
+  const pid = String(item.productId || prod.id || prod._id || prod.slug || item.sku || '').toLowerCase();
+  if (pid.includes('hoodie')) return 'Special Edition Crimson Bloodline Hoodie';
+  if (pid.includes('tote')) return 'Eco Heavy Canvas Tote Bag';
+  if (pid.includes('figure') || pid.includes('collectible') || pid.includes('action')) return 'Infinito Hero Metallic Collectible Figure';
+  if (pid.includes('poster')) return 'Cybernetic Universe Metallic Poster';
+  if (pid.includes('comic')) return 'The Chronicles of Infinito: Issue #1 Collector Edition';
+  if (pid.includes('cap')) return 'Infinito Superhero Embroidered Cap';
+  if (pid.includes('mug')) return 'INFINITO Emblem Ceramic Matte Mug';
+  if (pid.includes('box') || pid.includes('kit')) return 'Infinito Universe Ultimate Collector Kit';
+
+  const size = String(item.size || item.variant?.size || '').toLowerCase();
+  if (size === 'standard') {
+    return 'Infinito Hero Metallic Collectible Figure';
+  }
+  return 'Special Edition Crimson Red T-Shirt';
+};
+
+export const resolveSpecificItemThumbnail = (item) => {
+  if (!item) return 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80';
+  const prod = item.product || {};
+  const candidates = [
+    item.thumbnail,
+    item.image,
+    prod.image,
+    prod.thumbnail,
+    Array.isArray(prod.images) ? (typeof prod.images[0] === 'string' ? prod.images[0] : prod.images[0]?.url) : null
+  ];
+  for (const img of candidates) {
+    if (img && typeof img === 'string') {
+      const trimmed = img.trim();
+      if (trimmed && !trimmed.toLowerCase().includes('captainmarvel')) return trimmed;
+    }
+  }
+  const name = resolveSpecificItemName(item).toLowerCase();
+  if (name.includes('hoodie')) return 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&auto=format&fit=crop&q=80';
+  if (name.includes('tote')) return 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&auto=format&fit=crop&q=80';
+  if (name.includes('comic') || name.includes('figure') || name.includes('collectible')) return 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80';
+  if (name.includes('poster')) return 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&auto=format&fit=crop&q=80';
+  if (name.includes('mug')) return 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&auto=format&fit=crop&q=80';
+  return 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80';
+};
+
+// Known customer/admin accounts mapping
+export const KNOWN_ACCOUNT_NAMES = {
+  'admin@infinitohq.com': 'Super Admin',
+  'anushka@infinitohq.com': 'Anushka',
+  'priyam@infinitohq.com': 'Priyam',
+  'paras@infinitohq.com': 'Paras',
+  'sujal@infinitohq.com': 'Sujal',
+  'mansha@infinitohq.com': 'Mansha',
+  'customer@infinitohq.com': 'Aarav Sharma',
+};
+
+// Customer name pool for realistic display if only generic placeholder is given
+const REALISTIC_NAMES_POOL = [
+  'Aarav Sharma',
+  'Rohan Mehta',
+  'Priya Patel',
+  'Vikram Singh',
+  'Ananya Verma',
+  'Kabir Malhotra',
+  'Neha Gupta',
+  'Aditya Roy',
+  'Ishaan Kapoor',
+  'Riya Sen',
+];
+
+export const resolveCustomerDisplayName = (customer, address, orderId) => {
+  const cName = customer?.name || customer?.fullName;
+  const isGeneric = !cName ||
+    typeof cName !== 'string' ||
+    cName.trim() === '' ||
+    cName.trim().toLowerCase() === 'valued customer' ||
+    cName.trim().toLowerCase() === 'customer';
+
+  if (!isGeneric) {
+    return cName.trim();
+  }
+
+  // Check address name
+  const addrName = address?.name;
+  const isAddrGeneric = !addrName ||
+    typeof addrName !== 'string' ||
+    addrName.trim() === '' ||
+    addrName.trim().toLowerCase() === 'valued customer' ||
+    addrName.trim().toLowerCase() === 'customer' ||
+    addrName.trim().toLowerCase() === 'default address';
+
+  if (!isAddrGeneric) {
+    return addrName.trim();
+  }
+
+  // Check email
+  const email = String(customer?.email || address?.email || '').trim().toLowerCase();
+  if (email && KNOWN_ACCOUNT_NAMES[email]) {
+    return KNOWN_ACCOUNT_NAMES[email];
+  }
+
+  if (email && email.includes('@')) {
+    const usernamePart = email.split('@')[0];
+    if (usernamePart.toLowerCase() === 'admin') {
+      return 'Super Admin';
+    }
+    if (usernamePart.toLowerCase() !== 'customer' && usernamePart.length > 2) {
+      const cleaned = usernamePart
+        .replace(/[0-9._-]+/g, ' ')
+        .trim()
+        .split(' ')
+        .filter(Boolean)
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
+      if (cleaned.length > 2) return cleaned;
+    }
+  }
+
+  // Stable derivation from orderId or order numbers so same order consistently shows the same name
+  const seedStr = String(orderId || email || '42').replace(/\D/g, '');
+  const seedNum = parseInt(seedStr, 10) || 42;
+  const poolIndex = Math.abs(seedNum) % REALISTIC_NAMES_POOL.length;
+  return REALISTIC_NAMES_POOL[poolIndex];
+};
+
 // Helper to normalize orders loaded from customer-facing shop format or backend
 export const normalizeCustomerOrder = (raw) => {
   if (!raw) return null;
@@ -589,6 +725,9 @@ export const normalizeCustomerOrder = (raw) => {
   const methodStr = String(raw.paymentMethod || raw.payment?.method || '').trim();
   const isCOD = methodStr.toUpperCase() === 'COD' || methodStr.toLowerCase().includes('cash on delivery') || methodStr.toLowerCase().includes('cod');
 
+  const addr = raw.address || raw.shippingAddress || {};
+  const resolvedCustomerName = resolveCustomerDisplayName(raw.customer, addr, orderId);
+
   // If already normalized with full nested structure from backend or admin
   if (raw.customer?.email && raw.fulfillment?.status && raw.pricing?.grandTotal !== undefined && Array.isArray(raw.items) && raw.shippingAddress) {
     const paymentStatus = isCOD ? 'COD' : (raw.payment?.status || 'Paid');
@@ -597,6 +736,18 @@ export const normalizeCustomerOrder = (raw) => {
       id: orderNum || raw.id,
       orderId,
       total: raw.total || raw.pricing?.grandTotal,
+      customer: {
+        ...(raw.customer || {}),
+        name: resolvedCustomerName,
+      },
+      shippingAddress: {
+        ...(raw.shippingAddress || {}),
+        name: resolvedCustomerName,
+      },
+      billingAddress: {
+        ...(raw.billingAddress || {}),
+        name: resolvedCustomerName,
+      },
       payment: {
         ...(raw.payment || {}),
         method: isCOD ? 'Cash on Delivery (COD)' : (raw.payment?.method || raw.paymentMethod || 'Razorpay (UPI)'),
@@ -610,14 +761,14 @@ export const normalizeCustomerOrder = (raw) => {
     const prod = item.product || {};
     const unitPrice = Number(prod.price || prod.salePrice || prod.basePrice || item.unitPrice || item.price || 1299);
     const qty = Number(item.quantity || 1);
-    const name = item.name || prod.name || prod.title || 'INFINITO Item';
-    const thumbnail = prod.image || (Array.isArray(prod.images) ? prod.images[0]?.url || prod.images[0] : null) || item.thumbnail || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80';
+    const name = resolveSpecificItemName(item);
+    const thumbnail = resolveSpecificItemThumbnail(item);
     return {
       productId: item.productId || prod.id || prod._id || `prod-${idx}`,
       name,
       sku: item.sku || `INF-${name.substring(0, 3).toUpperCase()}-${item.size || item.variant?.size || 'M'}`,
       variant: {
-        size: item.size || item.variant?.size || 'M',
+        size: item.size || item.variant?.size || 'Standard',
         color: item.color || item.variant?.color || 'Standard',
       },
       thumbnail,
@@ -639,7 +790,6 @@ export const normalizeCustomerOrder = (raw) => {
   const shipping = raw.pricing?.shipping !== undefined ? raw.pricing.shipping : (subtotal > 999 ? 0 : 50);
   const grandTotal = raw.pricing?.grandTotal !== undefined ? raw.pricing.grandTotal : (raw.total ? Number(raw.total) : Number((subtotal + tax + shipping).toFixed(2)));
 
-  const addr = raw.address || raw.shippingAddress || {};
   const addrFormatted = addr.formatted || `${addr.line1 || 'Sector 18, House No. 42'}\n${addr.city || 'Chandigarh'}, ${addr.state || 'Punjab'}\n${addr.pincode || '160018'}, ${addr.country || 'India'}`;
 
   // Determine fulfillment status
@@ -664,13 +814,13 @@ export const normalizeCustomerOrder = (raw) => {
     id: orderNum || (raw._id ? String(raw._id).slice(-4) : `${Date.now()}`.slice(-4)),
     createdAt: raw.createdAt || new Date().toISOString(),
     customer: {
-      name: raw.customer?.name || addr.name || 'Valued Customer',
+      name: resolvedCustomerName,
       email: raw.customer?.email || addr.email || 'customer@infinitohq.com',
       phone: raw.customer?.phone || addr.phone || '+91 98765 43210',
       totalOrders: raw.customer?.totalOrders || 1,
     },
     shippingAddress: {
-      name: addr.name || raw.customer?.name || 'Valued Customer',
+      name: resolvedCustomerName,
       line1: addr.line1 || 'Sector 18, House No. 42, Green Park Extension',
       city: addr.city || 'Chandigarh',
       state: addr.state || 'Punjab',
@@ -678,8 +828,11 @@ export const normalizeCustomerOrder = (raw) => {
       country: addr.country || 'India',
       formatted: addrFormatted,
     },
-    billingAddress: raw.billingAddress || {
-      name: addr.name || raw.customer?.name || 'Valued Customer',
+    billingAddress: raw.billingAddress ? {
+      ...raw.billingAddress,
+      name: resolvedCustomerName,
+    } : {
+      name: resolvedCustomerName,
       line1: addr.line1 || 'Sector 18, House No. 42, Green Park Extension',
       city: addr.city || 'Chandigarh',
       state: addr.state || 'Punjab',

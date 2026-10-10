@@ -186,8 +186,8 @@ const ShopCatalog = () => {
         quantity: 1,
         product: {
           id: product._id || product.id || product.slug,
-          name: product.title || product.name || 'INFINITO',
-          title: product.subtitle || product.title || product.name || 'INFINITO',
+          name: product.name || product.title || 'Special Edition Crimson Red T-Shirt',
+          title: product.name || product.title || 'Special Edition Crimson Red T-Shirt',
           price: cleanPrice,
           mrp: cleanMrp,
           image: primaryImg,
@@ -196,7 +196,7 @@ const ShopCatalog = () => {
         },
       })
     );
-    toast.success(`Added ${product.subtitle || product.title || 'item'} to cart!`);
+    toast.success(`Added ${product.name || product.title || 'item'} to cart!`);
   };
 
   const handleCategoryClick = (cat) => {

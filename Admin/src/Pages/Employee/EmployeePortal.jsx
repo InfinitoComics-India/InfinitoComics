@@ -5,8 +5,14 @@ import {
   Clock, CheckCircle, AlertTriangle, CalendarOff, IndianRupee,
   Target, FileText, User, Send, Loader, LogIn, LogOut as LogOutIcon,
   ClipboardList, Headphones, TrendingUp, Lock, MessageCircle, Inbox,
-  SendHorizonal, Trash2, Plus, X, ChevronDown
+  SendHorizonal, Trash2, Plus, X, ChevronDown, ShoppingBag, Package,
+  FolderOpen, BarChart3, Sparkles, Building2, ExternalLink, ArrowRight,
+  ShieldCheck, RefreshCw, Check
 } from "lucide-react";
+import { isEmployeeShopAllowed } from "../../services/shopServices/shopAccessService";
+import { getAllProducts } from "../../services/shopServices/productService";
+import { getAllCategories } from "../../services/shopServices/categoryService";
+import { getAllOrders } from "../../services/shopServices/orderService";
 
 const BASE = import.meta.env.VITE_BASE_URL;
 const auth = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` } });
@@ -64,11 +70,90 @@ const EmployeePortal = () => {
 
   // Read tab from URL search param ?tab=xxx, fallback to "attendance"
   const tab = searchParams.get("tab") || "attendance";
-  const setTab = () => {}; // navigation handled by sidebar links
+  const setTab = (newTab) => {
+    setSearchParams({ tab: newTab });
+  };
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState("");
   const [success,    setSuccess]    = useState("");
   const [countdown,  setCountdown]  = useState(getCountdown());
+
+  // Shop Access state & metrics
+  const [empHasShopAccess, setEmpHasShopAccess] = useState(() => isEmployeeShopAllowed(myEmail, admin));
+  const [shopMetrics, setShopMetrics] = useState({
+    products: 0,
+    categories: 0,
+    orders: 0,
+    loading: false,
+    loaded: false,
+  });
+
+  const loadShopMetrics = async () => {
+    try {
+      setShopMetrics((prev) => ({ ...prev, loading: true }));
+      const [prodRes, catRes, ordersRes] = await Promise.allSettled([
+        getAllProducts(),
+        getAllCategories(),
+        getAllOrders(),
+      ]);
+
+      const prods = prodRes.status === "fulfilled"
+        ? (Array.isArray(prodRes.value?.data?.data) ? prodRes.value.data.data : (Array.isArray(prodRes.value?.data) ? prodRes.value.data : []))
+        : [];
+      const cats = catRes.status === "fulfilled"
+        ? (Array.isArray(catRes.value?.data?.data) ? catRes.value.data.data : (Array.isArray(catRes.value?.data) ? catRes.value.data : []))
+        : [];
+      const ords = ordersRes.status === "fulfilled"
+        ? (Array.isArray(ordersRes.value) ? ordersRes.value : [])
+        : [];
+
+      setShopMetrics({
+        products: prods.length,
+        categories: cats.length,
+        orders: ords.length,
+        loading: false,
+        loaded: true,
+      });
+    } catch {
+      setShopMetrics((prev) => ({ ...prev, loading: false, loaded: true }));
+    }
+  };
+
+  useEffect(() => {
+    const checkLiveAccess = () => {
+      const curAdmin = JSON.parse(localStorage.getItem("Admin") || "{}");
+      const allowed = isEmployeeShopAllowed(curAdmin?.email || myEmail, curAdmin);
+      setEmpHasShopAccess(allowed);
+    };
+
+    window.addEventListener("storage", checkLiveAccess);
+    window.addEventListener("focus", checkLiveAccess);
+
+    let bc;
+    try {
+      bc = new BroadcastChannel("infinito_shop_access_channel");
+      bc.onmessage = () => {
+        checkLiveAccess();
+      };
+    } catch {}
+
+    return () => {
+      window.removeEventListener("storage", checkLiveAccess);
+      window.removeEventListener("focus", checkLiveAccess);
+      if (bc) bc.close();
+    };
+  }, [myEmail]);
+
+  useEffect(() => {
+    if (empHasShopAccess && (tab === "shop" || !shopMetrics.loaded)) {
+      loadShopMetrics();
+    }
+  }, [empHasShopAccess, tab]);
+
+  const availableTabs = [
+    ...TABS,
+    ...(empHasShopAccess ? [{ key: "shop", label: "Shop Section", icon: ShoppingBag, badge: "Full Access" }] : []),
+  ];
 
   // Attendance state
   const [todayAttd,  setTodayAttd]  = useState(null);
@@ -153,6 +238,7 @@ const EmployeePortal = () => {
     if (tab === "performance") loadPerformance();
     if (tab === "messages")    { loadInbox(); loadSentMsgs(); loadContacts(); loadMsgUnread(); }
     if (tab === "profile")     loadProfile();
+    if (tab === "shop")        loadShopMetrics();
   }, [tab]);
 
   useEffect(() => { if (tab === "attendance") loadMonthlyAttd(); }, [attdMonth, attdYear]);
@@ -361,10 +447,55 @@ const EmployeePortal = () => {
           <h1 className="text-xl font-black tracking-widest text-gray-900">EMPLOYEE PORTAL</h1>
           <p className="text-xs text-gray-400 mt-0.5">Welcome, <strong>{myName}</strong> · {myEmail}</p>
         </div>
-        <div className="text-xs text-gray-500 font-semibold">{timeStr} IST</div>
+        <div className="flex items-center gap-3">
+          {empHasShopAccess && (
+            <button
+              onClick={() => setTab("shop")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition shadow-xs cursor-pointer ${
+                tab === "shop"
+                  ? "bg-[#DD1215] text-white"
+                  : "bg-red-50 hover:bg-red-100 text-[#DD1215] border border-red-200"
+              }`}
+            >
+              <ShoppingBag size={14} />
+              <span>Full Shop Access Active</span>
+            </button>
+          )}
+          <div className="text-xs text-gray-500 font-semibold">{timeStr} IST</div>
+        </div>
       </div>
 
       {/* Tab bar */}
+      <div className="bg-white border-b px-6 overflow-x-auto scrollbar-none shadow-xs">
+        <div className="flex items-center gap-1.5 min-w-max py-2.5">
+          {availableTabs.map((t) => {
+            const Icon = t.icon;
+            const isActive = tab === t.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setTab(t.key)}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                  isActive
+                    ? "bg-[#DD1215] text-white shadow-sm"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                }`}
+              >
+                <Icon size={14} className={isActive ? "text-white" : "text-gray-500"} />
+                <span>{t.label}</span>
+                {t.badge && (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-black uppercase tracking-wider ${
+                    isActive ? "bg-white text-[#DD1215]" : "bg-red-50 text-red-600 border border-red-200"
+                  }`}>
+                    {t.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       <div className="max-w-5xl mx-auto px-6 py-6 space-y-5">
         {error   && <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded flex items-center gap-2"><AlertTriangle size={14}/>{error}<button onClick={()=>setError("")} className="ml-auto text-red-400 hover:text-red-700">✕</button></div>}
@@ -1060,6 +1191,312 @@ const EmployeePortal = () => {
               <Send size={14}/> {profileSaving ? "Saving..." : "Save Profile"}
             </button>
           </form>
+        )}
+
+        {/* ── SHOP SECTION (FULL SUPER ADMIN PRIVILEGES ON EMPLOYEE PORTAL) ── */}
+        {tab === "shop" && empHasShopAccess && (
+          <div className="space-y-6">
+            {/* Banner card */}
+            <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-black text-white rounded-2xl p-6 md:p-8 shadow-md border border-gray-800 relative overflow-hidden">
+              <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial from-red-600/20 to-transparent pointer-events-none" />
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                  <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-red-600/30 border border-red-500/40 text-red-400 text-xs font-black uppercase tracking-widest mb-3">
+                    <ShieldCheck size={14} /> Super Admin Shop Privileges Active
+                  </div>
+                  <h2 className="text-2xl md:text-3xl font-black uppercase tracking-wide text-white">
+                    Store Management Center
+                  </h2>
+                  <p className="text-sm text-gray-300 mt-2 max-w-2xl leading-relaxed">
+                    You have been granted complete administrative access to the Infinito Shop. Manage the live product catalog, create categories, process customer orders, monitor warehouse stock inventory, update promotional banners, and review analytics.
+                  </p>
+                </div>
+                <div className="flex flex-wrap md:flex-col gap-2.5 shrink-0">
+                  <a
+                    href="/shop/products/new"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#DD1215] hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-sm"
+                  >
+                    <Plus size={15} />
+                    <span>Add New Product</span>
+                  </a>
+                  <a
+                    href="/shop/orders"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition border border-white/10"
+                  >
+                    <ClipboardList size={15} />
+                    <span>View Orders</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Quick Counter Row */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6 pt-6 border-t border-gray-800">
+                <a href="/shop/products" className="bg-white/5 hover:bg-white/10 p-3.5 rounded-xl border border-white/5 transition block">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400">Products Catalog</div>
+                  <div className="text-2xl font-black text-white mt-1">
+                    {shopMetrics.loading ? '...' : shopMetrics.products}
+                  </div>
+                  <span className="text-[11px] text-red-400 font-semibold mt-1 inline-flex items-center gap-1">
+                    Manage Products →
+                  </span>
+                </a>
+                <a href="/shop/categories" className="bg-white/5 hover:bg-white/10 p-3.5 rounded-xl border border-white/5 transition block">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400">Active Categories</div>
+                  <div className="text-2xl font-black text-white mt-1">
+                    {shopMetrics.loading ? '...' : shopMetrics.categories}
+                  </div>
+                  <span className="text-[11px] text-red-400 font-semibold mt-1 inline-flex items-center gap-1">
+                    View Categories →
+                  </span>
+                </a>
+                <a href="/shop/orders" className="bg-white/5 hover:bg-white/10 p-3.5 rounded-xl border border-white/5 transition block">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400">Total Orders</div>
+                  <div className="text-2xl font-black text-white mt-1">
+                    {shopMetrics.loading ? '...' : shopMetrics.orders}
+                  </div>
+                  <span className="text-[11px] text-red-400 font-semibold mt-1 inline-flex items-center gap-1">
+                    Process Orders →
+                  </span>
+                </a>
+                <a href="/shop/inventory" className="bg-white/5 hover:bg-white/10 p-3.5 rounded-xl border border-white/5 transition block">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400">Warehouse Stock</div>
+                  <div className="text-2xl font-black text-emerald-400 mt-1">
+                    Monitored
+                  </div>
+                  <span className="text-[11px] text-red-400 font-semibold mt-1 inline-flex items-center gap-1">
+                    Stock Alerts →
+                  </span>
+                </a>
+              </div>
+            </div>
+
+            {/* Complete Module Cards Grid */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-base font-black uppercase tracking-wider text-gray-900">
+                    Full Super Admin Shop Modules
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Direct access to all core eCommerce modules available to Super Administrators.
+                  </p>
+                </div>
+                <button
+                  onClick={loadShopMetrics}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition cursor-pointer"
+                  title="Refresh shop status"
+                >
+                  <RefreshCw size={13} className={shopMetrics.loading ? 'animate-spin' : ''} />
+                  <span>Refresh</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* 1. All Products */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-red-50 text-[#DD1215] flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <Package size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Products Catalog</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      View all products, edit pricing, variants, descriptions, tags, and stock statuses.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100 flex items-center gap-2">
+                    <a
+                      href="/shop/products"
+                      className="flex-1 py-2 text-center text-xs font-bold text-white bg-[#DD1215] hover:bg-red-700 rounded-lg transition"
+                    >
+                      View Catalog
+                    </a>
+                    <a
+                      href="/shop/products/new"
+                      className="px-2.5 py-2 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                      title="Add New Product"
+                    >
+                      + Add
+                    </a>
+                  </div>
+                </div>
+
+                {/* 2. Categories */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <FolderOpen size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Categories & Collections</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      Organize store items into Comics, Apparel, Figurines, and Posters categories with cover images.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100 flex items-center gap-2">
+                    <a
+                      href="/shop/categories"
+                      className="flex-1 py-2 text-center text-xs font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                    >
+                      Categories
+                    </a>
+                    <a
+                      href="/shop/categories/new"
+                      className="px-2.5 py-2 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                      title="Add New Category"
+                    >
+                      + Add
+                    </a>
+                  </div>
+                </div>
+
+                {/* 3. Orders */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <ClipboardList size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Orders & Dispatches</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      Manage customer orders, print GST tax invoices & packing slips, and dispatch orders to Qikink.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <a
+                      href="/shop/orders"
+                      className="w-full block py-2 text-center text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition"
+                    >
+                      All Orders ({shopMetrics.orders})
+                    </a>
+                  </div>
+                </div>
+
+                {/* 4. Inventory */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <BarChart3 size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Inventory & Stock</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      Track SKU stock counts in real time, review out-of-stock items, and update physical stock counts.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <a
+                      href="/shop/inventory"
+                      className="w-full block py-2 text-center text-xs font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                    >
+                      Manage Inventory
+                    </a>
+                  </div>
+                </div>
+
+                {/* 5. Analytics & Reports */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <TrendingUp size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Analytics & Reports</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      Monitor revenue trajectories, top revenue items, average order values, and sales breakdowns.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <a
+                      href="/shop/analytics"
+                      className="w-full block py-2 text-center text-xs font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                    >
+                      Open Analytics
+                    </a>
+                  </div>
+                </div>
+
+                {/* 6. Marketing & Promotions */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <Sparkles size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Marketing & Banners</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      Configure Hero Carousel slider slides, discount coupon codes, and promotional banners.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <a
+                      href="/shop/marketing"
+                      className="w-full block py-2 text-center text-xs font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                    >
+                      Hero & Marketing
+                    </a>
+                  </div>
+                </div>
+
+                {/* 7. Company Profile */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-700 flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <Building2 size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Company & Invoicing</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      Store legal company info, GSTIN tax registration, warehouse dispatch address, and logos.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <a
+                      href="/shop/company-profile"
+                      className="w-full block py-2 text-center text-xs font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                    >
+                      Company Profile
+                    </a>
+                  </div>
+                </div>
+
+                {/* 8. Live Storefront */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <ExternalLink size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Live Customer Store</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      Inspect the live customer storefront to preview new product drops, categories, and promotions.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <a
+                      href="https://shop.infinitohq.com/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full block py-2 text-center text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition"
+                    >
+                      Open Storefront ↗
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── SHOP ACCESS REQUIRED NOTICE (IF OPENED WITHOUT PERMISSION) ── */}
+        {tab === "shop" && !empHasShopAccess && (
+          <div className="bg-white border rounded-2xl p-8 text-center max-w-xl mx-auto space-y-4 shadow-sm">
+            <div className="w-14 h-14 bg-red-50 text-[#DD1215] rounded-full flex items-center justify-center mx-auto">
+              <ShoppingBag size={28} />
+            </div>
+            <h3 className="text-lg font-black uppercase text-gray-900">Shop Section Access Required</h3>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              Your employee account has not yet been granted Shop Section permissions. A Super Administrator can grant you access instantly under <strong>Shop &gt; Management</strong>.
+            </p>
+            <button
+              onClick={() => setTab("attendance")}
+              className="px-6 py-2.5 bg-[#DD1215] text-white text-xs font-bold uppercase rounded-lg hover:bg-red-700 transition"
+            >
+              Return to Attendance
+            </button>
+          </div>
         )}
       </div>
 

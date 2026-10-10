@@ -220,11 +220,26 @@ const ProductForm = () => {
         };
       });
 
+      // Clean variants: remove empty variants or options with empty values
+      const cleanVariants = (variants || [])
+        .filter(v => v.name && v.name.trim())
+        .map(v => ({
+          name: v.name.trim(),
+          options: (v.options || [])
+            .filter(opt => opt.value && String(opt.value).trim())
+            .map(opt => ({
+              value: String(opt.value).trim(),
+              price: Number(opt.price) || 0,
+              stock: Number(opt.stock) || 0,
+            }))
+        }))
+        .filter(v => v.options.length > 0);
+
       const productData = {
         ...formData,
         ...pricing,
         images: finalImages,
-        variants,
+        variants: cleanVariants,
       };
 
       let response;
@@ -829,25 +844,6 @@ const ProductForm = () => {
                   className="hidden"
                 />
               </label>
-
-              {/* Paste Direct Image / Cloudinary URL */}
-              <div className="flex gap-2 items-center mt-3">
-                <input
-                  type="url"
-                  value={imageUrlInput}
-                  onChange={(e) => setImageUrlInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddImageUrl(); } }}
-                  placeholder="Or paste Cloudinary image URL (https://res.cloudinary.com/...)"
-                  className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddImageUrl}
-                  className="px-3 py-1.5 bg-gray-800 hover:bg-black text-white text-xs font-semibold rounded-lg transition whitespace-nowrap cursor-pointer"
-                >
-                  + Add URL
-                </button>
-              </div>
             </div>
 
             {/* Image Preview Grid with Drag & Drop */}
