@@ -7,6 +7,21 @@ import { checkRole } from "../middleware/roleCheck.js";
 const HR_ALL    = ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin","shop_admin","employee"];
 const HR_MANAGE = ["superadmin","hr_manager","manager"];
 
+// GET attendance for all employees for a specific date  ?date=YYYY-MM-DD
+router.get("/bydate", adminauthenticate, checkRole(HR_ALL), async (req, res) => {
+  try {
+    const Attendance = (await import('../models/Attendance.js')).default;
+    const dateStr = req.query.date;
+    if (!dateStr) return res.status(400).json({ success: false, message: "date query param required (YYYY-MM-DD)." });
+    const start = new Date(dateStr + "T00:00:00.000Z");
+    const end   = new Date(dateStr + "T23:59:59.999Z");
+    const records = await Attendance.find({ date: { $gte: start, $lte: end } })
+      .populate("employeeId", "firstName lastName designation department employeeId")
+      .sort({ "employeeId.firstName": 1 });
+    res.status(200).json({ success: true, data: records, count: records.length });
+  } catch (e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
 // GET today's attendance for all employees
 router.get("/today", adminauthenticate, checkRole(HR_ALL), AttendanceController.getTodayAll);
 

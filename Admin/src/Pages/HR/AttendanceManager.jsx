@@ -55,11 +55,8 @@ const AttendanceManager = () => {
   // ── Load daily attendance for selected date ───────────────
   const loadDay = useCallback(async (dateStr) => {
     try { setLoading(true); setError("");
-      const r = await axios.get(`${BASE}/hr/attendance/last7days`, auth());
-      const all = r.data.data || [];
-      // Filter to selected date
-      const filtered = all.filter(rec => isoDate(rec.date) === dateStr);
-      setDayRecs(filtered);
+      const r = await axios.get(`${BASE}/hr/attendance/bydate`, { ...auth(), params: { date: dateStr } });
+      setDayRecs(r.data.data || []);
     } catch { setError("Failed to load attendance."); }
     finally { setLoading(false); }
   }, []);
