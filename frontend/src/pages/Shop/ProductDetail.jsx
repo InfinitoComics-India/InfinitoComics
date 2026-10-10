@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Share2, ShoppingCart } from 'lucide-react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
@@ -17,6 +17,8 @@ const ProductDetail = () => {
   const [suggestedProducts, setSuggestedProducts] = useState([]);
   const [visibleSuggestedCount, setVisibleSuggestedCount] = useState(4);
   const [selectedSize, setSelectedSize] = useState('M');
+  const [selectedVariants, setSelectedVariants] = useState({});
+  const [variantPriceAdjustment, setVariantPriceAdjustment] = useState(0);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -40,6 +42,20 @@ const ProductDetail = () => {
         setProduct(currentProduct);
         if (currentProduct && currentProduct.sizes && currentProduct.sizes.length > 0) {
           setSelectedSize(currentProduct.sizes[0]);
+        }
+        if (currentProduct && Array.isArray(currentProduct.variants) && currentProduct.variants.length > 0) {
+          const initialVariants = {};
+          currentProduct.variants.forEach((v) => {
+            if (v.name && Array.isArray(v.options) && v.options.length > 0) {
+              const firstOpt = v.options[0];
+              initialVariants[v.name] = typeof firstOpt === 'object' ? firstOpt.value : firstOpt;
+            }
+          });
+          setSelectedVariants(initialVariants);
+          const sizeVal = initialVariants['Size'] || initialVariants['size'];
+          if (sizeVal) setSelectedSize(sizeVal);
+        } else if (currentProduct && currentProduct.sizes && currentProduct.sizes.length > 0) {
+          setSelectedVariants({ Size: currentProduct.sizes[0] });
         }
         setSelectedImageIndex(0);
 
@@ -71,12 +87,42 @@ const ProductDetail = () => {
     };
   }, [productId, urlId, urlCategory, location.pathname, location.search]);
 
+  // Derive product variants list (combining explicit variants and fallback sizes)
+  const productVariants = useMemo(() => {
+    if (product?.variants && Array.isArray(product.variants) && product.variants.length > 0) {
+      return product.variants.filter((v) => v.name && Array.isArray(v.options) && v.options.length > 0);
+    }
+    const fallbackSizes = product?.sizes && product.sizes.length > 0 ? product.sizes : ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+    return [
+      {
+        name: 'Size',
+        options: fallbackSizes.map((s) => ({ value: s, price: 0, stock: 10 })),
+      },
+    ];
+  }, [product]);
+
+  const handleSelectVariant = (variantName, value, optPrice = 0) => {
+    setSelectedVariants((prev) => {
+      const updated = { ...prev, [variantName]: value };
+      if (variantName.toLowerCase() === 'size') {
+        setSelectedSize(value);
+      }
+      return updated;
+    });
+    if (optPrice && optPrice > 0) {
+      setVariantPriceAdjustment(optPrice);
+    } else {
+      setVariantPriceAdjustment(0);
+    }
+  };
+
   // Handlers
   const handleAddToCart = (prod = product) => {
     if (!prod) return;
-    const cleanPrice = typeof prod.price === 'string'
+    const basePriceNum = typeof prod.price === 'string'
       ? parseFloat(prod.price.replace(/[^\d.]/g, '')) || 1299
       : Number(prod.price || prod.salePrice || prod.basePrice || 1299);
+    const cleanPrice = variantPriceAdjustment > 0 ? variantPriceAdjustment : basePriceNum;
 
     const cleanMrp = typeof prod.mrp === 'string'
       ? parseFloat(prod.mrp.replace(/[^\d.]/g, '')) || Math.round(cleanPrice * 1.6)
@@ -86,10 +132,17 @@ const ProductDetail = () => {
       ? (typeof prod.images[0] === 'string' ? prod.images[0] : prod.images[0]?.url)
       : (prod.image || '/products/crimson_tshirt.jpg');
 
+    const chosenSize = selectedVariants['Size'] || selectedVariants['size'] || selectedSize || 'Standard';
+    const variantDesc = Object.entries(selectedVariants)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(', ');
+
     dispatch(
       addToCart({
         productId: prod._id || prod.id || prod.slug,
-        size: selectedSize || 'M',
+        size: chosenSize,
+        variant: selectedVariants,
+        variantText: variantDesc,
         quantity: 1,
         product: {
           id: prod._id || prod.id || prod.slug,
@@ -103,7 +156,7 @@ const ProductDetail = () => {
         },
       })
     );
-    toast.success(`Added ${prod.name || prod.title} (${selectedSize}) to cart!`);
+    toast.success(`Added ${prod.name || prod.title} (${variantDesc || chosenSize}) to cart!`);
   };
 
   const handleBuyNow = () => {
@@ -283,7 +336,9 @@ const ProductDetail = () => {
             {/* Price Block */}
             <div className="mt-6">
               <div className="flex items-baseline gap-3">
-                <span className="text-3xl font-extrabold text-black">{product.price || '₹1299'}</span>
+                <span className="text-3xl font-extrabold text-black">
+                  ₹{variantPriceAdjustment > 0 ? variantPriceAdjustment : (product.rawPrice || (typeof product.price === 'string' ? product.price.replace(/[^\d.]/g, '') : product.price) || 1299)}
+                </span>
                 <span className="text-sm text-gray-500 line-through font-medium">
                   {product.mrp || 'MRP ₹2599'}
                 </span>
@@ -291,34 +346,69 @@ const ProductDetail = () => {
               <p className="text-xs text-gray-500 font-medium mt-1">Inclusive of all taxes</p>
             </div>
 
-            {/* Select Size */}
-            <div className="mt-6">
-              <div className="flex justify-between items-center mb-3">
-                <h4 className="font-bold text-base text-black">Select Size</h4>
-                <button
-                  onClick={() => toast.info('Standard size guide')}
-                  className="text-xs text-red-600 font-bold uppercase hover:underline"
-                >
-                  SIZE CHART &gt;
-                </button>
-              </div>
+            {/* Dynamic Product Variants (Size, Color, Material, etc.) */}
+            <div className="mt-6 space-y-5">
+              {productVariants.map((variant) => {
+                const currentVal = selectedVariants[variant.name] || (variant.options[0]?.value || variant.options[0]);
+                const isSize = variant.name.toLowerCase().includes('size');
 
-              {/* Size Selector Buttons */}
-              <div className="flex flex-wrap gap-2.5">
-                {sizes.map((sz) => (
-                  <button
-                    key={sz}
-                    onClick={() => setSelectedSize(sz)}
-                    className={`min-w-[3.5rem] px-3 h-12 flex items-center justify-center font-bold text-sm transition ${
-                      selectedSize === sz
-                        ? 'bg-red-600 text-white shadow-sm'
-                        : 'bg-[#E5E7EB] text-gray-800 hover:bg-gray-300'
-                    }`}
-                  >
-                    {sz}
-                  </button>
-                ))}
-              </div>
+                return (
+                  <div key={variant.name} className="border-b border-gray-100 pb-5 last:border-b-0">
+                    <div className="flex justify-between items-center mb-2.5">
+                      <h4 className="font-bold text-sm md:text-base text-black flex items-center gap-1.5">
+                        <span>Select {variant.name}</span>
+                        {currentVal && (
+                          <span className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded ml-1">
+                            {currentVal}
+                          </span>
+                        )}
+                      </h4>
+                      {isSize && (
+                        <button
+                          onClick={() => toast.info('Standard size guide')}
+                          className="text-xs text-red-600 font-bold uppercase hover:underline cursor-pointer"
+                        >
+                          SIZE CHART &gt;
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Variant Option Buttons */}
+                    <div className="flex flex-wrap gap-2.5">
+                      {variant.options.map((opt, optIdx) => {
+                        const val = typeof opt === 'object' ? opt.value : opt;
+                        const optPrice = typeof opt === 'object' && opt.price ? Number(opt.price) : 0;
+                        const optStock = typeof opt === 'object' && opt.stock !== undefined ? Number(opt.stock) : null;
+                        const isSelected = currentVal === val;
+                        const isOutOfStock = optStock !== null && optStock <= 0;
+
+                        return (
+                          <button
+                            key={`${variant.name}-${val}-${optIdx}`}
+                            type="button"
+                            disabled={isOutOfStock}
+                            onClick={() => handleSelectVariant(variant.name, val, optPrice)}
+                            className={`min-w-[3.5rem] px-3.5 h-11 flex flex-col items-center justify-center font-bold text-xs md:text-sm transition cursor-pointer rounded-md border ${
+                              isSelected
+                                ? 'bg-red-600 text-white border-red-600 shadow-sm ring-2 ring-red-200'
+                                : isOutOfStock
+                                ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed line-through'
+                                : 'bg-[#E5E7EB] text-gray-800 border-transparent hover:bg-gray-300'
+                            }`}
+                          >
+                            <span>{val}</span>
+                            {optPrice > 0 && (
+                              <span className={`text-[10px] font-normal ${isSelected ? 'text-red-100' : 'text-gray-500'}`}>
+                                ₹{optPrice}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Action Buttons */}

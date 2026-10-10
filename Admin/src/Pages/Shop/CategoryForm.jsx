@@ -360,25 +360,6 @@ const CategoryForm = () => {
                     className="hidden"
                   />
                 </label>
-
-                {/* Or Paste Direct Image / Cloudinary URL */}
-                <div className="flex gap-2 items-center">
-                  <input
-                    type="url"
-                    value={imageUrlInput}
-                    onChange={(e) => setImageUrlInput(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSetImageUrl(); } }}
-                    placeholder="Or paste Cloudinary image URL (https://res.cloudinary.com/...)"
-                    className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSetImageUrl}
-                    className="px-3 py-1.5 bg-gray-800 hover:bg-black text-white text-xs font-semibold rounded-lg transition whitespace-nowrap cursor-pointer"
-                  >
-                    Set URL
-                  </button>
-                </div>
               </div>
             )}
 

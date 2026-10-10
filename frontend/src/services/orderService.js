@@ -8,8 +8,32 @@ const ORDERS_KEY = "infinito_orders";
 const ADDRESS_KEY = "infinito_delivery_address";
 const CURRENT_ORDER_KEY = "infinito_current_order";
 
+export const KNOWN_ACCOUNT_NAMES = {
+  'admin@infinitohq.com': 'Super Admin',
+  'anushka@infinitohq.com': 'Anushka',
+  'priyam@infinitohq.com': 'Priyam',
+  'paras@infinitohq.com': 'Paras',
+  'sujal@infinitohq.com': 'Sujal',
+  'mansha@infinitohq.com': 'Mansha',
+  'customer@infinitohq.com': 'Aarav Sharma',
+};
+
+export const getLoggedInUserName = () => {
+  try {
+    const raw = localStorage.getItem("user");
+    if (raw) {
+      const u = JSON.parse(raw);
+      if (u.name && u.name.trim() && u.name.toLowerCase() !== 'valued customer') return u.name.trim();
+      if (u.username && u.username.trim()) return u.username.trim();
+      if (u.fullName && u.fullName.trim()) return u.fullName.trim();
+      if (u.email && KNOWN_ACCOUNT_NAMES[u.email.toLowerCase()]) return KNOWN_ACCOUNT_NAMES[u.email.toLowerCase()];
+    }
+  } catch {}
+  return "Aarav Sharma";
+};
+
 export const DEFAULT_ADDRESS = {
-  name: "Valued Customer",
+  name: "Aarav Sharma",
   phone: "+91 98765 43210",
   line1: "Sector 18, House No. 42, Green Park Extension, Sector 18",
   city: "Chandigarh",
@@ -530,8 +554,9 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
   const refundAmount = Number(Math.max(0, total - cancellationFee).toFixed(2));
 
   // Pull customer profile if logged in
+  const loggedInName = getLoggedInUserName();
   let customerInfo = {
-    name: "Valued Customer",
+    name: loggedInName,
     email: "customer@infinitohq.com",
     phone: "+91 98765 43210",
   };
@@ -539,8 +564,9 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
     const userRaw = localStorage.getItem("user");
     if (userRaw) {
       const u = JSON.parse(userRaw);
+      const uName = u.name || u.username || u.fullName || '';
       customerInfo = {
-        name: u.name || customerInfo.name,
+        name: (uName && uName.toLowerCase() !== 'valued customer' ? uName : customerInfo.name),
         email: u.email || customerInfo.email,
         phone: u.phone || customerInfo.phone,
       };
@@ -548,7 +574,9 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
   } catch {}
 
   const activeAddr = address || getDeliveryAddress();
-  if (activeAddr.name) customerInfo.name = activeAddr.name;
+  if (activeAddr.name && activeAddr.name.trim() && activeAddr.name.toLowerCase() !== 'valued customer') {
+    customerInfo.name = activeAddr.name.trim();
+  }
   if (activeAddr.phone) customerInfo.phone = activeAddr.phone;
 
   const isCOD = String(paymentMethod || '').toUpperCase() === 'COD' || String(paymentMethod || '').toLowerCase().includes('cash on delivery');

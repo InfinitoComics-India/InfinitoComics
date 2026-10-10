@@ -26,7 +26,7 @@ const shopOrderSchema = new mongoose.Schema({
     trim: true,
   },
   customer: {
-    name: { type: String, default: 'Valued Customer' },
+    name: { type: String, default: 'Aarav Sharma' },
     email: { type: String, default: 'customer@infinitohq.com' },
     phone: { type: String, default: '+91 98765 43210' },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

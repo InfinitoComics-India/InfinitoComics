@@ -17,6 +17,7 @@ import {
   printPackingSlip,
   formatOrderDate,
   formatDateTime,
+  resolveCustomerDisplayName,
 } from '../../../services/shopServices/orderService';
 
 const OrderDetail = () => {
@@ -753,7 +754,9 @@ const OrderDetail = () => {
             <div className="space-y-3 text-xs">
               <div>
                 <p className="text-gray-400 font-bold uppercase text-[10px]">Name</p>
-                <p className="font-bold text-gray-900 text-sm mt-0.5">{order.customer?.name || 'Customer'}</p>
+                <p className="font-bold text-gray-900 text-sm mt-0.5">
+                  {resolveCustomerDisplayName(order.customer, order.shippingAddress, order.orderId)}
+                </p>
               </div>
 
               <div>
@@ -801,7 +804,9 @@ const OrderDetail = () => {
             </div>
 
             <div className="text-xs text-gray-700 leading-relaxed bg-gray-50 p-3 rounded-lg border border-gray-100">
-              <strong className="block text-gray-900 mb-1">{order.shippingAddress?.name || order.customer?.name}</strong>
+              <strong className="block text-gray-900 mb-1">
+                {resolveCustomerDisplayName(order.shippingAddress, order.customer, order.orderId)}
+              </strong>
               <div className="whitespace-pre-line">{order.shippingAddress?.formatted || order.shippingAddress?.line1}</div>
               <div className="mt-2 text-gray-500">
                 <strong>Phone:</strong> {order.customer?.phone || 'N/A'}
@@ -825,7 +830,9 @@ const OrderDetail = () => {
                 </div>
               ) : (
                 <>
-                  <strong className="block text-gray-900 mb-1">{order.billingAddress?.name || order.customer?.name}</strong>
+                  <strong className="block text-gray-900 mb-1">
+                    {resolveCustomerDisplayName(order.billingAddress, order.customer, order.orderId)}
+                  </strong>
                   <div className="whitespace-pre-line">{order.billingAddress?.formatted || order.billingAddress?.line1}</div>
                 </>
               )}

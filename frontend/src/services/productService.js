@@ -282,6 +282,7 @@ const mapBackendProduct = (p) => {
     description: p.description || p.shortDescription || 'Official INFINITO merchandise created with high-density premium materials.',
     images: allImgs,
     image: primaryImg,
+    variants: Array.isArray(p.variants) ? p.variants : [],
     sizes: sizes,
     specifications: specs,
     stock: p.stock ?? 10,

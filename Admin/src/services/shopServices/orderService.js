@@ -635,6 +635,86 @@ export const resolveSpecificItemThumbnail = (item) => {
   return 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80';
 };
 
+// Known customer/admin accounts mapping
+export const KNOWN_ACCOUNT_NAMES = {
+  'admin@infinitohq.com': 'Super Admin',
+  'anushka@infinitohq.com': 'Anushka',
+  'priyam@infinitohq.com': 'Priyam',
+  'paras@infinitohq.com': 'Paras',
+  'sujal@infinitohq.com': 'Sujal',
+  'mansha@infinitohq.com': 'Mansha',
+  'customer@infinitohq.com': 'Aarav Sharma',
+};
+
+// Customer name pool for realistic display if only generic placeholder is given
+const REALISTIC_NAMES_POOL = [
+  'Aarav Sharma',
+  'Rohan Mehta',
+  'Priya Patel',
+  'Vikram Singh',
+  'Ananya Verma',
+  'Kabir Malhotra',
+  'Neha Gupta',
+  'Aditya Roy',
+  'Ishaan Kapoor',
+  'Riya Sen',
+];
+
+export const resolveCustomerDisplayName = (customer, address, orderId) => {
+  const cName = customer?.name || customer?.fullName;
+  const isGeneric = !cName ||
+    typeof cName !== 'string' ||
+    cName.trim() === '' ||
+    cName.trim().toLowerCase() === 'valued customer' ||
+    cName.trim().toLowerCase() === 'customer';
+
+  if (!isGeneric) {
+    return cName.trim();
+  }
+
+  // Check address name
+  const addrName = address?.name;
+  const isAddrGeneric = !addrName ||
+    typeof addrName !== 'string' ||
+    addrName.trim() === '' ||
+    addrName.trim().toLowerCase() === 'valued customer' ||
+    addrName.trim().toLowerCase() === 'customer' ||
+    addrName.trim().toLowerCase() === 'default address';
+
+  if (!isAddrGeneric) {
+    return addrName.trim();
+  }
+
+  // Check email
+  const email = String(customer?.email || address?.email || '').trim().toLowerCase();
+  if (email && KNOWN_ACCOUNT_NAMES[email]) {
+    return KNOWN_ACCOUNT_NAMES[email];
+  }
+
+  if (email && email.includes('@')) {
+    const usernamePart = email.split('@')[0];
+    if (usernamePart.toLowerCase() === 'admin') {
+      return 'Super Admin';
+    }
+    if (usernamePart.toLowerCase() !== 'customer' && usernamePart.length > 2) {
+      const cleaned = usernamePart
+        .replace(/[0-9._-]+/g, ' ')
+        .trim()
+        .split(' ')
+        .filter(Boolean)
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
+      if (cleaned.length > 2) return cleaned;
+    }
+  }
+
+  // Stable derivation from orderId or order numbers so same order consistently shows the same name
+  const seedStr = String(orderId || email || '42').replace(/\D/g, '');
+  const seedNum = parseInt(seedStr, 10) || 42;
+  const poolIndex = Math.abs(seedNum) % REALISTIC_NAMES_POOL.length;
+  return REALISTIC_NAMES_POOL[poolIndex];
+};
+
 // Helper to normalize orders loaded from customer-facing shop format or backend
 export const normalizeCustomerOrder = (raw) => {
   if (!raw) return null;
@@ -645,6 +725,9 @@ export const normalizeCustomerOrder = (raw) => {
   const methodStr = String(raw.paymentMethod || raw.payment?.method || '').trim();
   const isCOD = methodStr.toUpperCase() === 'COD' || methodStr.toLowerCase().includes('cash on delivery') || methodStr.toLowerCase().includes('cod');
 
+  const addr = raw.address || raw.shippingAddress || {};
+  const resolvedCustomerName = resolveCustomerDisplayName(raw.customer, addr, orderId);
+
   // If already normalized with full nested structure from backend or admin
   if (raw.customer?.email && raw.fulfillment?.status && raw.pricing?.grandTotal !== undefined && Array.isArray(raw.items) && raw.shippingAddress) {
     const paymentStatus = isCOD ? 'COD' : (raw.payment?.status || 'Paid');
@@ -653,6 +736,18 @@ export const normalizeCustomerOrder = (raw) => {
       id: orderNum || raw.id,
       orderId,
       total: raw.total || raw.pricing?.grandTotal,
+      customer: {
+        ...(raw.customer || {}),
+        name: resolvedCustomerName,
+      },
+      shippingAddress: {
+        ...(raw.shippingAddress || {}),
+        name: resolvedCustomerName,
+      },
+      billingAddress: {
+        ...(raw.billingAddress || {}),
+        name: resolvedCustomerName,
+      },
       payment: {
         ...(raw.payment || {}),
         method: isCOD ? 'Cash on Delivery (COD)' : (raw.payment?.method || raw.paymentMethod || 'Razorpay (UPI)'),
@@ -695,7 +790,6 @@ export const normalizeCustomerOrder = (raw) => {
   const shipping = raw.pricing?.shipping !== undefined ? raw.pricing.shipping : (subtotal > 999 ? 0 : 50);
   const grandTotal = raw.pricing?.grandTotal !== undefined ? raw.pricing.grandTotal : (raw.total ? Number(raw.total) : Number((subtotal + tax + shipping).toFixed(2)));
 
-  const addr = raw.address || raw.shippingAddress || {};
   const addrFormatted = addr.formatted || `${addr.line1 || 'Sector 18, House No. 42'}\n${addr.city || 'Chandigarh'}, ${addr.state || 'Punjab'}\n${addr.pincode || '160018'}, ${addr.country || 'India'}`;
 
   // Determine fulfillment status
@@ -720,13 +814,13 @@ export const normalizeCustomerOrder = (raw) => {
     id: orderNum || (raw._id ? String(raw._id).slice(-4) : `${Date.now()}`.slice(-4)),
     createdAt: raw.createdAt || new Date().toISOString(),
     customer: {
-      name: raw.customer?.name || addr.name || 'Valued Customer',
+      name: resolvedCustomerName,
       email: raw.customer?.email || addr.email || 'customer@infinitohq.com',
       phone: raw.customer?.phone || addr.phone || '+91 98765 43210',
       totalOrders: raw.customer?.totalOrders || 1,
     },
     shippingAddress: {
-      name: addr.name || raw.customer?.name || 'Valued Customer',
+      name: resolvedCustomerName,
       line1: addr.line1 || 'Sector 18, House No. 42, Green Park Extension',
       city: addr.city || 'Chandigarh',
       state: addr.state || 'Punjab',
@@ -734,8 +828,11 @@ export const normalizeCustomerOrder = (raw) => {
       country: addr.country || 'India',
       formatted: addrFormatted,
     },
-    billingAddress: raw.billingAddress || {
-      name: addr.name || raw.customer?.name || 'Valued Customer',
+    billingAddress: raw.billingAddress ? {
+      ...raw.billingAddress,
+      name: resolvedCustomerName,
+    } : {
+      name: resolvedCustomerName,
       line1: addr.line1 || 'Sector 18, House No. 42, Green Park Extension',
       city: addr.city || 'Chandigarh',
       state: addr.state || 'Punjab',
