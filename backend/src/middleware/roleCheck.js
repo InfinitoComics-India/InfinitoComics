@@ -9,9 +9,13 @@ export const checkRole = (allowedRoles) => {
       : (user.role ? [user.role] : []);
 
     const hasAccess = userRoles.some((r) => allowedRoles.includes(r));
-    if (!hasAccess) {
-      return res.status(403).json({ message: 'Forbidden: insufficient role' });
+    if (hasAccess) return next();
+
+    // Allow user who has shopAccess enabled if the route allows shop_admin or employee
+    if ((allowedRoles.includes('shop_admin') || allowedRoles.includes('employee')) && user.shopAccess === true) {
+      return next();
     }
-    next();
+
+    return res.status(403).json({ message: 'Forbidden: insufficient role' });
   };
 };

@@ -635,7 +635,7 @@ const EmployeePortal = () => {
                 ))}
                 {buildGrid().map(({day,date,rec})=>{
                   const isToday = date.toDateString()===new Date().toDateString();
-                  const isWeekend = date.getDay()===0; // Only Sunday is weekend
+                  const isWeekend = date.getDay()===0||date.getDay()===6;
                   const sc = rec ? STATUS_COLORS[rec.status] : isWeekend ? "bg-gray-100 text-gray-400" : null;
                   return (
                     <div key={day} className={`border-b border-r min-h-[52px] p-1.5 ${isToday?"bg-red-50":""}`}>

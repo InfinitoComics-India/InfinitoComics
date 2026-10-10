@@ -1,69 +1,40 @@
-import React, { useState, useEffect } from "react";
-import NewsletterSectionShimmer from "../../shimmer/landingPageShimmer/NewsletterSectionShimmer";
-import newsletterimage from "../../../assets/Images/Newsletter/Newsletter.png";
-
+import React, { useState, useEffect } from "react";import NewsletterSectionShimmer from '../../shimmer/landingPageShimmer/NewsletterSectionShimmer'
 const NewsletterSection = () => {
-  const [loading, setLoading] = useState(true);
-  const [email, setEmail] = useState("");
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 2400);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!email) return;
-
-    // Add your newsletter submission logic here
-    console.log("Subscribed:", email);
-    setEmail("");
-  };
-
-  if (loading) return <NewsletterSectionShimmer />;
-
-  return (
-    <section
-      className="w-full bg-cover bg-center bg-no-repeat flex items-center min-h-[260px] md:min-h-[340px] py-10 md:py-14"
-      style={{ backgroundImage: `url(${newsletterimage})` }}
+    const [loading, setLoading] = useState(true);
+    useEffect(() => {
+      // fetch data / preload hero image ...
+      setTimeout(() => setLoading(false), 2400); // demo
+    }, []);
+  return loading?<NewsletterSectionShimmer/>: (
+    <div
+      className="w-full bg-cover bg-center flex flex-col md:flex-row items-center justify-between px-12 md:px-76 py-12 md:py-20"
+      style={{ backgroundImage: "url('/assets/Images/Newsletter.png')" }}
     >
-      {/* Same Container Alignment as AdsServices and AdsHero */}
-      <div className="w-full max-w-[1200px] mx-auto px-12">
-        <div className="w-full max-w-lg text-white">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-wide uppercase mb-2">
-            STAY UPDATED
-          </h2>
-
-          <p className="text-gray-200 text-sm sm:text-base font-normal mb-6">
-            Get the latest news and updates with our newsletter!
-          </p>
-
-          {/* Input & Button Form */}
-          <form
-            onSubmit={handleSubmit}
-            className="flex w-full max-w-md shadow-lg"
+      <div className="text-white  mt-14 md:mt-24 mx-40">
+        <h2 className="text-4xl md:text-xl font-extrabold mb-4 scale-y-180 tracking-widest">
+          STAY UPDATED
+        </h2>
+        <p className="text-lg md:text-xl mb-6">
+          Get the latest news and updates with our newsletter!
+        </p>
+        <form className="flex w-full max-w-md">
+          <input
+            type="email"
+            placeholder="Join Us, Write your mail"
+            className="flex-grow px-4 py-3 rounded-l-md focus:outline-none text-black placeholder-white bg-white bg-opacity-20"
+          />
+          <button
+            type="submit"
+            className="bg-red-600 text-white px-6 py-3 rounded-r-md font-bold tracking-wider hover:bg-red-700 transition"
           >
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              required
-              className="w-full min-w-0 px-4 py-3 bg-white text-gray-800 placeholder-gray-400 text-sm focus:outline-none"
-            />
-
-            <button
-              type="submit"
-              className="bg-[#d01824] hover:bg-[#b0131d] text-white font-bold text-xs sm:text-sm tracking-wider uppercase px-6 py-3 flex items-center justify-center gap-1 shrink-0 transition-colors duration-200"
-            >
-              <span>JOIN NOW</span>
-              <span className="text-xs">&gt;</span>
-            </button>
-          </form>
-        </div>
+            JOIN NOW!
+          </button>
+        </form>
       </div>
-    </section>
+    </div>
   );
 };
 
 export default NewsletterSection;
+
+

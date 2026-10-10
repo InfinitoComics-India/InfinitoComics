@@ -94,7 +94,7 @@ const ShopManagement = () => {
   };
 
   // Bulk Grant All filtered
-  const handleBulkGrantAll = () => {
+  const handleBulkGrantAll = async () => {
     const currentAllowed = new Set(getShopAllowedEmployees());
     filteredEmployees.forEach((emp) => {
       const em = String(emp.email || '').toLowerCase().trim();
@@ -109,10 +109,17 @@ const ShopManagement = () => {
       })
     );
     message.success(`Shop section access granted to all selected employees.`);
+
+    // Persist to backend for each employee
+    try {
+      await Promise.allSettled(
+        filteredEmployees.map((emp) => toggleEmployeeShopAccess(emp, true))
+      );
+    } catch {}
   };
 
   // Bulk Revoke All filtered
-  const handleBulkRevokeAll = () => {
+  const handleBulkRevokeAll = async () => {
     const toRemove = new Set(filteredEmployees.map((e) => String(e.email || '').toLowerCase().trim()));
     const currentAllowed = getShopAllowedEmployees();
     const nextList = currentAllowed.filter((e) => !toRemove.has(e));
@@ -124,6 +131,13 @@ const ShopManagement = () => {
       })
     );
     message.info(`Shop section access revoked for selected employees.`);
+
+    // Persist to backend for each employee
+    try {
+      await Promise.allSettled(
+        filteredEmployees.map((emp) => toggleEmployeeShopAccess(emp, false))
+      );
+    } catch {}
   };
 
   // Filter departments for dropdown

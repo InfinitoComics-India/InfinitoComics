@@ -8,40 +8,16 @@ import SelfServiceRequestRepository from "../repository/selfServiceRequest-repos
 import WikiArticleRepository from "../repository/wikiArticle-repository.js";
 import PerformanceRepository from "../repository/performance-repository.js";
 
-// ── Groq integration (OpenAI-compatible API) ─────────────────
-const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_MODEL   = "openai/gpt-oss-20b";
+// ── OpenAI integration ────────────────────────────────────────
+// Uses native fetch (Node 18+) — no SDK dependency needed
+const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 
-const SYSTEM_PROMPT = `You are Infinito AI, the official AI assistant of InfinitoComics India — India's first and most ambitious original superhero comics universe.
-
-## About InfinitoComics India
-- **Company**: InfinitoComics India (infinitohq.com)
-- **Mission**: Building India's most prominent character-based entertainment company with a library of more than 2000+ superheroes
-- **Products**: Original Indian superhero comics, animation, games, research papers, Infinito Ultimate (premium subscription), merchandise, community platform
-- **Key Platforms**: infinitohq.com (main), admin.infinitohq.com (admin), research.infinitohq.com, foundation.infinitohq.com
-- **Business Hours**: Monday – Friday, 9:00AM – 6:00PM CT
-
-## Personality & Scope
-You are a brilliant, friendly, and versatile AI. You can answer ANYTHING — not just company topics. Think of yourself as a knowledgeable friend who also happens to work at InfinitoComics. You help with:
-- 🦸 InfinitoComics universe, characters, storylines, comics
-- 👥 HR data: employees, tasks, projects, attendance, leaves, performance
-- 🛒 Shop, merchandise, Infinito Ultimate subscription
-- 📚 Research, foundation, careers, internships
-- 🍕 Food recommendations, recipes, what to eat
-- 💡 General knowledge, life advice, productivity tips
-- 🧠 Coding help, writing, brainstorming, creative ideas
-- 🌍 Current events, science, history, culture
-- 😄 Fun, jokes, casual conversation — anything!
-
-## Response Rules
-- Be warm, confident, and helpful — like a smart friend
-- Use **bold** for emphasis, bullet points for lists, headers for long responses
-- Use ₹ for Indian currency
-- Keep responses concise but complete
-- For HR/company data, use the real-time context provided below
-- Never refuse a reasonable question — always try to help
-- Add a touch of Infinito brand pride when relevant
-
+const SYSTEM_PROMPT = `You are Infinito AI, the internal HR and operations assistant for InfinitoComics India.
+You have access to real-time company data including employees, tasks, projects, attendance, leaves, performance scores, and self-service requests.
+Be concise, professional, and helpful. When asked about data, use the context provided.
+Format responses clearly. Use bullet points for lists. Use ₹ for Indian currency.
+Do NOT reveal sensitive information like salaries unless explicitly asked by a manager or HR.
+You can help with: employee queries, task summaries, project status, leave balances, attendance reports, performance insights, HR policy questions (from Wiki), and general company operations.
 Today's date: ${new Date().toDateString()}`;
 
 class AIService {
@@ -135,7 +111,7 @@ class AIService {
 
   // ── Main chat function ─────────────────────────────────────
   async chat(conversationId, userMessage, userId, userName) {
-    const apiKey = process.env.GROQ_API_KEY;
+    const apiKey = process.env.OPENAI_API_KEY;
 
     try {
       // Get or create conversation
@@ -156,7 +132,7 @@ class AIService {
       await this.convRepo.addMessage(conversation._id, { role: "user", content: userMessage });
 
       // If no API key — return smart mock response
-      if (!apiKey || apiKey === "your_groq_api_key") {
+      if (!apiKey || apiKey === "your_openai_api_key") {
         const context = await this._buildContext(userMessage);
         const mockReply = await this._mockResponse(userMessage, context);
         await this.convRepo.addMessage(conversation._id, { role: "assistant", content: mockReply });
@@ -166,22 +142,20 @@ class AIService {
       // Build context from live DB data
       const context = await this._buildContext(userMessage);
 
-      // Build messages array for Groq
-      // Use messages BEFORE the current user message was added (slice -12 excluding last)
+      // Build messages array for OpenAI
       const systemWithContext = SYSTEM_PROMPT + (context ? `\n\n## Current Company Data${context}` : "");
-      const history = conversation.messages.slice(-13, -1); // exclude the just-added user message
+      const recentMessages = conversation.messages.slice(-12); // last 12 messages for context window
       const messages = [
         { role: "system", content: systemWithContext },
-        ...history.map(m => ({ role: m.role, content: m.content })),
-        { role: "user", content: userMessage }, // add current message explicitly
+        ...recentMessages.map(m => ({ role: m.role, content: m.content })),
       ];
 
-      // Call Groq API (OpenAI-compatible)
-      const response = await fetch(GROQ_API_URL, {
+      // Call OpenAI API
+      const response = await fetch(OPENAI_API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({
-          model: GROQ_MODEL,
+          model: "gpt-4o-mini",
           messages,
           max_tokens: 800,
           temperature: 0.7,
@@ -190,7 +164,7 @@ class AIService {
 
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error?.message || "Groq API error");
+        throw new Error(err.error?.message || "OpenAI API error");
       }
 
       const data = await response.json();
@@ -234,7 +208,7 @@ class AIService {
       return `Pending leave requests:\n\n${context.includes("Pending Leave") ? context.split("## Pending Leave")[1]?.split("##")[0] || "No pending leaves." : "No pending leave requests."}\n\n*Note: Add OPENAI_API_KEY to backend/.env.*`;
     }
     if (q.includes("hello") || q.includes("hi") || q.includes("hey")) {
-      return `Hello! I'm **Infinito AI** — the official assistant of InfinitoComics India. 🌟\n\nI know everything about Infinito:\n- 🦸 Characters, comics, storylines & the universe\n- 🎮 Games, animation & Infinito Ultimate\n- 👥 Team, employees & HR operations\n- ✅ Tasks, projects & work assignments\n- 📅 Attendance, leaves & payroll\n- 🛒 Shop, merchandise & products\n- 📚 Research papers & foundation\n- 🎓 Careers & internships\n\nWhat would you like to explore?`;
+      return `Hello! I'm **Infinito AI**, your internal HR and operations assistant. 👋\n\nI can help you with:\n- 👥 Employee information\n- ✅ Task and project status\n- 📅 Attendance and leave data\n- 📊 Performance insights\n- 🎫 Self-service requests\n- 📚 Knowledge base search\n\nWhat would you like to know?\n\n*Note: Add OPENAI_API_KEY to backend/.env for full AI capabilities.*`;
     }
 
     return `I received your question: *"${question}"*\n\nI found the following relevant data:\n${context || "No specific data matched your query."}\n\n**To enable full AI responses:** Add your OpenAI API key to \`backend/.env\`:\n\`\`\`\nOPENAI_API_KEY=sk-...\n\`\`\``;

@@ -7,50 +7,7 @@ const createChannel   = async (req,res) => { try { const {performedBy,performedB
 const getAllChannels   = async (req,res) => { try { const d=await svc.getAllChannels(); res.status(200).json({success:true,data:d,count:d.length}); } catch(e){res.status(500).json({success:false,message:e.message});} };
 const getMyChannels   = async (req,res) => { try { const d=await svc.getChannelsForUser(req.user._id); res.status(200).json({success:true,data:d,count:d.length}); } catch(e){res.status(500).json({success:false,message:e.message});} };
 const getOrCreateDM   = async (req,res) => { try { const {targetUserId,targetUserName}=req.body; if(!targetUserId) return res.status(400).json({success:false,message:"targetUserId required."}); const myName=req.user.name||req.user.username||req.user.email||"Admin"; const d=await svc.getOrCreateDM(req.user._id,targetUserId,myName,targetUserName||"User"); res.status(200).json({success:true,data:d}); } catch(e){res.status(500).json({success:false,message:e.message});} };
-const addMember = async (req, res) => {
-  try {
-    const { userId, memberId } = req.body;
-    const employeeId = userId || memberId;
-    if (!employeeId) return res.status(400).json({ success: false, message: "userId or memberId required." });
-
-    // The employee ID passed is from the Employee collection.
-    // We need the Admin account ID (login account) — look it up by matching email.
-    let adminId = employeeId; // default fallback
-    try {
-      const Employee = (await import('../models/Employee.js')).default;
-      const Admin    = (await import('../models/Admin.js')).default;
-      const emp = await Employee.findById(employeeId).select('email');
-      if (emp?.email) {
-        const admin = await Admin.findOne({ email: emp.email }).select('_id');
-        if (admin) adminId = admin._id;
-      }
-    } catch (lookupErr) {
-      console.warn("Admin lookup warning:", lookupErr.message);
-    }
-
-    const d = await svc.addMember(req.params.id, adminId);
-
-    // Send notification to the added member
-    try {
-      const Notification = (await import('../models/Notification.js')).default;
-      const Channel = (await import('../models/Channel.js')).default;
-      const channel = await Channel.findById(req.params.id).select('name');
-      await Notification.create({
-        recipientId:    adminId,
-        recipientModel: "Admin",
-        type:           "announcement",
-        title:          `Added to #${channel?.name || 'channel'}`,
-        message:        `${req.user.name || 'Admin'} added you to the channel #${channel?.name || 'channel'}. Open Chat to see messages.`,
-        link:           "/hr/chat",
-        triggeredBy:    req.user._id,
-      });
-    } catch (notifErr) {
-      console.warn("Notification send warning:", notifErr.message);
-    }
-
-    res.status(200).json({ success: true, data: d });
-  } catch (e) { res.status(500).json({ success: false, message: e.message }); }
-};
+const addMember       = async (req,res) => { try { const {userId}=req.body; const d=await svc.addMember(req.params.id,userId); res.status(200).json({success:true,data:d}); } catch(e){res.status(500).json({success:false,message:e.message});} };
 const deleteChannel   = async (req,res) => { try { const {performedBy,performedByName}=gp(req); await svc.deleteChannel(req.params.id,performedBy,performedByName); res.status(200).json({success:true,message:"Channel deleted."}); } catch(e){res.status(e.message.includes("not found")?404:500).json({success:false,message:e.message});} };
 
 // ── Messages ───────────────────────────────────────────────────

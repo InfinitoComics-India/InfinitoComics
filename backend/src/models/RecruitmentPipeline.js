@@ -17,7 +17,9 @@ const RecruitmentPipelineSchema = new mongoose.Schema(
   {
     // ── Link to existing JobApplication ───────────────────────
     applicationId: {
-      type: mongoose.Schema.Types.Mixed, // ObjectId for real apps, string for manually added
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "JobApplication",
+      required: true,
       unique: true,
     },
 
@@ -72,10 +74,6 @@ const RecruitmentPipelineSchema = new mongoose.Schema(
     internalNotes: { type: String, default: "" },
     assignedTo:    { type: mongoose.Schema.Types.ObjectId, ref: "Employee" },
     createdBy:     { type: mongoose.Schema.Types.ObjectId },
-
-    // ── Conversion tracking ───────────────────────────────────
-    convertedToEmployeeId: { type: mongoose.Schema.Types.ObjectId, ref: "Employee", default: null },
-    convertedAt:           { type: Date, default: null },
   },
   { timestamps: true }
 );

@@ -2,93 +2,6 @@ import RecruitmentPipelineRepository from "../repository/recruitmentPipeline-rep
 import AuditLogRepository from "../repository/auditLog-repository.js";
 import NotificationRepository from "../repository/notification-repository.js";
 import EmployeeRepository from "../repository/employee-repository.js";
-import { sendEmail } from "../utils/sendEmail.js";
-
-// ── Offer letter email template ──────────────────────────────
-const buildOfferLetterEmail = (candidate, offerDetails, jobTitle) => {
-  const joiningDate = offerDetails.joiningDate
-    ? new Date(offerDetails.joiningDate).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })
-    : "To be discussed";
-  const today = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
-
-  return `OFFER LETTER
-
-Date: ${today}
-
-To,
-${candidate.candidateName}
-
-Dear ${candidate.candidateName.split(" ")[0]},
-
-Subject: Offer of Employment — ${jobTitle} at InfinitoComics India
-
-We are delighted to extend this formal offer of employment to you for the position of ${jobTitle} at InfinitoComics India Private Limited.
-
-After a thorough evaluation of your qualifications and interviews, we are pleased to offer you the following terms:
-
-POSITION DETAILS
-- Designation: ${jobTitle}
-- Employment Type: Full-Time
-- Joining Date: ${joiningDate}
-${offerDetails.salary ? `- Compensation: ₹${Number(offerDetails.salary).toLocaleString("en-IN")} per annum (CTC)` : ""}
-
-${offerDetails.note ? `ADDITIONAL NOTES\n${offerDetails.note}\n` : ""}
-NEXT STEPS
-Please review this offer and confirm your acceptance by replying to this email at career@infinitohq.com within 3 working days.
-
-Upon acceptance, our HR team will share the complete employment agreement, onboarding details, and any further documentation required.
-
-We are excited about the possibility of you joining the InfinitoComics family and contributing to our mission of bringing world-class comics to India.
-
-Warm regards,
-
-Talent Acquisition Team
-InfinitoComics India Private Limited
-career@infinitohq.com
-https://infinitohq.com
-
----
-This offer is conditional upon successful background verification and submission of required documents.
-This letter is confidential and intended solely for ${candidate.candidateName}.`;
-};
-const buildInterviewEmail = (candidate, interview, jobTitle) => {
-  const dateStr = interview.scheduledAt
-    ? new Date(interview.scheduledAt).toLocaleString("en-IN", {
-        weekday: "long", day: "2-digit", month: "long", year: "numeric",
-        hour: "2-digit", minute: "2-digit", hour12: true,
-      })
-    : "To be confirmed";
-
-  const typeLabel = {
-    phone:     "Phone Screening",
-    video:     "Video Interview",
-    technical: "Technical Interview",
-    hr:        "HR Interview",
-    final:     "Final Interview",
-  }[interview.type] || "Interview";
-
-  return `Dear ${candidate.candidateName},
-
-We are pleased to inform you that you have been shortlisted for the position of ${jobTitle} at InfinitoComics.
-
-We would like to schedule a ${typeLabel} (Round ${interview.round}) with you.
-
-Interview Details:
-- Type: ${typeLabel}
-- Round: ${interview.round}
-- Date & Time: ${dateStr}
-${interview.conductedBy ? `- Interviewer: ${interview.conductedBy}` : ""}
-${interview.notes ? `- Additional Notes: ${interview.notes}` : ""}
-
-Please ensure you are available at the scheduled time. If you have any questions or need to reschedule, please reply to this email or contact us at career@infinitohq.com.
-
-We look forward to speaking with you.
-
-Best regards,
-Talent Acquisition Team
-InfinitoComics India
-career@infinitohq.com`;
-};
 
 class RecruitmentPipelineService {
   constructor() {
@@ -96,11 +9,6 @@ class RecruitmentPipelineService {
     this.auditRepo        = new AuditLogRepository();
     this.notificationRepo = new NotificationRepository();
     this.employeeRepo     = new EmployeeRepository();
-  }
-
-  async checkExists(applicationId) {
-    try { return await this.pipelineRepo.findByApplication(applicationId); }
-    catch (e) { console.error("RecruitmentPipelineService.checkExists:", e); throw e; }
   }
 
   async addToPipeline(data, performedBy, performedByName) {
@@ -123,47 +31,12 @@ class RecruitmentPipelineService {
     catch (e) { console.error("RecruitmentPipelineService.getByStage:", e); throw e; }
   }
 
-  async moveStage(id, newStage, note, performedBy, performedByName, offerDetails = null) {
+  async moveStage(id, newStage, note, performedBy, performedByName) {
     try {
       const entry = await this.pipelineRepo.getById(id);
       if (!entry) throw new Error("Pipeline entry not found.");
-
-      // If offer_sent — save offer details to the record first
-      if (newStage === "offer_sent" && offerDetails) {
-        await this.pipelineRepo.findByIdandUpdate(id, {
-          offerDetails: {
-            salary:      offerDetails.salary,
-            joiningDate: offerDetails.joiningDate ? new Date(offerDetails.joiningDate) : undefined,
-            note:        offerDetails.note || "",
-            sentAt:      new Date(),
-          },
-        });
-      }
-
       const updated = await this.pipelineRepo.moveStage(id, newStage, performedBy, note);
       await this.auditRepo.create({ performedBy, performedByName, action: "STATUS_CHANGE", entity: "RecruitmentPipeline", entityId: id, oldValue: { stage: entry.stage }, newValue: { stage: newStage }, description: `${entry.candidateName} moved from ${entry.stage} → ${newStage}. ${note||""}` });
-
-      // ── Send stage-change email to candidate ──────────────
-      if (entry.candidateEmail) {
-        if (newStage === "offer_sent") {
-          const offerData = offerDetails || entry.offerDetails || {};
-          const subject = `Offer Letter — ${entry.jobTitle} | InfinitoComics`;
-          const body    = buildOfferLetterEmail(entry, offerData, entry.jobTitle);
-          await sendEmail(entry.candidateEmail, subject, body);
-        } else if (newStage === "hired") {
-          await sendEmail(
-            entry.candidateEmail,
-            `Welcome to InfinitoComics! — ${entry.jobTitle}`,
-            `Dear ${entry.candidateName},\n\nCongratulations! We are thrilled to confirm your selection for the role of ${entry.jobTitle} at InfinitoComics.\n\nPlease check your inbox for further onboarding details from our HR team. For any queries, feel free to reach us at career@infinitohq.com.\n\nWelcome aboard!\n\nBest regards,\nTalent Acquisition Team\nInfinitoComics India\ncareer@infinitohq.com`
-          );
-        } else if (newStage === "rejected") {
-          await sendEmail(
-            entry.candidateEmail,
-            `Application Update — ${entry.jobTitle} | InfinitoComics`,
-            `Dear ${entry.candidateName},\n\nThank you for your interest in the ${entry.jobTitle} position at InfinitoComics and for taking the time to go through our interview process.\n\nAfter careful consideration, we have decided to move forward with other candidates whose experience more closely matches our current requirements.\n\nWe truly appreciate your effort and wish you all the best in your career journey. We will keep your profile on file for future opportunities. Feel free to reach out to us at career@infinitohq.com.\n\nBest regards,\nTalent Acquisition Team\nInfinitoComics India\ncareer@infinitohq.com`
-          );
-        }
-      }
 
       // If hired → notify HR to create employee record
       if (newStage === "hired") {
@@ -178,40 +51,10 @@ class RecruitmentPipelineService {
 
   async addInterview(id, interview, performedBy, performedByName) {
     try {
-      const entry   = await this.pipelineRepo.getById(id);
-      if (!entry) throw new Error("Pipeline entry not found.");
-
       const updated = await this.pipelineRepo.addInterview(id, interview);
-
-      await this.auditRepo.create({
-        performedBy, performedByName,
-        action: "UPDATE", entity: "RecruitmentPipeline", entityId: id,
-        description: `Scheduled ${interview.type} interview round ${interview.round} for ${entry.candidateName}`,
-      });
-
-      // ── Send interview email to candidate ─────────────────
-      if (entry.candidateEmail) {
-        const typeLabel = {
-          phone: "Phone Screening", video: "Video Interview",
-          technical: "Technical Interview", hr: "HR Interview", final: "Final Interview",
-        }[interview.type] || "Interview";
-
-        const subject = `Interview Invitation — ${typeLabel} (Round ${interview.round}) | ${entry.jobTitle} | InfinitoComics`;
-        const body    = buildInterviewEmail(entry, interview, entry.jobTitle);
-
-        await sendEmail(entry.candidateEmail, subject, body);
-      }
-
-      // Move stage to interview_scheduled if still at applied/screening
-      if (["applied","screening"].includes(entry.stage)) {
-        await this.pipelineRepo.moveStage(id, "interview_scheduled", performedBy, "Interview scheduled");
-      }
-
+      await this.auditRepo.create({ performedBy, performedByName, action: "UPDATE", entity: "RecruitmentPipeline", entityId: id, description: `Scheduled ${interview.type} interview round ${interview.round}` });
       return updated;
-    } catch (e) {
-      console.error("RecruitmentPipelineService.addInterview:", e);
-      throw e;
-    }
+    } catch (e) { console.error("RecruitmentPipelineService.addInterview:", e); throw e; }
   }
 
   async updateInterview(pipelineId, interviewId, data, performedBy, performedByName) {
@@ -241,89 +84,6 @@ class RecruitmentPipelineService {
       await this.auditRepo.create({ performedBy, performedByName, action: "DELETE", entity: "RecruitmentPipeline", entityId: id, description: "Deleted pipeline entry" });
       return { success: true };
     } catch (e) { console.error("RecruitmentPipelineService.deleteEntry:", e); throw e; }
-  }
-
-  // ── Convert hired candidate → Employee + auto-trigger onboarding ──
-  async convertToEmployee(id, extraData, performedBy, performedByName) {
-    try {
-      const entry = await this.pipelineRepo.getById(id);
-      if (!entry) throw new Error("Pipeline entry not found.");
-      if (entry.stage !== "hired") throw new Error("Only hired candidates can be converted to employees.");
-      if (entry.convertedToEmployeeId) throw new Error("This candidate has already been converted to an employee.");
-
-      // Split candidateName into first + last
-      const nameParts = (entry.candidateName || "").trim().split(" ");
-      const firstName = nameParts[0] || "Unknown";
-      const lastName  = nameParts.slice(1).join(" ") || "-";
-
-      // Build employee payload — prefer extraData values over pipeline defaults
-      const joiningDate = extraData.joiningDate || entry.offerDetails?.joiningDate || new Date();
-
-      const employeeData = {
-        firstName,
-        lastName,
-        email:          entry.candidateEmail,
-        phone:          extraData.phone || entry.candidatePhone || "",
-        designation:    extraData.designation || entry.jobTitle,
-        department:     extraData.department  || "Engineering",
-        employmentType: extraData.employmentType || "full-time",
-        hrRole:         "employee",
-        status:         "active",
-        joiningDate:    new Date(joiningDate),
-        skills:         extraData.skills || [],
-        linkedIn:       extraData.linkedIn || "",
-        github:         extraData.github   || "",
-      };
-
-      const Employee = (await import("../models/Employee.js")).default;
-      const OnboardingService = (await import("./onboarding-service.js")).default;
-
-      // Create the employee record
-      const employee = await new Employee(employeeData).save();
-
-      // Auto-initiate onboarding checklist
-      const onboardingSvc = new OnboardingService();
-      await onboardingSvc.initiate(
-        employee._id,
-        "onboarding",
-        {
-          startDate:      new Date(joiningDate),
-          welcomeMessage: `Welcome to InfinitoComics, ${firstName}! You've been hired as ${employeeData.designation}.`,
-        },
-        performedBy,
-        performedByName
-      );
-
-      // Mark pipeline entry as converted
-      await this.pipelineRepo.findByIdandUpdate(id, {
-        convertedToEmployeeId: employee._id,
-        convertedAt:           new Date(),
-      });
-
-      await this.auditRepo.create({
-        performedBy, performedByName,
-        action:      "CREATE",
-        entity:      "Employee",
-        entityId:    employee._id,
-        description: `Converted hired candidate "${entry.candidateName}" (${entry.jobTitle}) to employee ${employee.employeeId}. Onboarding auto-initiated.`,
-      });
-
-      // Notify all HR managers
-      const hrs = await this.employeeRepo.getByRole("hr_manager");
-      for (const hr of hrs) {
-        await this.notificationRepo.create({
-          recipientId:    hr._id,
-          recipientModel: "Employee",
-          type:           "system",
-          title:          "New Employee Created",
-          message:        `${firstName} ${lastName} has been converted from candidate to employee (${employee.employeeId}). Onboarding checklist is live.`,
-          link:           "/hr/onboarding",
-          triggeredBy:    performedBy,
-        });
-      }
-
-      return { employee, message: `Employee ${employee.employeeId} created and onboarding initiated.` };
-    } catch (e) { console.error("RecruitmentPipelineService.convertToEmployee:", e); throw e; }
   }
 }
 

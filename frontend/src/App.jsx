@@ -33,7 +33,7 @@ import OrderSuccess from './pages/OrderFlow/OrderSuccess';
 import OrderDetails from './pages/OrderFlow/OrderDetails';
 import OrderCancel from './pages/OrderFlow/OrderCancel';
 import OrderCancelled from './pages/OrderFlow/OrderCancelled';
-import InfinitoAds from './pages/InfinitoAds/Ads.jsx'
+
 import ComicsPage from './pages/Comics/ComicsPage.jsx'
 import Characters from './pages/Characters/index.jsx'
 import Biography from './pages/biography/Index.jsx'
@@ -174,7 +174,6 @@ function App() {
               <Route path="/category/:category" element={<ProductDetail />} />
               <Route path="/category/:category/:id" element={<ProductDetail />} />
               <Route path="*" element={<NotFound />} />
-              <Route path="/ads" element={<InfinitoAds />} />
             </Route>
           </Routes>
         </BrowserRouter>

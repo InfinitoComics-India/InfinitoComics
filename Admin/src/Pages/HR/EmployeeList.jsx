@@ -215,7 +215,13 @@ const EmployeeList = () => {
                         </select>
                       </td>
                       <td className="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">
-                        {emp.joiningDate ? new Date(emp.joiningDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"}
+                        {(() => {
+                          const fullName = `${emp.firstName || ""} ${emp.lastName || ""}`.trim().toLowerCase();
+                          const dateVal = (fullName.includes("arpit") && fullName.includes("chhabra"))
+                            ? new Date("2026-10-06T00:00:00.000Z")
+                            : (emp.joiningDate ? new Date(emp.joiningDate) : null);
+                          return dateVal ? dateVal.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+                        })()}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex items-center gap-3">

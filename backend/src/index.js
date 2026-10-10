@@ -61,7 +61,7 @@ import productRoutes from './routes/product-routes.js';
 import categoryRoutes from './routes/category-routes.js';
 import inventoryRoutes from './routes/inventory-routes.js';
 import orderRoutes from './routes/order-routes.js';
-import adsInquiryRoutes from './routes/adsInquiry-routes.js';
+import companyProfileRoutes from './routes/companyProfile-routes.js';
 
 
 const explicitOrigins = [
@@ -168,13 +168,11 @@ app.use('/hr/worklog',        dailyWorkLogRoutes);
 app.use('/messages',          directMessageRoutes);
 
 // Shop routes
-app.use('/shop/products',     productRoutes);
-app.use('/shop/categories',   categoryRoutes);
-app.use('/shop/inventory',    inventoryRoutes);
-app.use('/shop/orders',       orderRoutes);
-
-// Ads Inquiry routes
-app.use('/api/ads-inquiry',   adsInquiryRoutes);
+app.use('/shop/products',        productRoutes);
+app.use('/shop/categories',      categoryRoutes);
+app.use('/shop/inventory',       inventoryRoutes);
+app.use('/shop/orders',          orderRoutes);
+app.use('/shop/company-profile', companyProfileRoutes);
 
 app.get('/', (req, res) => {
   res.send('Backend is up and running!');

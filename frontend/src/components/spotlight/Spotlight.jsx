@@ -4,7 +4,6 @@ import { PlayCircle } from "lucide-react";
 import bgtop from "../../../assets/Images/spotlighttopbg.png";
 import bgbottom from "../../../assets/Images/spotlightbottombg.png";
 import SpotlightShimmer from "../../shimmer/landingPageShimmer/SpotlightShimmer";
-import Spotlightimg from "../../../assets/Images/spotlight/Spotlightimg.png"
 
 const Spotlight = () => {
     const [loading, setLoading] = useState(true);
@@ -58,7 +57,7 @@ const Spotlight = () => {
           {/* Right section for image with play icon overlay */}
           <div className="relative w-full sm:w-[80%] md:w-[600px]">
             <img
-              src={Spotlightimg}
+              src={rival}
               alt="Spotlight"
               className="w-full h-auto rounded-md object-cover"
             />

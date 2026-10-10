@@ -8,11 +8,9 @@ const AdminSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    lowercase: true,
-    trim: true,
     validate: {
-      validator: (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
-      message: "Please enter a valid email address"
+      validator: (v) => v.endsWith("@infinitohq.com"),
+      message: "Email must be an @infinitohq.com address"
     }
   },
   password: {
@@ -22,12 +20,6 @@ const AdminSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true
-  },
-  // Optional employee ID (e.g. EMP-001) assigned by superadmin
-  employeeId: {
-    type: String,
-    default: "",
-    trim: true,
   },
   // roles is now an array (max 4), but we keep role as fallback for backward compat
   roles: {
@@ -49,6 +41,10 @@ const AdminSchema = new mongoose.Schema({
       values: VALID_ROLES,
       message: `Role must be one of: ${VALID_ROLES.join(", ")}`
     }
+  },
+  shopAccess: {
+    type: Boolean,
+    default: false
   }
 }, { timestamps: true });
 

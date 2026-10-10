@@ -13,8 +13,6 @@ import ExclusiveContent from './ExclusiveContent';
 import NewsletterSection from '../Footer/Newsletter';
 import Comic from '../../components/Comics/Comic.jsx';
 import CharacterCarousel from '../Characters/CharacterCarousel';
-import KitComponent from './KitComponent.jsx';
-import ResearchSection from './ReasearchSection.jsx';
 
 const Home = () => {
   const user = JSON.parse(localStorage.getItem('user'));
@@ -34,51 +32,30 @@ const Home = () => {
       {/* 3. Character Spotlight */}
       <CharacterSpotlight />
 
-      {/* 4. Today's Spotlight with Left & Right AD Banners */}
-      <div className="w-full bg-white flex items-stretch justify-between">
-        {/* Left AD */}
-        <div className="hidden md:flex w-16 lg:w-24 xl:w-32 bg-[#D1D5DB] shrink-0 items-center justify-center select-none">
-          <span className="text-white font-bold text-lg md:text-xl lg:text-2xl tracking-widest">
-            AD
-          </span>
-        </div>
-
-        {/* Center: Today's Spotlight */}
-        <div className="flex-1 min-w-0">
-          <TodaySpotlight />
-        </div>
-
-        {/* Right AD */}
-        <div className="hidden md:flex w-16 lg:w-24 xl:w-32 bg-[#D1D5DB] shrink-0 items-center justify-center select-none">
-          <span className="text-white font-bold text-lg md:text-xl lg:text-2xl tracking-widest">
-            AD
-          </span>
-        </div>
-      </div>
+      {/* 4. Today's Spotlight */}
+      <TodaySpotlight />
 
       {/* 5. Style Yourself Like a Super Hero */}
       <HeroSection />
-      <KitComponent/>
-
 
       {/* 6. Collector's Paradise */}
-      {/* <LandingMerch /> */}
+      <LandingMerch />
 
       {/* 7. Join the Ultimate Universe */}
-      {/* <JoinUltimate /> */}
+      <JoinUltimate />
 
       {/* 8. Premium Plans */}
-      {/* <PremiumPlans /> */}
+      <PremiumPlans />
 
       {/* 9. Fan Favourites */}
-      {/* <Comic /> */} 
+      <Comic />
 
       {/* 10. Spotlight (video) */}
       <Spotlight />
 
       {/* 11. Upcoming Events */}
-      {/* <UpcomingEvents /> */}
-      <ResearchSection/>
+      <UpcomingEvents />
+
       {/* 12. Foundation Section */}
       <FoundationSection />
 
@@ -86,8 +63,7 @@ const Home = () => {
       <ExclusiveContent />
 
       {/* 14. Newsletter */}
-      <NewsletterSection/>
-      {/* {user && !user.newsLetter && <NewsletterSection />} */}
+      {user && !user.newsLetter && <NewsletterSection />}
     </div>
   );
 };
