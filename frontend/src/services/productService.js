@@ -224,6 +224,9 @@ const resolveImageUrl = (url) => {
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
     return url;
   }
+  if (url.startsWith('/products/') || url.startsWith('/assets/') || url.startsWith('/banners/') || url.startsWith('/order-assets/')) {
+    return url;
+  }
   const base = BASE_URL?.replace(/\/$/, '') || 'https://infinitocomics-68cr.onrender.com';
   const path = url.startsWith('/') ? url : `/${url}`;
   return `${base}${path}`;
