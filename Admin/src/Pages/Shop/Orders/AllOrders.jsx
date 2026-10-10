@@ -145,10 +145,19 @@ const AllOrders = () => {
   const stats = calculateStats();
 
   // Status tag styling helpers
-  const getPaymentStatusTag = (status) => {
-    switch ((status || '').toLowerCase()) {
+  const getPaymentStatusTag = (status, method) => {
+    const s = String(status || '').toLowerCase().trim();
+    const m = String(method || '').toLowerCase().trim();
+    const isCOD = s === 'cod' || m === 'cod' || m.includes('cash on delivery') || m.includes('cod');
+
+    if (isCOD && s !== 'paid') {
+      return <Tag color="warning" className="px-2.5 py-0.5 font-bold uppercase text-xs">COD</Tag>;
+    }
+    switch (s) {
       case 'paid':
         return <Tag color="success" className="px-2.5 py-0.5 font-bold uppercase text-xs">Paid</Tag>;
+      case 'cod':
+        return <Tag color="warning" className="px-2.5 py-0.5 font-bold uppercase text-xs">COD</Tag>;
       case 'pending':
         return <Tag color="warning" className="px-2.5 py-0.5 font-bold uppercase text-xs">Pending</Tag>;
       case 'failed':
@@ -587,7 +596,7 @@ const AllOrders = () => {
 
                       {/* Payment Status */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        {getPaymentStatusTag(order.payment?.status)}
+                        {getPaymentStatusTag(order.payment?.status, order.payment?.method || order.paymentMethod)}
                       </td>
 
                       {/* Fulfillment Status */}
@@ -598,8 +607,8 @@ const AllOrders = () => {
                       {/* Actions */}
                       <td className="py-3.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1.5">
-                          {/* Send to Qikink quick button if unfulfilled/paid */}
-                          {isPaid && isUnfulfilled && !isQikinkSent && (
+                          {/* Send to Qikink quick button if unfulfilled */}
+                          {isUnfulfilled && !isQikinkSent && (
                             <button
                               onClick={(e) => handleOpenQikinkModal(order, e)}
                               className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#DD1215] hover:bg-red-700 text-white rounded text-xs font-bold transition shadow-xs"
