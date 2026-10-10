@@ -1,7 +1,7 @@
 import React, { useState, useRef, useLayoutEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import URLs from '../../Utils/utils.js';
-import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, ChevronDown, Mail, UserCog, Bell, ScrollText, CalendarDays, CalendarOff, Kanban, UserCheck, FolderKanban, TrendingUp, Target, Award as AwardIcon, Building2, IndianRupee, UserPlus, FileArchive, UserSearch, MessagesSquare, BookMarked, LifeBuoy, Sparkles, ShoppingBag, Package, FolderOpen, BarChart3, ClipboardList } from "lucide-react";
+import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, ChevronDown, Mail, UserCog, Bell, ScrollText, CalendarDays, CalendarOff, Kanban, UserCheck, FolderKanban, TrendingUp, Target, Award as AwardIcon, Building2, IndianRupee, UserPlus, FileArchive, UserSearch, MessagesSquare, BookMarked, LifeBuoy, Sparkles, ShoppingBag, Package, FolderOpen, BarChart3, ClipboardList, Megaphone } from "lucide-react";
 import { message, Popconfirm } from "antd";
 import { getRoles } from '../../Utils/auth.js';
 
@@ -34,6 +34,7 @@ const NAV_ITEMS = [
   { label: "Users",           to: "/users",            icon: Users,          roles: ["superadmin"] },
   { label: "Admin Mgmt",      to: "/admin-management", icon: ShieldCheck,    roles: ["superadmin"] },
   { label: "Contact Queries", to: "/contact-queries",  icon: Mail,           roles: ["superadmin"] },
+  { label: "Ads Inquiries",   to: "/ads",              icon: Megaphone,      roles: ["superadmin", "ads_admin"] },
   { label: "Wiki",            to: "/hr/wiki",                        icon: BookMarked,     roles: HR_ALL      },
   { label: "Infinito AI",     to: "/hr/ai",                          icon: Sparkles,       roles: HR_ALL      },
   { label: "Messages",        to: "/employee-portal?tab=messages",   icon: MessagesSquare, roles: ["employee"]},

@@ -65,13 +65,13 @@ const Home = () => {
       {/* <LandingMerch /> */}
 
       {/* 7. Join the Ultimate Universe */}
-      {/* <JoinUltimate />
+      {/* <JoinUltimate /> */}
 
       {/* 8. Premium Plans */}
       {/* <PremiumPlans /> */}
 
       {/* 9. Fan Favourites */}
-      {/* <Comic /> */} */
+      {/* <Comic /> */} 
 
       {/* 10. Spotlight (video) */}
       <Spotlight />
