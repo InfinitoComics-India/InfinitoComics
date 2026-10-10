@@ -579,6 +579,62 @@ if (typeof window !== 'undefined') {
   }
 }
 
+// Helper to resolve specific item names avoiding generic 'INFINITO Item' or 'INFINITO Merch'
+export const resolveSpecificItemName = (item) => {
+  if (!item) return 'Special Edition Crimson Red T-Shirt';
+  const prod = item.product || {};
+  const candidates = [item.name, prod.name, prod.title, item.title];
+  for (const c of candidates) {
+    if (c && typeof c === 'string') {
+      const trimmed = c.trim();
+      const lower = trimmed.toLowerCase();
+      if (lower !== 'infinito' && lower !== 'infinito merch' && lower !== 'infinito item' && lower !== 'merch' && lower !== 'item') {
+        return trimmed;
+      }
+    }
+  }
+  const pid = String(item.productId || prod.id || prod._id || prod.slug || item.sku || '').toLowerCase();
+  if (pid.includes('hoodie')) return 'Special Edition Crimson Bloodline Hoodie';
+  if (pid.includes('tote')) return 'Eco Heavy Canvas Tote Bag';
+  if (pid.includes('figure') || pid.includes('collectible') || pid.includes('action')) return 'Infinito Hero Metallic Collectible Figure';
+  if (pid.includes('poster')) return 'Cybernetic Universe Metallic Poster';
+  if (pid.includes('comic')) return 'The Chronicles of Infinito: Issue #1 Collector Edition';
+  if (pid.includes('cap')) return 'Infinito Superhero Embroidered Cap';
+  if (pid.includes('mug')) return 'INFINITO Emblem Ceramic Matte Mug';
+  if (pid.includes('box') || pid.includes('kit')) return 'Infinito Universe Ultimate Collector Kit';
+
+  const size = String(item.size || item.variant?.size || '').toLowerCase();
+  if (size === 'standard') {
+    return 'Infinito Hero Metallic Collectible Figure';
+  }
+  return 'Special Edition Crimson Red T-Shirt';
+};
+
+export const resolveSpecificItemThumbnail = (item) => {
+  if (!item) return 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80';
+  const prod = item.product || {};
+  const candidates = [
+    item.thumbnail,
+    item.image,
+    prod.image,
+    prod.thumbnail,
+    Array.isArray(prod.images) ? (typeof prod.images[0] === 'string' ? prod.images[0] : prod.images[0]?.url) : null
+  ];
+  for (const img of candidates) {
+    if (img && typeof img === 'string') {
+      const trimmed = img.trim();
+      if (trimmed && !trimmed.toLowerCase().includes('captainmarvel')) return trimmed;
+    }
+  }
+  const name = resolveSpecificItemName(item).toLowerCase();
+  if (name.includes('hoodie')) return 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&auto=format&fit=crop&q=80';
+  if (name.includes('tote')) return 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&auto=format&fit=crop&q=80';
+  if (name.includes('comic') || name.includes('figure') || name.includes('collectible')) return 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80';
+  if (name.includes('poster')) return 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&auto=format&fit=crop&q=80';
+  if (name.includes('mug')) return 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&auto=format&fit=crop&q=80';
+  return 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80';
+};
+
 // Helper to normalize orders loaded from customer-facing shop format or backend
 export const normalizeCustomerOrder = (raw) => {
   if (!raw) return null;
@@ -610,14 +666,14 @@ export const normalizeCustomerOrder = (raw) => {
     const prod = item.product || {};
     const unitPrice = Number(prod.price || prod.salePrice || prod.basePrice || item.unitPrice || item.price || 1299);
     const qty = Number(item.quantity || 1);
-    const name = item.name || prod.name || prod.title || 'INFINITO Item';
-    const thumbnail = prod.image || (Array.isArray(prod.images) ? prod.images[0]?.url || prod.images[0] : null) || item.thumbnail || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80';
+    const name = resolveSpecificItemName(item);
+    const thumbnail = resolveSpecificItemThumbnail(item);
     return {
       productId: item.productId || prod.id || prod._id || `prod-${idx}`,
       name,
       sku: item.sku || `INF-${name.substring(0, 3).toUpperCase()}-${item.size || item.variant?.size || 'M'}`,
       variant: {
-        size: item.size || item.variant?.size || 'M',
+        size: item.size || item.variant?.size || 'Standard',
         color: item.color || item.variant?.color || 'Standard',
       },
       thumbnail,
