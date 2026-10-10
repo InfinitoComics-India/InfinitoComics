@@ -184,11 +184,10 @@ const AttendanceManager = () => {
             </div>
 
             {/* Summary cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
                 { key:"present",  icon: CheckCircle, color:"text-green-600"  },
                 { key:"absent",   icon: XCircle,     color:"text-red-600"    },
-                { key:"late",     icon: AlertCircle, color:"text-yellow-600" },
                 { key:"half_day", icon: Clock,       color:"text-orange-600" },
                 { key:"on_leave", icon: Calendar,    color:"text-blue-600"   },
               ].map(({ key, icon: Icon, color }) => (
@@ -222,7 +221,7 @@ const AttendanceManager = () => {
                   <table className="min-w-full divide-y divide-gray-100 text-sm">
                     <thead className="bg-gray-50">
                       <tr>
-                        {["Employee","Status","Clock In","Clock Out","Hours","Late By","Actions"].map(h => (
+                        {["Employee","Status","Clock In","Clock Out","Hours","Actions"].map(h => (
                           <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                         ))}
                       </tr>
@@ -251,7 +250,6 @@ const AttendanceManager = () => {
                             <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{fmt(rec.clockIn)}</td>
                             <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{fmt(rec.clockOut)}</td>
                             <td className="px-4 py-3 text-xs font-semibold text-gray-700">{rec.hoursWorked > 0 ? `${rec.hoursWorked}h` : "—"}</td>
-                            <td className="px-4 py-3 text-xs text-yellow-600">{rec.isLate ? `${rec.lateByMinutes} mins` : "—"}</td>
                             <td className="px-4 py-3">
                               <button onClick={() => { setMarkModal({ recordId: rec._id }); setMarkForm({ date: isoDate(rec.date), status: rec.status, note: rec.note||"" }); }}
                                 className="text-xs text-blue-600 hover:underline font-semibold">Correct</button>
@@ -407,7 +405,7 @@ const AttendanceManager = () => {
                 <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Status</label>
                 <select value={markForm.status} onChange={e => setMarkForm(f => ({ ...f, status: e.target.value }))}
                   className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-[#DD1215]">
-                  {Object.entries(STATUS_STYLE).filter(([k])=>k!=="weekend").map(([s, v]) => (
+                  {Object.entries(STATUS_STYLE).filter(([k])=>k!=="weekend" && k!=="late").map(([s, v]) => (
                     <option key={s} value={s}>{v.label}</option>
                   ))}
                 </select>

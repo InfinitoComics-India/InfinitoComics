@@ -2,9 +2,7 @@ import AttendanceRepository from "../repository/attendance-repository.js";
 import AuditLogRepository from "../repository/auditLog-repository.js";
 import NotificationRepository from "../repository/notification-repository.js";
 
-const SHIFT_START_HOUR   = 9;  // 9:00 AM
-const SHIFT_START_MINUTE = 0;
-const GRACE_MINUTES      = 15; // 15 min grace before marking late
+const GRACE_MINUTES = 0; // flexible job — no late marking
 
 class AttendanceService {
   constructor() {
@@ -32,12 +30,9 @@ class AttendanceService {
         throw new Error("Already clocked in. Please clock out first.");
       }
 
-      // Late check
-      const shiftStart  = new Date(now);
-      shiftStart.setHours(SHIFT_START_HOUR, SHIFT_START_MINUTE, 0, 0);
-      const graceCutoff = new Date(shiftStart.getTime() + GRACE_MINUTES * 60 * 1000);
-      const isLate        = now > graceCutoff;
-      const lateByMinutes = isLate ? Math.floor((now - graceCutoff) / 60000) : 0;
+      // Flexible job — no shift start, no late marking
+      const isLate        = false;
+      const lateByMinutes = 0;
 
       const newSession = { clockIn: now, clockOut: null, hoursWorked: 0 };
       const sessions   = [...(existing?.sessions || []), newSession];
