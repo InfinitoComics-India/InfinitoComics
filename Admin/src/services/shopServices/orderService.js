@@ -1,6 +1,7 @@
 // Order service for Admin Orders Management, Qikink API fulfillment, tracking, and invoices
 import axios from 'axios';
 import { BACKEND_URL } from '../../Utils/constant';
+import { INFINITO_LOGO_BASE64 } from '../../Utils/infinitoLogoBase64';
 
 const ORDERS_STORAGE_KEY = 'infinito_orders';
 
@@ -585,12 +586,22 @@ export const normalizeCustomerOrder = (raw) => {
   const orderNum = String(raw.id || raw.orderId || '').replace(/^#/, '');
   const orderId = raw.orderId ? (raw.orderId.startsWith('#') ? raw.orderId : `#${raw.orderId}`) : `#${orderNum}`;
 
+  const methodStr = String(raw.paymentMethod || raw.payment?.method || '').trim();
+  const isCOD = methodStr.toUpperCase() === 'COD' || methodStr.toLowerCase().includes('cash on delivery') || methodStr.toLowerCase().includes('cod');
+
   // If already normalized with full nested structure from backend or admin
   if (raw.customer?.email && raw.fulfillment?.status && raw.pricing?.grandTotal !== undefined && Array.isArray(raw.items) && raw.shippingAddress) {
+    const paymentStatus = isCOD ? 'COD' : (raw.payment?.status || 'Paid');
     return {
       ...raw,
       id: orderNum || raw.id,
       orderId,
+      total: raw.total || raw.pricing?.grandTotal,
+      payment: {
+        ...(raw.payment || {}),
+        method: isCOD ? 'Cash on Delivery (COD)' : (raw.payment?.method || raw.paymentMethod || 'Razorpay (UPI)'),
+        status: paymentStatus,
+      },
       createdAt: raw.createdAt || new Date().toISOString(),
     };
   }
@@ -600,6 +611,7 @@ export const normalizeCustomerOrder = (raw) => {
     const unitPrice = Number(prod.price || prod.salePrice || prod.basePrice || item.unitPrice || item.price || 1299);
     const qty = Number(item.quantity || 1);
     const name = item.name || prod.name || prod.title || 'INFINITO Item';
+    const thumbnail = prod.image || (Array.isArray(prod.images) ? prod.images[0]?.url || prod.images[0] : null) || item.thumbnail || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80';
     return {
       productId: item.productId || prod.id || prod._id || `prod-${idx}`,
       name,
@@ -608,10 +620,17 @@ export const normalizeCustomerOrder = (raw) => {
         size: item.size || item.variant?.size || 'M',
         color: item.color || item.variant?.color || 'Standard',
       },
-      thumbnail: prod.image || (Array.isArray(prod.images) ? prod.images[0]?.url || prod.images[0] : null) || item.thumbnail || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
+      thumbnail,
       quantity: qty,
       unitPrice,
       total: unitPrice * qty,
+      product: {
+        ...prod,
+        name,
+        title: name,
+        price: unitPrice,
+        image: thumbnail,
+      },
     };
   });
 
@@ -633,7 +652,12 @@ export const normalizeCustomerOrder = (raw) => {
   }
 
   const isCancelled = fulfillStatus === 'Cancelled';
-  const paymentStatus = raw.payment?.status || (isCancelled ? 'Refunded' : 'Paid');
+  let paymentStatus = raw.payment?.status;
+  if (isCOD) {
+    paymentStatus = 'COD';
+  } else if (!paymentStatus) {
+    paymentStatus = isCancelled ? 'Refunded' : 'Paid';
+  }
 
   return {
     orderId,
@@ -665,6 +689,7 @@ export const normalizeCustomerOrder = (raw) => {
       formatted: addrFormatted,
     },
     items,
+    total: grandTotal,
     pricing: {
       subtotal,
       shipping,
@@ -673,8 +698,8 @@ export const normalizeCustomerOrder = (raw) => {
       grandTotal,
     },
     payment: {
-      method: raw.paymentMethod || raw.payment?.method || 'Razorpay (UPI)',
-      transactionId: raw.payment?.transactionId || `pay_Rzp${Math.floor(10000000 + Math.random() * 90000000)}`,
+      method: isCOD ? 'Cash on Delivery (COD)' : (raw.paymentMethod || raw.payment?.method || 'Razorpay (UPI)'),
+      transactionId: isCOD ? 'COD_PENDING' : (raw.payment?.transactionId || `pay_Rzp${Math.floor(10000000 + Math.random() * 90000000)}`),
       status: paymentStatus,
       date: raw.payment?.date || raw.createdAt || new Date().toISOString(),
     },
@@ -1011,6 +1036,11 @@ export const printPackingSlip = (order) => {
     ? 'Same as Shipping Address'
     : (order.billingAddress?.formatted ? order.billingAddress.formatted.replace(/\n/g, '<br/>') : shippingAddr);
 
+  const logoImage = order.companyProfile?.logoUrl || INFINITO_LOGO_BASE64;
+  const companyGst = order.companyProfile?.gstNumber || '03AABCI9821K1ZM';
+  const companyEmail = order.companyProfile?.contact?.email || 'support@infinitohq.com';
+  const companyWeb = order.companyProfile?.website || 'www.infinitocomics.com';
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -1020,7 +1050,7 @@ export const printPackingSlip = (order) => {
           * { box-sizing: border-box; }
           body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 40px; color: #1f2937; max-width: 850px; margin: 0 auto; background: #fff; }
           .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #DD1215; padding-bottom: 24px; margin-bottom: 28px; }
-          .logo-title { font-size: 32px; font-weight: 900; letter-spacing: 2px; color: #DD1215; line-height: 1; }
+          .logo-img { height: 46px; width: auto; max-width: 220px; object-fit: contain; margin-bottom: 6px; display: block; }
           .tagline { font-size: 11px; text-transform: uppercase; color: #6b7280; letter-spacing: 1.5px; margin-top: 4px; }
           .doc-badge { background: #fee2e2; color: #b91c1c; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase; display: inline-block; margin-bottom: 6px; }
           .meta-table { font-size: 13px; line-height: 1.6; text-align: right; }
@@ -1043,11 +1073,11 @@ export const printPackingSlip = (order) => {
       <body>
         <div class="header">
           <div>
-            <div class="logo-title">INFINITO</div>
+            <img src="${logoImage}" alt="Infinito Comics" class="logo-img" />
             <div class="tagline">Infinito Comics & Collectibles HQ</div>
             <div style="font-size: 12px; color: #4b5563; margin-top: 8px;">
-              GSTIN: <strong>03AABCI9821K1ZM</strong><br/>
-              Support: support@infinitohq.com | www.infinitohq.com
+              GSTIN: <strong>${companyGst}</strong><br/>
+              Support: ${companyEmail} | ${companyWeb}
             </div>
           </div>
           <div class="meta-table">
