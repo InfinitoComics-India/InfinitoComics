@@ -36,6 +36,8 @@ const NAV_ITEMS = [
   { label: "Users", to: "/users", icon: Users, roles: ["superadmin"] },
   { label: "Admin Mgmt", to: "/admin-management", icon: ShieldCheck, roles: ["superadmin"] },
   { label: "Contact Queries", to: "/contact-queries", icon: Mail, roles: ["superadmin"] },
+  { label: "Wiki", to: "/hr/wiki", icon: BookMarked, roles: ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin","shop_admin"] },
+  { label: "Infinito AI", to: "/hr/ai", icon: Sparkles, roles: ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin","shop_admin"] },
   { label: "Employee Portal", to: "/employee-portal", icon: UserCheck, roles: ["employee"] },
 ];
 
@@ -59,9 +61,7 @@ const HR_ITEMS = [
   { label: "Recruitment", to: "/hr/recruitment", icon: UserSearch, roles: HR_ALL },
   { label: "Chat", to: "/hr/chat", icon: MessagesSquare, roles: HR_ALL },
   { label: "Work Log", to: "/hr/worklog", icon: ClipboardList, roles: HR_ALL },
-  { label: "Wiki", to: "/hr/wiki", icon: BookMarked, roles: HR_ALL },
   { label: "Self Service", to: "/hr/self-service", icon: LifeBuoy, roles: HR_ALL },
-  { label: "Infinito AI", to: "/hr/ai", icon: Sparkles, roles: HR_ALL },
 ];
 
 // ── Shop sub-items (shown inside collapsible accordion) ────────
