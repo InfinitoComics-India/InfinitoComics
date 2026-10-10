@@ -5,6 +5,8 @@ import toast from "react-hot-toast";
 import {
   getOrderById,
   downloadInvoicePdf,
+  getOrderItemPrice,
+  getOrderTotal,
 } from "../../services/orderService";
 
 const OrderDetails = () => {
@@ -28,13 +30,13 @@ const OrderDetails = () => {
   const isCancelled = order.status === "Cancelled";
   const primaryItem = order.items?.[0] || {};
   const primaryProd = primaryItem.product || {};
-  const primaryPrice = Number(primaryProd.price || 1299);
+  const primaryPrice = getOrderItemPrice(primaryItem);
   const primaryMrp = Number(primaryProd.mrp || Math.round(primaryPrice * 1.6));
-  const primarySize = primaryItem.size || "M";
+  const primarySize = primaryItem.size || primaryItem.variant?.size || "M";
 
   return (
     <div className="bg-white min-h-screen text-black font-sans pb-24">
-      <div className="max-w-[1240px] mx-auto px-4 md:px-8 pt-8">
+      <div className="max-w-[1200px] mx-auto px-4 md:px-12 pt-8">
         
         {/* Back Link */}
         <button
@@ -285,10 +287,10 @@ const OrderDetails = () => {
               </thead>
               <tbody>
                 {(order.items || []).map((item, index) => {
-                  const price = Number(item.product?.price || 0);
+                  const price = getOrderItemPrice(item);
                   const qty = Number(item.quantity || 1);
                   const rowTotal = price * qty * 1.18;
-                  const itemName = item.product?.title || item.product?.name || "INFINITO Premium Tshirt";
+                  const itemName = item.product?.title || item.product?.name || item.name || item.title || "INFINITO Premium Tshirt";
 
                   return (
                     <tr
@@ -296,19 +298,19 @@ const OrderDetails = () => {
                       className="border-b border-gray-200 hover:bg-gray-50/50"
                     >
                       <td className="py-3.5 px-4 font-bold text-black">
-                        {itemName} {item.size ? `(${item.size})` : ""}
+                        {itemName} {item.size || item.variant?.size ? `(${item.size || item.variant?.size})` : ""}
                       </td>
                       <td className="py-3.5 px-4 text-center font-medium text-gray-800">
                         {qty}
                       </td>
                       <td className="py-3.5 px-4 text-right font-medium text-gray-800">
-                        {price}
+                        ₹{price}
                       </td>
                       <td className="py-3.5 px-4 text-right font-medium text-gray-800">
                         18%
                       </td>
                       <td className="py-3.5 px-4 text-right font-bold text-gray-900">
-                        {rowTotal.toFixed(2)}
+                        ₹{rowTotal.toFixed(2)}
                       </td>
                     </tr>
                   );
@@ -322,7 +324,7 @@ const OrderDetails = () => {
                     TOTAL
                   </td>
                   <td className="py-4 px-4 text-right font-black text-base md:text-lg text-black">
-                    ₹{Number(order.total).toFixed(2)}
+                    ₹{Number(getOrderTotal(order)).toFixed(2)}
                   </td>
                 </tr>
               </tbody>

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { BASE_URL } from '../utils/constants';
+import { INFINITO_LOGO_BASE64 } from '../utils/infinitoLogoBase64';
 
 // Service for managing Shop orders, delivery addresses, and invoice generation
 
@@ -161,11 +162,115 @@ export const setDefaultSavedAddress = (id) => {
   }
 };
 
+export const getOrderItemPrice = (item) => {
+  if (!item) return 1299;
+  const prod = item.product || {};
+  const candidates = [
+    prod.price,
+    prod.salePrice,
+    prod.basePrice,
+    item.unitPrice,
+    item.price,
+    item.total && item.quantity ? item.total / item.quantity : item.total,
+  ];
+
+  for (const c of candidates) {
+    if (c !== undefined && c !== null && c !== "") {
+      const parsed = typeof c === "number" ? c : Number(String(c).replace(/[^0-9.]/g, ""));
+      if (!isNaN(parsed) && parsed > 0) return parsed;
+    }
+  }
+  return 1299;
+};
+
+export const getOrderTotal = (order) => {
+  if (!order) return 0;
+  const candidates = [
+    order.total,
+    order.pricing?.grandTotal,
+    order.totalAmount,
+    order.grandTotal,
+    order.amount,
+  ];
+
+  for (const c of candidates) {
+    if (c !== undefined && c !== null && c !== "") {
+      const parsed = typeof c === "number" ? c : Number(String(c).replace(/[^0-9.]/g, ""));
+      if (!isNaN(parsed) && parsed > 0) return parsed;
+    }
+  }
+
+  if (Array.isArray(order.items) && order.items.length > 0) {
+    const calculated = order.items.reduce((sum, item) => {
+      const p = getOrderItemPrice(item);
+      const q = Number(item.quantity || 1);
+      return sum + p * q * 1.18;
+    }, 0);
+    if (calculated > 0) return Number(calculated.toFixed(2));
+  }
+
+  return 0;
+};
+
+export const normalizeOrder = (ord) => {
+  if (!ord) return null;
+  const total = getOrderTotal(ord);
+  const items = (ord.items || []).map((item, idx) => {
+    const price = getOrderItemPrice(item);
+    const qty = Number(item.quantity || 1);
+    const name = item.product?.title || item.product?.name || item.name || item.title || "INFINITO Merch";
+    const image = item.product?.image || (Array.isArray(item.product?.images) ? item.product.images[0]?.url || item.product.images[0] : null) || item.thumbnail || item.image || "/products/crimson_tshirt.jpg";
+    return {
+      ...item,
+      quantity: qty,
+      unitPrice: price,
+      name,
+      thumbnail: image,
+      total: price * qty,
+      product: {
+        ...(item.product || {}),
+        name,
+        title: name,
+        price,
+        image,
+      },
+    };
+  });
+
+  const method = String(ord.paymentMethod || ord.payment?.method || "").toUpperCase();
+  const isCOD = method === "COD" || method.includes("CASH ON DELIVERY");
+
+  return {
+    ...ord,
+    total,
+    subtotal: ord.subtotal || Math.round(total / 1.18),
+    pricing: {
+      subtotal: ord.pricing?.subtotal || ord.subtotal || Math.round(total / 1.18),
+      tax: ord.pricing?.tax || Number((total - (total / 1.18)).toFixed(2)),
+      shipping: ord.pricing?.shipping || 0,
+      grandTotal: total,
+    },
+    items,
+    paymentMethod: ord.paymentMethod || ord.payment?.method || (isCOD ? "COD" : "UPI"),
+    payment: {
+      ...(ord.payment || {}),
+      method: ord.payment?.method || ord.paymentMethod || (isCOD ? "COD" : "Razorpay (UPI)"),
+      status: isCOD ? "COD" : (ord.payment?.status || "Paid"),
+    },
+  };
+};
+
 export const getAllOrders = () => {
   try {
     const raw = localStorage.getItem(ORDERS_KEY);
     const list = raw ? JSON.parse(raw) : [];
-    return list;
+    if (!Array.isArray(list)) return [];
+    const normalized = list.map(normalizeOrder).filter(Boolean);
+    // Self-heal storage if amounts were 0 or unnormalized
+    try {
+      localStorage.setItem(ORDERS_KEY, JSON.stringify(normalized));
+    } catch {}
+    return normalized;
   } catch (e) {
     console.error("Failed to fetch all orders:", e);
     return [];
@@ -196,21 +301,34 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
   const outForDeliveryDate = formatOrderDate(now, 4);
   const deliveredDate = formatOrderDate(now, 6);
 
-  const subtotal = items.reduce((sum, item) => {
-    const p = Number(item.product?.price || 0);
-    const q = Number(item.quantity || 1);
-    return sum + p * q;
-  }, 0);
+  const cleanItems = (items || []).map((item) => {
+    const prod = item.product || {};
+    const price = getOrderItemPrice(item);
+    const qty = Number(item.quantity || 1);
+    const name = item.name || prod.name || prod.title || "INFINITO Merch";
+    const image = prod.image || (Array.isArray(prod.images) ? prod.images[0]?.url || prod.images[0] : null) || item.thumbnail || item.image || "/products/crimson_tshirt.jpg";
 
-  const total = items.reduce((sum, item) => {
-    const p = Number(item.product?.price || 0);
-    const q = Number(item.quantity || 1);
-    return sum + p * q * 1.18;
-  }, 0);
+    return {
+      ...item,
+      quantity: qty,
+      unitPrice: price,
+      name,
+      thumbnail: image,
+      total: price * qty,
+      product: {
+        ...prod,
+        name,
+        title: name,
+        price,
+        image,
+      },
+    };
+  });
 
-  const finalTotal = Number(total.toFixed(2));
+  const subtotal = cleanItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  const total = Number((subtotal * 1.18).toFixed(2));
   const cancellationFee = 199;
-  const refundAmount = Number(Math.max(0, finalTotal - cancellationFee).toFixed(2));
+  const refundAmount = Number(Math.max(0, total - cancellationFee).toFixed(2));
 
   // Pull customer profile if logged in
   let customerInfo = {
@@ -234,17 +352,30 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
   if (activeAddr.name) customerInfo.name = activeAddr.name;
   if (activeAddr.phone) customerInfo.phone = activeAddr.phone;
 
+  const isCOD = String(paymentMethod || '').toUpperCase() === 'COD' || String(paymentMethod || '').toLowerCase().includes('cash on delivery');
+
   const newOrder = {
     orderId,
     id: orderNumber.toString(),
     createdAt: now.toISOString(),
     customer: customerInfo,
-    items,
+    items: cleanItems,
     address: activeAddr,
     paymentMethod,
+    payment: {
+      method: isCOD ? "Cash on Delivery (COD)" : paymentMethod,
+      status: isCOD ? "COD" : "Paid",
+      date: now.toISOString(),
+    },
     subtotal,
     taxPercent: 18,
-    total: finalTotal,
+    total,
+    pricing: {
+      subtotal,
+      tax: Number((subtotal * 0.18).toFixed(2)),
+      shipping: 0,
+      grandTotal: total,
+    },
     cancellationFee,
     refundAmount,
     status: "Order Placed",
@@ -289,7 +420,7 @@ export const getOrderById = (idOrHash) => {
   if (!idOrHash) {
     try {
       const cur = localStorage.getItem(CURRENT_ORDER_KEY);
-      if (cur) return JSON.parse(cur);
+      if (cur) return normalizeOrder(JSON.parse(cur));
     } catch {}
   }
 
@@ -298,16 +429,16 @@ export const getOrderById = (idOrHash) => {
     const raw = localStorage.getItem(ORDERS_KEY);
     const list = raw ? JSON.parse(raw) : [];
     const found = list.find(
-      (o) => String(o.id) === clean || String(o.orderId) === `#${clean}`
+      (o) => String(o.id) === clean || String(o.orderId) === `#${clean}` || String(o.orderId) === clean
     );
-    if (found) return found;
+    if (found) return normalizeOrder(found);
 
     const cur = localStorage.getItem(CURRENT_ORDER_KEY);
-    if (cur) return JSON.parse(cur);
+    if (cur) return normalizeOrder(JSON.parse(cur));
   } catch {}
 
   // Fallback demo order matching SS2-SS4 if none exists
-  return {
+  return normalizeOrder({
     orderId: `#4721`,
     id: "4721",
     createdAt: new Date().toISOString(),
@@ -353,7 +484,7 @@ export const getOrderById = (idOrHash) => {
       outForDeliveryDate: formatOrderDate(new Date(), 4),
       deliveredDate: formatOrderDate(new Date(), 6),
     },
-  };
+  });
 };
 
 export const cancelOrder = (orderId, reasonData) => {
@@ -395,22 +526,24 @@ export const cancelOrder = (orderId, reasonData) => {
 
 // Generates and prints a clean, downloadable PDF invoice
 export const downloadInvoicePdf = (order) => {
-  const ord = order || getOrderById();
+  const ord = normalizeOrder(order || getOrderById());
   const printWindow = window.open("", "_blank", "width=800,height=900");
   if (!printWindow) {
     alert("Please allow popups to download the invoice PDF.");
     return;
   }
 
+  const totalAmount = getOrderTotal(ord);
+
   const itemsHtml = (ord.items || [])
     .map((item, idx) => {
-      const p = Number(item.product?.price || 0);
+      const p = getOrderItemPrice(item);
       const q = Number(item.quantity || 1);
       const rowTotal = (p * q * 1.18).toFixed(2);
-      const title = item.product?.title || item.product?.name || "INFINITO Premium Tshirt";
+      const title = item.product?.title || item.product?.name || item.name || "INFINITO Premium Tshirt";
       return `
         <tr style="border-bottom: 1px solid #e5e7eb;">
-          <td style="padding: 12px; font-weight: 600;">${title} (${item.size || 'M'})</td>
+          <td style="padding: 12px; font-weight: 600;">${title} (${item.size || item.variant?.size || 'M'})</td>
           <td style="padding: 12px; text-align: center;">${q}</td>
           <td style="padding: 12px; text-align: right;">₹${p}</td>
           <td style="padding: 12px; text-align: right;">18%</td>
@@ -424,6 +557,8 @@ export const downloadInvoicePdf = (order) => {
     ? ord.address.formatted.replace(/\n/g, "<br/>")
     : "Sector 18, House No. 42, Green Park Extension, Sector 18<br/>Chandigarh, Punjab<br/>160018, India";
 
+  const isCOD = String(ord.payment?.status || ord.paymentMethod || ord.payment?.method || '').toUpperCase().includes('COD');
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -432,7 +567,7 @@ export const downloadInvoicePdf = (order) => {
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 40px; color: #111; max-width: 800px; margin: 0 auto; }
           .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #DD1215; padding-bottom: 20px; margin-bottom: 30px; }
-          .logo { font-size: 28px; font-weight: 900; letter-spacing: 2px; color: #DD1215; text-transform: uppercase; }
+          .logo-img { height: 44px; width: auto; max-width: 200px; object-fit: contain; margin-bottom: 4px; display: block; }
           .meta { text-align: right; font-size: 13px; color: #555; line-height: 1.6; }
           .section-title { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; color: #000; }
           .address-box { border: 1px solid #ddd; padding: 15px; margin-bottom: 30px; font-size: 14px; line-height: 1.6; }
@@ -448,7 +583,7 @@ export const downloadInvoicePdf = (order) => {
       <body>
         <div class="header">
           <div>
-            <div class="logo">INFINITO</div>
+            <img src="${INFINITO_LOGO_BASE64}" alt="Infinito Comics" class="logo-img" />
             <div style="font-size: 11px; text-transform: uppercase; color: #666; letter-spacing: 1px;">Where Imagination Breaks Boundaries</div>
           </div>
           <div class="meta">
@@ -456,6 +591,7 @@ export const downloadInvoicePdf = (order) => {
             <div>Order: <strong>${ord.orderId}</strong></div>
             <div>Date: ${ord.timeline?.placedDate || formatOrderDate(new Date(), 0)}</div>
             <div>Status: ${ord.status}</div>
+            <div>Payment: <strong>${isCOD ? 'Cash on Delivery (COD)' : (ord.paymentMethod || 'Paid')}</strong></div>
           </div>
         </div>
 
@@ -479,7 +615,7 @@ export const downloadInvoicePdf = (order) => {
             ${itemsHtml}
             <tr class="total-row">
               <td colspan="4" style="text-transform: uppercase;">TOTAL</td>
-              <td style="text-align: right; color: #DD1215;">₹${Number(ord.total).toFixed(2)}</td>
+              <td style="text-align: right; color: #DD1215;">₹${Number(totalAmount).toFixed(2)}</td>
             </tr>
           </tbody>
         </table>
