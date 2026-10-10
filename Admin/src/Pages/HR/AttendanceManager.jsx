@@ -103,7 +103,7 @@ const AttendanceManager = () => {
 
   const empSummary = (empId) => {
     const rows = monthMap[empId] || {};
-    let present=0, absent=0, late=0, leave=0;
+    let present=0, absent=0, late=0, leave=0, halfDay=0;
     for (const d of allDays) {
       const r = rows[d];
       const isWknd = new Date(year, month-1, d).getDay() === 0 || new Date(year, month-1, d).getDay() === 6;
@@ -111,8 +111,9 @@ const AttendanceManager = () => {
       if (r?.status === "present") present++;
       if (r?.status === "late") { present++; late++; }
       if (r?.status === "on_leave") leave++;
+      if (r?.status === "half_day") halfDay++;
     }
-    return { present, absent, late, leave };
+    return { present, absent, late, leave, halfDay };
   };
 
   return (
@@ -278,112 +279,133 @@ const AttendanceManager = () => {
         {tab === "monthly" && (
           <>
             {/* Controls */}
-            <div className="bg-white border rounded-lg px-5 py-4 flex flex-wrap gap-4 items-end">
+            <div className="bg-white border rounded-lg px-5 py-4 flex flex-wrap gap-4 items-center">
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase">Month</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Month</label>
                 <select value={month} onChange={e => setMonth(parseInt(e.target.value))}
-                  className="border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-[#DD1215]">
+                  className="border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-[#DD1215] rounded">
                   {MONTHS.map((m, i) => <option key={i} value={i+1}>{m}</option>)}
                 </select>
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase">Year</label>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setYear(y => y-1)} className="border border-gray-300 p-2 hover:bg-gray-50 transition"><ChevronLeft size={14}/></button>
-                  <span className="text-sm font-bold px-2">{year}</span>
-                  <button onClick={() => setYear(y => y+1)} className="border border-gray-300 p-2 hover:bg-gray-50 transition"><ChevronRight size={14}/></button>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Year</label>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => setYear(y => y-1)} className="border border-gray-300 p-2 hover:bg-gray-50 rounded transition"><ChevronLeft size={14}/></button>
+                  <span className="text-sm font-bold px-3">{year}</span>
+                  <button onClick={() => setYear(y => y+1)} className="border border-gray-300 p-2 hover:bg-gray-50 rounded transition"><ChevronRight size={14}/></button>
                 </div>
               </div>
-              <button onClick={loadMonthAll} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 border border-gray-300 px-3 py-2 transition mt-4 rounded">
+              <button onClick={loadMonthAll} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 border border-gray-300 px-3 py-2 rounded transition mt-4">
                 <RefreshCw size={12}/> Refresh
               </button>
-              <div className="flex items-center gap-2 ml-auto text-[10px] text-gray-400 mt-4 flex-wrap">
-                {[["P","green","Present"],["A","red","Absent"],["L","yellow","Late"],["OL","blue","On Leave"],["H","orange","Half Day"]].map(([abbr,c,lbl])=>(
-                  <span key={abbr} className={`bg-${c}-100 text-${c}-700 px-1.5 py-0.5 rounded font-bold`}>{abbr}</span>
-                ))}
-              </div>
+              {/* Month summary stats */}
+              {mEmployees.length > 0 && (
+                <div className="ml-auto flex items-center gap-4 mt-4">
+                  <div className="text-center">
+                    <p className="text-lg font-black text-gray-900">{mEmployees.length}</p>
+                    <p className="text-[9px] uppercase tracking-widest text-gray-400">Employees</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-black text-green-700">{mEmployees.reduce((s,e)=>s+empSummary(e._id.toString()).present,0)}</p>
+                    <p className="text-[9px] uppercase tracking-widest text-gray-400">Total Present</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-black text-red-600">{mEmployees.reduce((s,e)=>s+empSummary(e._id.toString()).absent,0)}</p>
+                    <p className="text-[9px] uppercase tracking-widest text-gray-400">Total Absent</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-black text-blue-600">{mEmployees.reduce((s,e)=>s+empSummary(e._id.toString()).leave,0)}</p>
+                    <p className="text-[9px] uppercase tracking-widest text-gray-400">On Leave</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {loading ? (
               <div className="flex justify-center py-16"><Loader size={28} className="animate-spin text-[#DD1215]"/></div>
+            ) : mEmployees.length === 0 ? (
+              <div className="bg-white border rounded-lg text-center py-16 text-gray-400">
+                <Users size={36} className="mx-auto mb-3 opacity-30"/>
+                <p className="font-semibold">No employees found.</p>
+              </div>
             ) : (
-              <div className="bg-white border rounded-lg overflow-hidden">
-                <div className="px-5 py-3 border-b flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-widest text-gray-500">{MONTHS[month-1]} {year} · {mEmployees.length} Employees</p>
-                  <div className="flex items-center gap-2 text-xs text-gray-400"><Users size={12}/> All Active Employees</div>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="text-sm border-collapse w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap sticky left-0 bg-gray-50 z-10 min-w-[180px] border-r border-gray-200">Employee</th>
-                        {allDays.map(d => {
-                          const dow = new Date(year, month-1, d).getDay();
-                          const isWknd = dow === 0 || dow === 6;
-                          const isTdy  = new Date(year, month-1, d).toDateString() === now.toDateString();
-                          return (
-                            <th key={d} className={`px-1 py-2 text-center text-[10px] font-bold min-w-[30px] whitespace-nowrap ${isTdy?"bg-red-50 text-[#DD1215]":isWknd?"bg-gray-100 text-gray-400":"text-gray-500"}`}>
-                              <div>{d}</div>
-                              <div className="font-normal text-[8px]">{DAYS[dow][0]}</div>
-                            </th>
-                          );
-                        })}
-                        {["Present","Absent","Late","Leave"].map(h => (
-                          <th key={h} className="px-3 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap border-l border-gray-200">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {mEmployees.length === 0 ? (
-                        <tr><td colSpan={daysInMonth+5} className="text-center py-16 text-gray-400">No employees found.</td></tr>
-                      ) : mEmployees.map(emp => {
-                        const eid  = emp._id.toString();
-                        const rows = monthMap[eid] || {};
-                        const sum  = empSummary(eid);
-                        const init = `${emp.firstName?.[0]||""}${emp.lastName?.[0]||""}`.toUpperCase();
-                        return (
-                          <tr key={eid} className="hover:bg-gray-50">
-                            <td className="px-4 py-2 sticky left-0 bg-white z-10 border-r border-gray-100">
-                              <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-full bg-[#DD1215] text-white flex items-center justify-center text-[10px] font-bold shrink-0">{init}</div>
-                                <div>
-                                  <p className="font-semibold text-gray-900 text-xs whitespace-nowrap">{emp.firstName} {emp.lastName}</p>
-                                  <p className="text-[9px] text-gray-400">{emp.employeeId}</p>
-                                </div>
-                              </div>
-                            </td>
-                            {allDays.map(d => {
-                              const rec    = rows[d];
-                              const dow    = new Date(year, month-1, d).getDay();
-                              const isWknd = dow === 0 || dow === 6;
-                              const isFut  = new Date(year, month-1, d) > now;
-                              const isTdy  = new Date(year, month-1, d).toDateString() === now.toDateString();
-                              let status   = rec?.status;
-                              if (!status && isWknd) status = "weekend";
-                              const abbr = { present:"P", absent:"A", late:"L", half_day:"H", on_leave:"OL", holiday:"Ho", weekend:"–" };
-                              const s = STATUS_STYLE[status];
-                              return (
-                                <td key={d} className={`px-1 py-2 text-center ${isTdy?"bg-red-50/40":isWknd?"bg-gray-50/60":""}`}>
-                                  {isFut && !isTdy ? (
-                                    <span className="text-gray-200 text-xs">·</span>
-                                  ) : s ? (
-                                    <span className={`inline-flex items-center justify-center w-6 h-5 rounded text-[9px] font-black ${s.bg} ${s.text}`}>{abbr[status]||"?"}</span>
-                                  ) : (
-                                    <span className="text-[9px] text-gray-300">—</span>
-                                  )}
-                                </td>
-                              );
-                            })}
-                            <td className="px-3 py-2 text-center text-xs font-black text-green-700 border-l border-gray-100">{sum.present}</td>
-                            <td className="px-3 py-2 text-center text-xs font-black text-red-600">{sum.absent}</td>
-                            <td className="px-3 py-2 text-center text-xs font-black text-yellow-600">{sum.late}</td>
-                            <td className="px-3 py-2 text-center text-xs font-black text-blue-600">{sum.leave}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+              <div className="space-y-3">
+                {mEmployees.map(emp => {
+                  const eid   = emp._id.toString();
+                  const sum   = empSummary(eid);
+                  const init  = `${emp.firstName?.[0]||""}${emp.lastName?.[0]||""}`.toUpperCase();
+                  const totalWorkDays = allDays.filter(d => {
+                    const dow = new Date(year, month-1, d).getDay();
+                    return dow !== 0 && dow !== 6 && new Date(year, month-1, d) <= now;
+                  }).length;
+                  const attendPct = totalWorkDays > 0 ? Math.round((sum.present / totalWorkDays) * 100) : 0;
+                  const rows = monthMap[eid] || {};
+                  const totalHours = Object.values(rows).reduce((s, r) => s + (r.hoursWorked || 0), 0);
+
+                  return (
+                    <div key={eid} className="bg-white border rounded-xl px-5 py-4 hover:shadow-sm transition">
+                      <div className="flex items-center gap-4 flex-wrap">
+                        {/* Avatar + Name */}
+                        <div className="flex items-center gap-3 min-w-[180px]">
+                          <div className="w-10 h-10 rounded-full bg-[#DD1215] text-white flex items-center justify-center text-sm font-black shrink-0">{init}</div>
+                          <div>
+                            <p className="font-black text-gray-900 text-sm">{emp.firstName} {emp.lastName}</p>
+                            <p className="text-[10px] text-gray-400">{emp.employeeId} · {emp.designation || emp.department}</p>
+                          </div>
+                        </div>
+
+                        {/* Stats */}
+                        <div className="flex items-center gap-6 flex-1 flex-wrap">
+                          {[
+                            { label:"Present", value: sum.present, color:"text-green-700", bg:"bg-green-50 border-green-200" },
+                            { label:"Absent",  value: sum.absent,  color:"text-red-600",   bg:"bg-red-50 border-red-200"    },
+                            { label:"Half Day",value: sum.halfDay, color:"text-orange-600",bg:"bg-orange-50 border-orange-200"},
+                            { label:"On Leave",value: sum.leave,   color:"text-blue-600",  bg:"bg-blue-50 border-blue-200"  },
+                            { label:"Hours",   value: `${totalHours.toFixed(1)}h`, color:"text-purple-700", bg:"bg-purple-50 border-purple-200"},
+                          ].map(({ label, value, color, bg }) => (
+                            <div key={label} className={`flex flex-col items-center px-4 py-2 rounded-lg border ${bg} min-w-[60px]`}>
+                              <p className={`text-lg font-black ${color}`}>{value}</p>
+                              <p className="text-[9px] uppercase tracking-wider text-gray-500 mt-0.5">{label}</p>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Attendance % bar */}
+                        <div className="min-w-[120px]">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] text-gray-500 font-semibold">Attendance</span>
+                            <span className={`text-xs font-black ${attendPct >= 80 ? "text-green-700" : attendPct >= 60 ? "text-yellow-600" : "text-red-600"}`}>{attendPct}%</span>
+                          </div>
+                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full transition-all ${attendPct >= 80 ? "bg-green-500" : attendPct >= 60 ? "bg-yellow-400" : "bg-red-500"}`}
+                              style={{ width: `${attendPct}%` }}/>
+                          </div>
+                        </div>
+
+                        {/* Day-by-day mini dots */}
+                        <div className="flex flex-wrap gap-0.5 max-w-[220px]">
+                          {allDays.map(d => {
+                            const rec    = rows[d];
+                            const dow    = new Date(year, month-1, d).getDay();
+                            const isWknd = dow === 0 || dow === 6;
+                            const isFut  = new Date(year, month-1, d) > now;
+                            const isTdy  = new Date(year, month-1, d).toDateString() === now.toDateString();
+                            let status   = rec?.status || (isWknd ? "weekend" : null);
+                            const dotColor = {
+                              present:"bg-green-500", absent:"bg-red-400", late:"bg-green-400",
+                              half_day:"bg-orange-400", on_leave:"bg-blue-400",
+                              holiday:"bg-purple-400", weekend:"bg-gray-200"
+                            }[status] || (isFut && !isTdy ? "bg-gray-100" : "bg-gray-300");
+                            return (
+                              <div key={d} title={`${d} — ${status || "no record"}`}
+                                className={`w-3 h-3 rounded-sm ${dotColor}`}/>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </>
