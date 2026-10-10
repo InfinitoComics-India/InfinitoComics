@@ -1,7 +1,7 @@
 import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import URLs from '../../Utils/utils.js';
-import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, ChevronDown, Mail, UserCog, Bell, ScrollText, CalendarDays, CalendarOff, Kanban, UserCheck, FolderKanban, TrendingUp, Target, Award as AwardIcon, Building2, IndianRupee, UserPlus, FileArchive, UserSearch, MessagesSquare, BookMarked, LifeBuoy, Sparkles, ShoppingBag, Package, FolderOpen, BarChart3, ClipboardList, Plus } from "lucide-react";
+import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, ChevronDown, Mail, UserCog, Bell, ScrollText, CalendarDays, CalendarOff, Kanban, UserCheck, FolderKanban, TrendingUp, Target, Award as AwardIcon, Building2, IndianRupee, UserPlus, FileArchive, UserSearch, MessagesSquare, BookMarked, LifeBuoy, Sparkles, ShoppingBag, Package, FolderOpen, BarChart3, ClipboardList, Plus, Megaphone } from "lucide-react";
 import { message, Popconfirm } from "antd";
 import { getRoles, getAdmin } from '../../Utils/auth.js';
 import { isEmployeeShopAllowed } from '../../services/shopServices/shopAccessService.js';
@@ -25,20 +25,23 @@ const EMP_ITEMS = [
 
 // ── Regular nav items (above HR section) ────────────────────
 const NAV_ITEMS = [
-  { label: "Home", to: "/", icon: Home, roles: ["superadmin", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin"] },
-  { label: "Comics", to: "/comic", icon: BookOpen, roles: ["superadmin", "comics_admin"] },
-  { label: "Characters", to: "/characters", icon: User, roles: ["superadmin", "character_admin"] },
-  { label: "Research", to: "/research", icon: FlaskConical, roles: ["superadmin", "research_admin"] },
-  { label: "Blogs", to: "/createblog", icon: FileText, roles: ["superadmin", "blog_admin"] },
-  { label: "FAQs", to: "/createfaq", icon: HelpCircle, roles: ["superadmin", "blog_admin"] },
-  { label: "Timeline", to: "/timeline", icon: Clock, roles: ["superadmin", "blog_admin"] },
-  { label: "Career", to: "/career", icon: Briefcase, roles: ["superadmin", "career_admin"] },
-  { label: "Users", to: "/users", icon: Users, roles: ["superadmin"] },
-  { label: "Admin Mgmt", to: "/admin-management", icon: ShieldCheck, roles: ["superadmin"] },
-  { label: "Contact Queries", to: "/contact-queries", icon: Mail, roles: ["superadmin"] },
-  { label: "Wiki", to: "/hr/wiki", icon: BookMarked, roles: ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin","shop_admin"] },
-  { label: "Infinito AI", to: "/hr/ai", icon: Sparkles, roles: ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin","shop_admin"] },
-  { label: "Employee Portal", to: "/employee-portal", icon: UserCheck, roles: ["employee"] },
+  { label: "Home",            to: "/",                 icon: Home,           roles: ["superadmin", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin"] },
+  { label: "Comics",          to: "/comic",            icon: BookOpen,       roles: ["superadmin", "comics_admin"] },
+  { label: "Characters",      to: "/characters",       icon: User,           roles: ["superadmin", "character_admin"] },
+  { label: "Research",        to: "/research",         icon: FlaskConical,   roles: ["superadmin", "research_admin"] },
+  { label: "Blogs",           to: "/createblog",       icon: FileText,       roles: ["superadmin", "blog_admin"] },
+  { label: "FAQs",            to: "/createfaq",        icon: HelpCircle,     roles: ["superadmin", "blog_admin"] },
+  { label: "Timeline",        to: "/timeline",         icon: Clock,          roles: ["superadmin", "blog_admin"] },
+  { label: "Career",          to: "/career",           icon: Briefcase,      roles: ["superadmin", "career_admin"] },
+  { label: "Users",           to: "/users",            icon: Users,          roles: ["superadmin"] },
+  { label: "Admin Mgmt",      to: "/admin-management", icon: ShieldCheck,    roles: ["superadmin"] },
+  { label: "Contact Queries", to: "/contact-queries",  icon: Mail,           roles: ["superadmin"] },
+  { label: "Ads Inquiries",   to: "/ads",              icon: Megaphone,      roles: ["superadmin", "ads_admin"] },
+  { label: "Wiki",            to: "/hr/wiki",          icon: BookMarked,     roles: HR_ALL },
+  { label: "Infinito AI",     to: "/hr/ai",            icon: Sparkles,       roles: HR_ALL },
+  { label: "Messages",        to: "/employee-portal?tab=messages", icon: MessagesSquare, roles: ["employee"] },
+  { label: "Messages",        to: "/messages",         icon: MessagesSquare, roles: HR_ALL },
+  { label: "Employee Portal", to: "/employee-portal",  icon: UserCheck,      roles: ["employee"] },
 ];
 
 // ── HR sub-items — ordered by employee lifecycle flow ────────
