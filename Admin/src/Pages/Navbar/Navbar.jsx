@@ -4,7 +4,7 @@ import URLs from '../../Utils/utils.js';
 import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, ChevronDown, Mail, UserCog, Bell, ScrollText, CalendarDays, CalendarOff, Kanban, UserCheck, FolderKanban, TrendingUp, Target, Award as AwardIcon, Building2, IndianRupee, UserPlus, FileArchive, UserSearch, MessagesSquare, BookMarked, LifeBuoy, Sparkles, ShoppingBag, Package, FolderOpen, BarChart3, ClipboardList, Plus } from "lucide-react";
 import { message, Popconfirm } from "antd";
 import { getRoles, getAdmin } from '../../Utils/auth.js';
-import { isEmployeeShopAllowed, fetchMyCurrentShopAccess } from '../../services/shopServices/shopAccessService.js';
+import { isEmployeeShopAllowed } from '../../services/shopServices/shopAccessService.js';
 
 const HR_ALL = ["superadmin", "hr_manager", "manager", "team_lead", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin", "shop_admin"];
 const HR_AUDIT = ["superadmin", "hr_manager"];
@@ -20,7 +20,6 @@ const EMP_ITEMS = [
   { label: "Self Service", to: "/employee-portal?tab=requests", icon: LifeBuoy, roles: EMP_ALL },
   { label: "Work Log", to: "/employee-portal?tab=worklog", icon: ClipboardList, roles: EMP_ALL },
   { label: "Chat", to: "/hr/chat", icon: MessagesSquare, roles: EMP_ALL },
-  { label: "Messages", to: "/employee-portal?tab=messages", icon: MessagesSquare, roles: ["employee"] },
   { label: "My Profile", to: "/employee-portal?tab=profile", icon: User, roles: ["employee"] },
 ];
 
@@ -37,33 +36,43 @@ const NAV_ITEMS = [
   { label: "Users", to: "/users", icon: Users, roles: ["superadmin"] },
   { label: "Admin Mgmt", to: "/admin-management", icon: ShieldCheck, roles: ["superadmin"] },
   { label: "Contact Queries", to: "/contact-queries", icon: Mail, roles: ["superadmin"] },
-  { label: "Messages", to: "/messages", icon: MessagesSquare, roles: HR_ALL },
+  { label: "Wiki", to: "/hr/wiki", icon: BookMarked, roles: ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin","shop_admin"] },
+  { label: "Infinito AI", to: "/hr/ai", icon: Sparkles, roles: ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin","shop_admin"] },
   { label: "Employee Portal", to: "/employee-portal", icon: UserCheck, roles: ["employee"] },
 ];
 
-// ── HR sub-items (shown inside collapsible accordion) ────────
+// ── HR sub-items — ordered by employee lifecycle flow ────────
 const HR_ITEMS = [
-  { label: "Employees", to: "/hr/employees", icon: UserCog, roles: HR_ALL },
-  { label: "Notifications", to: "/hr/notifications", icon: Bell, roles: HR_ALL },
-  { label: "Audit Log", to: "/hr/audit", icon: ScrollText, roles: HR_AUDIT },
-  { label: "Attendance", to: "/hr/attendance", icon: Clock, roles: HR_ALL },
-  { label: "Leaves", to: "/hr/leaves", icon: CalendarOff, roles: HR_ALL },
-  { label: "Calendar", to: "/hr/calendar", icon: CalendarDays, roles: HR_ALL },
-  { label: "Work Log", to: "/hr/worklog", icon: ClipboardList, roles: HR_ALL },
-  { label: "Task Board", to: "/hr/tasks", icon: Kanban, roles: HR_ALL },
-  { label: "Work Assignment", to: "/hr/assignments", icon: UserCheck, roles: HR_ALL },
-  { label: "Projects", to: "/hr/projects", icon: FolderKanban, roles: HR_ALL },
-  { label: "Performance", to: "/hr/performance", icon: TrendingUp, roles: HR_ALL },
-  { label: "Goals", to: "/hr/goals", icon: Target, roles: HR_ALL },
-  { label: "Recognition", to: "/hr/recognition", icon: AwardIcon, roles: HR_ALL },
-  { label: "Payroll", to: "/hr/payroll", icon: IndianRupee, roles: HR_ALL },
-  { label: "Onboarding", to: "/hr/onboarding", icon: UserPlus, roles: HR_ALL },
-  { label: "Documents", to: "/hr/documents", icon: FileArchive, roles: HR_ALL },
-  { label: "Recruitment", to: "/hr/recruitment", icon: UserSearch, roles: HR_ALL },
-  { label: "Chat", to: "/hr/chat", icon: MessagesSquare, roles: HR_ALL },
-  { label: "Wiki", to: "/hr/wiki", icon: BookMarked, roles: HR_ALL },
-  { label: "Self Service", to: "/hr/self-service", icon: LifeBuoy, roles: HR_ALL },
-  { label: "Infinito AI", to: "/hr/ai", icon: Sparkles, roles: HR_ALL },
+  // ── People ────────────────────────────────────────────────
+  { label: "Employees",      to: "/hr/employees",   icon: UserCog,      roles: HR_ALL   },
+  { label: "Recruitment",    to: "/hr/recruitment", icon: UserSearch,   roles: HR_ALL   },
+  { label: "Onboarding",     to: "/hr/onboarding",  icon: UserPlus,     roles: HR_ALL   },
+
+  // ── Time & Attendance ─────────────────────────────────────
+  { label: "Attendance",     to: "/hr/attendance",  icon: Clock,        roles: HR_ALL   },
+  { label: "Leaves",         to: "/hr/leaves",      icon: CalendarOff,  roles: HR_ALL   },
+  { label: "Calendar",       to: "/hr/calendar",    icon: CalendarDays, roles: HR_ALL   },
+
+  // ── Work ──────────────────────────────────────────────────
+  { label: "Work Log",       to: "/hr/worklog",     icon: ClipboardList,roles: HR_ALL   },
+  { label: "Work Assignment",to: "/hr/assignments", icon: UserCheck,    roles: HR_ALL   },
+  { label: "Task Board",     to: "/hr/tasks",       icon: Kanban,       roles: HR_ALL   },
+  { label: "Projects",       to: "/hr/projects",    icon: FolderKanban, roles: HR_ALL   },
+
+  // ── Performance ───────────────────────────────────────────
+  { label: "Performance",    to: "/hr/performance", icon: TrendingUp,   roles: HR_ALL   },
+  { label: "Goals",          to: "/hr/goals",       icon: Target,       roles: HR_ALL   },
+  { label: "Recognition",    to: "/hr/recognition", icon: AwardIcon,    roles: HR_ALL   },
+
+  // ── Finance ───────────────────────────────────────────────
+  { label: "Payroll",        to: "/hr/payroll",     icon: IndianRupee,  roles: HR_ALL   },
+
+  // ── Admin ─────────────────────────────────────────────────
+  { label: "Documents",      to: "/hr/documents",   icon: FileArchive,  roles: HR_ALL   },
+  { label: "Self Service",   to: "/hr/self-service",icon: LifeBuoy,     roles: HR_ALL   },
+  { label: "Chat",           to: "/hr/chat",        icon: MessagesSquare,roles: HR_ALL  },
+  { label: "Notifications",  to: "/hr/notifications",icon: Bell,        roles: HR_ALL   },
+  { label: "Audit Log",      to: "/hr/audit",       icon: ScrollText,   roles: HR_AUDIT },
 ];
 
 // ── Shop sub-items (shown inside collapsible accordion) ────────
@@ -75,7 +84,6 @@ const SHOP_ITEMS = [
   { label: "Orders", to: "/shop/orders", icon: ClipboardList, roles: SHOP_ALL },
   { label: "Analytics & Reports", to: "/shop/analytics", icon: TrendingUp, roles: SHOP_ALL },
   { label: "Marketing & Promotions", to: "/shop/marketing", icon: Sparkles, roles: SHOP_ALL },
-  { label: "Company Profile", to: "/shop/company-profile", icon: Building2, roles: SHOP_ALL },
   { label: "Management", to: "/shop/management", icon: Users, roles: ["superadmin"] },
 ];
 
@@ -94,49 +102,23 @@ const Navbar = () => {
     return isEmployeeShopAllowed(admin?.email, admin);
   });
 
-  // Listen for shop access changes in real-time across tabs / storage events and server status
+  // Listen for shop access changes in real-time across tabs / storage events
   useEffect(() => {
-    let isMounted = true;
-
     const checkAccess = () => {
       const curAdmin = getAdmin();
-      const allowed = isEmployeeShopAllowed(curAdmin?.email, curAdmin);
-      if (isMounted) setEmpShopAllowed(allowed);
+      setEmpShopAllowed(isEmployeeShopAllowed(curAdmin?.email, curAdmin));
     };
-
-    // Immediately fetch fresh status from backend server
-    const syncWithServer = async () => {
-      try {
-        const allowed = await fetchMyCurrentShopAccess();
-        if (isMounted) {
-          setEmpShopAllowed(allowed);
-        }
-      } catch {}
-    };
-
-    checkAccess();
-    syncWithServer();
 
     window.addEventListener('storage', checkAccess);
-    window.addEventListener('focus', syncWithServer);
-
-    // Periodic sync every 10 seconds so employee sees shop toggle in real-time
-    const interval = setInterval(syncWithServer, 10000);
 
     let bc;
     try {
       bc = new BroadcastChannel('infinito_shop_access_channel');
-      bc.onmessage = (e) => {
-        checkAccess();
-        syncWithServer();
-      };
+      bc.onmessage = checkAccess;
     } catch { }
 
     return () => {
-      isMounted = false;
-      clearInterval(interval);
       window.removeEventListener('storage', checkAccess);
-      window.removeEventListener('focus', syncWithServer);
       if (bc) bc.close();
     };
   }, []);
@@ -146,23 +128,13 @@ const Navbar = () => {
   // If on a shop route or user has shop access, shop opens by default
   const isShopActive = location.pathname.startsWith('/admin/shop') || location.pathname.startsWith('/shop');
   const [shopOpen, setShopOpen] = useState(() => {
-    return canViewShop && (isShopActive || roles.includes('shop_admin') || (roles.includes('employee') && empShopAllowed));
+    return canViewShop && (isShopActive || roles.includes('shop_admin') || roles.includes('employee'));
   });
-
-  // Automatically keep shop accordion open if shop becomes newly allowed
-  useEffect(() => {
-    if (canViewShop && (isShopActive || roles.includes('shop_admin') || (roles.includes('employee') && empShopAllowed))) {
-      setShopOpen(true);
-    }
-  }, [canViewShop, isShopActive, empShopAllowed]);
 
   const visibleNav = NAV_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
   const visibleHR = HR_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
   const visibleShop = SHOP_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
-  const baseEmp = EMP_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
-  const visibleEmp = canViewShop
-    ? [...baseEmp, { label: "Shop Section", to: "/employee-portal?tab=shop", icon: ShoppingBag, roles: EMP_ALL }]
-    : baseEmp;
+  const visibleEmp = EMP_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
   const isEmpOnly = roles.length > 0 && roles.every(r => r === "employee");
   const showHRSection = visibleHR.length > 0 && !isEmpOnly;
   const showShopSection = visibleShop.length > 0 && canViewShop;

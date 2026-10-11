@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Users, Plus, X, ChevronRight, Loader, Star, Calendar, Briefcase, RefreshCw, Mail, Phone } from "lucide-react";
+import { Users, Plus, X, ChevronRight, Loader, Star, Calendar, Briefcase, RefreshCw, Mail, Phone, FileText } from "lucide-react";
 import axios from "axios";
 
 const BASE = import.meta.env.VITE_BASE_URL;
@@ -20,6 +20,7 @@ const SOURCE_COLORS = { website:"bg-blue-100 text-blue-700", linkedin:"bg-indigo
 const INTERVIEW_TYPES = ["phone","video","technical","hr","final"];
 const EMPTY_INTERVIEW = { round:1, type:"phone", scheduledAt:"", conductedBy:"", notes:"" };
 const EMPTY_FORM = { candidateName:"", candidateEmail:"", candidatePhone:"", jobTitle:"", jobType:"", source:"website", resumeUrl:"", internalNotes:"" };
+const EMPTY_OFFER = { salary:"", joiningDate:"", note:"" };
 
 const fmt = (d) => d ? new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "—";
 
@@ -33,9 +34,14 @@ const RecruitmentPipeline = () => {
   const [form,     setForm]     = useState(EMPTY_FORM);
   const [saving,   setSaving]   = useState(false);
   const [movingId, setMovingId] = useState(null);
-  const [intModal, setIntModal] = useState(null); // pipeline id
+  const [intModal, setIntModal] = useState(null);
   const [intForm,  setIntForm]  = useState(EMPTY_INTERVIEW);
   const [tab,      setTab]      = useState("kanban");
+
+  // ── Offer letter modal state ──────────────────────────────
+  const [offerModal,  setOfferModal]  = useState(null); // { id, candidateName, jobTitle }
+  const [offerForm,   setOfferForm]   = useState(EMPTY_OFFER);
+  const [offerSaving, setOfferSaving] = useState(false);
 
   const load = async () => {
     try { setLoading(true); setError("");
@@ -60,11 +66,36 @@ const RecruitmentPipeline = () => {
     } catch (e) { setError(e.response?.data?.message || "Failed to add."); } finally { setSaving(false); }
   };
 
-  const handleMove = async (id, stage) => {
+  const handleMove = async (id, stage, candidateName, jobTitle) => {
+    // Intercept offer_sent — show offer letter modal first
+    if (stage === "offer_sent") {
+      setOfferModal({ id, candidateName, jobTitle });
+      setOfferForm(EMPTY_OFFER);
+      return;
+    }
     try { setMovingId(id);
       await axios.patch(`${BASE}/hr/recruitment/stage/${id}`, { stage }, auth());
       load(); if (detail?._id === id) setDetail(d => ({...d, stage}));
     } catch (e) { setError(e.response?.data?.message || "Failed to move."); } finally { setMovingId(null); }
+  };
+
+  // Send offer letter + move to offer_sent
+  const handleSendOffer = async () => {
+    if (!offerModal) return;
+    if (!offerForm.salary || !offerForm.joiningDate) {
+      setError("Salary and joining date are required to generate the offer letter.");
+      return;
+    }
+    try { setOfferSaving(true); setError("");
+      await axios.patch(`${BASE}/hr/recruitment/stage/${offerModal.id}`, {
+        stage: "offer_sent",
+        offerDetails: offerForm,
+      }, auth());
+      setOfferModal(null); setOfferForm(EMPTY_OFFER);
+      load();
+      if (detail?._id === offerModal.id) setDetail(d => ({...d, stage:"offer_sent"}));
+    } catch (e) { setError(e.response?.data?.message || "Failed to send offer."); }
+    finally { setOfferSaving(false); }
   };
 
   const handleAddInterview = async () => {
@@ -185,8 +216,9 @@ const RecruitmentPipeline = () => {
                 <p className="text-xs font-bold uppercase text-gray-400 mb-2">Move to Stage</p>
                 <div className="flex flex-wrap gap-2">
                   {STAGES.filter(s => s.key !== detail.stage).map(s => (
-                    <button key={s.key} onClick={() => { handleMove(detail._id, s.key); setDetail(d=>({...d,stage:s.key})); }} disabled={movingId===detail._id}
-                      className="text-xs px-3 py-1.5 border border-gray-300 hover:border-[#DD1215] hover:text-[#DD1215] font-semibold capitalize transition rounded">
+                    <button key={s.key} onClick={() => { handleMove(detail._id, s.key, detail.candidateName, detail.jobTitle); if (s.key !== "offer_sent") setDetail(d=>({...d,stage:s.key})); }} disabled={movingId===detail._id}
+                      className={`text-xs px-3 py-1.5 border font-semibold capitalize transition rounded flex items-center gap-1 ${s.key==="offer_sent"?"border-orange-400 text-orange-600 hover:bg-orange-50":"border-gray-300 hover:border-[#DD1215] hover:text-[#DD1215]"}`}>
+                      {s.key === "offer_sent" && <FileText size={11}/>}
                       → {s.label}
                     </button>
                   ))}
@@ -319,6 +351,62 @@ const RecruitmentPipeline = () => {
               <button onClick={() => setIntModal(null)} className="flex-1 border border-gray-300 px-4 py-2 text-xs font-bold uppercase hover:bg-gray-50 transition">Cancel</button>
               <button onClick={handleAddInterview} disabled={saving} className="flex-1 bg-[#DD1215] text-white px-4 py-2 text-xs font-bold uppercase hover:bg-red-700 transition disabled:opacity-50">
                 {saving ? "Saving..." : "Schedule"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Offer Letter Modal ── */}
+      {offerModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4 py-8 overflow-y-auto">
+          <div className="bg-white rounded-xl p-8 max-w-lg w-full shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                <FileText size={20} className="text-orange-600"/>
+              </div>
+              <div>
+                <h3 className="text-lg font-black uppercase tracking-widest">Send Offer Letter</h3>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  To: <span className="font-semibold text-gray-700">{offerModal.candidateName}</span> · {offerModal.jobTitle}
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-orange-50 border border-orange-200 rounded-lg px-4 py-3 mb-5">
+              <p className="text-xs text-orange-800 font-semibold">📄 A formal offer letter will be automatically generated and emailed to the candidate from career@infinitohq.com</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <F label="Salary (₹ per annum) *">
+                  <input type="number" value={offerForm.salary} onChange={e=>setOfferForm(f=>({...f,salary:e.target.value}))}
+                    className={inp} placeholder="600000" required />
+                </F>
+                <F label="Joining Date *">
+                  <input type="date" value={offerForm.joiningDate} onChange={e=>setOfferForm(f=>({...f,joiningDate:e.target.value}))}
+                    className={inp} required />
+                </F>
+              </div>
+              <F label="Additional Note (optional)">
+                <textarea rows={3} value={offerForm.note} onChange={e=>setOfferForm(f=>({...f,note:e.target.value}))}
+                  className={`${inp} resize-none`}
+                  placeholder="Any specific conditions, probation period, benefits, etc..." />
+              </F>
+            </div>
+
+            {error && <p className="text-red-600 text-xs mt-3">{error}</p>}
+
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => { setOfferModal(null); setError(""); }}
+                className="flex-1 border border-gray-300 px-4 py-2 text-xs font-bold uppercase hover:bg-gray-50 transition">
+                Cancel
+              </button>
+              <button onClick={handleSendOffer} disabled={offerSaving}
+                className="flex-1 bg-orange-500 text-white px-4 py-2 text-xs font-bold uppercase hover:bg-orange-600 transition disabled:opacity-50 flex items-center justify-center gap-2">
+                <FileText size={13}/>
+                {offerSaving ? "Sending..." : "Generate & Send Offer Letter"}
               </button>
             </div>
           </div>
