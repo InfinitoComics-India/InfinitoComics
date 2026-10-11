@@ -11,14 +11,37 @@ const HR_MANAGE = ["superadmin","hr_manager","manager"];
 router.get("/bydate", adminauthenticate, checkRole(HR_ALL), async (req, res) => {
   try {
     const Attendance = (await import('../models/Attendance.js')).default;
+    const Admin      = (await import('../models/Admin.js')).default;
+    const Employee   = (await import('../models/Employee.js')).default;
     const dateStr = req.query.date;
     if (!dateStr) return res.status(400).json({ success: false, message: "date query param required (YYYY-MM-DD)." });
-    const start = new Date(dateStr + "T00:00:00.000Z");
-    const end   = new Date(dateStr + "T23:59:59.999Z");
-    const records = await Attendance.find({ date: { $gte: start, $lte: end } })
-      .populate("employeeId", "firstName lastName designation department employeeId")
-      .sort({ "employeeId.firstName": 1 });
-    res.status(200).json({ success: true, data: records, count: records.length });
+    // Use a wide date range to handle timezone offsets
+    const start = new Date(dateStr + "T00:00:00.000+05:30");
+    const end   = new Date(dateStr + "T23:59:59.999+05:30");
+    const records = await Attendance.find({ date: { $gte: start, $lte: end } }).sort({ createdAt: 1 });
+
+    // Enrich with name: try Employee model first, then Admin model, then snapshot
+    const ids = [...new Set(records.map(r => r.employeeId?.toString()).filter(Boolean))];
+    const [empDocs, adminDocs] = await Promise.all([
+      Employee.find({ _id: { $in: ids } }).select("_id firstName lastName designation department employeeId"),
+      Admin.find({ _id: { $in: ids } }).select("_id name email employeeId designation department"),
+    ]);
+    const nameMap = {};
+    empDocs.forEach(e => { nameMap[e._id.toString()] = { firstName: e.firstName, lastName: e.lastName, designation: e.designation, department: e.department, employeeId: e.employeeId }; });
+    adminDocs.forEach(a => {
+      if (!nameMap[a._id.toString()]) {
+        const p = (a.name||"").trim().split(" ");
+        nameMap[a._id.toString()] = { firstName: p[0]||a.email, lastName: p.slice(1).join(" ")||"", designation: a.designation||"", department: a.department||"", employeeId: a.employeeId||"" };
+      }
+    });
+
+    const enriched = records.map(r => {
+      const eid  = r.employeeId?.toString();
+      const info = nameMap[eid] || { firstName: r.employeeName?.split(" ")[0]||"", lastName: r.employeeName?.split(" ").slice(1).join(" ")||"", designation:"", department:"", employeeId: r.employeeEmpId||"" };
+      return { ...r.toObject(), employeeId: { _id: eid, ...info } };
+    });
+
+    res.status(200).json({ success: true, data: enriched, count: enriched.length });
   } catch (e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
@@ -29,15 +52,31 @@ router.get("/today", adminauthenticate, checkRole(HR_ALL), AttendanceController.
 router.get("/last7days", adminauthenticate, checkRole(HR_ALL), async (req, res) => {
   try {
     const Attendance = (await import('../models/Attendance.js')).default;
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
-    const records = await Attendance.find({ date: { $gte: sevenDaysAgo, $lte: today } })
-      .populate("employeeId", "firstName lastName designation department employeeId")
-      .sort({ date: 1 });
-    res.status(200).json({ success: true, data: records, count: records.length });
+    const Admin      = (await import('../models/Admin.js')).default;
+    const Employee   = (await import('../models/Employee.js')).default;
+    const today = new Date(); today.setHours(23, 59, 59, 999);
+    const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6); sevenDaysAgo.setHours(0, 0, 0, 0);
+    const records = await Attendance.find({ date: { $gte: sevenDaysAgo, $lte: today } }).sort({ date: 1 });
+
+    const ids = [...new Set(records.map(r => r.employeeId?.toString()).filter(Boolean))];
+    const [empDocs, adminDocs] = await Promise.all([
+      Employee.find({ _id: { $in: ids } }).select("_id firstName lastName designation department employeeId"),
+      Admin.find({ _id: { $in: ids } }).select("_id name email employeeId designation department"),
+    ]);
+    const nameMap = {};
+    empDocs.forEach(e => { nameMap[e._id.toString()] = { firstName: e.firstName, lastName: e.lastName, designation: e.designation, department: e.department, employeeId: e.employeeId }; });
+    adminDocs.forEach(a => {
+      if (!nameMap[a._id.toString()]) {
+        const p = (a.name||"").trim().split(" ");
+        nameMap[a._id.toString()] = { firstName: p[0]||a.email, lastName: p.slice(1).join(" ")||"", designation: a.designation||"", department: a.department||"", employeeId: a.employeeId||"" };
+      }
+    });
+    const enriched = records.map(r => {
+      const eid  = r.employeeId?.toString();
+      const info = nameMap[eid] || { firstName: r.employeeName?.split(" ")[0]||"", lastName: r.employeeName?.split(" ").slice(1).join(" ")||"", designation:"", department:"", employeeId: r.employeeEmpId||"" };
+      return { ...r.toObject(), employeeId: { _id: eid, ...info } };
+    });
+    res.status(200).json({ success: true, data: enriched, count: enriched.length });
   } catch (e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
