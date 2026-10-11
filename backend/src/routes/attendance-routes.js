@@ -253,6 +253,7 @@ router.post("/me/clockout", adminauthenticate, checkRole(HR_ALL), async (req, re
     // Find last open session
     const lastOpenIdx = [...sessions].reverse().findIndex(s => s.clockIn && !s.clockOut);
     const actualIdx   = lastOpenIdx === -1 ? -1 : sessions.length - 1 - lastOpenIdx;
+    console.log(`[me/clockout] sessions=${sessions.length} lastOpenIdx=${lastOpenIdx} actualIdx=${actualIdx}`);
 
     if (actualIdx === -1) {
       // Legacy mode
@@ -266,7 +267,7 @@ router.post("/me/clockout", adminauthenticate, checkRole(HR_ALL), async (req, re
       return res.status(200).json({ success: true, message: "Clocked out.", data: updated });
     }
 
-    const sessionHours = parseFloat(((now - sessions[actualIdx].clockIn) / (1000*60*60)).toFixed(2));
+    const sessionHours = parseFloat(((now - new Date(sessions[actualIdx].clockIn)) / (1000*60*60)).toFixed(2));
     const totalHours   = parseFloat((sessions.reduce((s,x,i) => s + (i===actualIdx ? sessionHours : (x.hoursWorked||0)), 0)).toFixed(2));
 
     // Update the specific session using positional operator
