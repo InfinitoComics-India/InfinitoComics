@@ -171,8 +171,19 @@ router.post("/me/clockout", adminauthenticate, checkRole(HR_ALL), async (req, re
   AttendanceController.clockOut(req, res);
 });
 router.get("/me/today", adminauthenticate, checkRole(HR_ALL), async (req, res) => {
-  req.params.employeeId = req.user._id;
-  AttendanceController.getTodayForEmployee(req, res);
+  try {
+    const Attendance = (await import('../models/Attendance.js')).default;
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istNow = new Date(now.getTime() + istOffset);
+    istNow.setUTCHours(0, 0, 0, 0);
+    const start = new Date(istNow.getTime() - istOffset);
+    const utcStart = new Date(new Date(now).setHours(0, 0, 0, 0));
+    const searchStart = utcStart < start ? utcStart : start;
+    const searchEnd = new Date(searchStart.getTime() + 30 * 60 * 60 * 1000); // 30h window
+    const record = await Attendance.findOne({ employeeId: req.user._id, date: { $gte: searchStart, $lte: searchEnd } });
+    res.status(200).json({ success: true, data: record || null });
+  } catch (e) { res.status(500).json({ success: false, message: e.message }); }
 });
 router.get("/me/monthly", adminauthenticate, checkRole(HR_ALL), async (req, res) => {
   req.params.employeeId = req.user._id;
