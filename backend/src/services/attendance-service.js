@@ -32,6 +32,7 @@ class AttendanceService {
       const searchEnd   = utcEnd   > end   ? utcEnd   : end;
 
       const existing = await Attendance.findOne({ employeeId, date: { $gte: searchStart, $lte: searchEnd } });
+      console.log(`[ClockIn] employeeId=${employeeId} searchStart=${searchStart.toISOString()} searchEnd=${searchEnd.toISOString()} existing=${existing?._id||'null'} sessions=${existing?.sessions?.length||0}`);
 
       // Block if already clocked in (last session open or legacy clockIn without clockOut)
       if (existing?.sessions?.length > 0) {
