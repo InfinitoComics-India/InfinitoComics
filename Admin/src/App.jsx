@@ -21,6 +21,7 @@ import ContactQueries from './Pages/ContactQueries/ContactQueries.jsx';
 
 // ── HR System imports ─────────────────────────────────────────
 import EmployeeList from './Pages/HR/EmployeeList.jsx';
+import HRDashboard from './Pages/HR/HRDashboard.jsx';
 import EmployeeForm from './Pages/HR/EmployeeForm.jsx';
 import EmployeeProfile from './Pages/HR/EmployeeProfile.jsx';
 import NotificationsPage from './Pages/HR/Notifications.jsx';
@@ -162,6 +163,11 @@ function App() {
           } />
 
           {/* ── HR System ──────────────────────────────────── */}
+
+          {/* HR Dashboard */}
+          <Route path="/hr" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><HRDashboard /></ProtectedRoute>
+          } />
 
           {/* Employee Management */}
           <Route path="/hr/employees" element={

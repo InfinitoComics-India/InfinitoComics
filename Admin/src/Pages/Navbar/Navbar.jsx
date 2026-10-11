@@ -43,6 +43,9 @@ const NAV_ITEMS = [
 
 // ── HR sub-items — ordered by employee lifecycle flow ────────
 const HR_ITEMS = [
+  // ── Overview ──────────────────────────────────────────────
+  { label: "HR Overview",    to: "/hr",             icon: Building2,    roles: HR_ALL   },
+
   // ── People ────────────────────────────────────────────────
   { label: "Employees",      to: "/hr/employees",   icon: UserCog,      roles: HR_ALL   },
   { label: "Recruitment",    to: "/hr/recruitment", icon: UserSearch,   roles: HR_ALL   },

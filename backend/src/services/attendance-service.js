@@ -16,9 +16,13 @@ class AttendanceService {
     try {
       const now  = new Date();
       const Attendance = (await import('../models/Attendance.js')).default;
-      const d     = new Date(now);
-      const start = new Date(new Date(d).setHours(0, 0, 0, 0));
-      const end   = new Date(new Date(d).setHours(23, 59, 59, 999));
+
+      // Use IST midnight for date boundary (UTC+5:30)
+      const istOffset = 5.5 * 60 * 60 * 1000;
+      const istNow    = new Date(now.getTime() + istOffset);
+      istNow.setUTCHours(0, 0, 0, 0);
+      const start = new Date(istNow.getTime() - istOffset); // IST midnight in UTC
+      const end   = new Date(start.getTime() + 24*60*60*1000 - 1); // end of IST day
 
       const existing = await Attendance.findOne({ employeeId, date: { $gte: start, $lte: end } });
 
@@ -78,9 +82,12 @@ class AttendanceService {
     try {
       const now    = new Date();
       const Attendance = (await import('../models/Attendance.js')).default;
-      const d     = new Date(now);
-      const start = new Date(new Date(d).setHours(0, 0, 0, 0));
-      const end   = new Date(new Date(d).setHours(23, 59, 59, 999));
+
+      const istOffset = 5.5 * 60 * 60 * 1000;
+      const istNow    = new Date(now.getTime() + istOffset);
+      istNow.setUTCHours(0, 0, 0, 0);
+      const start = new Date(istNow.getTime() - istOffset);
+      const end   = new Date(start.getTime() + 24*60*60*1000 - 1);
 
       const record = await Attendance.findOne({ employeeId, date: { $gte: start, $lte: end } });
       if (!record) throw new Error("No clock-in record found for today.");
