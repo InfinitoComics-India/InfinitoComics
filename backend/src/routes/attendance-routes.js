@@ -293,6 +293,9 @@ router.get("/me/today", adminauthenticate, checkRole(HR_ALL), async (req, res) =
     const searchStart = utcStart < start ? utcStart : start;
     const searchEnd = new Date(searchStart.getTime() + 30 * 60 * 60 * 1000); // 30h window
     const record = await Attendance.findOne({ employeeId: req.user._id, date: { $gte: searchStart, $lte: searchEnd } });
+    // Prevent browser caching so fresh data is always returned
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.set('Pragma', 'no-cache');
     res.status(200).json({ success: true, data: record || null });
   } catch (e) { res.status(500).json({ success: false, message: e.message }); }
 });

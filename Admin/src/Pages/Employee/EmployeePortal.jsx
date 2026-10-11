@@ -245,7 +245,11 @@ const EmployeePortal = () => {
 
   // ── Loaders ──────────────────────────────────────────────────
   const loadTodayAttd = async () => {
-    try { const r = await axios.get(`${BASE}/hr/attendance/me/today`, auth()); setTodayAttd(r.data.data); } catch {}
+    try {
+      // Add timestamp to bust browser cache (304 Not Modified issue)
+      const r = await axios.get(`${BASE}/hr/attendance/me/today?_t=${Date.now()}`, auth());
+      setTodayAttd(r.data.data);
+    } catch {}
   };
   const loadMonthlyAttd = async () => {
     try { const r = await axios.get(`${BASE}/hr/attendance/me/monthly`, { ...auth(), params:{ year:attdYear, month:attdMonth } }); setMonthlyAttd(r.data.data||[]); } catch {}
