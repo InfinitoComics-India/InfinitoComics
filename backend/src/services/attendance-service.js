@@ -18,13 +18,20 @@ class AttendanceService {
       const Attendance = (await import('../models/Attendance.js')).default;
 
       // Use IST midnight for date boundary (UTC+5:30)
+      // Search a 48-hour window to catch records stored in either UTC or IST midnight
       const istOffset = 5.5 * 60 * 60 * 1000;
       const istNow    = new Date(now.getTime() + istOffset);
       istNow.setUTCHours(0, 0, 0, 0);
       const start = new Date(istNow.getTime() - istOffset); // IST midnight in UTC
       const end   = new Date(start.getTime() + 24*60*60*1000 - 1); // end of IST day
+      // Also search UTC midnight start for backwards compat
+      const utcStart = new Date(new Date(now).setHours(0, 0, 0, 0));
+      const utcEnd   = new Date(new Date(now).setHours(23, 59, 59, 999));
+      // Use whichever window is wider
+      const searchStart = utcStart < start ? utcStart : start;
+      const searchEnd   = utcEnd   > end   ? utcEnd   : end;
 
-      const existing = await Attendance.findOne({ employeeId, date: { $gte: start, $lte: end } });
+      const existing = await Attendance.findOne({ employeeId, date: { $gte: searchStart, $lte: searchEnd } });
 
       // Block if already clocked in (last session open or legacy clockIn without clockOut)
       if (existing?.sessions?.length > 0) {
@@ -84,12 +91,16 @@ class AttendanceService {
       const Attendance = (await import('../models/Attendance.js')).default;
 
       const istOffset = 5.5 * 60 * 60 * 1000;
-      const istNow    = new Date(now.getTime() + istOffset);
-      istNow.setUTCHours(0, 0, 0, 0);
-      const start = new Date(istNow.getTime() - istOffset);
-      const end   = new Date(start.getTime() + 24*60*60*1000 - 1);
+      const istNow2   = new Date(now.getTime() + istOffset);
+      istNow2.setUTCHours(0, 0, 0, 0);
+      const start2 = new Date(istNow2.getTime() - istOffset);
+      const end2   = new Date(start2.getTime() + 24*60*60*1000 - 1);
+      const utcStart2 = new Date(new Date(now).setHours(0, 0, 0, 0));
+      const utcEnd2   = new Date(new Date(now).setHours(23, 59, 59, 999));
+      const searchStart2 = utcStart2 < start2 ? utcStart2 : start2;
+      const searchEnd2   = utcEnd2   > end2   ? utcEnd2   : end2;
 
-      const record = await Attendance.findOne({ employeeId, date: { $gte: start, $lte: end } });
+      const record = await Attendance.findOne({ employeeId, date: { $gte: searchStart2, $lte: searchEnd2 } });
       if (!record) throw new Error("No clock-in record found for today.");
 
       // Find last open session
