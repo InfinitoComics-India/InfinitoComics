@@ -28,7 +28,17 @@ const STATUS_COLORS = {
   weekend:  "bg-gray-100 text-gray-400",
 };
 const fmt      = (d) => d ? new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "—";
-const fmtTime  = (d) => d ? new Date(d).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}) : "—";
+const fmtTime  = (d) => {
+  if (!d) return "—";
+  // Convert UTC to IST (UTC+5:30) explicitly
+  const utc = new Date(d);
+  const ist = new Date(utc.getTime() + 5.5 * 60 * 60 * 1000);
+  const h = ist.getUTCHours();
+  const m = String(ist.getUTCMinutes()).padStart(2,"0");
+  const ampm = h >= 12 ? "pm" : "am";
+  const h12 = h % 12 || 12;
+  return `${String(h12).padStart(2,"0")}:${m} ${ampm}`;
+};
 const fmtShort = (d) => d ? new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short"}) : "—";
 const fmtAgo   = (d) => {
   if (!d) return "";
