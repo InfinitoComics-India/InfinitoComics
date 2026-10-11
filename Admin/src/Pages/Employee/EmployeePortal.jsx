@@ -373,15 +373,18 @@ const EmployeePortal = () => {
   // ── Actions ──────────────────────────────────────────────────
   const handleClockIn = async () => {
     try { setClocking(true); setError(""); setSuccess("");
-      await axios.post(`${BASE}/hr/attendance/me/clockin`, {}, auth());
-      await loadTodayAttd();
+      const r = await axios.post(`${BASE}/hr/attendance/me/clockin`, {}, auth());
+      // Use response data directly — don't rely on /me/today which may be cached/stale
+      if (r.data.data) setTodayAttd(r.data.data);
+      else await loadTodayAttd();
       setSuccess("✅ Clocked in successfully!");
     } catch (e) { setError(e.response?.data?.message||"Failed to clock in."); } finally { setClocking(false); }
   };
   const handleClockOut = async () => {
     try { setClocking(true); setError(""); setSuccess("");
-      await axios.post(`${BASE}/hr/attendance/me/clockout`, {}, auth());
-      await loadTodayAttd();
+      const r = await axios.post(`${BASE}/hr/attendance/me/clockout`, {}, auth());
+      if (r.data.data) setTodayAttd(r.data.data);
+      else await loadTodayAttd();
       setSuccess("✅ Clocked out successfully!");
     } catch (e) { setError(e.response?.data?.message||"Failed to clock out."); } finally { setClocking(false); }
   };
