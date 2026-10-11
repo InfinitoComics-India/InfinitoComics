@@ -515,21 +515,25 @@ const EmployeePortal = () => {
         {/* ── ATTENDANCE ── */}
         {tab === "attendance" && (
           <div className="space-y-5">
-            {/* Clock in/out card */}
-            <div className="bg-white border rounded-xl p-6">
-              <div className="flex items-center justify-between mb-5">
+
+            {/* ── Clock In/Out Card ── */}
+            <div className="bg-white border rounded-xl p-6 space-y-4">
+
+              {/* Header row */}
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-black text-gray-900">Today — {fmt(new Date())}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{fmtTime(new Date())} IST</p>
+                  <p className="text-sm font-black text-gray-900">Today — {new Date().toLocaleDateString("en-IN",{weekday:"long",day:"2-digit",month:"long",year:"numeric"})}</p>
                 </div>
                 {todayAttd && (
                   <div className="flex items-center gap-3">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 text-center">
-                      <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">Total Hours</p>
-                      <p className="text-xl font-black text-blue-700">{(todayAttd.totalHours || todayAttd.hoursWorked || 0).toFixed(1)}h</p>
+                    <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-2 text-center">
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-blue-400">Total Hours</p>
+                      <p className="text-xl font-black text-blue-700 leading-none mt-0.5">
+                        {Number(todayAttd.totalHours || todayAttd.hoursWorked || 0).toFixed(1)}h
+                      </p>
                     </div>
                     <span className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize ${STATUS_COLORS[todayAttd.status]||"bg-gray-100 text-gray-600"}`}>
-                      {todayAttd.status?.replace("_"," ")||"Present"}
+                      {(todayAttd.status||"").replace("_"," ")||"Present"}
                     </span>
                   </div>
                 )}
@@ -537,85 +541,90 @@ const EmployeePortal = () => {
 
               {/* Sessions */}
               {(() => {
-                const sessions = todayAttd?.sessions?.length > 0
-                  ? todayAttd.sessions
-                  : todayAttd?.clockIn
-                    ? [{ clockIn: todayAttd.clockIn, clockOut: todayAttd.clockOut, hoursWorked: todayAttd.hoursWorked }]
-                    : [];
+                // Unify sessions array + legacy single clockIn/clockOut into one list
+                let sessions = [];
+                if (todayAttd?.sessions?.length > 0) {
+                  sessions = todayAttd.sessions;
+                } else if (todayAttd?.clockIn) {
+                  sessions = [{ clockIn: todayAttd.clockIn, clockOut: todayAttd.clockOut || null, hoursWorked: todayAttd.hoursWorked || 0 }];
+                }
 
                 if (sessions.length === 0) {
                   return (
-                    <div className="flex items-center gap-3 text-gray-400 mb-5 bg-gray-50 rounded-lg px-4 py-3">
-                      <Clock size={20}/>
+                    <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-5 py-4">
+                      <Clock size={24} className="text-gray-300"/>
                       <div>
-                        <p className="font-black text-gray-700 text-sm">Not Clocked In Yet</p>
-                        <p className="text-xs text-gray-400">Click "Clock In" to start your session</p>
+                        <p className="font-black text-gray-800">Not clocked in yet</p>
+                        <p className="text-xs text-gray-400 mt-0.5">Click Clock In to start your work session</p>
                       </div>
                     </div>
                   );
                 }
 
-                const totalHours = sessions.reduce((s, x) => s + (x.hoursWorked || 0), 0);
+                const totalHrs = sessions.reduce((sum, s) => sum + Number(s.hoursWorked || 0), 0);
+                const pct = Math.min((totalHrs / 4) * 100, 100);
 
                 return (
-                  <div className="space-y-2 mb-5">
-                    {sessions.map((s, i) => (
-                      <div key={i} className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-2.5">
-                        <span className="w-7 h-7 rounded-full bg-[#DD1215] text-white flex items-center justify-center font-black text-xs shrink-0">{i+1}</span>
-                        <div className="flex-1 text-sm">
-                          <span className="text-green-700 font-bold">IN: {fmtTime(s.clockIn)}</span>
-                          {s.clockOut
-                            ? <span className="text-red-600 font-bold ml-4">OUT: {fmtTime(s.clockOut)}</span>
-                            : <span className="text-yellow-600 font-semibold ml-4 animate-pulse">● Currently working</span>
-                          }
+                  <div className="space-y-2">
+                    {sessions.map((s, i) => {
+                      const inTime  = s.clockIn  ? new Date(s.clockIn).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}) : "—";
+                      const outTime = s.clockOut ? new Date(s.clockOut).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}) : null;
+                      return (
+                        <div key={i} className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3">
+                          <div className="w-7 h-7 rounded-full bg-[#DD1215] text-white flex items-center justify-center text-xs font-black shrink-0">{i+1}</div>
+                          <div className="flex-1">
+                            <span className="text-green-700 font-bold text-sm">IN: {inTime}</span>
+                            {outTime
+                              ? <span className="text-red-600 font-bold text-sm ml-4">OUT: {outTime}</span>
+                              : <span className="text-yellow-600 text-sm ml-4 animate-pulse font-semibold">● Working now</span>
+                            }
+                          </div>
+                          {outTime && (
+                            <span className="text-xs text-gray-500 font-semibold">{Number(s.hoursWorked||0).toFixed(2)}h</span>
+                          )}
                         </div>
-                        {s.clockOut && <span className="text-xs text-gray-500 font-semibold whitespace-nowrap">{Number(s.hoursWorked||0).toFixed(2)}h</span>}
-                      </div>
-                    ))}
+                      );
+                    })}
 
-                    {/* Progress bar */}
-                    <div className="mt-3 pt-3 border-t border-gray-100">
-                      <div className="flex justify-between text-[10px] text-gray-400 mb-1.5">
-                        <span>Daily target</span>
-                        <span>{Math.min(totalHours, 4).toFixed(1)}h / 4h</span>
+                    {/* Progress toward 4h */}
+                    <div className="pt-2">
+                      <div className="flex justify-between text-[10px] text-gray-400 mb-1">
+                        <span>Daily target (4h for Present)</span>
+                        <span>{totalHrs.toFixed(1)}h / 4h</span>
                       </div>
-                      <div className="w-full bg-gray-100 rounded-full h-2">
-                        <div className={`h-2 rounded-full transition-all ${totalHours >= 4 ? "bg-green-500" : "bg-yellow-400"}`}
-                          style={{width:`${Math.min((totalHours/4)*100, 100)}%`}}/>
+                      <div className="w-full bg-gray-100 rounded-full h-2.5">
+                        <div className={`h-2.5 rounded-full transition-all duration-500 ${pct >= 100 ? "bg-green-500" : "bg-yellow-400"}`} style={{width:`${pct}%`}}/>
                       </div>
-                      <p className={`text-[10px] mt-1 font-semibold ${totalHours >= 4 ? "text-green-600" : "text-yellow-600"}`}>
-                        {totalHours >= 4 ? "✅ Present — 4h target met" : `⚠️ ${(4-totalHours).toFixed(1)}h more for Present (Half Day currently)`}
+                      <p className={`text-[11px] font-semibold mt-1 ${pct >= 100 ? "text-green-600" : "text-yellow-600"}`}>
+                        {pct >= 100 ? "✅ Present — daily target met!" : `⚠️ ${(4-totalHrs).toFixed(1)}h more to reach Present status`}
                       </p>
                     </div>
                   </div>
                 );
               })()}
 
-              {/* Clock In / Clock Out buttons */}
+              {/* Buttons */}
               {(() => {
                 const sessions = todayAttd?.sessions || [];
-                const lastSession = sessions[sessions.length - 1];
-                const isCurrentlyIn =
-                  (sessions.length > 0 && lastSession && !lastSession.clockOut) ||
-                  (sessions.length === 0 && todayAttd?.clockIn && !todayAttd?.clockOut);
-                const hasAnySessions = sessions.length > 0 || todayAttd?.clockOut;
-
+                const last = sessions[sessions.length - 1];
+                const clocked_in =
+                  (sessions.length > 0 && last && !last.clockOut) ||
+                  (sessions.length === 0 && !!todayAttd?.clockIn && !todayAttd?.clockOut);
+                const had_session = sessions.length > 0 || !!todayAttd?.clockOut;
                 return (
-                  <div className="flex items-center gap-3 flex-wrap">
-                    {isCurrentlyIn ? (
+                  <div className="flex items-center gap-3 pt-2 flex-wrap">
+                    {clocked_in ? (
                       <button onClick={handleClockOut} disabled={clocking}
-                        className="flex items-center gap-2 bg-red-600 text-white px-6 py-3 text-sm font-black uppercase tracking-widest hover:bg-red-700 transition disabled:opacity-50 rounded-xl">
-                        <LogOutIcon size={16}/> {clocking ? "Clocking Out..." : "Clock Out"}
+                        className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-7 py-3 rounded-xl text-sm font-black uppercase tracking-wider transition disabled:opacity-50">
+                        <LogOutIcon size={16}/>{clocking ? "Clocking Out..." : "Clock Out"}
                       </button>
                     ) : (
                       <button onClick={handleClockIn} disabled={clocking}
-                        className="flex items-center gap-2 bg-green-600 text-white px-6 py-3 text-sm font-black uppercase tracking-widest hover:bg-green-700 transition disabled:opacity-50 rounded-xl">
-                        <LogIn size={16}/> {clocking ? "Clocking In..." : hasAnySessions ? "Clock In Again" : "Clock In"}
+                        className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-7 py-3 rounded-xl text-sm font-black uppercase tracking-wider transition disabled:opacity-50">
+                        <LogIn size={16}/>{clocking ? "Clocking In..." : had_session ? "Clock In Again" : "Clock In"}
                       </button>
                     )}
-                    <span className="text-xs text-gray-400">
-                      {sessions.length} session{sessions.length !== 1 ? "s" : ""} today
-                    </span>
+                    <span className="text-xs text-gray-400">{sessions.length} session{sessions.length!==1?"s":""} today</span>
                   </div>
                 );
               })()}
