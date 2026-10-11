@@ -46,13 +46,19 @@ class AttendanceService {
       const lateByMinutes = 0;
 
       const newSession = { clockIn: now, clockOut: null, hoursWorked: 0 };
-      const sessions   = [...(existing?.sessions || []), newSession];
+      // Convert existing sessions to plain objects to avoid Mongoose subdoc issues
+      const existingSessions = (existing?.sessions || []).map(s => ({
+        clockIn: s.clockIn,
+        clockOut: s.clockOut || null,
+        hoursWorked: s.hoursWorked || 0,
+      }));
+      const sessions = [...existingSessions, newSession];
 
       let record;
       if (existing) {
         record = await Attendance.findByIdAndUpdate(
           existing._id,
-          { $set: { sessions, status: "present", isLate: existing.isLate || isLate, lateByMinutes: existing.lateByMinutes || lateByMinutes } },
+          { $push: { sessions: newSession }, $set: { status: "present" } },
           { new: true }
         );
       } else {
@@ -74,7 +80,7 @@ class AttendanceService {
       await this.auditRepo.create({
         performedBy, performedByName,
         action: "UPDATE", entity: "Attendance", entityId: record._id,
-        description: `Clock In #${sessions.length} at ${now.toLocaleTimeString()} ${isLate ? `(Late by ${lateByMinutes} mins)` : ""}`,
+        description: `Clock In session at ${now.toLocaleTimeString()}`,
       });
 
       return record;
