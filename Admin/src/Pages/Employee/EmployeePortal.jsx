@@ -30,14 +30,8 @@ const STATUS_COLORS = {
 const fmt      = (d) => d ? new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "—";
 const fmtTime  = (d) => {
   if (!d) return "—";
-  // Convert UTC to IST (UTC+5:30) explicitly
-  const utc = new Date(d);
-  const ist = new Date(utc.getTime() + 5.5 * 60 * 60 * 1000);
-  const h = ist.getUTCHours();
-  const m = String(ist.getUTCMinutes()).padStart(2,"0");
-  const ampm = h >= 12 ? "pm" : "am";
-  const h12 = h % 12 || 12;
-  return `${String(h12).padStart(2,"0")}:${m} ${ampm}`;
+  // Browser automatically converts UTC to local timezone (IST for Indian users)
+  return new Date(d).toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit", hour12:true });
 };
 const fmtShort = (d) => d ? new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short"}) : "—";
 const fmtAgo   = (d) => {
@@ -523,113 +517,108 @@ const EmployeePortal = () => {
           <div className="space-y-5">
             {/* Clock in/out card */}
             <div className="bg-white border rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Today — {fmt(new Date())}</p>
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <p className="text-sm font-black text-gray-900">Today — {fmt(new Date())}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{fmtTime(new Date())} IST</p>
+                </div>
                 {todayAttd && (
                   <div className="flex items-center gap-3">
-                    {/* Total hours badge */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5 text-center">
-                      <p className="text-[10px] text-blue-500 font-bold uppercase">Total Hours</p>
-                      <p className="text-lg font-black text-blue-700">{(todayAttd.totalHours || todayAttd.hoursWorked || 0).toFixed(1)}h</p>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 text-center">
+                      <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">Total Hours</p>
+                      <p className="text-xl font-black text-blue-700">{(todayAttd.totalHours || todayAttd.hoursWorked || 0).toFixed(1)}h</p>
                     </div>
-                    {/* Status badge */}
                     <span className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize ${STATUS_COLORS[todayAttd.status]||"bg-gray-100 text-gray-600"}`}>
-                      {todayAttd.status?.replace("_"," ")}
+                      {todayAttd.status?.replace("_"," ")||"Present"}
                     </span>
                   </div>
                 )}
               </div>
 
-              {/* Sessions list */}
-              {todayAttd?.sessions?.length > 0 ? (
-                <div className="space-y-2 mb-4">
-                  {todayAttd.sessions.map((s, i) => (
-                    <div key={i} className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-2.5 text-xs">
-                      <span className="w-6 h-6 rounded-full bg-[#DD1215] text-white flex items-center justify-center font-black text-[10px] shrink-0">{i+1}</span>
-                      <div className="flex-1">
-                        <span className="text-green-700 font-bold">IN: {fmtTime(s.clockIn)}</span>
-                        {s.clockOut ? (
-                          <span className="text-red-600 font-bold ml-4">OUT: {fmtTime(s.clockOut)}</span>
-                        ) : (
-                          <span className="text-yellow-600 font-semibold ml-4 animate-pulse">● Currently working</span>
-                        )}
-                      </div>
-                      {s.clockOut && <span className="text-gray-500 font-semibold">{s.hoursWorked}h</span>}
-                    </div>
-                  ))}
-                  {/* 4hr progress bar */}
-                  <div className="mt-2">
-                    <div className="flex justify-between text-[10px] text-gray-400 mb-1">
-                      <span>Daily target</span>
-                      <span>{Math.min((todayAttd.totalHours||0), 4).toFixed(1)}h / 4h</span>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2">
-                      <div className={`h-2 rounded-full transition-all ${(todayAttd.totalHours||0) >= 4 ? "bg-green-500" : "bg-yellow-400"}`}
-                        style={{width:`${Math.min(((todayAttd.totalHours||0)/4)*100,100)}%`}}/>
-                    </div>
-                    {(todayAttd.totalHours||0) >= 4
-                      ? <p className="text-[10px] text-green-600 font-bold mt-1">✅ Present — 4h target met</p>
-                      : <p className="text-[10px] text-yellow-600 mt-1">⚠️ {(4-(todayAttd.totalHours||0)).toFixed(1)}h more for Present (Half Day currently)</p>
-                    }
-                  </div>
-                </div>
-              ) : todayAttd?.clockIn ? (
-                // Legacy single session display
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-2.5 text-xs">
-                    <span className="w-6 h-6 rounded-full bg-[#DD1215] text-white flex items-center justify-center font-black text-[10px] shrink-0">1</span>
-                    <div className="flex-1">
-                      <span className="text-green-700 font-bold">IN: {fmtTime(todayAttd.clockIn)}</span>
-                      {todayAttd.clockOut ? (
-                        <span className="text-red-600 font-bold ml-4">OUT: {fmtTime(todayAttd.clockOut)}</span>
-                      ) : (
-                        <span className="text-yellow-600 font-semibold ml-4 animate-pulse">● Currently working</span>
-                      )}
-                    </div>
-                    {todayAttd.clockOut && (
-                      <span className="text-gray-500 font-semibold">{todayAttd.hoursWorked}h</span>
-                    )}
-                  </div>
-                </div>
-              ) : !todayAttd ? (
-                <div className="flex items-center gap-2 text-gray-400 mb-4">
-                  <Clock size={20}/>
-                  <div><p className="font-black text-gray-700">Not Clocked In</p><p className="text-xs">Tap Clock In to start your session</p></div>
-                </div>
-              ) : null}
+              {/* Sessions */}
+              {(() => {
+                const sessions = todayAttd?.sessions?.length > 0
+                  ? todayAttd.sessions
+                  : todayAttd?.clockIn
+                    ? [{ clockIn: todayAttd.clockIn, clockOut: todayAttd.clockOut, hoursWorked: todayAttd.hoursWorked }]
+                    : [];
 
-              {/* Buttons */}
-              <div className="flex gap-3 flex-wrap">
-                {(() => {
-                  const sessions = todayAttd?.sessions || [];
-                  const lastSession = sessions[sessions.length - 1];
-                  // Check sessions array OR legacy clockIn/clockOut fields
-                  const isCurrentlyIn = 
-                    (sessions.length > 0 && !lastSession?.clockOut) ||
-                    (sessions.length === 0 && todayAttd?.clockIn && !todayAttd?.clockOut);
-                  if (isCurrentlyIn) {
-                    return (
+                if (sessions.length === 0) {
+                  return (
+                    <div className="flex items-center gap-3 text-gray-400 mb-5 bg-gray-50 rounded-lg px-4 py-3">
+                      <Clock size={20}/>
+                      <div>
+                        <p className="font-black text-gray-700 text-sm">Not Clocked In Yet</p>
+                        <p className="text-xs text-gray-400">Click "Clock In" to start your session</p>
+                      </div>
+                    </div>
+                  );
+                }
+
+                const totalHours = sessions.reduce((s, x) => s + (x.hoursWorked || 0), 0);
+
+                return (
+                  <div className="space-y-2 mb-5">
+                    {sessions.map((s, i) => (
+                      <div key={i} className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-2.5">
+                        <span className="w-7 h-7 rounded-full bg-[#DD1215] text-white flex items-center justify-center font-black text-xs shrink-0">{i+1}</span>
+                        <div className="flex-1 text-sm">
+                          <span className="text-green-700 font-bold">IN: {fmtTime(s.clockIn)}</span>
+                          {s.clockOut
+                            ? <span className="text-red-600 font-bold ml-4">OUT: {fmtTime(s.clockOut)}</span>
+                            : <span className="text-yellow-600 font-semibold ml-4 animate-pulse">● Currently working</span>
+                          }
+                        </div>
+                        {s.clockOut && <span className="text-xs text-gray-500 font-semibold whitespace-nowrap">{Number(s.hoursWorked||0).toFixed(2)}h</span>}
+                      </div>
+                    ))}
+
+                    {/* Progress bar */}
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <div className="flex justify-between text-[10px] text-gray-400 mb-1.5">
+                        <span>Daily target</span>
+                        <span>{Math.min(totalHours, 4).toFixed(1)}h / 4h</span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-2">
+                        <div className={`h-2 rounded-full transition-all ${totalHours >= 4 ? "bg-green-500" : "bg-yellow-400"}`}
+                          style={{width:`${Math.min((totalHours/4)*100, 100)}%`}}/>
+                      </div>
+                      <p className={`text-[10px] mt-1 font-semibold ${totalHours >= 4 ? "text-green-600" : "text-yellow-600"}`}>
+                        {totalHours >= 4 ? "✅ Present — 4h target met" : `⚠️ ${(4-totalHours).toFixed(1)}h more for Present (Half Day currently)`}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Clock In / Clock Out buttons */}
+              {(() => {
+                const sessions = todayAttd?.sessions || [];
+                const lastSession = sessions[sessions.length - 1];
+                const isCurrentlyIn =
+                  (sessions.length > 0 && lastSession && !lastSession.clockOut) ||
+                  (sessions.length === 0 && todayAttd?.clockIn && !todayAttd?.clockOut);
+                const hasAnySessions = sessions.length > 0 || todayAttd?.clockOut;
+
+                return (
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {isCurrentlyIn ? (
                       <button onClick={handleClockOut} disabled={clocking}
-                        className="flex items-center gap-2 bg-red-600 text-white px-6 py-3 text-xs font-black uppercase tracking-widest hover:bg-red-700 transition disabled:opacity-50 rounded-lg">
+                        className="flex items-center gap-2 bg-red-600 text-white px-6 py-3 text-sm font-black uppercase tracking-widest hover:bg-red-700 transition disabled:opacity-50 rounded-xl">
                         <LogOutIcon size={16}/> {clocking ? "Clocking Out..." : "Clock Out"}
                       </button>
-                    );
-                  }
-                  const hasAnySessions = sessions.length > 0 || todayAttd?.clockOut;
-                  return (
-                    <button onClick={handleClockIn} disabled={clocking}
-                      className="flex items-center gap-2 bg-green-600 text-white px-6 py-3 text-xs font-black uppercase tracking-widest hover:bg-green-700 transition disabled:opacity-50 rounded-lg">
-                      <LogIn size={16}/> {clocking ? "Clocking In..." : hasAnySessions ? "Clock In Again" : "Clock In"}
-                    </button>
-                  );
-                })()}
-                {todayAttd && (
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
-                    {todayAttd.isLate && <span className="text-yellow-600 font-semibold">⚠️ Late by {todayAttd.lateByMinutes} mins</span>}
-                    <span>{(todayAttd.sessions||[]).length} session{(todayAttd.sessions||[]).length !== 1 ? "s" : ""} today</span>
+                    ) : (
+                      <button onClick={handleClockIn} disabled={clocking}
+                        className="flex items-center gap-2 bg-green-600 text-white px-6 py-3 text-sm font-black uppercase tracking-widest hover:bg-green-700 transition disabled:opacity-50 rounded-xl">
+                        <LogIn size={16}/> {clocking ? "Clocking In..." : hasAnySessions ? "Clock In Again" : "Clock In"}
+                      </button>
+                    )}
+                    <span className="text-xs text-gray-400">
+                      {sessions.length} session{sessions.length !== 1 ? "s" : ""} today
+                    </span>
                   </div>
-                )}
-              </div>
+                );
+              })()}
             </div>
 
             {/* Monthly calendar */}
