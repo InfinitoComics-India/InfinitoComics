@@ -3,10 +3,6 @@ node_modules/
 **/node_modules/
 
 # Environment files - NEVER commit these
-.env
-**/.env
-.env.local
-.env.production
 
 # Build outputs
 dist/
@@ -29,3 +25,4 @@ Thumbs.db
 branch_structure.json
 temp_auto_push.bat
 temp_interactive_push.bat
+config.bat
