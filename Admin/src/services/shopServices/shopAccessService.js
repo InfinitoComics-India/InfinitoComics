@@ -164,7 +164,7 @@ export const toggleEmployeeShopAccess = async (employee, grant) => {
     localStorage.setItem('Admin', JSON.stringify(curAdmin));
   }
 
-  notifyAccessChange({ type: 'shop_access_updated', email, shopAccess: Boolean(grant) });
+  notifyAccessChange({ type: 'shop_access_updated', email, shopAccess: Boolean(grant), allowedEmails: next });
   return next;
 };
 
@@ -180,17 +180,19 @@ export const fetchAllEmployeesWithShopStatus = async () => {
     const hrRes = await getAllEmployees({ all: true });
     const hrData = hrRes?.data?.data || hrRes?.data || [];
     if (Array.isArray(hrData)) {
-      employeeList = hrData.map((emp) => {
-        const em = String(emp.email || '').toLowerCase().trim();
-        const hasAccess = emp.shopAccess === true || allowedEmails.has(em);
+      employeeList = hrData.map((emp, idx) => {
+        const em = emp.email ? String(emp.email).toLowerCase().trim() : '';
+        const hasAccess = emp.shopAccess === true || (em ? allowedEmails.has(em) : false);
         if (emp.shopAccess === true && em) allowedEmails.add(em);
+        const uniqueId = String(emp._id || emp.id || `hr_${emp.employeeId || idx}`);
         return {
-          id: emp._id || emp.id,
-          employeeId: emp.employeeId || 'EMP',
+          id: uniqueId,
+          _id: emp._id || uniqueId,
+          employeeId: emp.employeeId || `EMP-${idx + 1}`,
           firstName: emp.firstName || '',
           lastName: emp.lastName || '',
           name: emp.fullName || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || 'Employee',
-          email: emp.email || '',
+          email: em,
           department: emp.department || 'Operations',
           designation: emp.designation || 'Staff',
           hrRole: emp.hrRole || 'employee',
@@ -213,25 +215,28 @@ export const fetchAllEmployeesWithShopStatus = async () => {
     });
     const admins = adminRes?.data?.data || [];
     if (Array.isArray(admins)) {
-      admins.forEach((adm) => {
-        const em = String(adm.email || '').toLowerCase().trim();
-        const existingIdx = employeeList.findIndex((e) => String(e.email).toLowerCase().trim() === em);
+      admins.forEach((adm, idx) => {
+        const em = adm.email ? String(adm.email).toLowerCase().trim() : '';
+        const existingIdx = em ? employeeList.findIndex((e) => e.email === em) : -1;
         const roles = adm.roles || (adm.role ? [adm.role] : []);
-        const hasAccess = adm.shopAccess === true || roles.includes('shop_admin') || allowedEmails.has(em);
+        const hasAccess = adm.shopAccess === true || roles.includes('shop_admin') || (em ? allowedEmails.has(em) : false);
 
         if (existingIdx >= 0) {
-          // Merge admin roles
+          // Merge admin roles into existing employee
           employeeList[existingIdx].shopAccess = employeeList[existingIdx].shopAccess || hasAccess;
           employeeList[existingIdx].roles = roles;
+          employeeList[existingIdx].adminId = adm._id || adm.id;
         } else {
-          // Add as employee entry
+          // Add as distinct employee entry with unique id
+          const uniqueId = String(adm._id || adm.id || `adm_${idx}`);
           employeeList.push({
-            id: adm._id || adm.id,
-            employeeId: 'ADM-' + (adm._id ? adm._id.slice(-4) : 'USER'),
+            id: uniqueId,
+            _id: adm._id || uniqueId,
+            employeeId: 'ADM-' + (adm._id ? String(adm._id).slice(-4) : `${idx + 1}`),
             firstName: adm.name || '',
             lastName: '',
-            name: adm.name || adm.email?.split('@')[0] || 'Staff Member',
-            email: adm.email,
+            name: adm.name || (em ? em.split('@')[0] : 'Staff Member'),
+            email: em,
             department: roles.includes('superadmin') ? 'Executive' : 'Operations',
             designation: roles.includes('superadmin') ? 'Super Admin' : (roles[0] || 'Employee'),
             hrRole: roles.includes('superadmin') ? 'superadmin' : 'employee',

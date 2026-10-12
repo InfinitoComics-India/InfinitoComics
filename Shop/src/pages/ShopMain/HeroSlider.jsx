@@ -180,9 +180,15 @@ const Slide = ({ slide }) => {
       )}
 
       {slide.hideText ? (
-        // Artwork already carries heading, subtext and CTA — reserve
-        // the same vertical space and stay out of the way matching SS1 aspect ratio.
-        <div className="w-full aspect-[1024/380] min-h-[340px] sm:min-h-[420px] md:min-h-[500px]" />
+        // Artwork carries heading, subtext and CTA — reserve space and link on click
+        <div
+          onClick={() => {
+            const link = slide.ctaLink || "https://shop.infinitohq.com/";
+            if (link.startsWith("http")) window.location.href = link;
+            else window.location.pathname = link;
+          }}
+          className="w-full aspect-[1024/380] min-h-[340px] sm:min-h-[420px] md:min-h-[500px] cursor-pointer"
+        />
       ) : (
         <div className="relative max-w-[1200px] mx-auto px-4 md:px-12 w-full aspect-[1024/380] min-h-[340px] sm:min-h-[420px] md:min-h-[500px] flex items-center">
           <div
@@ -199,7 +205,19 @@ const Slide = ({ slide }) => {
             )}
 
             <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black uppercase leading-[0.9] tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] drop-shadow-lg">
-              {slide.heading}
+              {(() => {
+                const heading = slide.heading || "INFINITO";
+                const hl = slide.highlightText;
+                if (!hl || !heading.toLowerCase().includes(hl.toLowerCase())) return heading;
+                const parts = heading.split(new RegExp(`(${hl})`, 'gi'));
+                return parts.map((part, i) =>
+                  part.toLowerCase() === hl.toLowerCase() ? (
+                    <span key={i} className="text-[#DD1215]">{part}</span>
+                  ) : (
+                    part
+                  )
+                );
+              })()}
             </h1>
 
             <p
@@ -211,7 +229,15 @@ const Slide = ({ slide }) => {
             </p>
 
             <div className={`mt-8 flex ${isRight ? "md:justify-end" : ""}`}>
-              <button className="px-8 py-3 bg-[#DD1215] hover:bg-red-700 text-white text-sm font-bold uppercase tracking-widest transition-colors font-dmsans">
+              <button
+                type="button"
+                onClick={() => {
+                  const link = slide.ctaLink || "https://shop.infinitohq.com/";
+                  if (link.startsWith("http")) window.location.href = link;
+                  else window.location.pathname = link;
+                }}
+                className="px-8 py-3 bg-[#DD1215] hover:bg-red-700 text-white text-sm font-bold uppercase tracking-widest transition-colors font-dmsans cursor-pointer shadow-lg"
+              >
                 {slide.cta}
               </button>
             </div>

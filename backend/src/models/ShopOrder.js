@@ -26,7 +26,7 @@ const shopOrderSchema = new mongoose.Schema({
     trim: true,
   },
   customer: {
-    name: { type: String, default: 'Aarav Sharma' },
+    name: { type: String, default: 'Customer' },
     email: { type: String, default: 'customer@infinitohq.com' },
     phone: { type: String, default: '+91 98765 43210' },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -82,6 +82,8 @@ const shopOrderSchema = new mongoose.Schema({
       sentAt: { type: Date, default: null },
       qikinkOrderId: { type: String, default: null },
       status: { type: String, default: 'Pending Dispatch' },
+      environment: { type: String, default: 'live' },
+      rawResponse: { type: mongoose.Schema.Types.Mixed, default: null },
     },
     tracking: {
       carrier: { type: String, default: 'BlueDart Express' },

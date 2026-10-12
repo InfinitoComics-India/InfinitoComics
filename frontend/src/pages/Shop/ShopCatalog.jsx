@@ -330,39 +330,69 @@ const ShopCatalog = () => {
             <ChevronLeft size={18} />
           </button>
 
-          {/* Exact SS2 Sized Banner Card */}
-          <div
-            className="relative w-full max-w-[780px] h-[160px] sm:h-[175px] md:h-[180px] rounded-xl overflow-hidden shadow-md flex items-center bg-black bg-cover bg-center shrink-0"
-            style={{
-              backgroundColor: currentPromo?.bgColor || "#800000",
-              backgroundImage: currentPromo?.bgImageUrl ? `url(${currentPromo.bgImageUrl})` : "none",
-            }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/25 to-transparent pointer-events-none" />
+          {/* Exact Responsive Promo Banner Card - Image fills container cleanly */}
+          {(() => {
+            const isRight = currentPromo?.alignment === "right";
+            const isCenter = currentPromo?.alignment === "center";
 
-            <div className="relative z-10 pl-6 sm:pl-8 md:pl-10 max-w-[65%] sm:max-w-[55%] space-y-1 text-white">
-              {(currentPromo?.badgeText || currentPromo?.discountCode) && (
-                <span className="inline-block bg-black/70 text-[#DD1215] text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded">
-                  {currentPromo.badgeText || currentPromo.discountCode}
-                </span>
-              )}
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight text-white drop-shadow">
-                {currentPromo?.headline || "35% off"}
-              </h2>
-              <p className="text-[11px] sm:text-xs md:text-sm font-semibold tracking-wide text-gray-200 uppercase drop-shadow">
-                {currentPromo?.subtitle || "on THE CRIMSON BLOODLINE"}
-              </p>
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => handleCtaClick(currentPromo?.buttonLink || "https://shop.infinitohq.com/")}
-                  className="px-4 sm:px-5 py-1.5 sm:py-2 bg-[#DD1215] hover:bg-red-700 text-white text-xs font-bold uppercase tracking-wider rounded transition cursor-pointer shadow-sm"
-                >
-                  {currentPromo?.buttonText || "Buy Now"}
-                </button>
+            return (
+              <div
+                className="relative w-full max-w-[840px] min-h-[170px] sm:min-h-[190px] md:min-h-[210px] rounded-xl overflow-hidden shadow-md flex items-center bg-black shrink-0"
+                style={{
+                  backgroundColor: currentPromo?.bgColor || "#800000",
+                }}
+              >
+                {/* The image fills the size of the banner cleanly */}
+                {currentPromo?.bgImageUrl && (
+                  <img
+                    src={currentPromo.bgImageUrl}
+                    alt={currentPromo?.headline || "Promotional Banner"}
+                    className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none transition-all duration-300"
+                  />
+                )}
+
+                {/* Gradient overlay for readability */}
+                <div className={`absolute inset-0 pointer-events-none ${
+                  isRight
+                    ? "bg-gradient-to-l from-black/85 via-black/40 to-transparent"
+                    : isCenter
+                    ? "bg-black/55"
+                    : "bg-gradient-to-r from-black/85 via-black/40 to-transparent"
+                }`} />
+
+                <div className={`relative z-10 px-6 sm:px-8 md:px-10 py-4 max-w-[70%] sm:max-w-[60%] space-y-1 text-white ${
+                  isRight ? "ml-auto text-right" : isCenter ? "mx-auto text-center" : "text-left"
+                }`}>
+                  {(currentPromo?.badgeText || currentPromo?.discountCode) && (
+                    <div className={`flex items-center gap-2 ${
+                      isRight ? "justify-end" : isCenter ? "justify-center" : "justify-start"
+                    }`}>
+                      <span className="inline-block bg-black/70 text-[#DD1215] text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded">
+                        {currentPromo.badgeText || currentPromo.discountCode}
+                      </span>
+                    </div>
+                  )}
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight text-white drop-shadow font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif]">
+                    {currentPromo?.headline || "35% off"}
+                  </h2>
+                  <p className="text-[11px] sm:text-xs md:text-sm font-semibold tracking-wide text-gray-200 uppercase drop-shadow">
+                    {currentPromo?.subtitle || "on THE CRIMSON BLOODLINE"}
+                  </p>
+                  <div className={`pt-2 flex ${
+                    isRight ? "justify-end" : isCenter ? "justify-center" : "justify-start"
+                  }`}>
+                    <button
+                      type="button"
+                      onClick={() => handleCtaClick(currentPromo?.buttonLink || "https://shop.infinitohq.com/")}
+                      className="px-4 sm:px-5 py-1.5 sm:py-2 bg-[#DD1215] hover:bg-red-700 text-white text-xs font-bold uppercase tracking-wider rounded transition cursor-pointer shadow-sm"
+                    >
+                      {currentPromo?.buttonText || "Buy Now"}
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Right Arrow Button */}
           <button
