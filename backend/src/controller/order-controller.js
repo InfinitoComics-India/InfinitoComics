@@ -1,5 +1,6 @@
 import ShopOrder from '../models/ShopOrder.js';
 import Product from '../models/Product.js';
+import qikinkService from '../services/qikink-service.js';
 
 // Format helper
 const formatOrderNumber = () => {
@@ -336,5 +337,157 @@ export const cancelOrder = async (req, res) => {
       success: false,
       message: error.message || 'Failed to cancel order',
     });
+  }
+};
+
+/**
+ * Dispatch an order to Qikink Fulfillment API
+ */
+export const dispatchOrderToQikink = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const cleanId = String(id).replace(/^#/, '');
+    const options = req.body || {};
+
+    const order = await ShopOrder.findOne({
+      $or: [
+        { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null },
+        { orderId: `#${cleanId}` },
+        { orderId: cleanId },
+        { id: cleanId },
+      ].filter(Boolean),
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found',
+      });
+    }
+
+    if (order.fulfillment?.status === 'Cancelled') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot dispatch a cancelled order to Qikink',
+      });
+    }
+
+    // Call Qikink Service to create order
+    const result = await qikinkService.createOrder(order.toObject(), options);
+
+    // Update order fulfillment status
+    const now = new Date();
+    order.fulfillment = {
+      ...(order.fulfillment?.toObject() || {}),
+      status: 'Processing',
+      qikink: {
+        sent: true,
+        sentAt: now,
+        qikinkOrderId: result.qikinkOrderId,
+        status: result.isSimulation ? 'Sandbox Simulated' : 'In Production',
+        rawResponse: result.rawResponse,
+        environment: result.environment,
+      },
+    };
+
+    order.timeline = {
+      ...(order.timeline?.toObject() || {}),
+      sentToQikink: now,
+      printed: order.timeline?.printed || new Date(Date.now() + 1000 * 60 * 60 * 6),
+    };
+
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: result.message || 'Order dispatched to Qikink successfully',
+      data: order,
+      qikink: result,
+    });
+  } catch (error) {
+    console.error('Error dispatching order to Qikink:', error);
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || 'Failed to dispatch order to Qikink',
+      details: error.response || error.payload || null,
+    });
+  }
+};
+
+/**
+ * Test Qikink API connection and credentials
+ */
+export const testQikinkConnection = async (req, res) => {
+  try {
+    const result = await qikinkService.testConnection();
+    return res.status(result.success ? 200 : 400).json(result);
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to test Qikink connection',
+    });
+  }
+};
+
+/**
+ * Handle incoming webhooks from Qikink for shipment and AWB tracking updates
+ */
+export const handleQikinkWebhook = async (req, res) => {
+  try {
+    const payload = req.body || {};
+    const orderNum = String(payload.order_number || payload.order_id || payload.qikink_order_id || '').replace(/^INF/, '');
+
+    if (!orderNum) {
+      return res.status(400).json({ success: false, message: 'Missing order_number in webhook payload' });
+    }
+
+    const order = await ShopOrder.findOne({
+      $or: [
+        { orderId: `#${orderNum}` },
+        { orderId: orderNum },
+        { id: orderNum },
+        { 'fulfillment.qikink.qikinkOrderId': payload.order_id || payload.qikink_order_id },
+      ].filter(Boolean),
+    });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found for webhook' });
+    }
+
+    const status = String(payload.status || payload.current_status || '').toLowerCase();
+    const awb = payload.awb_number || payload.tracking_number || payload.awb;
+    const courier = payload.courier_name || payload.courier || payload.shipping_carrier;
+
+    if (awb) {
+      order.fulfillment.tracking.trackingNumber = awb;
+      order.fulfillment.tracking.carrier = courier || order.fulfillment.tracking.carrier || 'BlueDart';
+      order.fulfillment.tracking.trackingUrl = payload.tracking_url || `https://${(courier || 'bluedart').toLowerCase().replace(/\s+/g, '')}.com/track/${awb}`;
+    }
+
+    if (status.includes('deliver')) {
+      order.fulfillment.status = 'Fulfilled';
+      order.timeline.delivered = new Date();
+      order.fulfillment.qikink.status = 'Delivered';
+    } else if (status.includes('dispatch') || status.includes('transit') || status.includes('shipped')) {
+      order.fulfillment.status = 'Processing';
+      order.timeline.shipped = new Date();
+      order.fulfillment.qikink.status = 'Dispatched';
+    } else if (status.includes('print')) {
+      order.timeline.printed = new Date();
+      order.fulfillment.qikink.status = 'In Production';
+    } else if (status) {
+      order.fulfillment.qikink.status = payload.status;
+    }
+
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Order updated from Qikink webhook',
+      orderId: order.orderId,
+    });
+  } catch (error) {
+    console.error('Error handling Qikink webhook:', error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
