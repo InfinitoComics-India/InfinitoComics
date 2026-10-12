@@ -39,6 +39,7 @@ export const ROLE_ROUTES = {
   research_admin: ["/research"],
   blog_admin: ["/createblog", "/createfaq", "/timeline"],
   career_admin: ["/career"],
+  ads_admin: ["/ads"],
 };
 
 // Get the admin object stored at login
