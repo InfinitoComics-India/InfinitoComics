@@ -160,9 +160,9 @@ router.post("/me/clockin", adminauthenticate, checkRole(HR_ALL), async (req, res
       if (openSession || legacyOpen) {
         return res.status(409).json({ success: false, message: "Already clocked in. Please clock out first." });
       }
-      // Push new session
+      // Push new session — don't change status on clock-in, only update on clock-out
       const updated = await Attendance.findByIdAndUpdate(existing._id,
-        { $push: { sessions: { clockIn: now, clockOut: null, hoursWorked: 0 } }, $set: { status: "present" } },
+        { $push: { sessions: { clockIn: now, clockOut: null, hoursWorked: 0 } } },
         { new: true }
       );
       return res.status(200).json({ success: true, message: "Clocked in successfully.", data: updated });
