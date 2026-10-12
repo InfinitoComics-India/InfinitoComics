@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from "react";
 import NewsletterSectionShimmer from "../../shimmer/landingPageShimmer/NewsletterSectionShimmer";
-<<<<<<< HEAD
 import bgimage from "../../../assets/Images/Newsletter/Newsletter.png";
-=======
->>>>>>> main
 
 const NewsletterSection = () => {
   const [loading, setLoading] = useState(true);
