@@ -69,7 +69,8 @@ const LoginPage = () => {
 
       setShowSuccess(true);
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      window.location.href = "/admin";
+      const redirectPath = import.meta.env.MODE === 'production' ? '/admin' : '/';
+      window.location.href = redirectPath;
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
       alert(

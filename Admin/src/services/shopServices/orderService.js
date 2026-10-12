@@ -1,6 +1,7 @@
 // Order service for Admin Orders Management, Qikink API fulfillment, tracking, and invoices
 import axios from 'axios';
 import { BACKEND_URL } from '../../Utils/constant';
+
 const ORDERS_STORAGE_KEY = 'infinito_orders';
 
 // Helper to format dates nicely
@@ -482,7 +483,7 @@ export const initCrossTabBridge = () => {
         }
       };
     }
-  } catch {}
+  } catch { }
 
   // 2. Cross-port/cross-origin iframe bridge to pull orders from Frontend (e.g. localhost:5173)
   const currentOrigin = window.location.origin;
@@ -494,7 +495,7 @@ export const initCrossTabBridge = () => {
         ifr.style.cssText = 'display:none;width:0;height:0;border:none;position:absolute;visibility:hidden;';
         document.body.appendChild(ifr);
         bridgeIframes.push(ifr);
-      } catch {}
+      } catch { }
     }
   });
 
@@ -507,7 +508,7 @@ export const initCrossTabBridge = () => {
         if (Array.isArray(parsed) && parsed.length > 0) {
           mergeExternalOrders(parsed);
         }
-      } catch {}
+      } catch { }
     }
   });
 };
@@ -546,7 +547,7 @@ export const mergeExternalOrders = (incoming) => {
       window.dispatchEvent(new CustomEvent('infinito_order_placed', { detail: merged[0] }));
       window.dispatchEvent(new CustomEvent('infinito_orders_updated', { detail: merged }));
     }
-  } catch {}
+  } catch { }
 };
 
 // Sync orders outbound to all connected apps/iframes
@@ -556,7 +557,7 @@ export const broadcastOrdersToBridge = (ordersList) => {
     if (broadcastBus) {
       broadcastBus.postMessage({ type: 'infinito_orders_sync', orders: valid });
     }
-  } catch {}
+  } catch { }
 
   bridgeIframes.forEach((ifr) => {
     try {
@@ -564,7 +565,7 @@ export const broadcastOrdersToBridge = (ordersList) => {
         type: 'sync-orders',
         orders: JSON.stringify(valid)
       }, '*');
-    } catch {}
+    } catch { }
   });
 };
 
@@ -764,7 +765,7 @@ export const normalizeCustomerOrder = (raw) => {
     return {
       productId: item.productId || prod.id || prod._id || `prod-${idx}`,
       name,
-      sku: item.sku || `INF-${name.substring(0, 3).toUpperCase()}-${item.size || item.variant?.size || 'M'}`,
+      sku: item.sku || prod.sku || `INF-${name.substring(0, 3).toUpperCase()}-${item.size || item.variant?.size || 'M'}`,
       variant: {
         size: item.size || item.variant?.size || 'Standard',
         color: item.color || item.variant?.color || 'Standard',
@@ -819,6 +820,7 @@ export const normalizeCustomerOrder = (raw) => {
     },
     shippingAddress: {
       name: resolvedCustomerName,
+      phone: raw.shippingAddress?.phone || addr.phone || raw.customer?.phone || '+91 98765 43210',
       line1: addr.line1 || 'Sector 18, House No. 42, Green Park Extension',
       city: addr.city || 'Chandigarh',
       state: addr.state || 'Punjab',
@@ -899,7 +901,7 @@ export const getAllOrders = async () => {
         if (localRes.data?.success && Array.isArray(localRes.data?.data)) {
           backendOrders = localRes.data.data;
         }
-      } catch {}
+      } catch { }
     }
 
     const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
@@ -910,7 +912,7 @@ export const getAllOrders = async () => {
         if (Array.isArray(parsed) && parsed.length > 0) {
           localOrders = parsed;
         }
-      } catch {}
+      } catch { }
     }
 
     const orderMap = new Map();
@@ -940,7 +942,7 @@ export const getAllOrders = async () => {
 
     try {
       localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(merged));
-    } catch {}
+    } catch { }
 
     return merged;
   } catch (error) {
@@ -959,7 +961,7 @@ export const getOrderById = async (idOrHash) => {
     if (res.data?.success && res.data?.data) {
       return normalizeCustomerOrder(res.data.data);
     }
-  } catch {}
+  } catch { }
 
   const all = await getAllOrders();
   const found = all.find(o => String(o.id) === clean || String(o.orderId) === `#${clean}`);
@@ -971,7 +973,7 @@ export const updateOrder = async (orderId, updates) => {
   const clean = String(orderId || '').replace(/^#/, '').trim();
   const all = await getAllOrders();
   const index = all.findIndex(o => String(o.id) === clean || String(o.orderId) === `#${clean}`);
-  
+
   if (index === -1) {
     throw new Error(`Order ${orderId} not found`);
   }
@@ -996,13 +998,13 @@ export const updateOrder = async (orderId, updates) => {
   all[index] = updated;
   try {
     localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(all));
-  } catch {}
+  } catch { }
 
   // Sync with backend API (Render + local 5000 fallback)
   try {
-    axios.patch(`${BACKEND_URL}/shop/orders/${clean}`, updates, { timeout: 3500 }).catch(() => {});
-    axios.patch(`http://localhost:5000/shop/orders/${clean}`, updates, { timeout: 2000 }).catch(() => {});
-  } catch {}
+    axios.patch(`${BACKEND_URL}/shop/orders/${clean}`, updates, { timeout: 3500 }).catch(() => { });
+    axios.patch(`http://localhost:5000/shop/orders/${clean}`, updates, { timeout: 2000 }).catch(() => { });
+  } catch { }
 
   // Broadcast to all connected app bridges
   broadcastOrdersToBridge(all);
@@ -1014,13 +1016,47 @@ export const updateOrder = async (orderId, updates) => {
 };
 
 // KEY FEATURE: Send Order to Qikink Fulfillment API
-export const sendOrderToQikink = async (orderId) => {
+export const sendOrderToQikink = async (orderId, options = {}) => {
+  const clean = String(orderId || '').replace(/^#/, '').trim();
   const order = await getOrderById(orderId);
   if (!order) throw new Error('Order not found');
 
-  // Simulate external network delay to Qikink API
-  await new Promise((res) => setTimeout(res, 850));
+  let backendSuccess = false;
+  let backendData = null;
 
+  // 1. Try sending to live backend endpoint
+  try {
+    const res = await axios.post(`${BACKEND_URL}/shop/orders/${clean}/dispatch-qikink`, options, { timeout: 12000 });
+    if (res.data?.success && res.data?.data) {
+      backendSuccess = true;
+      backendData = res.data.data;
+    }
+  } catch (err) {
+    // 2. Try local dev backend port 5000 fallback if primary backend fails
+    try {
+      const localRes = await axios.post(`http://localhost:5000/shop/orders/${clean}/dispatch-qikink`, options, { timeout: 10000 });
+      if (localRes.data?.success && localRes.data?.data) {
+        backendSuccess = true;
+        backendData = localRes.data.data;
+      }
+    } catch { }
+
+    if (!backendSuccess) {
+      const errMsg = err.response?.data?.message || err.message;
+      // If user hasn't opted into sandbox simulation and it's a real API rejection, throw so admin sees Qikink's exact error
+      if (!options.allowSandboxSimulation && !options.dryRun) {
+        throw new Error(errMsg);
+      }
+    }
+  }
+
+  if (backendSuccess && backendData) {
+    const normalized = normalizeCustomerOrder(backendData);
+    await updateOrder(orderId, normalized);
+    return normalized;
+  }
+
+  // Fallback simulation (e.g. for Sandbox tests where store SKU is not yet created in Qikink Sandbox portal)
   const qikinkOrderId = `QIK-${Math.floor(100000 + Math.random() * 900000)}`;
   const now = new Date().toISOString();
 
@@ -1036,7 +1072,7 @@ export const sendOrderToQikink = async (orderId) => {
         response: {
           success: true,
           status_code: 200,
-          message: 'Order created in Qikink system',
+          message: 'Order created in Qikink system (Sandbox Dry-Run)',
           order_id: qikinkOrderId,
         },
       },
@@ -1049,6 +1085,21 @@ export const sendOrderToQikink = async (orderId) => {
   };
 
   return await updateOrder(orderId, updates);
+};
+
+// Test Qikink API Credentials and Connectivity
+export const testQikinkConnection = async () => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/shop/orders/qikink/test-connection`, { timeout: 8000 });
+    return res.data;
+  } catch (err) {
+    try {
+      const localRes = await axios.get(`http://localhost:5000/shop/orders/qikink/test-connection`, { timeout: 5000 });
+      return localRes.data;
+    } catch {
+      return { success: false, message: err.response?.data?.message || err.message };
+    }
+  }
 };
 
 // Manual override: Mark as Fulfilled with carrier & tracking

@@ -42,5 +42,9 @@ export default {
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     // Razorpay (optional)
     RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
-    RAZORPAY_SECRET_KEY: process.env.RAZORPAY_SECRET_KEY
+    RAZORPAY_SECRET_KEY: process.env.RAZORPAY_SECRET_KEY,
+    // Qikink Fulfillment API
+    QIKINK_CLIENT_ID: process.env.QIKINK_CLIENT_ID,
+    QIKINK_CLIENT_SECRET: process.env.QIKINK_CLIENT_SECRET,
+    QIKINK_ENV: process.env.QIKINK_ENV || 'sandbox'
 }

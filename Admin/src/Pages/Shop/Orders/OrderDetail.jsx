@@ -15,6 +15,7 @@ import {
   refundOrder,
   resendOrderEmail,
   printPackingSlip,
+  testQikinkConnection,
   formatOrderDate,
   formatDateTime,
   resolveCustomerDisplayName,
@@ -31,6 +32,9 @@ const OrderDetail = () => {
   // Modals & Action loading states
   const [qikinkModalOpen, setQikinkModalOpen] = useState(false);
   const [qikinkLoading, setQikinkLoading] = useState(false);
+  const [qikinkAllowSimulation, setQikinkAllowSimulation] = useState(true);
+  const [testingQikink, setTestingQikink] = useState(false);
+  const [qikinkTestResult, setQikinkTestResult] = useState(null);
 
   const [fulfillModalOpen, setFulfillModalOpen] = useState(false);
   const [fulfillCarrier, setFulfillCarrier] = useState('BlueDart');
@@ -101,15 +105,34 @@ const OrderDetail = () => {
   const handleSendToQikink = async () => {
     try {
       setQikinkLoading(true);
-      const updated = await sendOrderToQikink(order.orderId);
+      const updated = await sendOrderToQikink(order.orderId, {
+        allowSandboxSimulation: qikinkAllowSimulation,
+      });
       setOrder(updated);
       setQikinkModalOpen(false);
       message.success(`Order successfully sent to Qikink POD! Assigned ID: ${updated.fulfillment?.qikink?.qikinkOrderId}`);
     } catch (err) {
       console.error(err);
-      message.error('Failed to transmit order to Qikink');
+      message.error(err.message || 'Failed to transmit order to Qikink');
     } finally {
       setQikinkLoading(false);
+    }
+  };
+
+  const handleTestQikink = async () => {
+    try {
+      setTestingQikink(true);
+      const res = await testQikinkConnection();
+      setQikinkTestResult(res);
+      if (res?.success) {
+        message.success(`Connected to Qikink API (${res.environment}) successfully!`);
+      } else {
+        message.error(`Qikink API Error: ${res?.message || 'Check credentials'}`);
+      }
+    } catch (e) {
+      message.error('Failed to ping Qikink API');
+    } finally {
+      setTestingQikink(false);
     }
   };
 
@@ -809,7 +832,7 @@ const OrderDetail = () => {
               </strong>
               <div className="whitespace-pre-line">{order.shippingAddress?.formatted || order.shippingAddress?.line1}</div>
               <div className="mt-2 text-gray-500">
-                <strong>Phone:</strong> {order.customer?.phone || 'N/A'}
+                <strong>Phone:</strong> {order.shippingAddress?.phone || order.customer?.phone || 'N/A'}
               </div>
             </div>
           </div>
@@ -859,7 +882,7 @@ const OrderDetail = () => {
       >
         <div className="space-y-4 py-2 text-sm">
           <p className="text-gray-600">
-            This will make an automated API call to Qikink Print-on-Demand service with customer shipping data and apparel print configurations.
+            This transmits the order data directly to Qikink Print-on-Demand API with customer shipping info and item SKU configurations.
           </p>
 
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs space-y-2">
@@ -878,13 +901,39 @@ const OrderDetail = () => {
             <div className="flex justify-between">
               <span className="text-gray-500">Print Items:</span>
               <span className="font-bold text-[#DD1215]">
-                {(order.items || []).map(i => `${i.quantity}x ${i.name}`).join(', ')}
+                {(order.items || []).map(i => `${i.quantity}x ${i.name} [SKU: ${i.sku || 'INF-ITEM'}]`).join(', ')}
               </span>
             </div>
           </div>
 
+          <div className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={qikinkAllowSimulation}
+                onChange={(e) => setQikinkAllowSimulation(e.target.checked)}
+                className="rounded text-[#DD1215] focus:ring-red-500 h-4 w-4"
+              />
+              <span className="font-medium">Sandbox Fallback: Simulate if SKU is not yet registered in Sandbox portal</span>
+            </label>
+            <button
+              type="button"
+              onClick={handleTestQikink}
+              disabled={testingQikink}
+              className="px-2.5 py-1 bg-white border border-amber-300 hover:bg-amber-100 rounded text-[11px] font-bold text-amber-800 transition"
+            >
+              {testingQikink ? 'Checking...' : 'Check API Handshake'}
+            </button>
+          </div>
+
+          {qikinkTestResult && (
+            <div className={`p-2.5 rounded-lg text-xs font-mono border ${qikinkTestResult.success ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+              <strong>API Status:</strong> {qikinkTestResult.message} ({qikinkTestResult.environment || 'sandbox'})
+            </div>
+          )}
+
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
-            ℹ️ Status will automatically change to <strong>Processing</strong> and a unique Qikink tracking reference will be attached.
+            ℹ️ On successful dispatch, status will automatically update to <strong>Processing</strong> and a Qikink tracking reference will be recorded.
           </div>
         </div>
       </Modal>

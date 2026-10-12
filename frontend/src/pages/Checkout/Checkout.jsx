@@ -22,6 +22,8 @@ const Checkout = () => {
   // Edit address state
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [addressForm, setAddressForm] = useState({
+    name: address.name || "Aarav Sharma",
+    phone: address.phone ? String(address.phone).replace(/\D/g, '').slice(-10) : "9876543210",
     line1: address.line1 || "",
     city: address.city || "",
     state: address.state || "",
@@ -69,10 +71,43 @@ const Checkout = () => {
 
   const handleSaveAddress = (e) => {
     e.preventDefault();
-    const updated = saveDeliveryAddress(addressForm);
+    const cleanPhone = String(addressForm.phone || "").replace(/\D/g, "").slice(-10);
+    const cleanPin = String(addressForm.pincode || "").replace(/\D/g, "").slice(0, 6);
+
+    if (!addressForm.name || !addressForm.name.trim()) {
+      toast.error("Please enter recipient name");
+      return;
+    }
+    if (cleanPhone.length !== 10) {
+      toast.error("Please enter a valid 10-digit Indian mobile number");
+      return;
+    }
+    if (!addressForm.line1 || !addressForm.line1.trim()) {
+      toast.error("Please enter street address / house number");
+      return;
+    }
+    if (!addressForm.city || !addressForm.city.trim()) {
+      toast.error("Please enter city");
+      return;
+    }
+    if (!addressForm.state || !addressForm.state.trim()) {
+      toast.error("Please enter state");
+      return;
+    }
+    if (cleanPin.length !== 6) {
+      toast.error("Please enter a valid 6-digit Indian PIN code");
+      return;
+    }
+
+    const updated = saveDeliveryAddress({
+      ...addressForm,
+      name: addressForm.name.trim(),
+      phone: cleanPhone,
+      pincode: cleanPin,
+    });
     setAddress(updated);
     setIsEditingAddress(false);
-    toast.success("Delivery address updated");
+    toast.success("Delivery address updated successfully");
   };
 
   const handleProceedPayment = () => {
@@ -124,6 +159,8 @@ const Checkout = () => {
             <button
               onClick={() => {
                 setAddressForm({
+                  name: address.name || "Aarav Sharma",
+                  phone: address.phone ? String(address.phone).replace(/\D/g, '').slice(-10) : "9876543210",
                   line1: address.line1 || "",
                   city: address.city || "",
                   state: address.state || "",
@@ -140,10 +177,22 @@ const Checkout = () => {
           </div>
 
           {/* Address Display Box */}
-          <div className="border border-black p-5 md:p-6 bg-white min-h-[100px] flex items-center">
-            <p className="text-base md:text-lg font-medium text-black leading-relaxed whitespace-pre-line">
-              {address.formatted || `${address.line1}\n${address.city}, ${address.state}\n${address.pincode}, ${address.country}`}
-            </p>
+          <div className="border border-black p-5 md:p-6 bg-white min-h-[100px] flex items-center justify-between">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-base md:text-lg font-bold text-black font-dmsans">
+                  {address.name || "Aarav Sharma"}
+                </span>
+                {address.phone && (
+                  <span className="text-xs md:text-sm font-semibold bg-gray-100 text-gray-700 px-2.5 py-0.5 rounded">
+                    📞 {address.phone}
+                  </span>
+                )}
+              </div>
+              <p className="text-sm md:text-base font-medium text-gray-800 leading-relaxed whitespace-pre-line">
+                {address.formatted || `${address.line1}\n${address.city}, ${address.state}\n${address.pincode}, ${address.country}`}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -253,7 +302,37 @@ const Checkout = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSaveAddress} className="space-y-4">
+            <form onSubmit={handleSaveAddress} className="space-y-3.5">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-700 mb-1">
+                    Recipient Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={addressForm.name}
+                    onChange={(e) => setAddressForm({ ...addressForm, name: e.target.value })}
+                    placeholder="e.g. Aarav Sharma"
+                    className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-700 mb-1">
+                    Mobile Number (10 digits) *
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    maxLength={10}
+                    value={addressForm.phone}
+                    onChange={(e) => setAddressForm({ ...addressForm, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                    placeholder="9876543210"
+                    className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold uppercase text-gray-700 mb-1">
                   Street / Area / House No. *
@@ -300,13 +379,14 @@ const Checkout = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold uppercase text-gray-700 mb-1">
-                    PIN Code *
+                    PIN Code (6 digits) *
                   </label>
                   <input
                     type="text"
                     required
+                    maxLength={6}
                     value={addressForm.pincode}
-                    onChange={(e) => setAddressForm({ ...addressForm, pincode: e.target.value })}
+                    onChange={(e) => setAddressForm({ ...addressForm, pincode: e.target.value.replace(/\D/g, '').slice(0, 6) })}
                     placeholder="160018"
                     className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
                   />

@@ -161,7 +161,8 @@ const Navbar = () => {
   const handleLogout = () => {
     localStorage.clear();
     message.success("Logged out successfully");
-    window.location.href = "/admin";
+    const loginPath = import.meta.env.MODE === 'production' ? '/admin/login' : '/login';
+    window.location.href = loginPath;
   };
 
   const isActive = (to) => {
