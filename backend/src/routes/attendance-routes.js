@@ -214,8 +214,8 @@ router.post("/me/clockout", adminauthenticate, checkRole(HR_ALL), async (req, re
     if (!existing) return res.status(404).json({ success: false, message: "No clock-in record found for today." });
 
     const sessions = existing.sessions || [];
-    const lastOpenIdx = [...sessions].reverse().findIndex(s => s.clockIn && !s.clockOut);
-    const actualIdx   = lastOpenIdx === -1 ? -1 : sessions.length - 1 - lastOpenIdx;
+    // Find FIRST open session (not last — handles cases where sessions are out of order)
+    const actualIdx = sessions.findIndex(s => s.clockIn && !s.clockOut);
     console.log(`[me/clockout] sessions=${sessions.length} actualIdx=${actualIdx}`);
 
     if (actualIdx === -1) {

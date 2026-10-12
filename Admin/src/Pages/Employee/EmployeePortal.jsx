@@ -608,7 +608,7 @@ const EmployeePortal = () => {
                 const sessions = todayAttd?.sessions || [];
                 const last = sessions[sessions.length - 1];
                 const clocked_in =
-                  (sessions.length > 0 && last && !last.clockOut) ||
+                  sessions.some(s => s.clockIn && !s.clockOut) ||
                   (sessions.length === 0 && !!todayAttd?.clockIn && !todayAttd?.clockOut);
                 const had_session = sessions.length > 0 || !!todayAttd?.clockOut;
                 return (
