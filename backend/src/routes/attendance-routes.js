@@ -16,13 +16,14 @@ router.get("/bydate", adminauthenticate, checkRole(HR_ALL), async (req, res) => 
     const dateStr = req.query.date;
     if (!dateStr) return res.status(400).json({ success: false, message: "date query param required (YYYY-MM-DD)." });
 
-    // Wide window: from previous day UTC midnight to next day UTC midnight
-    // This catches records stored in any timezone (UTC, IST, etc.)
+    // Convert YYYY-MM-DD to IST day boundaries (IST = UTC+5:30)
+    // IST midnight = UTC 18:30 of the previous calendar day
+    // IST 23:59:59 = UTC 18:29:59 of the same calendar day
     const [y, m, d] = dateStr.split("-").map(Number);
-    const start = new Date(Date.UTC(y, m-1, d-1, 0, 0, 0, 0)); // day before at UTC midnight
-    const end   = new Date(Date.UTC(y, m-1, d+1, 23, 59, 59, 999)); // day after at UTC end
+    const istStart = new Date(Date.UTC(y, m-1, d-1, 18, 30, 0, 0));   // IST midnight in UTC
+    const istEnd   = new Date(Date.UTC(y, m-1, d,   18, 29, 59, 999)); // IST 23:59 in UTC
 
-    const records = await Attendance.find({ date: { $gte: start, $lte: end } }).sort({ createdAt: 1 });
+    const records = await Attendance.find({ date: { $gte: istStart, $lte: istEnd } }).sort({ createdAt: 1 });
 
     // Enrich with name: try Employee model first, then Admin model, then snapshot
     const ids = [...new Set(records.map(r => r.employeeId?.toString()).filter(Boolean))];
