@@ -49,10 +49,32 @@ export const getDeliveryAddress = () => {
   return DEFAULT_ADDRESS;
 };
 
+export const sanitizePhoneNumber = (raw) => {
+  const digits = String(raw || '').replace(/\D/g, '');
+  if (digits.length > 10 && digits.startsWith('91')) {
+    return digits.slice(2).slice(-10);
+  }
+  return digits.slice(-10);
+};
+
+export const sanitizePinCode = (raw) => {
+  return String(raw || '').replace(/\D/g, '').slice(0, 6);
+};
+
 export const saveDeliveryAddress = (addr) => {
   try {
-    const formatted = `${addr.line1 || ''}\n${addr.city || ''}, ${addr.state || ''}\n${addr.pincode || ''}, ${addr.country || 'India'}`.trim();
-    const toSave = { ...addr, formatted };
+    const cleanName = (addr.name || '').trim() || getLoggedInUserName();
+    const cleanPhone = sanitizePhoneNumber(addr.phone) || '9876543210';
+    const cleanPin = sanitizePinCode(addr.pincode) || '160018';
+    const formatted = `${cleanName} (${cleanPhone})\n${addr.line1 || ''}\n${addr.city || ''}, ${addr.state || ''}\n${cleanPin}, ${addr.country || 'India'}`.trim();
+    const toSave = {
+      ...addr,
+      name: cleanName,
+      phone: cleanPhone,
+      pincode: cleanPin,
+      country: addr.country || 'India',
+      formatted,
+    };
     localStorage.setItem(ADDRESS_KEY, JSON.stringify(toSave));
     return toSave;
   } catch (e) {
@@ -97,7 +119,10 @@ export const saveNewAddress = (addr) => {
   try {
     const list = getSavedAddresses();
     const newId = `addr_${Date.now()}`;
-    const formatted = `${addr.line1 || ''}\n${addr.city || ''}, ${addr.state || ''}\n${addr.pincode || ''}, ${addr.country || 'India'}`.trim();
+    const cleanName = (addr.name || '').trim() || getLoggedInUserName();
+    const cleanPhone = sanitizePhoneNumber(addr.phone) || '9876543210';
+    const cleanPin = sanitizePinCode(addr.pincode) || '160018';
+    const formatted = `${cleanName} (${cleanPhone})\n${addr.line1 || ''}\n${addr.city || ''}, ${addr.state || ''}\n${cleanPin}, ${addr.country || 'India'}`.trim();
     
     if (addr.isDefault || list.length === 0) {
       list.forEach((a) => (a.isDefault = false));
@@ -106,6 +131,10 @@ export const saveNewAddress = (addr) => {
     const entry = {
       ...addr,
       id: newId,
+      name: cleanName,
+      phone: cleanPhone,
+      pincode: cleanPin,
+      country: addr.country || 'India',
       formatted,
       isDefault: Boolean(addr.isDefault || list.length === 0),
     };
@@ -570,7 +599,7 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
       customerInfo = {
         name: (uName && uName.toLowerCase() !== 'valued customer' ? uName : customerInfo.name),
         email: u.email || customerInfo.email,
-        phone: u.phone || customerInfo.phone,
+        phone: sanitizePhoneNumber(u.phone) || customerInfo.phone,
       };
     }
   } catch {}
@@ -579,7 +608,18 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
   if (activeAddr.name && activeAddr.name.trim() && activeAddr.name.toLowerCase() !== 'valued customer') {
     customerInfo.name = activeAddr.name.trim();
   }
-  if (activeAddr.phone) customerInfo.phone = activeAddr.phone;
+  const cleanPhone = sanitizePhoneNumber(activeAddr.phone || customerInfo.phone) || '9876543210';
+  const cleanPin = sanitizePinCode(activeAddr.pincode) || '160018';
+  customerInfo.phone = cleanPhone;
+
+  const sanitizedAddr = {
+    ...activeAddr,
+    name: customerInfo.name,
+    phone: cleanPhone,
+    pincode: cleanPin,
+    country: activeAddr.country || 'India',
+    formatted: activeAddr.formatted || `${activeAddr.line1 || ''}\n${activeAddr.city || ''}, ${activeAddr.state || ''}\n${cleanPin}, ${activeAddr.country || 'India'}`.trim(),
+  };
 
   const isCOD = String(paymentMethod || '').toUpperCase() === 'COD' || String(paymentMethod || '').toLowerCase().includes('cash on delivery');
 
@@ -589,7 +629,7 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
     createdAt: now.toISOString(),
     customer: customerInfo,
     items: cleanItems,
-    address: activeAddr,
+    address: sanitizedAddr,
     paymentMethod,
     payment: {
       method: isCOD ? "Cash on Delivery (COD)" : paymentMethod,

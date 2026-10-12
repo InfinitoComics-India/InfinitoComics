@@ -21,24 +21,32 @@ export const createOrder = async (req, res) => {
       ? rawCustomerName
       : fallbackName;
 
+    // Sanitize customer and shipping phone (clean 10 digits for India / Qikink)
+    const rawCustomerPhone = String(body.customer?.phone || body.address?.phone || body.shippingAddress?.phone || '9876543210').replace(/\D/g, '');
+    let cleanCustomerPhone = rawCustomerPhone.length > 10 && rawCustomerPhone.startsWith('91') ? rawCustomerPhone.slice(2) : rawCustomerPhone;
+    cleanCustomerPhone = cleanCustomerPhone.slice(-10) || '9876543210';
+
     const customer = {
       name: resolvedName,
       email: reqEmail || 'customer@infinitohq.com',
-      phone: body.customer?.phone || body.address?.phone || '+91 98765 43210',
+      phone: cleanCustomerPhone,
       totalOrders: body.customer?.totalOrders || 1,
     };
 
     // Normalize shipping address
     const addr = body.address || body.shippingAddress || {};
-    const formattedAddr = addr.formatted || [addr.line1, addr.city, addr.state, addr.pincode, addr.country || 'India'].filter(Boolean).join(', ');
+    const rawPin = String(addr.pincode || addr.zip || '160018').replace(/\D/g, '').slice(0, 6);
+    const cleanPin = rawPin.length === 6 ? rawPin : '160018';
+
+    const formattedAddr = addr.formatted || [addr.line1 || 'Sector 18, House No. 42', addr.city || 'Chandigarh', addr.state || 'Punjab', cleanPin, addr.country || 'India'].filter(Boolean).join(', ');
 
     const shippingAddress = {
       name: addr.name || customer.name,
-      phone: addr.phone || customer.phone,
+      phone: cleanCustomerPhone,
       line1: addr.line1 || 'Sector 18, House No. 42',
       city: addr.city || 'Chandigarh',
       state: addr.state || 'Punjab',
-      pincode: addr.pincode || '160018',
+      pincode: cleanPin,
       country: addr.country || 'India',
       formatted: formattedAddr,
     };
@@ -71,6 +79,10 @@ export const createOrder = async (req, res) => {
     const shipping = body.pricing?.shipping !== undefined ? Number(body.pricing.shipping) : (subtotal > 999 ? 0 : 50);
     const grandTotal = body.total ? Number(body.total) : (body.pricing?.grandTotal || Number((subtotal + tax + shipping).toFixed(2)));
 
+    const isCOD = String(body.paymentMethod || body.payment?.method || '').toUpperCase() === 'COD' ||
+                  String(body.paymentMethod || body.payment?.method || '').toLowerCase().includes('cash on delivery') ||
+                  String(body.payment?.status || '').toUpperCase() === 'COD';
+
     const now = new Date();
     const orderData = {
       orderId,
@@ -88,9 +100,9 @@ export const createOrder = async (req, res) => {
         grandTotal,
       },
       payment: {
-        method: body.paymentMethod || body.payment?.method || 'Razorpay (UPI)',
-        transactionId: body.payment?.transactionId || `pay_Rzp${Math.floor(10000000 + Math.random() * 90000000)}`,
-        status: body.payment?.status || 'Paid',
+        method: isCOD ? 'Cash on Delivery (COD)' : (body.paymentMethod || body.payment?.method || 'Razorpay (UPI)'),
+        transactionId: isCOD ? 'COD_PENDING' : (body.payment?.transactionId || `pay_Rzp${Math.floor(10000000 + Math.random() * 90000000)}`),
+        status: isCOD ? 'COD' : (body.payment?.status || 'Paid'),
         date: now,
       },
       fulfillment: {

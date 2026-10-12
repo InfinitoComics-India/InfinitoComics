@@ -820,6 +820,7 @@ export const normalizeCustomerOrder = (raw) => {
     },
     shippingAddress: {
       name: resolvedCustomerName,
+      phone: raw.shippingAddress?.phone || addr.phone || raw.customer?.phone || '+91 98765 43210',
       line1: addr.line1 || 'Sector 18, House No. 42, Green Park Extension',
       city: addr.city || 'Chandigarh',
       state: addr.state || 'Punjab',

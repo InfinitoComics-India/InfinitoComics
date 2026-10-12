@@ -66,7 +66,7 @@ const shopOrderSchema = new mongoose.Schema({
     transactionId: { type: String, default: '' },
     status: {
       type: String,
-      enum: ['Paid', 'Pending', 'Failed', 'Refunded', 'Partially Refunded'],
+      enum: ['Paid', 'Pending', 'Failed', 'Refunded', 'Partially Refunded', 'COD'],
       default: 'Paid',
     },
     date: { type: Date, default: Date.now },
@@ -74,7 +74,7 @@ const shopOrderSchema = new mongoose.Schema({
   fulfillment: {
     status: {
       type: String,
-      enum: ['Unfulfilled', 'Processing', 'Fulfilled', 'Cancelled'],
+      enum: ['Unfulfilled', 'Processing', 'Fulfilled', 'Cancelled', 'Pending Dispatch'],
       default: 'Unfulfilled',
     },
     qikink: {

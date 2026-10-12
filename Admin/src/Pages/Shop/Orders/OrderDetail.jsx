@@ -832,7 +832,7 @@ const OrderDetail = () => {
               </strong>
               <div className="whitespace-pre-line">{order.shippingAddress?.formatted || order.shippingAddress?.line1}</div>
               <div className="mt-2 text-gray-500">
-                <strong>Phone:</strong> {order.customer?.phone || 'N/A'}
+                <strong>Phone:</strong> {order.shippingAddress?.phone || order.customer?.phone || 'N/A'}
               </div>
             </div>
           </div>
