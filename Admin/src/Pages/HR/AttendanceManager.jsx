@@ -213,6 +213,15 @@ const AttendanceManager = () => {
                         const name = emp?.firstName ? `${emp.firstName} ${emp.lastName}` : rec.employeeName || "Unknown";
                         const empId= emp?.employeeId || rec.employeeEmpId || "";
                         const init = name !== "Unknown" ? name.split(" ").map(w=>w[0]).join("").substring(0,2).toUpperCase() : "?";
+                        // Use sessions array if available, otherwise fall back to legacy clockIn/clockOut
+                        const sessions = rec.sessions || [];
+                        const firstIn  = sessions.length > 0 ? sessions[0].clockIn : rec.clockIn;
+                        const lastOut  = sessions.length > 0 
+                          ? sessions.filter(s => s.clockOut).slice(-1)[0]?.clockOut 
+                          : rec.clockOut;
+                        const totalHrs = sessions.length > 0
+                          ? sessions.reduce((s, x) => s + (x.hoursWorked || 0), 0)
+                          : rec.hoursWorked;
                         return (
                           <tr key={rec._id} className="hover:bg-gray-50 transition-colors">
                             <td className="px-4 py-3">
@@ -225,9 +234,14 @@ const AttendanceManager = () => {
                               </div>
                             </td>
                             <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${s.bg} ${s.text}`}>{s.label}</span></td>
-                            <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{fmt(rec.clockIn)}</td>
-                            <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{fmt(rec.clockOut)}</td>
-                            <td className="px-4 py-3 text-xs font-semibold text-gray-700">{rec.hoursWorked > 0 ? `${rec.hoursWorked}h` : "—"}</td>
+                            <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{fmt(firstIn)}</td>
+                            <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                              {lastOut ? fmt(lastOut) : sessions.some(s => !s.clockOut) ? <span className="text-yellow-600 text-[10px] font-semibold animate-pulse">● Working</span> : "—"}
+                            </td>
+                            <td className="px-4 py-3 text-xs font-semibold text-gray-700">
+                              {totalHrs > 0 ? `${Number(totalHrs).toFixed(2)}h` : "—"}
+                              {sessions.length > 1 && <span className="ml-1 text-[9px] text-blue-500 font-bold">{sessions.length}s</span>}
+                            </td>
                             <td className="px-4 py-3">
                               <button onClick={() => { setMarkModal({ recordId: rec._id }); setMarkForm({ date: isoDate(rec.date), status: rec.status, note: rec.note||"" }); }}
                                 className="text-xs text-blue-600 hover:underline font-semibold">Correct</button>
