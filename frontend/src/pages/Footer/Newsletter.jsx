@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import NewsletterSectionShimmer from "../../shimmer/landingPageShimmer/NewsletterSectionShimmer";
-import newsletterimage from "../../../assets/Images/Newsletter/Newsletter.png";
+import bgimage from "../../../assets/Images/Newsletter/Newsletter.png";
 
 const NewsletterSection = () => {
   const [loading, setLoading] = useState(true);
@@ -24,11 +24,13 @@ const NewsletterSection = () => {
 
   return (
     <section
-      className="w-full bg-cover bg-center bg-no-repeat flex items-center min-h-[260px] md:min-h-[340px] py-10 md:py-14"
-      style={{ backgroundImage: `url(${newsletterimage})` }}
+      className="w-full bg-cover bg-center py-16 sm:py-20"
+      style={{
+        backgroundImage: `url(${bgimage})`,
+      }}
     >
-      {/* Same Container Alignment as AdsServices and AdsHero */}
-      <div className="w-full max-w-[1200px] mx-auto px-12">
+      {/* Container Alignment */}
+      <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 md:px-12">
         <div className="w-full max-w-lg text-white">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-wide uppercase mb-2">
             STAY UPDATED
