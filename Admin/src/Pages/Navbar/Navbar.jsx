@@ -47,30 +47,36 @@ const HR_ITEMS = [
   { label: "HR Overview",    to: "/hr",             icon: Building2,    roles: HR_ALL   },
 
   // ── People ────────────────────────────────────────────────
+  { section: "People" },
   { label: "Employees",      to: "/hr/employees",   icon: UserCog,      roles: HR_ALL   },
   { label: "Recruitment",    to: "/hr/recruitment", icon: UserSearch,   roles: HR_ALL   },
   { label: "Onboarding",     to: "/hr/onboarding",  icon: UserPlus,     roles: HR_ALL   },
 
   // ── Time & Attendance ─────────────────────────────────────
+  { section: "Time & Work" },
   { label: "Attendance",     to: "/hr/attendance",  icon: Clock,        roles: HR_ALL   },
   { label: "Leaves",         to: "/hr/leaves",      icon: CalendarOff,  roles: HR_ALL   },
   { label: "Calendar",       to: "/hr/calendar",    icon: CalendarDays, roles: HR_ALL   },
-
-  // ── Work ──────────────────────────────────────────────────
   { label: "Work Log",       to: "/hr/worklog",     icon: ClipboardList,roles: HR_ALL   },
+
+  // ── Tasks & Projects ──────────────────────────────────────
+  { section: "Tasks & Projects" },
   { label: "Work Assignment",to: "/hr/assignments", icon: UserCheck,    roles: HR_ALL   },
   { label: "Task Board",     to: "/hr/tasks",       icon: Kanban,       roles: HR_ALL   },
   { label: "Projects",       to: "/hr/projects",    icon: FolderKanban, roles: HR_ALL   },
 
   // ── Performance ───────────────────────────────────────────
+  { section: "Performance" },
   { label: "Performance",    to: "/hr/performance", icon: TrendingUp,   roles: HR_ALL   },
   { label: "Goals",          to: "/hr/goals",       icon: Target,       roles: HR_ALL   },
   { label: "Recognition",    to: "/hr/recognition", icon: AwardIcon,    roles: HR_ALL   },
 
   // ── Finance ───────────────────────────────────────────────
+  { section: "Finance" },
   { label: "Payroll",        to: "/hr/payroll",     icon: IndianRupee,  roles: HR_ALL   },
 
   // ── Admin ─────────────────────────────────────────────────
+  { section: "Admin" },
   { label: "Documents",      to: "/hr/documents",   icon: FileArchive,  roles: HR_ALL   },
   { label: "Self Service",   to: "/hr/self-service",icon: LifeBuoy,     roles: HR_ALL   },
   { label: "Chat",           to: "/hr/chat",        icon: MessagesSquare,roles: HR_ALL  },
@@ -135,15 +141,16 @@ const Navbar = () => {
   });
 
   const visibleNav = NAV_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
-  const visibleHR = HR_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
+  const visibleHR = HR_ITEMS.filter(item => item.section || roles.some(r => item.roles?.includes(r)));
   const visibleShop = SHOP_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
   const visibleEmp = EMP_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
   const isEmpOnly = roles.length > 0 && roles.every(r => r === "employee");
-  const showHRSection = visibleHR.length > 0 && !isEmpOnly;
+  const visibleHRLinks = visibleHR.filter(i => !i.section);
+  const showHRSection = visibleHRLinks.length > 0 && !isEmpOnly;
   const showShopSection = visibleShop.length > 0 && canViewShop;
 
   // If any HR route is currently active, keep accordion open
-  const isHRActive = visibleHR.some(item => location.pathname.startsWith(`/admin${item.to}`) || location.pathname.startsWith(item.to));
+  const isHRActive = visibleHRLinks.some(item => location.pathname.startsWith(`/admin${item.to}`) || location.pathname.startsWith(item.to));
 
   // Track and persist scroll position of the sidebar navigation
   const handleNavScroll = (e) => {
@@ -352,26 +359,35 @@ const Navbar = () => {
             {/* HR Sub-items — animated dropdown */}
             {(hrOpen || isHRActive) && (
               <div className={`mt-1 space-y-0.5 overflow-hidden ${!collapsed ? "pl-2" : ""}`}>
-                {visibleHR.map(({ label, to, icon: Icon }) => (
-                  <Link
-                    key={to}
-                    to={to}
-                    onClick={onNavClick}
-                    title={collapsed ? label : ""}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150
-                      ${isActive(to)
-                        ? "bg-[#DD1215] text-white font-bold"
-                        : "text-gray-400 hover:bg-gray-700 hover:text-white font-medium"
-                      }
-                      ${collapsed ? "justify-center" : ""}
-                    `}
-                  >
-                    <Icon size={17} className="shrink-0" />
-                    {!collapsed && (
-                      <span className="text-xs">{label}</span>
-                    )}
-                  </Link>
-                ))}
+                {visibleHR.map((item, idx) => {
+                  if (item.section) {
+                    if (collapsed) return null;
+                    return (
+                      <div key={`sec-${idx}`} className="px-3 pt-3 pb-1">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-500 border-t border-gray-700 pt-2">{item.section}</p>
+                      </div>
+                    );
+                  }
+                  const { label, to, icon: Icon } = item;
+                  return (
+                    <Link
+                      key={to}
+                      to={to}
+                      onClick={onNavClick}
+                      title={collapsed ? label : ""}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150
+                        ${isActive(to)
+                          ? "bg-[#DD1215] text-white font-bold"
+                          : "text-gray-400 hover:bg-gray-700 hover:text-white font-medium"
+                        }
+                        ${collapsed ? "justify-center" : ""}
+                      `}
+                    >
+                      <Icon size={17} className="shrink-0" />
+                      {!collapsed && <span className="text-xs">{label}</span>}
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </div>
