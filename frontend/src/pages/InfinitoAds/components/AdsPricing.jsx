@@ -3,9 +3,9 @@ import { pricingData } from "../data/adsData";
 
 const AdsPricing = () => {
   return (
-    <section className="w-full bg-white py-16 sm:py-20 text-gray-900 border-t border-gray-100">
-      <div className="w-full max-w-[1200px] mx-auto px-12">
-        <h2 className="text-2xl sm:text-3xl font-black uppercase text-center mb-12 sm:mb-14 tracking-wider text-black">
+    <section className="w-full bg-white py-12 sm:py-16 lg:py-20 text-gray-900 border-t border-gray-100">
+      <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 md:px-12">
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-black uppercase text-center mb-8 sm:mb-12 lg:mb-14 tracking-wide sm:tracking-wider text-black">
           CHOOSE THE BEST FIT PACKAGE!
         </h2>
 
@@ -13,9 +13,9 @@ const AdsPricing = () => {
           {pricingData.map((pkg, idx) => (
             <div
               key={idx}
-              className={`relative rounded-md p-6 flex flex-col justify-between transition-all duration-300 ${
+              className={`relative rounded-md p-5 sm:p-6 flex flex-col justify-between transition-all duration-300 ${
                 pkg.isPopular
-                  ? "bg-black text-white shadow-xl scale-[1.02] z-10"
+                  ? "bg-black text-white shadow-xl scale-[1] sm:scale-[1.02] z-10"
                   : "bg-white text-gray-900 border border-gray-200 shadow-xs hover:shadow-md"
               }`}
             >
@@ -77,7 +77,7 @@ const AdsPricing = () => {
         </div>
 
         {/* Footnote Bar */}
-        <div className="mt-10 flex flex-col sm:flex-row items-center justify-between text-xs border-t border-gray-100 pt-5 gap-2">
+        <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center sm:justify-between text-[11px] sm:text-xs text-center sm:text-left border-t border-gray-100 pt-5 gap-2">
           <span className="text-[#d01824] font-bold">
             *SME Package - INR 49,999/- Super-Hero integrated 10 graphics!
           </span>
