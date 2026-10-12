@@ -16,12 +16,11 @@ router.get("/bydate", adminauthenticate, checkRole(HR_ALL), async (req, res) => 
     const dateStr = req.query.date;
     if (!dateStr) return res.status(400).json({ success: false, message: "date query param required (YYYY-MM-DD)." });
 
-    // Convert YYYY-MM-DD to IST day boundaries (IST = UTC+5:30)
-    // IST midnight = UTC 18:30 of the previous calendar day
-    // IST 23:59:59 = UTC 18:29:59 of the same calendar day
+    // Query the exact UTC calendar day matching the date string
+    // Records are stored with date = UTC midnight of that day
     const [y, m, d] = dateStr.split("-").map(Number);
-    const istStart = new Date(Date.UTC(y, m-1, d-1, 18, 30, 0, 0));   // IST midnight in UTC
-    const istEnd   = new Date(Date.UTC(y, m-1, d,   18, 29, 59, 999)); // IST 23:59 in UTC
+    const istStart = new Date(Date.UTC(y, m-1, d, 0, 0, 0, 0));      // UTC midnight
+    const istEnd   = new Date(Date.UTC(y, m-1, d, 23, 59, 59, 999)); // UTC end of day
 
     const records = await Attendance.find({ date: { $gte: istStart, $lte: istEnd } }).sort({ createdAt: 1 });
 
