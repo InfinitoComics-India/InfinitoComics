@@ -67,6 +67,7 @@ const ProductForm = () => {
     costPrice: '',
     trackInventory: true,
     stock: '',
+    sku: '',
   });
 
   // Images & Drag-and-drop state
@@ -140,6 +141,7 @@ const ProductForm = () => {
         costPrice: product.costPrice || '',
         trackInventory: product.trackInventory !== false,
         stock: product.stock || '',
+        sku: product.sku || '',
       });
 
       const rawImages = Array.isArray(product.images) ? product.images : [];
@@ -231,6 +233,7 @@ const ProductForm = () => {
               value: String(opt.value).trim(),
               price: Number(opt.price) || 0,
               stock: Number(opt.stock) || 0,
+              sku: String(opt.sku || '').trim(),
             }))
         }))
         .filter(v => v.options.length > 0);
@@ -390,7 +393,7 @@ const ProductForm = () => {
   const addVariantOption = (variantId) => {
     setVariants(prev => prev.map(v => 
       v.id === variantId 
-        ? { ...v, options: [...v.options, { value: '', price: '', stock: '' }] }
+        ? { ...v, options: [...v.options, { value: '', price: '', stock: '', sku: '' }] }
         : v
     ));
   };
@@ -672,27 +675,36 @@ const ProductForm = () => {
                                   type="text"
                                   value={option.value}
                                   onChange={(e) => updateVariantOption(variant.id, oIndex, 'value', e.target.value)}
-                                  placeholder="Value (e.g., S, M, L)"
-                                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  placeholder="Option (e.g., S, M, L)"
+                                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                />
+                                <input
+                                  type="text"
+                                  value={option.sku || ''}
+                                  onChange={(e) => updateVariantOption(variant.id, oIndex, 'sku', e.target.value)}
+                                  placeholder="Qikink SKU (e.g., INF-TEE-BLK-M)"
+                                  className="w-48 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-xs"
+                                  title="SKU defined in your Qikink Dashboard"
                                 />
                                 <input
                                   type="number"
                                   value={option.price}
                                   onChange={(e) => updateVariantOption(variant.id, oIndex, 'price', e.target.value)}
-                                  placeholder="Price"
-                                  className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  placeholder="Price (₹)"
+                                  className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                 />
                                 <input
                                   type="number"
                                   value={option.stock}
                                   onChange={(e) => updateVariantOption(variant.id, oIndex, 'stock', e.target.value)}
                                   placeholder="Stock"
-                                  className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                 />
                                 <button
                                   type="button"
                                   onClick={() => removeVariantOption(variant.id, oIndex)}
                                   className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                                  title="Remove option"
                                 >
                                   <X className="w-4 h-4" />
                                 </button>
@@ -765,6 +777,23 @@ const ProductForm = () => {
                           step="0.01"
                         />
                       </div>
+                    </div>
+
+                    {/* Qikink Base SKU */}
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Base Product SKU (Qikink Item Code)
+                      </label>
+                      <input
+                        type="text"
+                        value={pricing.sku}
+                        onChange={(e) => setPricing(prev => ({ ...prev, sku: e.target.value }))}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                        placeholder="e.g. INF-TEE-CRIMSON"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Base SKU matching your Qikink product. If product has sizes/colors, you can set individual variant SKUs in the <strong>Variants</strong> tab.
+                      </p>
                     </div>
                   </div>
 

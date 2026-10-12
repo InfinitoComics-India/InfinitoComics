@@ -57,6 +57,52 @@ export const isEmployeeShopAllowed = (email, adminObj = null) => {
 };
 
 /**
+ * Fetch live Shop access status for the currently logged in user from backend
+ */
+export const fetchMyCurrentShopAccess = async () => {
+  try {
+    const token = localStorage.getItem('authToken');
+    if (!token) return false;
+
+    const res = await axios.get(`${BACKEND_URL}/admin/me/shop-access`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const access = Boolean(res?.data?.data?.shopAccess);
+    const email = String(res?.data?.data?.email || '').toLowerCase().trim();
+
+    // Update stored Admin object with latest shopAccess
+    const adminRaw = localStorage.getItem('Admin');
+    if (adminRaw) {
+      try {
+        const parsedAdmin = JSON.parse(adminRaw);
+        parsedAdmin.shopAccess = access;
+        localStorage.setItem('Admin', JSON.stringify(parsedAdmin));
+      } catch {}
+    }
+
+    // Update local allowed employee cache
+    if (email) {
+      const current = getShopAllowedEmployees();
+      let next;
+      if (access) {
+        next = Array.from(new Set([...current, email]));
+      } else {
+        next = current.filter((e) => e !== email);
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    }
+
+    notifyAccessChange({ type: 'shop_access_updated', email, shopAccess: access });
+    return access;
+  } catch (err) {
+    console.warn('Live shop access check warning:', err.message);
+    const curAdmin = JSON.parse(localStorage.getItem('Admin') || '{}');
+    return isEmployeeShopAllowed(curAdmin?.email, curAdmin);
+  }
+};
+
+/**
  * Broadcast access change across tabs
  */
 export const notifyAccessChange = (payload) => {
@@ -72,7 +118,8 @@ export const notifyAccessChange = (payload) => {
  */
 export const toggleEmployeeShopAccess = async (employee, grant) => {
   const email = String(employee.email || '').toLowerCase().trim();
-  if (!email) return false;
+  const empId = employee._id || employee.id;
+  const token = localStorage.getItem('authToken');
 
   // 1. Update local storage list immediately
   const current = getShopAllowedEmployees();
@@ -84,16 +131,40 @@ export const toggleEmployeeShopAccess = async (employee, grant) => {
   }
   setShopAllowedEmployees(next);
 
-  // 2. Persist to backend employee document if id exists
-  const empId = employee._id || employee.id;
+  // 2. Call dedicated backend endpoint to persist across Admin & Employee collections
+  try {
+    await axios.patch(
+      `${BACKEND_URL}/admin/shop-access/toggle`,
+      {
+        email,
+        shopAccess: Boolean(grant),
+        employeeId: empId,
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+  } catch (err) {
+    console.warn('Backend admin shop-access toggle warning:', err.message);
+  }
+
+  // 3. Also update Employee HR document if empId exists
   if (empId) {
     try {
-      await updateEmployee(empId, { shopAccess: grant });
+      await updateEmployee(empId, { shopAccess: Boolean(grant) });
     } catch (e) {
-      console.warn('Backend updateEmployee shopAccess warning (saved locally):', e.message);
+      console.warn('Backend updateEmployee shopAccess warning:', e.message);
     }
   }
 
+  // 4. If current admin is the one toggled, update local Admin object
+  const curAdmin = JSON.parse(localStorage.getItem('Admin') || '{}');
+  if (String(curAdmin?.email || '').toLowerCase().trim() === email) {
+    curAdmin.shopAccess = Boolean(grant);
+    localStorage.setItem('Admin', JSON.stringify(curAdmin));
+  }
+
+  notifyAccessChange({ type: 'shop_access_updated', email, shopAccess: Boolean(grant) });
   return next;
 };
 

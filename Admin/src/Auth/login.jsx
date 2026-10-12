@@ -57,11 +57,20 @@ const LoginPage = () => {
       localStorage.setItem("authToken", token);
       if (admin) {
         localStorage.setItem("Admin", JSON.stringify(admin));
+        if (admin.shopAccess && admin.email) {
+          try {
+            const raw = localStorage.getItem("infinito_shop_allowed_employees");
+            const existing = raw ? JSON.parse(raw) : [];
+            const clean = Array.from(new Set([...existing, String(admin.email).toLowerCase().trim()]));
+            localStorage.setItem("infinito_shop_allowed_employees", JSON.stringify(clean));
+          } catch {}
+        }
       }
 
       setShowSuccess(true);
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      window.location.href = "/admin";
+      const redirectPath = import.meta.env.MODE === 'production' ? '/admin' : '/';
+      window.location.href = redirectPath;
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
       alert(

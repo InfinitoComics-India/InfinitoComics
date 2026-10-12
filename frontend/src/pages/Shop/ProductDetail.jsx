@@ -137,10 +137,32 @@ const ProductDetail = () => {
       .map(([k, v]) => `${k}: ${v}`)
       .join(', ');
 
+    // Resolve matching SKU from product variants or fallback
+    let resolvedSku = prod.sku || '';
+    if (Array.isArray(prod.variants)) {
+      for (const v of prod.variants) {
+        if (Array.isArray(v.options)) {
+          const matchOpt = v.options.find(opt => 
+            opt.value === chosenSize || 
+            selectedVariants[v.name] === opt.value
+          );
+          if (matchOpt?.sku) {
+            resolvedSku = matchOpt.sku;
+            break;
+          }
+        }
+      }
+    }
+    if (!resolvedSku) {
+      const prodShortName = (prod.name || prod.title || 'ITEM').replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).toUpperCase();
+      resolvedSku = `INF-${prodShortName}-${chosenSize}`;
+    }
+
     dispatch(
       addToCart({
         productId: prod._id || prod.id || prod.slug,
         size: chosenSize,
+        sku: resolvedSku,
         variant: selectedVariants,
         variantText: variantDesc,
         quantity: 1,
@@ -148,6 +170,7 @@ const ProductDetail = () => {
           id: prod._id || prod.id || prod.slug,
           name: prod.name || prod.title || 'Special Edition Crimson Red T-Shirt',
           title: prod.name || prod.title || 'Special Edition Crimson Red T-Shirt',
+          sku: resolvedSku,
           price: cleanPrice,
           mrp: cleanMrp,
           image: primaryImg,

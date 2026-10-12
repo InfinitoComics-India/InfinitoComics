@@ -54,7 +54,7 @@ export const createOrder = async (req, res) => {
       return {
         productId: String(item.productId || prod.id || prod._id || `prod-${idx}`),
         name: prodName,
-        sku: item.sku || `INF-${prodName.substring(0, 3).toUpperCase()}-${item.size || 'M'}`,
+        sku: item.sku || prod.sku || `INF-${prodName.substring(0, 3).toUpperCase()}-${item.size || 'M'}`,
         variant: {
           size: item.size || item.variant?.size || 'M',
           color: item.color || item.variant?.color || 'Standard',
