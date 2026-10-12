@@ -205,7 +205,7 @@ const AllOrders = () => {
       fetchOrders();
     } catch (err) {
       console.error(err);
-      message.error('Failed to send order to Qikink');
+      message.error(err.message || 'Failed to send order to Qikink');
     } finally {
       setSendingToQikink(false);
     }

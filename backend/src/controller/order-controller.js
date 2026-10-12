@@ -447,46 +447,70 @@ export const testQikinkConnection = async (req, res) => {
 export const handleQikinkWebhook = async (req, res) => {
   try {
     const payload = req.body || {};
-    const orderNum = String(payload.order_number || payload.order_id || payload.qikink_order_id || '').replace(/^INF/, '');
+    const rawNum = String(payload.order_number || payload.order_id || payload.qikink_order_id || payload.client_order_id || '').trim();
+    const cleanNum = rawNum.replace(/^INF/i, '').replace(/^#/, '').trim();
 
-    if (!orderNum) {
-      return res.status(400).json({ success: false, message: 'Missing order_number in webhook payload' });
+    if (!cleanNum && !payload.order_id && !payload.qikink_order_id) {
+      return res.status(400).json({ success: false, message: 'Missing order_number or order_id in webhook payload' });
     }
 
     const order = await ShopOrder.findOne({
       $or: [
-        { orderId: `#${orderNum}` },
-        { orderId: orderNum },
-        { id: orderNum },
-        { 'fulfillment.qikink.qikinkOrderId': payload.order_id || payload.qikink_order_id },
+        cleanNum ? { orderId: `#${cleanNum}` } : null,
+        cleanNum ? { orderId: cleanNum } : null,
+        cleanNum ? { orderId: `INF${cleanNum}` } : null,
+        cleanNum ? { id: cleanNum } : null,
+        payload.order_id ? { 'fulfillment.qikink.qikinkOrderId': payload.order_id } : null,
+        payload.qikink_order_id ? { 'fulfillment.qikink.qikinkOrderId': payload.qikink_order_id } : null,
       ].filter(Boolean),
     });
 
     if (!order) {
-      return res.status(404).json({ success: false, message: 'Order not found for webhook' });
+      return res.status(404).json({
+        success: false,
+        message: `Order not found for identifier: ${rawNum || payload.order_id || payload.qikink_order_id}`,
+      });
     }
 
-    const status = String(payload.status || payload.current_status || '').toLowerCase();
-    const awb = payload.awb_number || payload.tracking_number || payload.awb;
-    const courier = payload.courier_name || payload.courier || payload.shipping_carrier;
+    // Ensure sub-objects exist
+    order.fulfillment = order.fulfillment || {};
+    order.fulfillment.tracking = order.fulfillment.tracking || {};
+    order.fulfillment.qikink = order.fulfillment.qikink || {};
+    order.timeline = order.timeline || {};
+
+    const status = String(payload.status || payload.current_status || payload.shipment_status || '').toLowerCase();
+    const awb = payload.awb_number || payload.tracking_number || payload.awb || payload.tracking_code;
+    const courier = payload.courier_name || payload.courier || payload.shipping_carrier || payload.logistics_partner;
+    const edd = payload.estimated_delivery || payload.edd || payload.estimated_delivery_date;
 
     if (awb) {
-      order.fulfillment.tracking.trackingNumber = awb;
-      order.fulfillment.tracking.carrier = courier || order.fulfillment.tracking.carrier || 'BlueDart';
-      order.fulfillment.tracking.trackingUrl = payload.tracking_url || `https://${(courier || 'bluedart').toLowerCase().replace(/\s+/g, '')}.com/track/${awb}`;
+      order.fulfillment.tracking.trackingNumber = String(awb).trim();
+      order.fulfillment.tracking.carrier = courier || order.fulfillment.tracking.carrier || 'BlueDart Express';
+      order.fulfillment.tracking.trackingUrl = payload.tracking_url || payload.tracking_link || `https://${(courier || 'bluedart').toLowerCase().replace(/\s+/g, '')}.com/track/${awb}`;
     }
+
+    if (edd) {
+      order.fulfillment.tracking.estimatedDelivery = String(edd);
+    }
+
+    const now = new Date();
+    order.fulfillment.qikink.lastWebhookAt = now;
+    order.fulfillment.qikink.rawResponse = payload;
 
     if (status.includes('deliver')) {
       order.fulfillment.status = 'Fulfilled';
-      order.timeline.delivered = new Date();
+      order.timeline.delivered = now;
       order.fulfillment.qikink.status = 'Delivered';
-    } else if (status.includes('dispatch') || status.includes('transit') || status.includes('shipped')) {
+    } else if (status.includes('dispatch') || status.includes('transit') || status.includes('shipped') || status.includes('out for delivery')) {
       order.fulfillment.status = 'Processing';
-      order.timeline.shipped = new Date();
-      order.fulfillment.qikink.status = 'Dispatched';
-    } else if (status.includes('print')) {
-      order.timeline.printed = new Date();
+      order.timeline.shipped = order.timeline.shipped || now;
+      order.fulfillment.qikink.status = status.includes('out') ? 'Out for Delivery' : 'Dispatched';
+    } else if (status.includes('print') || status.includes('production') || status.includes('manufactur')) {
+      order.timeline.printed = order.timeline.printed || now;
       order.fulfillment.qikink.status = 'In Production';
+    } else if (status.includes('cancel')) {
+      order.fulfillment.status = 'Cancelled';
+      order.fulfillment.qikink.status = 'Cancelled';
     } else if (status) {
       order.fulfillment.qikink.status = payload.status;
     }
@@ -495,8 +519,12 @@ export const handleQikinkWebhook = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Order updated from Qikink webhook',
+      message: 'Order updated from Qikink webhook successfully',
       orderId: order.orderId,
+      status: order.fulfillment.status,
+      qikinkStatus: order.fulfillment.qikink.status,
+      tracking: order.fulfillment.tracking,
+      data: order,
     });
   } catch (error) {
     console.error('Error handling Qikink webhook:', error);

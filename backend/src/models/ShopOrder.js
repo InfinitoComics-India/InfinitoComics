@@ -82,6 +82,8 @@ const shopOrderSchema = new mongoose.Schema({
       sentAt: { type: Date, default: null },
       qikinkOrderId: { type: String, default: null },
       status: { type: String, default: 'Pending Dispatch' },
+      environment: { type: String, default: 'live' },
+      rawResponse: { type: mongoose.Schema.Types.Mixed, default: null },
     },
     tracking: {
       carrier: { type: String, default: 'BlueDart Express' },

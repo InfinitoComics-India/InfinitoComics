@@ -685,6 +685,32 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
   return newOrder;
 };
 
+export const fetchOrderByIdFromApi = async (idOrHash) => {
+  const clean = String(idOrHash || '').replace(/^#/, '').trim();
+  if (!clean) return null;
+  try {
+    const res = await axios.get(`${BASE_URL}/shop/orders/${clean}`, { timeout: 4000 });
+    if (res.data?.success && res.data?.data) {
+      const norm = normalizeOrder(res.data.data);
+      try {
+        const raw = localStorage.getItem(ORDERS_KEY);
+        const list = raw ? JSON.parse(raw) : [];
+        const idx = list.findIndex(
+          (o) => String(o.id) === clean || String(o.orderId) === `#${clean}` || String(o.orderId) === clean
+        );
+        if (idx !== -1) {
+          list[idx] = { ...list[idx], ...norm };
+        } else {
+          list.unshift(norm);
+        }
+        localStorage.setItem(ORDERS_KEY, JSON.stringify(list));
+      } catch {}
+      return norm;
+    }
+  } catch {}
+  return getOrderById(idOrHash);
+};
+
 export const getOrderById = (idOrHash) => {
   if (!idOrHash) {
     try {

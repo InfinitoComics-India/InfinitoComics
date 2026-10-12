@@ -483,7 +483,7 @@ export const initCrossTabBridge = () => {
         }
       };
     }
-  } catch { }
+  } catch {}
 
   // 2. Cross-port/cross-origin iframe bridge to pull orders from Frontend (e.g. localhost:5173)
   const currentOrigin = window.location.origin;
@@ -495,7 +495,7 @@ export const initCrossTabBridge = () => {
         ifr.style.cssText = 'display:none;width:0;height:0;border:none;position:absolute;visibility:hidden;';
         document.body.appendChild(ifr);
         bridgeIframes.push(ifr);
-      } catch { }
+      } catch {}
     }
   });
 
@@ -508,7 +508,7 @@ export const initCrossTabBridge = () => {
         if (Array.isArray(parsed) && parsed.length > 0) {
           mergeExternalOrders(parsed);
         }
-      } catch { }
+      } catch {}
     }
   });
 };
@@ -547,7 +547,7 @@ export const mergeExternalOrders = (incoming) => {
       window.dispatchEvent(new CustomEvent('infinito_order_placed', { detail: merged[0] }));
       window.dispatchEvent(new CustomEvent('infinito_orders_updated', { detail: merged }));
     }
-  } catch { }
+  } catch {}
 };
 
 // Sync orders outbound to all connected apps/iframes
@@ -557,7 +557,7 @@ export const broadcastOrdersToBridge = (ordersList) => {
     if (broadcastBus) {
       broadcastBus.postMessage({ type: 'infinito_orders_sync', orders: valid });
     }
-  } catch { }
+  } catch {}
 
   bridgeIframes.forEach((ifr) => {
     try {
@@ -565,7 +565,7 @@ export const broadcastOrdersToBridge = (ordersList) => {
         type: 'sync-orders',
         orders: JSON.stringify(valid)
       }, '*');
-    } catch { }
+    } catch {}
   });
 };
 
@@ -901,7 +901,7 @@ export const getAllOrders = async () => {
         if (localRes.data?.success && Array.isArray(localRes.data?.data)) {
           backendOrders = localRes.data.data;
         }
-      } catch { }
+      } catch {}
     }
 
     const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
@@ -912,7 +912,7 @@ export const getAllOrders = async () => {
         if (Array.isArray(parsed) && parsed.length > 0) {
           localOrders = parsed;
         }
-      } catch { }
+      } catch {}
     }
 
     const orderMap = new Map();
@@ -942,7 +942,7 @@ export const getAllOrders = async () => {
 
     try {
       localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(merged));
-    } catch { }
+    } catch {}
 
     return merged;
   } catch (error) {
@@ -961,7 +961,7 @@ export const getOrderById = async (idOrHash) => {
     if (res.data?.success && res.data?.data) {
       return normalizeCustomerOrder(res.data.data);
     }
-  } catch { }
+  } catch {}
 
   const all = await getAllOrders();
   const found = all.find(o => String(o.id) === clean || String(o.orderId) === `#${clean}`);
@@ -973,7 +973,7 @@ export const updateOrder = async (orderId, updates) => {
   const clean = String(orderId || '').replace(/^#/, '').trim();
   const all = await getAllOrders();
   const index = all.findIndex(o => String(o.id) === clean || String(o.orderId) === `#${clean}`);
-
+  
   if (index === -1) {
     throw new Error(`Order ${orderId} not found`);
   }
@@ -998,13 +998,13 @@ export const updateOrder = async (orderId, updates) => {
   all[index] = updated;
   try {
     localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(all));
-  } catch { }
+  } catch {}
 
   // Sync with backend API (Render + local 5000 fallback)
   try {
-    axios.patch(`${BACKEND_URL}/shop/orders/${clean}`, updates, { timeout: 3500 }).catch(() => { });
-    axios.patch(`http://localhost:5000/shop/orders/${clean}`, updates, { timeout: 2000 }).catch(() => { });
-  } catch { }
+    axios.patch(`${BACKEND_URL}/shop/orders/${clean}`, updates, { timeout: 3500 }).catch(() => {});
+    axios.patch(`http://localhost:5000/shop/orders/${clean}`, updates, { timeout: 2000 }).catch(() => {});
+  } catch {}
 
   // Broadcast to all connected app bridges
   broadcastOrdersToBridge(all);
@@ -1039,7 +1039,7 @@ export const sendOrderToQikink = async (orderId, options = {}) => {
         backendSuccess = true;
         backendData = localRes.data.data;
       }
-    } catch { }
+    } catch {}
 
     if (!backendSuccess) {
       const errMsg = err.response?.data?.message || err.message;
@@ -1100,6 +1100,80 @@ export const testQikinkConnection = async () => {
       return { success: false, message: err.response?.data?.message || err.message };
     }
   }
+};
+
+// Simulate incoming Qikink Webhook for tracking and delivery testing
+export const triggerQikinkWebhookSimulation = async (payload) => {
+  let backendSuccess = false;
+  let backendData = null;
+
+  try {
+    const res = await axios.post(`${BACKEND_URL}/shop/orders/qikink-webhook`, payload, { timeout: 8000 });
+    if (res.data?.success) {
+      backendSuccess = true;
+      backendData = res.data.data;
+    }
+  } catch (err) {
+    try {
+      const localRes = await axios.post(`http://localhost:5000/shop/orders/qikink-webhook`, payload, { timeout: 5000 });
+      if (localRes.data?.success) {
+        backendSuccess = true;
+        backendData = localRes.data.data;
+      }
+    } catch {}
+  }
+
+  if (backendSuccess && backendData) {
+    const normalized = normalizeCustomerOrder(backendData);
+    await updateOrder(payload.order_number, normalized);
+    return normalized;
+  }
+
+  // Fallback local update if backend is unreachable
+  const cleanId = String(payload.order_number || payload.order_id || '').replace(/^#/, '');
+  const order = await getOrderById(cleanId);
+  if (!order) throw new Error('Order not found');
+
+  const status = String(payload.status || '').toLowerCase();
+  const awb = payload.awb_number || payload.tracking_number || `BD-${Math.floor(10000000 + Math.random() * 90000000)}`;
+  const courier = payload.courier_name || 'BlueDart Express';
+  const now = new Date().toISOString();
+
+  let fulfillStatus = order.fulfillment?.status || 'Processing';
+  let qikinkStatus = payload.status || 'Dispatched';
+
+  if (status.includes('deliver')) {
+    fulfillStatus = 'Fulfilled';
+    qikinkStatus = 'Delivered';
+  } else if (status.includes('dispatch') || status.includes('shipped') || status.includes('transit')) {
+    fulfillStatus = 'Processing';
+    qikinkStatus = 'Dispatched';
+  }
+
+  const updates = {
+    fulfillment: {
+      ...order.fulfillment,
+      status: fulfillStatus,
+      qikink: {
+        ...(order.fulfillment?.qikink || {}),
+        status: qikinkStatus,
+        lastWebhookAt: now,
+      },
+      tracking: {
+        carrier: courier,
+        trackingNumber: awb,
+        trackingUrl: payload.tracking_url || `https://${courier.toLowerCase().replace(/\s+/g, '')}.com/track/${awb}`,
+        estimatedDelivery: payload.estimated_delivery || formatOrderDate(new Date(), 3),
+      },
+    },
+    timeline: {
+      ...order.timeline,
+      shipped: status.includes('dispatch') || status.includes('shipped') ? (order.timeline?.shipped || now) : order.timeline?.shipped,
+      delivered: status.includes('deliver') ? now : order.timeline?.delivered,
+    },
+  };
+
+  return await updateOrder(cleanId, updates);
 };
 
 // Manual override: Mark as Fulfilled with carrier & tracking

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Download, XCircle, ChevronLeft } from "lucide-react";
+import { Download, XCircle, ChevronLeft, ExternalLink, Truck } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   getOrderById,
+  fetchOrderByIdFromApi,
   downloadInvoicePdf,
   getOrderItemPrice,
   getOrderTotal,
@@ -17,8 +18,26 @@ const OrderDetails = () => {
   const [order, setOrder] = useState(null);
 
   useEffect(() => {
+    // 1. Initial local load
     const ord = getOrderById(orderId);
-    setOrder(ord);
+    if (ord) setOrder(ord);
+
+    // 2. Refresh from backend for live tracking updates
+    fetchOrderByIdFromApi(orderId).then((live) => {
+      if (live) setOrder(live);
+    });
+
+    // 3. Listen for storage & broadcast updates
+    const handleUpdate = () => {
+      const refreshed = getOrderById(orderId);
+      if (refreshed) setOrder(refreshed);
+    };
+    window.addEventListener("storage", handleUpdate);
+    window.addEventListener("infinito_orders_updated", handleUpdate);
+    return () => {
+      window.removeEventListener("storage", handleUpdate);
+      window.removeEventListener("infinito_orders_updated", handleUpdate);
+    };
   }, [orderId]);
 
   if (!order) {
@@ -162,88 +181,138 @@ const OrderDetails = () => {
           </div>
 
           {/* 4 Milestones Progress Line */}
-          <div className="border border-gray-200 p-6 md:p-8 bg-white shadow-sm">
-            <div className="flex items-center justify-between relative max-w-4xl mx-auto">
-              
-              {/* Step 1: Order Placed */}
-              <div className="flex flex-col items-center text-center z-10 w-1/4">
-                <div className="w-14 h-14 md:w-16 md:h-16 flex items-center justify-center mb-2">
-                  <img
-                    src="/order-assets/status-placed.png"
-                    alt="Order Placed"
-                    className="max-h-full max-w-full object-contain"
-                  />
+          {(() => {
+            const fulfillStatus = (order.fulfillment?.status || order.status || '').toLowerCase();
+            const qikinkStatus = (order.fulfillment?.qikink?.status || '').toLowerCase();
+            const trackingObj = order.fulfillment?.tracking || order.tracking || {};
+            const trackingNum = trackingObj.trackingNumber || '';
+            const carrierName = trackingObj.carrier || 'BlueDart Express';
+            const trackingLink = trackingObj.trackingUrl || '';
+
+            const isDispatched = fulfillStatus === 'fulfilled' || fulfillStatus === 'processing' || qikinkStatus.includes('dispatch') || qikinkStatus.includes('shipped') || qikinkStatus.includes('transit') || !!trackingNum;
+            const isOutForDelivery = fulfillStatus === 'fulfilled' || qikinkStatus.includes('out for delivery') || qikinkStatus.includes('out');
+            const isDelivered = fulfillStatus === 'fulfilled' || qikinkStatus.includes('delivered');
+
+            return (
+              <div className="border border-gray-200 p-6 md:p-8 bg-white shadow-sm">
+                <div className="flex items-center justify-between relative max-w-4xl mx-auto">
+                  
+                  {/* Step 1: Order Placed */}
+                  <div className="flex flex-col items-center text-center z-10 w-1/4">
+                    <div className="w-14 h-14 md:w-16 md:h-16 flex items-center justify-center mb-2">
+                      <img
+                        src="/order-assets/status-placed.png"
+                        alt="Order Placed"
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
+                    <h4 className="text-xs md:text-sm font-bold text-black uppercase tracking-tight">
+                      Order Placed
+                    </h4>
+                    <p className="text-[11px] md:text-xs text-gray-500 mt-1">
+                      {order.timeline?.placedDate}
+                    </p>
+                  </div>
+
+                  {/* Connecting Line 1 */}
+                  <div className={`h-1 flex-1 mx-1 md:mx-2 -mt-8 ${isDispatched ? 'bg-[#DD1215]' : 'bg-[#DD1215]'}`} />
+
+                  {/* Step 2: Dispatched */}
+                  <div className="flex flex-col items-center text-center z-10 w-1/4">
+                    <div className="w-14 h-14 md:w-16 md:h-16 flex items-center justify-center mb-2">
+                      <img
+                        src="/order-assets/status-dispatched.png"
+                        alt="Dispatched"
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
+                    <h4 className="text-xs md:text-sm font-bold text-black uppercase tracking-tight">
+                      Dispatched
+                    </h4>
+                    <p className="text-[11px] md:text-xs text-gray-500 mt-1">
+                      {order.timeline?.dispatchedDate}
+                    </p>
+                  </div>
+
+                  {/* Connecting Line 2 */}
+                  <div className={`h-1 flex-1 mx-1 md:mx-2 -mt-8 ${isOutForDelivery || isDelivered ? 'bg-[#DD1215]' : 'bg-gray-300'}`} />
+
+                  {/* Step 3: Out for Delivery */}
+                  <div className="flex flex-col items-center text-center z-10 w-1/4">
+                    <div className="w-14 h-14 md:w-16 md:h-16 flex items-center justify-center mb-2">
+                      <img
+                        src="/order-assets/status-truck.png"
+                        alt="Out for Delivery"
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
+                    <h4 className="text-xs md:text-sm font-bold text-black uppercase tracking-tight">
+                      Out for Delivery
+                    </h4>
+                    <p className="text-[11px] md:text-xs text-gray-500 mt-1">
+                      {order.timeline?.outForDeliveryDate}
+                    </p>
+                  </div>
+
+                  {/* Connecting Line 3 */}
+                  <div className={`h-1 flex-1 mx-1 md:mx-2 -mt-8 ${isDelivered ? 'bg-[#DD1215]' : 'bg-gray-300'}`} />
+
+                  {/* Step 4: Order Delivered */}
+                  <div className="flex flex-col items-center text-center z-10 w-1/4">
+                    <div className="w-14 h-14 md:w-16 md:h-16 flex items-center justify-center mb-2">
+                      <img
+                        src="/order-assets/status-delivered.png"
+                        alt="Order Delivered"
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
+                    <h4 className="text-xs md:text-sm font-bold text-black uppercase tracking-tight">
+                      Order Delivered
+                    </h4>
+                    <p className="text-[11px] md:text-xs text-gray-500 mt-1">
+                      {order.timeline?.deliveredDate}
+                    </p>
+                  </div>
+
                 </div>
-                <h4 className="text-xs md:text-sm font-bold text-black uppercase tracking-tight">
-                  Order Placed
-                </h4>
-                <p className="text-[11px] md:text-xs text-gray-500 mt-1">
-                  {order.timeline?.placedDate}
-                </p>
+
+                {/* Live Shipment Tracking Card */}
+                {trackingNum && (
+                  <div className="mt-6 pt-5 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-emerald-50/70 border border-emerald-200 p-4 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-emerald-100 text-emerald-800 rounded">
+                        <Truck className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-200/60 px-2 py-0.5 rounded">
+                          Live Courier Tracking Active
+                        </span>
+                        <p className="text-xs md:text-sm font-bold text-gray-900 mt-1">
+                          Carrier: <span className="font-semibold text-gray-700">{carrierName}</span> · AWB / Tracking #: <span className="font-mono text-[#DD1215] font-black">{trackingNum}</span>
+                        </p>
+                        {trackingObj.estimatedDelivery && (
+                          <p className="text-[11px] text-gray-500 mt-0.5">
+                            Estimated Delivery: {trackingObj.estimatedDelivery}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {trackingLink && (
+                      <a
+                        href={trackingLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2.5 bg-black hover:bg-gray-800 text-white text-xs font-bold uppercase tracking-wider transition inline-flex items-center gap-1.5 shrink-0 rounded shadow-sm"
+                      >
+                        <span>Track on {carrierName}</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
-
-              {/* Connecting Line 1 */}
-              <div className="h-1 flex-1 bg-[#DD1215] mx-1 md:mx-2 -mt-8" />
-
-              {/* Step 2: Dispatched */}
-              <div className="flex flex-col items-center text-center z-10 w-1/4">
-                <div className="w-14 h-14 md:w-16 md:h-16 flex items-center justify-center mb-2">
-                  <img
-                    src="/order-assets/status-dispatched.png"
-                    alt="Dispatched"
-                    className="max-h-full max-w-full object-contain"
-                  />
-                </div>
-                <h4 className="text-xs md:text-sm font-bold text-black uppercase tracking-tight">
-                  Dispatched
-                </h4>
-                <p className="text-[11px] md:text-xs text-gray-500 mt-1">
-                  {order.timeline?.dispatchedDate}
-                </p>
-              </div>
-
-              {/* Connecting Line 2 */}
-              <div className="h-1 flex-1 bg-gray-300 mx-1 md:mx-2 -mt-8" />
-
-              {/* Step 3: Out for Delivery */}
-              <div className="flex flex-col items-center text-center z-10 w-1/4">
-                <div className="w-14 h-14 md:w-16 md:h-16 flex items-center justify-center mb-2">
-                  <img
-                    src="/order-assets/status-truck.png"
-                    alt="Out for Delivery"
-                    className="max-h-full max-w-full object-contain"
-                  />
-                </div>
-                <h4 className="text-xs md:text-sm font-bold text-black uppercase tracking-tight">
-                  Out for Delivery
-                </h4>
-                <p className="text-[11px] md:text-xs text-gray-500 mt-1">
-                  {order.timeline?.outForDeliveryDate}
-                </p>
-              </div>
-
-              {/* Connecting Line 3 */}
-              <div className="h-1 flex-1 bg-gray-300 mx-1 md:mx-2 -mt-8" />
-
-              {/* Step 4: Order Delivered */}
-              <div className="flex flex-col items-center text-center z-10 w-1/4">
-                <div className="w-14 h-14 md:w-16 md:h-16 flex items-center justify-center mb-2">
-                  <img
-                    src="/order-assets/status-delivered.png"
-                    alt="Order Delivered"
-                    className="max-h-full max-w-full object-contain"
-                  />
-                </div>
-                <h4 className="text-xs md:text-sm font-bold text-black uppercase tracking-tight">
-                  Order Delivered
-                </h4>
-                <p className="text-[11px] md:text-xs text-gray-500 mt-1">
-                  {order.timeline?.deliveredDate}
-                </p>
-              </div>
-
-            </div>
-          </div>
+            );
+          })()}
         </div>
 
         {/* ─── SECTION 3: DELIVER AT THIS ADDRESS (MATCHING SS4) ─── */}

@@ -11,8 +11,10 @@ router.get('/', orderController.getAllOrders);
 // Test Qikink API Connection and credentials
 router.get('/qikink/test-connection', orderController.testQikinkConnection);
 
-// Qikink Webhook for automatic delivery and tracking status updates
+// Qikink Webhook for automatic delivery and tracking status updates (with common aliases)
 router.post('/qikink-webhook', orderController.handleQikinkWebhook);
+router.post('/qikink/webhook', orderController.handleQikinkWebhook);
+router.post('/webhook', orderController.handleQikinkWebhook);
 
 // Single order details by orderId or MongoDB _id
 router.get('/:id', orderController.getOrderById);

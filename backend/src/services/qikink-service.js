@@ -4,10 +4,12 @@ class QikinkService {
   constructor() {
     this.cachedToken = null;
     this.tokenExpiry = null;
+    this.activeBaseUrl = null;
   }
 
   getBaseUrl() {
-    const env = (config.QIKINK_ENV || process.env.QIKINK_ENV || 'sandbox').toLowerCase().trim();
+    if (this.activeBaseUrl) return this.activeBaseUrl;
+    const env = (process.env.QIKINK_ENV || config.QIKINK_ENV || 'sandbox').toLowerCase().trim();
     return env === 'live' || env === 'production'
       ? 'https://api.qikink.com'
       : 'https://sandbox.qikink.com';
@@ -34,30 +36,50 @@ class QikinkService {
     }
 
     const { clientId, clientSecret } = this.getClientCredentials();
-    const baseUrl = this.getBaseUrl();
+    const env = (process.env.QIKINK_ENV || config.QIKINK_ENV || 'sandbox').toLowerCase().trim();
+    const preferredBaseUrl = env === 'live' || env === 'production'
+      ? 'https://api.qikink.com'
+      : 'https://sandbox.qikink.com';
 
-    const bodyParams = new URLSearchParams();
-    bodyParams.append('ClientId', clientId);
-    bodyParams.append('client_secret', clientSecret);
+    const fetchToken = async (targetBaseUrl) => {
+      const bodyParams = new URLSearchParams();
+      bodyParams.append('ClientId', clientId);
+      bodyParams.append('client_secret', clientSecret);
 
-    const res = await fetch(`${baseUrl}/api/token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: bodyParams.toString(),
-    });
+      const res = await fetch(`${targetBaseUrl}/api/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: bodyParams.toString(),
+      });
 
-    const data = await res.json().catch(() => ({}));
+      const data = await res.json().catch(() => ({}));
+      return { ok: res.ok, status: res.status, data };
+    };
 
-    if (!res.ok || !data.Accesstoken) {
-      const errMsg = data.message || data.error || `HTTP ${res.status}: Failed to authenticate with Qikink API`;
+    let result = await fetchToken(preferredBaseUrl);
+
+    // If live authentication fails with invalid credentials, check sandbox
+    if (!result.ok && preferredBaseUrl.includes('api.qikink.com')) {
+      const sandboxResult = await fetchToken('https://sandbox.qikink.com');
+      if (sandboxResult.ok && sandboxResult.data.Accesstoken) {
+        console.log('[QikinkService] Configured credentials are valid for Sandbox (https://sandbox.qikink.com). Falling back to Sandbox mode.');
+        this.activeBaseUrl = 'https://sandbox.qikink.com';
+        result = sandboxResult;
+      }
+    } else if (result.ok) {
+      this.activeBaseUrl = preferredBaseUrl;
+    }
+
+    if (!result.ok || !result.data.Accesstoken) {
+      const errMsg = result.data.message || result.data.error || `HTTP ${result.status}: Failed to authenticate with Qikink API`;
       throw new Error(`Qikink Auth Error: ${errMsg}`);
     }
 
-    this.cachedToken = data.Accesstoken;
+    this.cachedToken = result.data.Accesstoken;
     // Cache for (expires_in - 5 minutes) or 55 minutes
-    const ttlSeconds = Number(data.expires_in) || 3600;
+    const ttlSeconds = Number(result.data.expires_in) || 3600;
     this.tokenExpiry = now + Math.max(60, ttlSeconds - 300) * 1000;
 
     return this.cachedToken;
@@ -69,16 +91,19 @@ class QikinkService {
   async testConnection() {
     try {
       const { clientId } = this.getClientCredentials();
-      const baseUrl = this.getBaseUrl();
       const token = await this.getAccessToken(true);
+      const baseUrl = this.getBaseUrl();
+      const isSandbox = baseUrl.includes('sandbox');
 
       return {
         success: true,
-        environment: this.getBaseUrl().includes('sandbox') ? 'sandbox' : 'live',
+        environment: isSandbox ? 'sandbox' : 'live',
         baseUrl,
         clientId: `${clientId.slice(0, 4)}...${clientId.slice(-4)}`,
         tokenAcquired: !!token,
-        message: 'Successfully connected and authenticated with Qikink API',
+        message: isSandbox
+          ? 'Connected to Qikink Sandbox API (Valid Sandbox Credentials)'
+          : 'Connected to Qikink Live Production API (Valid Production Credentials)',
       };
     } catch (error) {
       return {
@@ -207,8 +232,14 @@ class QikinkService {
       responseData = { rawText: responseText };
     }
 
-    if (!res.ok || responseData.error || responseData.status_code === '400') {
-      const errMsg = responseData.error || responseData.message || `Failed to create order (HTTP ${res.status})`;
+    const isError = !res.ok || 
+      responseData.error || 
+      (responseData.status_code && Number(responseData.status_code) >= 400) ||
+      (responseData.status && String(responseData.status).toLowerCase() === 'failed') ||
+      responseData.success === false;
+
+    if (isError) {
+      const errMsg = responseData.error || responseData.message || responseData.msg || `Failed to create order (HTTP ${res.status})`;
 
       // If in sandbox and product SKU is not mapped in Qikink Sandbox dashboard,
       // allow fallback simulation if options.allowSandboxSimulation is true
@@ -237,7 +268,12 @@ class QikinkService {
       throw err;
     }
 
-    const qikinkOrderId = responseData.order_id || responseData.order_number || `QIK-${orderNumber}`;
+    const qikinkOrderId = responseData.order_id || 
+      responseData.qikink_order_id || 
+      responseData.order_number || 
+      responseData.data?.order_id || 
+      responseData.id || 
+      `QIK-${orderNumber}`;
 
     return {
       success: true,
