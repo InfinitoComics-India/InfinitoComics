@@ -15,9 +15,13 @@ router.get("/bydate", adminauthenticate, checkRole(HR_ALL), async (req, res) => 
     const Employee   = (await import('../models/Employee.js')).default;
     const dateStr = req.query.date;
     if (!dateStr) return res.status(400).json({ success: false, message: "date query param required (YYYY-MM-DD)." });
-    // Use a wide date range to handle timezone offsets
-    const start = new Date(dateStr + "T00:00:00.000+05:30");
-    const end   = new Date(dateStr + "T23:59:59.999+05:30");
+
+    // Wide window: from previous day UTC midnight to next day UTC midnight
+    // This catches records stored in any timezone (UTC, IST, etc.)
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const start = new Date(Date.UTC(y, m-1, d-1, 0, 0, 0, 0)); // day before at UTC midnight
+    const end   = new Date(Date.UTC(y, m-1, d+1, 23, 59, 59, 999)); // day after at UTC end
+
     const records = await Attendance.find({ date: { $gte: start, $lte: end } }).sort({ createdAt: 1 });
 
     // Enrich with name: try Employee model first, then Admin model, then snapshot
