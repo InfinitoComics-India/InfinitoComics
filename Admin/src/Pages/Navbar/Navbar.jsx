@@ -38,7 +38,6 @@ const NAV_ITEMS = [
   { label: "Contact Queries", to: "/contact-queries", icon: Mail, roles: ["superadmin"] },
   { label: "Wiki", to: "/hr/wiki", icon: BookMarked, roles: ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin","shop_admin"] },
   { label: "Infinito AI", to: "/hr/ai", icon: Sparkles, roles: ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin","shop_admin"] },
-  { label: "Employee Portal", to: "/employee-portal", icon: UserCheck, roles: ["employee"] },
 ];
 
 // ── HR sub-items — ordered by employee lifecycle flow ────────
