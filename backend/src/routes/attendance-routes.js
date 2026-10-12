@@ -256,9 +256,14 @@ router.post("/me/clockout", adminauthenticate, checkRole(HR_ALL), async (req, re
     console.log(`[me/clockout] sessions=${sessions.length} lastOpenIdx=${lastOpenIdx} actualIdx=${actualIdx}`);
 
     if (actualIdx === -1) {
-      // Legacy mode
+      // No open session in sessions array
+      // Only fall back to legacy mode if sessions array is completely empty
+      if (sessions.length > 0) {
+        return res.status(400).json({ success: false, message: "No open session found. Please Clock In first." });
+      }
+      // Legacy mode — single clockIn/clockOut fields
       if (!existing.clockIn) return res.status(400).json({ success: false, message: "Not clocked in." });
-      if (existing.clockOut) return res.status(400).json({ success: false, message: "Already clocked out." });
+      if (existing.clockOut) return res.status(400).json({ success: false, message: "Already clocked out. Use Clock In Again first." });
       const hours = parseFloat(((now - existing.clockIn) / (1000*60*60)).toFixed(2));
       const updated = await Attendance.findByIdAndUpdate(existing._id,
         { $set: { clockOut: now, hoursWorked: hours, totalHours: hours, status: "present" } },
