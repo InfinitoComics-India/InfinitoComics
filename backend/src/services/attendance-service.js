@@ -2,9 +2,7 @@ import AttendanceRepository from "../repository/attendance-repository.js";
 import AuditLogRepository from "../repository/auditLog-repository.js";
 import NotificationRepository from "../repository/notification-repository.js";
 
-const SHIFT_START_HOUR   = 9;  // 9:00 AM
-const SHIFT_START_MINUTE = 0;
-const GRACE_MINUTES      = 15; // 15 min grace before marking late
+const GRACE_MINUTES = 0; // flexible job — no late marking
 
 class AttendanceService {
   constructor() {
@@ -18,11 +16,23 @@ class AttendanceService {
     try {
       const now  = new Date();
       const Attendance = (await import('../models/Attendance.js')).default;
-      const d     = new Date(now);
-      const start = new Date(new Date(d).setHours(0, 0, 0, 0));
-      const end   = new Date(new Date(d).setHours(23, 59, 59, 999));
 
-      const existing = await Attendance.findOne({ employeeId, date: { $gte: start, $lte: end } });
+      // Use IST midnight for date boundary (UTC+5:30)
+      // Search a 48-hour window to catch records stored in either UTC or IST midnight
+      const istOffset = 5.5 * 60 * 60 * 1000;
+      const istNow    = new Date(now.getTime() + istOffset);
+      istNow.setUTCHours(0, 0, 0, 0);
+      const start = new Date(istNow.getTime() - istOffset); // IST midnight in UTC
+      const end   = new Date(start.getTime() + 24*60*60*1000 - 1); // end of IST day
+      // Also search UTC midnight start for backwards compat
+      const utcStart = new Date(new Date(now).setHours(0, 0, 0, 0));
+      const utcEnd   = new Date(new Date(now).setHours(23, 59, 59, 999));
+      // Use whichever window is wider
+      const searchStart = utcStart < start ? utcStart : start;
+      const searchEnd   = utcEnd   > end   ? utcEnd   : end;
+
+      const existing = await Attendance.findOne({ employeeId, date: { $gte: searchStart, $lte: searchEnd } });
+      console.log(`[ClockIn] employeeId=${employeeId} searchStart=${searchStart.toISOString()} searchEnd=${searchEnd.toISOString()} existing=${existing?._id||'null'} sessions=${existing?.sessions?.length||0}`);
 
       // Block if already clocked in (last session open or legacy clockIn without clockOut)
       if (existing?.sessions?.length > 0) {
@@ -32,26 +42,38 @@ class AttendanceService {
         throw new Error("Already clocked in. Please clock out first.");
       }
 
-      // Late check
-      const shiftStart  = new Date(now);
-      shiftStart.setHours(SHIFT_START_HOUR, SHIFT_START_MINUTE, 0, 0);
-      const graceCutoff = new Date(shiftStart.getTime() + GRACE_MINUTES * 60 * 1000);
-      const isLate        = now > graceCutoff;
-      const lateByMinutes = isLate ? Math.floor((now - graceCutoff) / 60000) : 0;
+      // Flexible job — no shift start, no late marking
+      const isLate        = false;
+      const lateByMinutes = 0;
 
       const newSession = { clockIn: now, clockOut: null, hoursWorked: 0 };
-      const sessions   = [...(existing?.sessions || []), newSession];
+      // Convert existing sessions to plain objects to avoid Mongoose subdoc issues
+      const existingSessions = (existing?.sessions || []).map(s => ({
+        clockIn: s.clockIn,
+        clockOut: s.clockOut || null,
+        hoursWorked: s.hoursWorked || 0,
+      }));
+      const sessions = [...existingSessions, newSession];
 
       let record;
       if (existing) {
         record = await Attendance.findByIdAndUpdate(
           existing._id,
-          { $set: { sessions, status: "present", isLate: existing.isLate || isLate, lateByMinutes: existing.lateByMinutes || lateByMinutes } },
+          { $push: { sessions: newSession }, $set: { status: "present" } },
           { new: true }
         );
       } else {
+        // Look up employee name from Admin account
+        let eName = "", eEmpId = "";
+        try {
+          const Admin = (await import('../models/Admin.js')).default;
+          const adm = await Admin.findById(employeeId).select("name employeeId");
+          if (adm) { eName = adm.name || ""; eEmpId = adm.employeeId || ""; }
+        } catch {}
+
         record = await Attendance.create({
           employeeId, date: start, sessions,
+          employeeName: eName, employeeEmpId: eEmpId,
           clockIn: now, status: isLate ? "late" : "present", isLate, lateByMinutes,
         });
       }
@@ -59,7 +81,7 @@ class AttendanceService {
       await this.auditRepo.create({
         performedBy, performedByName,
         action: "UPDATE", entity: "Attendance", entityId: record._id,
-        description: `Clock In #${sessions.length} at ${now.toLocaleTimeString()} ${isLate ? `(Late by ${lateByMinutes} mins)` : ""}`,
+        description: `Clock In session at ${now.toLocaleTimeString()}`,
       });
 
       return record;
@@ -74,11 +96,18 @@ class AttendanceService {
     try {
       const now    = new Date();
       const Attendance = (await import('../models/Attendance.js')).default;
-      const d     = new Date(now);
-      const start = new Date(new Date(d).setHours(0, 0, 0, 0));
-      const end   = new Date(new Date(d).setHours(23, 59, 59, 999));
 
-      const record = await Attendance.findOne({ employeeId, date: { $gte: start, $lte: end } });
+      const istOffset = 5.5 * 60 * 60 * 1000;
+      const istNow2   = new Date(now.getTime() + istOffset);
+      istNow2.setUTCHours(0, 0, 0, 0);
+      const start2 = new Date(istNow2.getTime() - istOffset);
+      const end2   = new Date(start2.getTime() + 24*60*60*1000 - 1);
+      const utcStart2 = new Date(new Date(now).setHours(0, 0, 0, 0));
+      const utcEnd2   = new Date(new Date(now).setHours(23, 59, 59, 999));
+      const searchStart2 = utcStart2 < start2 ? utcStart2 : start2;
+      const searchEnd2   = utcEnd2   > end2   ? utcEnd2   : end2;
+
+      const record = await Attendance.findOne({ employeeId, date: { $gte: searchStart2, $lte: searchEnd2 } });
       if (!record) throw new Error("No clock-in record found for today.");
 
       // Find last open session

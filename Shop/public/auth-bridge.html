@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head><title>Infinito Bridge</title></head>
+<body>
+<script>
+  // Read current auth state and orders from localStorage
+  const user = localStorage.getItem('user');
+  const token = localStorage.getItem('authtoken') || localStorage.getItem('token');
+  const orders = localStorage.getItem('infinito_orders');
+
+  // Send to whoever embedded this iframe (Admin or Shop)
+  window.parent.postMessage({
+    type: 'auth-bridge',
+    user: user,
+    token: token,
+    orders: orders
+  }, '*');
+
+  // Also support direct orders request / sync
+  window.addEventListener('message', (event) => {
+    if (event.data?.type === 'sync-orders') {
+      if (event.data.orders) {
+        try {
+          localStorage.setItem('infinito_orders', event.data.orders);
+        } catch {}
+      }
+    } else if (event.data?.type === 'request-orders') {
+      const currentOrders = localStorage.getItem('infinito_orders');
+      window.parent.postMessage({
+        type: 'orders-response',
+        orders: currentOrders
+      }, '*');
+    }
+  });
+</script>
+</body>
+</html>

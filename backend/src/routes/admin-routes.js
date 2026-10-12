@@ -8,6 +8,11 @@ const router = express.Router();
 // Public route — login only
 router.post('/login', AdminController.loginAdmin);
 
+// Shop section access verification & toggle
+router.get('/me/shop-access', adminauthenticate, AdminController.getShopAccessStatus);
+router.patch('/shop-access/toggle', adminauthenticate, checkRole(['superadmin']), AdminController.toggleShopAccess);
+router.put('/shop-access/toggle', adminauthenticate, checkRole(['superadmin']), AdminController.toggleShopAccess);
+
 // Superadmin only — create, list, update, delete admins
 router.post('/create', adminauthenticate, checkRole(['superadmin']), AdminController.createAdmin);
 router.get('/all', adminauthenticate, checkRole(['superadmin']), AdminController.getAllAdmins);

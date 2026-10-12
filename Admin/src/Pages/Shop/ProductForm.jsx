@@ -71,6 +71,7 @@ const ProductForm = () => {
 
   // Images & Drag-and-drop state
   const [images, setImages] = useState([]);
+  const [imageUrlInput, setImageUrlInput] = useState('');
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
 
@@ -219,11 +220,26 @@ const ProductForm = () => {
         };
       });
 
+      // Clean variants: remove empty variants or options with empty values
+      const cleanVariants = (variants || [])
+        .filter(v => v.name && v.name.trim())
+        .map(v => ({
+          name: v.name.trim(),
+          options: (v.options || [])
+            .filter(opt => opt.value && String(opt.value).trim())
+            .map(opt => ({
+              value: String(opt.value).trim(),
+              price: Number(opt.price) || 0,
+              stock: Number(opt.stock) || 0,
+            }))
+        }))
+        .filter(v => v.options.length > 0);
+
       const productData = {
         ...formData,
         ...pricing,
         images: finalImages,
-        variants,
+        variants: cleanVariants,
       };
 
       let response;
@@ -271,6 +287,27 @@ const ProductForm = () => {
 
     // Reset input so re-selecting the same file works
     e.target.value = '';
+  };
+
+  const handleAddImageUrl = () => {
+    const trimmed = imageUrlInput.trim();
+    if (!trimmed) return;
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://') && !trimmed.startsWith('data:')) {
+      Swal.fire('Invalid URL', 'Please enter a valid image URL starting with https://', 'warning');
+      return;
+    }
+    const isFirst = images.length === 0;
+    setImages((prev) => [
+      ...prev,
+      {
+        url: trimmed,
+        isNew: false, // Hosted directly (e.g. on Cloudinary)
+        alt: formData.name || 'Product Image',
+        isPrimary: isFirst,
+        id: `url-${Date.now()}-${Math.random()}`,
+      },
+    ]);
+    setImageUrlInput('');
   };
 
   const handleRemoveImage = (index) => {

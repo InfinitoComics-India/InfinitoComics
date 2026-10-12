@@ -17,6 +17,7 @@ import {
   printPackingSlip,
   formatOrderDate,
   formatDateTime,
+  resolveCustomerDisplayName,
 } from '../../../services/shopServices/orderService';
 
 const OrderDetail = () => {
@@ -51,15 +52,29 @@ const OrderDetail = () => {
 
   useEffect(() => {
     loadOrder();
+
+    const handleUpdate = () => {
+      loadOrder(true);
+    };
+
+    window.addEventListener('storage', handleUpdate);
+    window.addEventListener('infinito_orders_updated', handleUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleUpdate);
+      window.removeEventListener('infinito_orders_updated', handleUpdate);
+    };
   }, [orderId]);
 
-  const loadOrder = async () => {
+  const loadOrder = async (isBackground = false) => {
     try {
-      setLoading(true);
+      if (!isBackground) setLoading(true);
       const data = await getOrderById(orderId);
       if (!data) {
-        message.error(`Order #${orderId} not found`);
-        navigate('/shop/orders');
+        if (!isBackground) {
+          message.error(`Order #${orderId} not found`);
+          navigate('/shop/orders');
+        }
         return;
       }
       setOrder(data);
@@ -68,9 +83,9 @@ const OrderDetail = () => {
       setFulfillDeliveryDate(data.fulfillment?.tracking?.estimatedDelivery || formatOrderDate(new Date(), 3));
     } catch (err) {
       console.error(err);
-      message.error('Failed to load order details');
+      if (!isBackground) message.error('Failed to load order details');
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
 
@@ -174,10 +189,19 @@ const OrderDetail = () => {
   }
 
   // Status helper badges
-  const getPaymentStatusTag = (status) => {
-    switch ((status || '').toLowerCase()) {
+  const getPaymentStatusTag = (status, method) => {
+    const s = String(status || '').toLowerCase().trim();
+    const m = String(method || '').toLowerCase().trim();
+    const isCOD = s === 'cod' || m === 'cod' || m.includes('cash on delivery') || m.includes('cod');
+
+    if (isCOD && s !== 'paid') {
+      return <Tag color="warning" className="px-3 py-1 font-bold uppercase text-xs">COD</Tag>;
+    }
+    switch (s) {
       case 'paid':
         return <Tag color="success" className="px-3 py-1 font-bold uppercase text-xs">Paid</Tag>;
+      case 'cod':
+        return <Tag color="warning" className="px-3 py-1 font-bold uppercase text-xs">COD</Tag>;
       case 'pending':
         return <Tag color="warning" className="px-3 py-1 font-bold uppercase text-xs">Pending</Tag>;
       case 'failed':
@@ -206,6 +230,8 @@ const OrderDetail = () => {
   };
 
   // Timeline Step calculation
+  const isCODOrder = String(order.payment?.status || '').toLowerCase() === 'cod' || String(order.payment?.method || order.paymentMethod || '').toLowerCase().includes('cod');
+
   const timelineSteps = [
     {
       key: 'orderPlaced',
@@ -216,10 +242,10 @@ const OrderDetail = () => {
     },
     {
       key: 'paymentConfirmed',
-      title: 'Payment Confirmed',
-      description: order.payment?.method || 'Razorpay Gateway',
-      date: order.timeline?.paymentConfirmed,
-      completed: (order.payment?.status || '').toLowerCase() === 'paid' || !!order.timeline?.paymentConfirmed,
+      title: isCODOrder ? 'Payment Method: COD' : 'Payment Confirmed',
+      description: isCODOrder ? 'Cash to be collected upon delivery' : (order.payment?.method || 'Razorpay Gateway'),
+      date: isCODOrder ? null : (order.timeline?.paymentConfirmed || order.payment?.date),
+      completed: !isCODOrder && ((order.payment?.status || '').toLowerCase() === 'paid' || !!order.timeline?.paymentConfirmed),
     },
     {
       key: 'sentToQikink',
@@ -665,29 +691,35 @@ const OrderDetail = () => {
                   Payment Information
                 </h3>
               </div>
-              <div>{getPaymentStatusTag(order.payment?.status)}</div>
+              <div>{getPaymentStatusTag(order.payment?.status, order.payment?.method || order.paymentMethod)}</div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div className="p-3 bg-gray-50 rounded-lg space-y-1">
                 <p className="text-gray-400 font-bold uppercase text-[10px]">Payment Method</p>
-                <p className="font-semibold text-gray-900 text-sm">{order.payment?.method || 'Razorpay'}</p>
-                <p className="text-gray-500">Processed securely via Razorpay gateway</p>
+                <p className="font-semibold text-gray-900 text-sm">
+                  {isCODOrder ? 'Cash on Delivery (COD)' : (order.payment?.method || 'Razorpay')}
+                </p>
+                <p className="text-gray-500">
+                  {isCODOrder ? 'Cash to be collected upon order delivery' : 'Processed securely via Razorpay gateway'}
+                </p>
               </div>
 
               <div className="p-3 bg-gray-50 rounded-lg space-y-1">
                 <p className="text-gray-400 font-bold uppercase text-[10px]">Transaction ID</p>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-gray-900 text-xs">
-                    {order.payment?.transactionId || 'pay_RzpDefault'}
+                  <span className={`font-mono font-bold text-xs ${isCODOrder ? 'text-amber-700' : 'text-gray-900'}`}>
+                    {isCODOrder ? 'COD (Collect on Delivery)' : (order.payment?.transactionId || 'pay_RzpDefault')}
                   </span>
-                  <button
-                    onClick={() => copyToClipboard(order.payment?.transactionId, 'Transaction ID')}
-                    className="text-gray-400 hover:text-gray-600"
-                    title="Copy Transaction ID"
-                  >
-                    <Copy size={13} />
-                  </button>
+                  {!isCODOrder && (
+                    <button
+                      onClick={() => copyToClipboard(order.payment?.transactionId, 'Transaction ID')}
+                      className="text-gray-400 hover:text-gray-600"
+                      title="Copy Transaction ID"
+                    >
+                      <Copy size={13} />
+                    </button>
+                  )}
                 </div>
                 <p className="text-gray-500">{formatDateTime(order.payment?.date || order.createdAt)}</p>
               </div>
@@ -722,7 +754,9 @@ const OrderDetail = () => {
             <div className="space-y-3 text-xs">
               <div>
                 <p className="text-gray-400 font-bold uppercase text-[10px]">Name</p>
-                <p className="font-bold text-gray-900 text-sm mt-0.5">{order.customer?.name || 'Customer'}</p>
+                <p className="font-bold text-gray-900 text-sm mt-0.5">
+                  {resolveCustomerDisplayName(order.customer, order.shippingAddress, order.orderId)}
+                </p>
               </div>
 
               <div>
@@ -770,7 +804,9 @@ const OrderDetail = () => {
             </div>
 
             <div className="text-xs text-gray-700 leading-relaxed bg-gray-50 p-3 rounded-lg border border-gray-100">
-              <strong className="block text-gray-900 mb-1">{order.shippingAddress?.name || order.customer?.name}</strong>
+              <strong className="block text-gray-900 mb-1">
+                {resolveCustomerDisplayName(order.shippingAddress, order.customer, order.orderId)}
+              </strong>
               <div className="whitespace-pre-line">{order.shippingAddress?.formatted || order.shippingAddress?.line1}</div>
               <div className="mt-2 text-gray-500">
                 <strong>Phone:</strong> {order.customer?.phone || 'N/A'}
@@ -794,7 +830,9 @@ const OrderDetail = () => {
                 </div>
               ) : (
                 <>
-                  <strong className="block text-gray-900 mb-1">{order.billingAddress?.name || order.customer?.name}</strong>
+                  <strong className="block text-gray-900 mb-1">
+                    {resolveCustomerDisplayName(order.billingAddress, order.customer, order.orderId)}
+                  </strong>
                   <div className="whitespace-pre-line">{order.billingAddress?.formatted || order.billingAddress?.line1}</div>
                 </>
               )}

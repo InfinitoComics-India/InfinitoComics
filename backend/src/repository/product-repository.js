@@ -67,8 +67,40 @@ class ProductRepository extends CrudRepository {
 
   async getByCategory(categorySlug) {
     try {
+      const clean = String(categorySlug || "").trim();
+      const slugRegex = new RegExp(`^${clean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+
+      let matchingCategoryIds = [];
+      try {
+        const ShopCategory = (await import("../models/ShopCategory.js")).default;
+        const matchingCats = await ShopCategory.find({
+          $or: [
+            { slug: slugRegex },
+            { name: slugRegex }
+          ]
+        }).select('_id');
+        matchingCategoryIds = matchingCats.map(c => c._id);
+      } catch (e) {}
+
+      const orQuery = [
+        { categorySlug: clean },
+        { categorySlug: clean.toLowerCase() },
+        { categorySlug: slugRegex }
+      ];
+
+      if (matchingCategoryIds.length > 0) {
+        orQuery.push({ category: { $in: matchingCategoryIds } });
+      }
+
+      if (/^[0-9a-fA-F]{24}$/.test(clean)) {
+        orQuery.push({ category: clean });
+      }
+
       return await this.model
-        .find({ categorySlug, status: 'active' })
+        .find({
+          $or: orQuery,
+          status: { $ne: 'inactive' }
+        })
         .populate('category', 'name slug')
         .sort({ featured: -1, createdAt: -1 });
     } catch (error) {

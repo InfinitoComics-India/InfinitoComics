@@ -1,51 +1,16 @@
 import AdminService from "../services/admin-service.js";
-import Employee from "../models/Employee.js";
-
 const adminService = new AdminService();
-
 // Create a new admin
 const createAdmin = async (req, res) => {
     try {
-        const { email, password, role, roles, name, employeeId } = req.body;
-        const finalRoles = roles?.length > 0 ? roles : (role ? [role] : []);
+        const { email, password, role, name } = req.body;
 
         const adminData = await adminService.createAdmin({
             email,
             password,
             role,
-            roles: finalRoles,
-            name,
-            employeeId: employeeId || "",
+            name
         });
-
-        // ── Auto-create Employee record if role includes "employee" ──
-        if (finalRoles.includes("employee")) {
-            try {
-                const nameParts = name.trim().split(" ");
-                const firstName = nameParts[0] || name;
-                const lastName  = nameParts.slice(1).join(" ") || "-";
-
-                // Check if employee record already exists for this email
-                const existing = await Employee.findOne({ email: email.toLowerCase() });
-                if (!existing) {
-                    await Employee.create({
-                        employeeId:     employeeId || undefined, // let auto-gen if not set
-                        firstName,
-                        lastName,
-                        email:          email.toLowerCase(),
-                        designation:    "Team Member",
-                        department:     "Other",
-                        employmentType: "full-time",
-                        joiningDate:    new Date(),
-                        hrRole:         "employee",
-                        status:         "active",
-                    });
-                }
-            } catch (empErr) {
-                // Don't fail the whole request if employee creation fails
-                console.warn("Auto employee record creation warning:", empErr.message);
-            }
-        }
 
         return res.status(201).json({
             success: true,
@@ -161,11 +126,52 @@ const deleteAdmin = async (req, res) => {
     }
 };
 
+const getShopAccessStatus = async (req, res) => {
+    try {
+        const user = req.user;
+        const result = await adminService.getShopAccessStatus(user?.email, user);
+        return res.status(200).json({
+            success: true,
+            data: result,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
+const toggleShopAccess = async (req, res) => {
+    try {
+        const { email, shopAccess, employeeId } = req.body;
+        if (!email && !employeeId) {
+            return res.status(400).json({
+                success: false,
+                message: "Email or employeeId is required",
+            });
+        }
+        const result = await adminService.toggleShopAccess(email, shopAccess, employeeId);
+        return res.status(200).json({
+            success: true,
+            message: `Shop access ${shopAccess ? "granted" : "revoked"} successfully`,
+            data: result,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
 export default {
     createAdmin,
     loginAdmin,
     getAllAdmins,
     getAdminById,
     updateAdmin,
-    deleteAdmin
+    deleteAdmin,
+    getShopAccessStatus,
+    toggleShopAccess
 }

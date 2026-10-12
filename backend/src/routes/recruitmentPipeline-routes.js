@@ -17,5 +17,6 @@ router.put   ("/update/:id",                            adminauthenticate, check
 router.post  ("/interview/:id",                         adminauthenticate, checkRole(HR),  RecruitmentPipelineController.addInterview);
 router.put   ("/interview/:id/:interviewId",            adminauthenticate, checkRole(HR),  RecruitmentPipelineController.updateInterview);
 router.delete("/delete/:id",                            adminauthenticate, checkRole(HR),  RecruitmentPipelineController.deleteEntry);
+router.post  ("/convert/:id",                           adminauthenticate, checkRole(HR),  RecruitmentPipelineController.convertToEmployee);
 
 export default router;

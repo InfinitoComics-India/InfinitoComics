@@ -59,7 +59,7 @@ class AttendanceRepository extends CrudRepository {
     const end   = new Date(new Date(d).setHours(23, 59, 59, 999));
     return await Attendance.findOneAndUpdate(
       { employeeId, date: { $gte: start, $lte: end } },
-      { $set: { ...data, employeeId, date: start } },
+      { ...data, employeeId, date: start },
       { upsert: true, new: true }
     );
   }

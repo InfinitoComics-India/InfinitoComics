@@ -5,8 +5,14 @@ import {
   Clock, CheckCircle, AlertTriangle, CalendarOff, IndianRupee,
   Target, FileText, User, Send, Loader, LogIn, LogOut as LogOutIcon,
   ClipboardList, Headphones, TrendingUp, Lock, MessageCircle, Inbox,
-  SendHorizonal, Trash2, Plus, X, ChevronDown
+  SendHorizonal, Trash2, Plus, X, ChevronDown, ShoppingBag, Package,
+  FolderOpen, BarChart3, Sparkles, Building2, ExternalLink, ArrowRight,
+  ShieldCheck, RefreshCw, Check
 } from "lucide-react";
+import { isEmployeeShopAllowed } from "../../services/shopServices/shopAccessService";
+import { getAllProducts } from "../../services/shopServices/productService";
+import { getAllCategories } from "../../services/shopServices/categoryService";
+import { getAllOrders } from "../../services/shopServices/orderService";
 
 const BASE = import.meta.env.VITE_BASE_URL;
 const auth = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` } });
@@ -22,7 +28,11 @@ const STATUS_COLORS = {
   weekend:  "bg-gray-100 text-gray-400",
 };
 const fmt      = (d) => d ? new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "—";
-const fmtTime  = (d) => d ? new Date(d).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}) : "—";
+const fmtTime  = (d) => {
+  if (!d) return "—";
+  // Browser automatically converts UTC to local timezone (IST for Indian users)
+  return new Date(d).toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit", hour12:true });
+};
 const fmtShort = (d) => d ? new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short"}) : "—";
 const fmtAgo   = (d) => {
   if (!d) return "";
@@ -51,6 +61,7 @@ const TABS = [
   { key:"requests",    label:"Requests",     icon:Headphones     },
   { key:"performance", label:"Performance",  icon:TrendingUp     },
   { key:"messages",    label:"Messages",     icon:MessageCircle  },
+  { key:"profile",     label:"My Profile",   icon:User           },
 ];
 
 const EmployeePortal = () => {
@@ -63,11 +74,90 @@ const EmployeePortal = () => {
 
   // Read tab from URL search param ?tab=xxx, fallback to "attendance"
   const tab = searchParams.get("tab") || "attendance";
-  const setTab = () => {}; // navigation handled by sidebar links
+  const setTab = (newTab) => {
+    setSearchParams({ tab: newTab });
+  };
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState("");
   const [success,    setSuccess]    = useState("");
   const [countdown,  setCountdown]  = useState(getCountdown());
+
+  // Shop Access state & metrics
+  const [empHasShopAccess, setEmpHasShopAccess] = useState(() => isEmployeeShopAllowed(myEmail, admin));
+  const [shopMetrics, setShopMetrics] = useState({
+    products: 0,
+    categories: 0,
+    orders: 0,
+    loading: false,
+    loaded: false,
+  });
+
+  const loadShopMetrics = async () => {
+    try {
+      setShopMetrics((prev) => ({ ...prev, loading: true }));
+      const [prodRes, catRes, ordersRes] = await Promise.allSettled([
+        getAllProducts(),
+        getAllCategories(),
+        getAllOrders(),
+      ]);
+
+      const prods = prodRes.status === "fulfilled"
+        ? (Array.isArray(prodRes.value?.data?.data) ? prodRes.value.data.data : (Array.isArray(prodRes.value?.data) ? prodRes.value.data : []))
+        : [];
+      const cats = catRes.status === "fulfilled"
+        ? (Array.isArray(catRes.value?.data?.data) ? catRes.value.data.data : (Array.isArray(catRes.value?.data) ? catRes.value.data : []))
+        : [];
+      const ords = ordersRes.status === "fulfilled"
+        ? (Array.isArray(ordersRes.value) ? ordersRes.value : [])
+        : [];
+
+      setShopMetrics({
+        products: prods.length,
+        categories: cats.length,
+        orders: ords.length,
+        loading: false,
+        loaded: true,
+      });
+    } catch {
+      setShopMetrics((prev) => ({ ...prev, loading: false, loaded: true }));
+    }
+  };
+
+  useEffect(() => {
+    const checkLiveAccess = () => {
+      const curAdmin = JSON.parse(localStorage.getItem("Admin") || "{}");
+      const allowed = isEmployeeShopAllowed(curAdmin?.email || myEmail, curAdmin);
+      setEmpHasShopAccess(allowed);
+    };
+
+    window.addEventListener("storage", checkLiveAccess);
+    window.addEventListener("focus", checkLiveAccess);
+
+    let bc;
+    try {
+      bc = new BroadcastChannel("infinito_shop_access_channel");
+      bc.onmessage = () => {
+        checkLiveAccess();
+      };
+    } catch {}
+
+    return () => {
+      window.removeEventListener("storage", checkLiveAccess);
+      window.removeEventListener("focus", checkLiveAccess);
+      if (bc) bc.close();
+    };
+  }, [myEmail]);
+
+  useEffect(() => {
+    if (empHasShopAccess && (tab === "shop" || !shopMetrics.loaded)) {
+      loadShopMetrics();
+    }
+  }, [empHasShopAccess, tab]);
+
+  const availableTabs = [
+    ...TABS,
+    ...(empHasShopAccess ? [{ key: "shop", label: "Shop Section", icon: ShoppingBag, badge: "Full Access" }] : []),
+  ];
 
   // Attendance state
   const [todayAttd,  setTodayAttd]  = useState(null);
@@ -126,6 +216,15 @@ const EmployeePortal = () => {
   const [msgSending, setMsgSending] = useState(false);
   const [dropOpen,   setDropOpen]   = useState(false);
 
+  // Profile state
+  const [profile,      setProfile]      = useState(null);
+  const [profileForm,  setProfileForm]  = useState({
+    phone:"", dateOfBirth:"", gender:"", address:"",
+    bankName:"", accountHolder:"", accountNumber:"", ifscCode:"",
+    emergencyContact: { name:"", phone:"", relation:"" }
+  });
+  const [profileSaving, setProfileSaving] = useState(false);
+
   useEffect(() => {
     const t = setInterval(() => setCountdown(getCountdown()), 30000);
     return () => clearInterval(t);
@@ -142,13 +241,19 @@ const EmployeePortal = () => {
     if (tab === "requests")    loadRequests();
     if (tab === "performance") loadPerformance();
     if (tab === "messages")    { loadInbox(); loadSentMsgs(); loadContacts(); loadMsgUnread(); }
+    if (tab === "profile")     loadProfile();
+    if (tab === "shop")        loadShopMetrics();
   }, [tab]);
 
   useEffect(() => { if (tab === "attendance") loadMonthlyAttd(); }, [attdMonth, attdYear]);
 
   // ── Loaders ──────────────────────────────────────────────────
   const loadTodayAttd = async () => {
-    try { const r = await axios.get(`${BASE}/hr/attendance/me/today`, auth()); setTodayAttd(r.data.data); } catch {}
+    try {
+      // Add timestamp to bust browser cache (304 Not Modified issue)
+      const r = await axios.get(`${BASE}/hr/attendance/me/today?_t=${Date.now()}`, auth());
+      setTodayAttd(r.data.data);
+    } catch {}
   };
   const loadMonthlyAttd = async () => {
     try { const r = await axios.get(`${BASE}/hr/attendance/me/monthly`, { ...auth(), params:{ year:attdYear, month:attdMonth } }); setMonthlyAttd(r.data.data||[]); } catch {}
@@ -162,7 +267,32 @@ const EmployeePortal = () => {
     } catch {}
   };
   const loadWorkHistory = async () => {
-    try { const r = await axios.get(`${BASE}/hr/worklog/my/history`, auth()); setWorkHistory(r.data.data||[]); } catch {}
+    let list = [];
+    try {
+      const r = await axios.get(`${BASE}/hr/worklog/my/history`, auth());
+      list = r.data.data || [];
+    } catch {}
+
+    try {
+      const raw = localStorage.getItem("infinito_daily_worklogs_store");
+      if (raw) {
+        const stored = JSON.parse(raw);
+        if (Array.isArray(stored)) {
+          stored.forEach(s => {
+            const sDateStr = s.date ? new Date(s.date).toDateString() : '';
+            const existingIdx = list.findIndex(item => item._id === s._id || (item.date && new Date(item.date).toDateString() === sDateStr));
+            if (existingIdx === -1) {
+              list.push(s);
+            } else if (!list[existingIdx].workDescription || list[existingIdx].status === "auto_leave") {
+              list[existingIdx] = { ...list[existingIdx], ...s };
+            }
+          });
+        }
+      }
+    } catch {}
+
+    list.sort((a,b) => new Date(b.date) - new Date(a.date));
+    setWorkHistory(list);
   };
   const loadLeaves = async () => {
     try { const r = await axios.get(`${BASE}/hr/leaves/employee/${myId}`, auth()); setLeaves(r.data.data||[]); } catch {}
@@ -210,18 +340,55 @@ const EmployeePortal = () => {
     } catch(e) { setError(e.response?.data?.message||"Failed."); } finally { setMsgSending(false); }
   };
 
+  const loadProfile = async () => {
+    try {
+      const r = await axios.get(`${BASE}/hr/employees/me/profile`, auth());
+      const d = r.data.data || {};
+      setProfile(d);
+      setProfileForm({
+        phone:        d.phone || "",
+        dateOfBirth:  d.dateOfBirth ? d.dateOfBirth.split("T")[0] : "",
+        gender:       d.gender || "",
+        address:      d.address || "",
+        bankName:     d.bankName || "",
+        accountHolder:d.accountHolder || "",
+        accountNumber:d.accountNumber || "",
+        ifscCode:     d.ifscCode || "",
+        emergencyContact: {
+          name:     d.emergencyContact?.name || "",
+          phone:    d.emergencyContact?.phone || "",
+          relation: d.emergencyContact?.relation || "",
+        },
+      });
+    } catch {}
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    try {
+      setProfileSaving(true); setError(""); setSuccess("");
+      await axios.patch(`${BASE}/hr/employees/me/profile`, profileForm, auth());
+      setSuccess("✅ Profile updated successfully!");
+      loadProfile();
+    } catch (e) { setError(e.response?.data?.message || "Failed to save profile."); }
+    finally { setProfileSaving(false); }
+  };
+
   // ── Actions ──────────────────────────────────────────────────
   const handleClockIn = async () => {
     try { setClocking(true); setError(""); setSuccess("");
       const r = await axios.post(`${BASE}/hr/attendance/me/clockin`, {}, auth());
-      setTodayAttd(r.data.data);
+      // Use response data directly — don't rely on /me/today which may be cached/stale
+      if (r.data.data) setTodayAttd(r.data.data);
+      else await loadTodayAttd();
       setSuccess("✅ Clocked in successfully!");
     } catch (e) { setError(e.response?.data?.message||"Failed to clock in."); } finally { setClocking(false); }
   };
   const handleClockOut = async () => {
     try { setClocking(true); setError(""); setSuccess("");
       const r = await axios.post(`${BASE}/hr/attendance/me/clockout`, {}, auth());
-      setTodayAttd(r.data.data);
+      if (r.data.data) setTodayAttd(r.data.data);
+      else await loadTodayAttd();
       setSuccess("✅ Clocked out successfully!");
     } catch (e) { setError(e.response?.data?.message||"Failed to clock out."); } finally { setClocking(false); }
   };
@@ -268,7 +435,9 @@ const EmployeePortal = () => {
   };
 
   const { minsLeft, timeStr } = countdown;
-  const workLocked = myLog?.isLocked;
+  // Allow submission if not locked, OR if locked but was auto_leave (late submission allowed)
+  const workLocked   = myLog?.isLocked && myLog?.status !== "auto_leave";
+  const isAutoLeave  = myLog?.status === "auto_leave";
   const workSubmitted = myLog && ["submitted","edited"].includes(myLog.status);
 
   // Build monthly calendar grid
@@ -289,10 +458,55 @@ const EmployeePortal = () => {
           <h1 className="text-xl font-black tracking-widest text-gray-900">EMPLOYEE PORTAL</h1>
           <p className="text-xs text-gray-400 mt-0.5">Welcome, <strong>{myName}</strong> · {myEmail}</p>
         </div>
-        <div className="text-xs text-gray-500 font-semibold">{timeStr} IST</div>
+        <div className="flex items-center gap-3">
+          {empHasShopAccess && (
+            <button
+              onClick={() => setTab("shop")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition shadow-xs cursor-pointer ${
+                tab === "shop"
+                  ? "bg-[#DD1215] text-white"
+                  : "bg-red-50 hover:bg-red-100 text-[#DD1215] border border-red-200"
+              }`}
+            >
+              <ShoppingBag size={14} />
+              <span>Full Shop Access Active</span>
+            </button>
+          )}
+          <div className="text-xs text-gray-500 font-semibold">{timeStr} IST</div>
+        </div>
       </div>
 
       {/* Tab bar */}
+      <div className="bg-white border-b px-6 overflow-x-auto scrollbar-none shadow-xs">
+        <div className="flex items-center gap-1.5 min-w-max py-2.5">
+          {availableTabs.map((t) => {
+            const Icon = t.icon;
+            const isActive = tab === t.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setTab(t.key)}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                  isActive
+                    ? "bg-[#DD1215] text-white shadow-sm"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                }`}
+              >
+                <Icon size={14} className={isActive ? "text-white" : "text-gray-500"} />
+                <span>{t.label}</span>
+                {t.badge && (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-black uppercase tracking-wider ${
+                    isActive ? "bg-white text-[#DD1215]" : "bg-red-50 text-red-600 border border-red-200"
+                  }`}>
+                    {t.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       <div className="max-w-5xl mx-auto px-6 py-6 space-y-5">
         {error   && <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded flex items-center gap-2"><AlertTriangle size={14}/>{error}<button onClick={()=>setError("")} className="ml-auto text-red-400 hover:text-red-700">✕</button></div>}
@@ -301,115 +515,119 @@ const EmployeePortal = () => {
         {/* ── ATTENDANCE ── */}
         {tab === "attendance" && (
           <div className="space-y-5">
-            {/* Clock in/out card */}
-            <div className="bg-white border rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Today — {fmt(new Date())}</p>
+
+            {/* ── Clock In/Out Card ── */}
+            <div className="bg-white border rounded-xl p-6 space-y-4">
+
+              {/* Header row */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-black text-gray-900">Today — {new Date().toLocaleDateString("en-IN",{weekday:"long",day:"2-digit",month:"long",year:"numeric"})}</p>
+                </div>
                 {todayAttd && (
                   <div className="flex items-center gap-3">
-                    {/* Total hours badge */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5 text-center">
-                      <p className="text-[10px] text-blue-500 font-bold uppercase">Total Hours</p>
-                      <p className="text-lg font-black text-blue-700">{(todayAttd.totalHours || todayAttd.hoursWorked || 0).toFixed(1)}h</p>
+                    <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-2 text-center">
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-blue-400">Total Hours</p>
+                      <p className="text-xl font-black text-blue-700 leading-none mt-0.5">
+                        {Number(todayAttd.totalHours || todayAttd.hoursWorked || 0).toFixed(1)}h
+                      </p>
                     </div>
-                    {/* Status badge */}
                     <span className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize ${STATUS_COLORS[todayAttd.status]||"bg-gray-100 text-gray-600"}`}>
-                      {todayAttd.status?.replace("_"," ")}
+                      {(todayAttd.status||"").replace("_"," ")||"Present"}
                     </span>
                   </div>
                 )}
               </div>
 
-              {/* Sessions list */}
-              {todayAttd?.sessions?.length > 0 ? (
-                <div className="space-y-2 mb-4">
-                  {todayAttd.sessions.map((s, i) => (
-                    <div key={i} className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-2.5 text-xs">
-                      <span className="w-6 h-6 rounded-full bg-[#DD1215] text-white flex items-center justify-center font-black text-[10px] shrink-0">{i+1}</span>
-                      <div className="flex-1">
-                        <span className="text-green-700 font-bold">IN: {fmtTime(s.clockIn)}</span>
-                        {s.clockOut ? (
-                          <span className="text-red-600 font-bold ml-4">OUT: {fmtTime(s.clockOut)}</span>
-                        ) : (
-                          <span className="text-yellow-600 font-semibold ml-4 animate-pulse">● Currently working</span>
-                        )}
+              {/* Sessions */}
+              {(() => {
+                // Unify sessions array + legacy single clockIn/clockOut into one list
+                let sessions = [];
+                if (todayAttd?.sessions?.length > 0) {
+                  sessions = todayAttd.sessions;
+                } else if (todayAttd?.clockIn) {
+                  sessions = [{ clockIn: todayAttd.clockIn, clockOut: todayAttd.clockOut || null, hoursWorked: todayAttd.hoursWorked || 0 }];
+                }
+
+                if (sessions.length === 0) {
+                  return (
+                    <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-5 py-4">
+                      <Clock size={24} className="text-gray-300"/>
+                      <div>
+                        <p className="font-black text-gray-800">Not clocked in yet</p>
+                        <p className="text-xs text-gray-400 mt-0.5">Click Clock In to start your work session</p>
                       </div>
-                      {s.clockOut && <span className="text-gray-500 font-semibold">{s.hoursWorked}h</span>}
                     </div>
-                  ))}
-                  {/* 4hr progress bar */}
-                  <div className="mt-2">
-                    <div className="flex justify-between text-[10px] text-gray-400 mb-1">
-                      <span>Daily target</span>
-                      <span>{Math.min((todayAttd.totalHours||0), 4).toFixed(1)}h / 4h</span>
+                  );
+                }
+
+                const totalHrs = sessions.reduce((sum, s) => sum + Number(s.hoursWorked || 0), 0);
+                const pct = Math.min((totalHrs / 4) * 100, 100);
+
+                return (
+                  <div className="space-y-2">
+                    {sessions.map((s, i) => {
+                      const inTime  = s.clockIn  ? new Date(s.clockIn).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}) : "—";
+                      const outTime = s.clockOut ? new Date(s.clockOut).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}) : null;
+                      return (
+                        <div key={i} className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3">
+                          <div className="w-7 h-7 rounded-full bg-[#DD1215] text-white flex items-center justify-center text-xs font-black shrink-0">{i+1}</div>
+                          <div className="flex-1">
+                            <span className="text-green-700 font-bold text-sm">IN: {inTime}</span>
+                            {outTime
+                              ? <span className="text-red-600 font-bold text-sm ml-4">OUT: {outTime}</span>
+                              : <span className="text-yellow-600 text-sm ml-4 animate-pulse font-semibold">● Working now</span>
+                            }
+                          </div>
+                          {outTime && (
+                            <span className="text-xs text-gray-500 font-semibold">{Number(s.hoursWorked||0).toFixed(2)}h</span>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {/* Progress toward 4h */}
+                    <div className="pt-2">
+                      <div className="flex justify-between text-[10px] text-gray-400 mb-1">
+                        <span>Daily target (4h for Present)</span>
+                        <span>{totalHrs.toFixed(1)}h / 4h</span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-2.5">
+                        <div className={`h-2.5 rounded-full transition-all duration-500 ${pct >= 100 ? "bg-green-500" : "bg-yellow-400"}`} style={{width:`${pct}%`}}/>
+                      </div>
+                      <p className={`text-[11px] font-semibold mt-1 ${pct >= 100 ? "text-green-600" : "text-yellow-600"}`}>
+                        {pct >= 100 ? "✅ Present — daily target met!" : `⚠️ ${(4-totalHrs).toFixed(1)}h more to reach Present status`}
+                      </p>
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2">
-                      <div className={`h-2 rounded-full transition-all ${(todayAttd.totalHours||0) >= 4 ? "bg-green-500" : "bg-yellow-400"}`}
-                        style={{width:`${Math.min(((todayAttd.totalHours||0)/4)*100,100)}%`}}/>
-                    </div>
-                    {(todayAttd.totalHours||0) >= 4
-                      ? <p className="text-[10px] text-green-600 font-bold mt-1">✅ Present — 4h target met</p>
-                      : <p className="text-[10px] text-yellow-600 mt-1">⚠️ {(4-(todayAttd.totalHours||0)).toFixed(1)}h more for Present (Half Day currently)</p>
-                    }
                   </div>
-                </div>
-              ) : todayAttd?.clockIn ? (
-                // Legacy single session display
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-2.5 text-xs">
-                    <span className="w-6 h-6 rounded-full bg-[#DD1215] text-white flex items-center justify-center font-black text-[10px] shrink-0">1</span>
-                    <div className="flex-1">
-                      <span className="text-green-700 font-bold">IN: {fmtTime(todayAttd.clockIn)}</span>
-                      {todayAttd.clockOut ? (
-                        <span className="text-red-600 font-bold ml-4">OUT: {fmtTime(todayAttd.clockOut)}</span>
-                      ) : (
-                        <span className="text-yellow-600 font-semibold ml-4 animate-pulse">● Currently working</span>
-                      )}
-                    </div>
-                    {todayAttd.clockOut && (
-                      <span className="text-gray-500 font-semibold">{todayAttd.hoursWorked}h</span>
-                    )}
-                  </div>
-                </div>
-              ) : !todayAttd ? (
-                <div className="flex items-center gap-2 text-gray-400 mb-4">
-                  <Clock size={20}/>
-                  <div><p className="font-black text-gray-700">Not Clocked In</p><p className="text-xs">Tap Clock In to start your session</p></div>
-                </div>
-              ) : null}
+                );
+              })()}
 
               {/* Buttons */}
-              <div className="flex gap-3 flex-wrap">
-                {(() => {
-                  const sessions = todayAttd?.sessions || [];
-                  const lastSession = sessions[sessions.length - 1];
-                  // Check sessions array OR legacy clockIn/clockOut fields
-                  const isCurrentlyIn = 
-                    (sessions.length > 0 && !lastSession?.clockOut) ||
-                    (sessions.length === 0 && todayAttd?.clockIn && !todayAttd?.clockOut);
-                  if (isCurrentlyIn) {
-                    return (
+              {(() => {
+                const sessions = todayAttd?.sessions || [];
+                const last = sessions[sessions.length - 1];
+                const clocked_in =
+                  sessions.some(s => s.clockIn && !s.clockOut) ||
+                  (sessions.length === 0 && !!todayAttd?.clockIn && !todayAttd?.clockOut);
+                const had_session = sessions.length > 0 || !!todayAttd?.clockOut;
+                return (
+                  <div className="flex items-center gap-3 pt-2 flex-wrap">
+                    {clocked_in ? (
                       <button onClick={handleClockOut} disabled={clocking}
-                        className="flex items-center gap-2 bg-red-600 text-white px-6 py-3 text-xs font-black uppercase tracking-widest hover:bg-red-700 transition disabled:opacity-50 rounded-lg">
-                        <LogOutIcon size={16}/> {clocking ? "Clocking Out..." : "Clock Out"}
+                        className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-7 py-3 rounded-xl text-sm font-black uppercase tracking-wider transition disabled:opacity-50">
+                        <LogOutIcon size={16}/>{clocking ? "Clocking Out..." : "Clock Out"}
                       </button>
-                    );
-                  }
-                  const hasAnySessions = sessions.length > 0 || todayAttd?.clockOut;
-                  return (
-                    <button onClick={handleClockIn} disabled={clocking}
-                      className="flex items-center gap-2 bg-green-600 text-white px-6 py-3 text-xs font-black uppercase tracking-widest hover:bg-green-700 transition disabled:opacity-50 rounded-lg">
-                      <LogIn size={16}/> {clocking ? "Clocking In..." : hasAnySessions ? "Clock In Again" : "Clock In"}
-                    </button>
-                  );
-                })()}
-                {todayAttd && (
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
-                    {todayAttd.isLate && <span className="text-yellow-600 font-semibold">⚠️ Late by {todayAttd.lateByMinutes} mins</span>}
-                    <span>{(todayAttd.sessions||[]).length} session{(todayAttd.sessions||[]).length !== 1 ? "s" : ""} today</span>
+                    ) : (
+                      <button onClick={handleClockIn} disabled={clocking}
+                        className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-7 py-3 rounded-xl text-sm font-black uppercase tracking-wider transition disabled:opacity-50">
+                        <LogIn size={16}/>{clocking ? "Clocking In..." : had_session ? "Clock In Again" : "Clock In"}
+                      </button>
+                    )}
+                    <span className="text-xs text-gray-400">{sessions.length} session{sessions.length!==1?"s":""} today</span>
                   </div>
-                )}
-              </div>
+                );
+              })()}
             </div>
 
             {/* Monthly calendar */}
@@ -459,7 +677,8 @@ const EmployeePortal = () => {
               <div className="bg-gray-900 text-white px-6 py-4 flex items-center justify-between">
                 <div><p className="font-black text-lg">{fmt(new Date())}</p><p className="text-xs text-gray-400">Your daily work update</p></div>
                 {workLocked && <div className="flex items-center gap-1.5 bg-red-900/50 text-red-300 px-3 py-1.5 rounded text-xs font-semibold"><Lock size={12}/>Locked</div>}
-                {workSubmitted && !workLocked && <div className="flex items-center gap-1.5 bg-green-900/50 text-green-300 px-3 py-1.5 rounded text-xs font-semibold"><CheckCircle size={12}/>Submitted {fmtTime(myLog.submittedAt)}</div>}
+                {isAutoLeave && <div className="flex items-center gap-1.5 bg-orange-900/50 text-orange-300 px-3 py-1.5 rounded text-xs font-semibold"><AlertTriangle size={12}/>Auto Leave — Submit to override</div>}
+                {workSubmitted && !workLocked && !isAutoLeave && <div className="flex items-center gap-1.5 bg-green-900/50 text-green-300 px-3 py-1.5 rounded text-xs font-semibold"><CheckCircle size={12}/>Submitted {fmtTime(myLog.submittedAt)}</div>}
               </div>
               <div className="p-6">
                 {workLocked ? (
@@ -470,6 +689,12 @@ const EmployeePortal = () => {
                   </div>
                 ) : (
                   <form onSubmit={handleWorkSubmit} className="space-y-4">
+                    {isAutoLeave && (
+                      <div className="bg-orange-50 border border-orange-300 text-orange-800 text-sm px-4 py-3 rounded flex items-center gap-2">
+                        <AlertTriangle size={16}/>
+                        <span>You were auto-marked as <strong>on leave</strong>. You can still add your work below — your manager can review and override your status.</span>
+                      </div>
+                    )}
                     <div>
                       <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">What did you work on today? *</label>
                       <textarea rows={6} value={workDesc} onChange={e=>setWorkDesc(e.target.value)}
@@ -862,6 +1087,430 @@ const EmployeePortal = () => {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* ── PROFILE ── */}
+        {tab === "profile" && (
+          <form onSubmit={handleSaveProfile} className="space-y-5 max-w-2xl">
+
+            {/* Personal Info */}
+            <div className="bg-white border rounded-xl p-6 space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <User size={18} className="text-[#DD1215]"/>
+                <h3 className="font-black text-gray-900 uppercase tracking-widest text-sm">Personal Information</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Full Name</label>
+                  <input value={myName} disabled className="w-full border border-gray-200 px-3 py-2.5 text-sm bg-gray-50 text-gray-400 rounded-lg cursor-not-allowed"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Email</label>
+                  <input value={myEmail} disabled className="w-full border border-gray-200 px-3 py-2.5 text-sm bg-gray-50 text-gray-400 rounded-lg cursor-not-allowed"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Phone Number</label>
+                  <input type="tel" value={profileForm.phone} onChange={e=>setProfileForm(f=>({...f,phone:e.target.value}))}
+                    placeholder="e.g. 9876543210" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Date of Birth</label>
+                  <input type="date" value={profileForm.dateOfBirth} onChange={e=>setProfileForm(f=>({...f,dateOfBirth:e.target.value}))}
+                    className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Gender</label>
+                  <select value={profileForm.gender} onChange={e=>setProfileForm(f=>({...f,gender:e.target.value}))}
+                    className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg bg-white">
+                    <option value="">Select gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                    <option value="prefer_not_to_say">Prefer not to say</option>
+                  </select>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Address</label>
+                  <textarea value={profileForm.address} onChange={e=>setProfileForm(f=>({...f,address:e.target.value}))}
+                    rows={2} placeholder="Your full address..."
+                    className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg resize-none"/>
+                </div>
+              </div>
+            </div>
+
+            {/* Bank Details */}
+            <div className="bg-white border rounded-xl p-6 space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <IndianRupee size={18} className="text-[#DD1215]"/>
+                <h3 className="font-black text-gray-900 uppercase tracking-widest text-sm">Bank Details</h3>
+              </div>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-2.5 text-xs text-yellow-800">
+                ⚠️ Your bank details are used for salary disbursement. Please ensure they are accurate.
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Account Holder Name *</label>
+                  <input type="text" value={profileForm.accountHolder} onChange={e=>setProfileForm(f=>({...f,accountHolder:e.target.value}))}
+                    placeholder="As on bank account" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Bank Name *</label>
+                  <input type="text" value={profileForm.bankName} onChange={e=>setProfileForm(f=>({...f,bankName:e.target.value}))}
+                    placeholder="e.g. HDFC Bank" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Account Number *</label>
+                  <input type="text" value={profileForm.accountNumber} onChange={e=>setProfileForm(f=>({...f,accountNumber:e.target.value}))}
+                    placeholder="e.g. 1234567890" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">IFSC Code *</label>
+                  <input type="text" value={profileForm.ifscCode} onChange={e=>setProfileForm(f=>({...f,ifscCode:e.target.value.toUpperCase()}))}
+                    placeholder="e.g. HDFC0001234" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg font-mono"/>
+                </div>
+              </div>
+            </div>
+
+            {/* Emergency Contact */}
+            <div className="bg-white border rounded-xl p-6 space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle size={18} className="text-[#DD1215]"/>
+                <h3 className="font-black text-gray-900 uppercase tracking-widest text-sm">Emergency Contact</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Contact Name</label>
+                  <input type="text" value={profileForm.emergencyContact.name}
+                    onChange={e=>setProfileForm(f=>({...f,emergencyContact:{...f.emergencyContact,name:e.target.value}}))}
+                    placeholder="e.g. Parent / Spouse" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Phone</label>
+                  <input type="tel" value={profileForm.emergencyContact.phone}
+                    onChange={e=>setProfileForm(f=>({...f,emergencyContact:{...f.emergencyContact,phone:e.target.value}}))}
+                    placeholder="9876543210" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Relation</label>
+                  <input type="text" value={profileForm.emergencyContact.relation}
+                    onChange={e=>setProfileForm(f=>({...f,emergencyContact:{...f.emergencyContact,relation:e.target.value}}))}
+                    placeholder="e.g. Father, Mother" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+              </div>
+            </div>
+
+            {/* Save button */}
+            <button type="submit" disabled={profileSaving}
+              className="flex items-center justify-center gap-2 w-full bg-[#DD1215] text-white py-3 text-xs font-black uppercase tracking-widest hover:bg-red-700 transition disabled:opacity-50 rounded-xl">
+              <Send size={14}/> {profileSaving ? "Saving..." : "Save Profile"}
+            </button>
+          </form>
+        )}
+
+        {/* ── SHOP SECTION (FULL SUPER ADMIN PRIVILEGES ON EMPLOYEE PORTAL) ── */}
+        {tab === "shop" && empHasShopAccess && (
+          <div className="space-y-6">
+            {/* Banner card */}
+            <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-black text-white rounded-2xl p-6 md:p-8 shadow-md border border-gray-800 relative overflow-hidden">
+              <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial from-red-600/20 to-transparent pointer-events-none" />
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                  <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-red-600/30 border border-red-500/40 text-red-400 text-xs font-black uppercase tracking-widest mb-3">
+                    <ShieldCheck size={14} /> Super Admin Shop Privileges Active
+                  </div>
+                  <h2 className="text-2xl md:text-3xl font-black uppercase tracking-wide text-white">
+                    Store Management Center
+                  </h2>
+                  <p className="text-sm text-gray-300 mt-2 max-w-2xl leading-relaxed">
+                    You have been granted complete administrative access to the Infinito Shop. Manage the live product catalog, create categories, process customer orders, monitor warehouse stock inventory, update promotional banners, and review analytics.
+                  </p>
+                </div>
+                <div className="flex flex-wrap md:flex-col gap-2.5 shrink-0">
+                  <a
+                    href="/shop/products/new"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#DD1215] hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-sm"
+                  >
+                    <Plus size={15} />
+                    <span>Add New Product</span>
+                  </a>
+                  <a
+                    href="/shop/orders"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition border border-white/10"
+                  >
+                    <ClipboardList size={15} />
+                    <span>View Orders</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Quick Counter Row */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6 pt-6 border-t border-gray-800">
+                <a href="/shop/products" className="bg-white/5 hover:bg-white/10 p-3.5 rounded-xl border border-white/5 transition block">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400">Products Catalog</div>
+                  <div className="text-2xl font-black text-white mt-1">
+                    {shopMetrics.loading ? '...' : shopMetrics.products}
+                  </div>
+                  <span className="text-[11px] text-red-400 font-semibold mt-1 inline-flex items-center gap-1">
+                    Manage Products →
+                  </span>
+                </a>
+                <a href="/shop/categories" className="bg-white/5 hover:bg-white/10 p-3.5 rounded-xl border border-white/5 transition block">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400">Active Categories</div>
+                  <div className="text-2xl font-black text-white mt-1">
+                    {shopMetrics.loading ? '...' : shopMetrics.categories}
+                  </div>
+                  <span className="text-[11px] text-red-400 font-semibold mt-1 inline-flex items-center gap-1">
+                    View Categories →
+                  </span>
+                </a>
+                <a href="/shop/orders" className="bg-white/5 hover:bg-white/10 p-3.5 rounded-xl border border-white/5 transition block">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400">Total Orders</div>
+                  <div className="text-2xl font-black text-white mt-1">
+                    {shopMetrics.loading ? '...' : shopMetrics.orders}
+                  </div>
+                  <span className="text-[11px] text-red-400 font-semibold mt-1 inline-flex items-center gap-1">
+                    Process Orders →
+                  </span>
+                </a>
+                <a href="/shop/inventory" className="bg-white/5 hover:bg-white/10 p-3.5 rounded-xl border border-white/5 transition block">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400">Warehouse Stock</div>
+                  <div className="text-2xl font-black text-emerald-400 mt-1">
+                    Monitored
+                  </div>
+                  <span className="text-[11px] text-red-400 font-semibold mt-1 inline-flex items-center gap-1">
+                    Stock Alerts →
+                  </span>
+                </a>
+              </div>
+            </div>
+
+            {/* Complete Module Cards Grid */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-base font-black uppercase tracking-wider text-gray-900">
+                    Full Super Admin Shop Modules
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Direct access to all core eCommerce modules available to Super Administrators.
+                  </p>
+                </div>
+                <button
+                  onClick={loadShopMetrics}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition cursor-pointer"
+                  title="Refresh shop status"
+                >
+                  <RefreshCw size={13} className={shopMetrics.loading ? 'animate-spin' : ''} />
+                  <span>Refresh</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* 1. All Products */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-red-50 text-[#DD1215] flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <Package size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Products Catalog</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      View all products, edit pricing, variants, descriptions, tags, and stock statuses.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100 flex items-center gap-2">
+                    <a
+                      href="/shop/products"
+                      className="flex-1 py-2 text-center text-xs font-bold text-white bg-[#DD1215] hover:bg-red-700 rounded-lg transition"
+                    >
+                      View Catalog
+                    </a>
+                    <a
+                      href="/shop/products/new"
+                      className="px-2.5 py-2 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                      title="Add New Product"
+                    >
+                      + Add
+                    </a>
+                  </div>
+                </div>
+
+                {/* 2. Categories */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <FolderOpen size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Categories & Collections</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      Organize store items into Comics, Apparel, Figurines, and Posters categories with cover images.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100 flex items-center gap-2">
+                    <a
+                      href="/shop/categories"
+                      className="flex-1 py-2 text-center text-xs font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                    >
+                      Categories
+                    </a>
+                    <a
+                      href="/shop/categories/new"
+                      className="px-2.5 py-2 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                      title="Add New Category"
+                    >
+                      + Add
+                    </a>
+                  </div>
+                </div>
+
+                {/* 3. Orders */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <ClipboardList size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Orders & Dispatches</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      Manage customer orders, print GST tax invoices & packing slips, and dispatch orders to Qikink.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <a
+                      href="/shop/orders"
+                      className="w-full block py-2 text-center text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition"
+                    >
+                      All Orders ({shopMetrics.orders})
+                    </a>
+                  </div>
+                </div>
+
+                {/* 4. Inventory */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <BarChart3 size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Inventory & Stock</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      Track SKU stock counts in real time, review out-of-stock items, and update physical stock counts.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <a
+                      href="/shop/inventory"
+                      className="w-full block py-2 text-center text-xs font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                    >
+                      Manage Inventory
+                    </a>
+                  </div>
+                </div>
+
+                {/* 5. Analytics & Reports */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <TrendingUp size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Analytics & Reports</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      Monitor revenue trajectories, top revenue items, average order values, and sales breakdowns.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <a
+                      href="/shop/analytics"
+                      className="w-full block py-2 text-center text-xs font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                    >
+                      Open Analytics
+                    </a>
+                  </div>
+                </div>
+
+                {/* 6. Marketing & Promotions */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <Sparkles size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Marketing & Banners</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      Configure Hero Carousel slider slides, discount coupon codes, and promotional banners.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <a
+                      href="/shop/marketing"
+                      className="w-full block py-2 text-center text-xs font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                    >
+                      Hero & Marketing
+                    </a>
+                  </div>
+                </div>
+
+                {/* 7. Company Profile */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-700 flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <Building2 size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Company & Invoicing</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      Store legal company info, GSTIN tax registration, warehouse dispatch address, and logos.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <a
+                      href="/shop/company-profile"
+                      className="w-full block py-2 text-center text-xs font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                    >
+                      Company Profile
+                    </a>
+                  </div>
+                </div>
+
+                {/* 8. Live Storefront */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <ExternalLink size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Live Customer Store</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      Inspect the live customer storefront to preview new product drops, categories, and promotions.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <a
+                      href="https://shop.infinitohq.com/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full block py-2 text-center text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition"
+                    >
+                      Open Storefront ↗
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── SHOP ACCESS REQUIRED NOTICE (IF OPENED WITHOUT PERMISSION) ── */}
+        {tab === "shop" && !empHasShopAccess && (
+          <div className="bg-white border rounded-2xl p-8 text-center max-w-xl mx-auto space-y-4 shadow-sm">
+            <div className="w-14 h-14 bg-red-50 text-[#DD1215] rounded-full flex items-center justify-center mx-auto">
+              <ShoppingBag size={28} />
+            </div>
+            <h3 className="text-lg font-black uppercase text-gray-900">Shop Section Access Required</h3>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              Your employee account has not yet been granted Shop Section permissions. A Super Administrator can grant you access instantly under <strong>Shop &gt; Management</strong>.
+            </p>
+            <button
+              onClick={() => setTab("attendance")}
+              className="px-6 py-2.5 bg-[#DD1215] text-white text-xs font-bold uppercase rounded-lg hover:bg-red-700 transition"
+            >
+              Return to Attendance
+            </button>
           </div>
         )}
       </div>

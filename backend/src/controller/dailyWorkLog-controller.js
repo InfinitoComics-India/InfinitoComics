@@ -35,12 +35,22 @@ export const submitWorkLog = async (req, res) => {
     const existing = await DailyWorkLog.findOne({ adminId, date: today });
 
     if (existing) {
-      if (existing.isLocked) return res.status(403).json({ success: false, message: "Today's work log is locked. Submissions are closed after midnight IST." });
+      // Allow updating auto_leave records — save work but keep auto_leave status
+      // Only superadmin can change status from auto_leave (via review endpoint)
+      if (existing.isLocked && existing.status !== "auto_leave") {
+        return res.status(403).json({ success: false, message: "Today's work log is locked. Submissions are closed after midnight IST." });
+      }
       existing.workDescription = workDescription.trim();
-      existing.status          = "edited";
-      existing.lastEditedAt    = new Date();
+      // If auto_leave, keep the status — superadmin reviews and overrides manually
+      if (existing.status !== "auto_leave") {
+        existing.status = "edited";
+      }
+      existing.lastEditedAt = new Date();
       await existing.save();
-      return res.status(200).json({ success: true, message: "Work log updated.", data: existing });
+      const msg = existing.status === "auto_leave"
+        ? "Work saved. Note: You are still marked as Auto Leave. Superadmin can change your status."
+        : "Work log updated.";
+      return res.status(200).json({ success: true, message: msg, data: existing });
     }
 
     const log = await DailyWorkLog.create({
@@ -90,6 +100,23 @@ export const getLogsForDate = async (req, res) => {
     const logs = await DailyWorkLog.find({
       date: { $gte: targetDate, $lt: nextDay },
     }).sort({ status: 1, adminName: 1 });
+
+    // For any log missing adminEmployeeId, try to look it up from Employee model by email
+    const missingIds = logs.filter(l => !l.adminEmployeeId && l.adminEmail);
+    if (missingIds.length > 0) {
+      const emails = missingIds.map(l => l.adminEmail.toLowerCase());
+      const employees = await Employee.find({ email: { $in: emails } }).select("email employeeId");
+      const empMap = {};
+      employees.forEach(e => { empMap[e.email.toLowerCase()] = e.employeeId || ""; });
+
+      const enriched = logs.map(l => {
+        if (!l.adminEmployeeId && l.adminEmail && empMap[l.adminEmail.toLowerCase()]) {
+          return { ...l.toObject(), adminEmployeeId: empMap[l.adminEmail.toLowerCase()] };
+        }
+        return l.toObject ? l.toObject() : l;
+      });
+      return res.status(200).json({ success: true, data: enriched, count: enriched.length });
+    }
 
     res.status(200).json({ success: true, data: logs, count: logs.length });
   } catch (e) { res.status(500).json({ success: false, message: e.message }); }
@@ -143,6 +170,23 @@ export const reviewLog = async (req, res) => {
   } catch (e) { res.status(500).json({ success: false, message: e.message }); }
 };
 
+// ── OVERRIDE STATUS (superadmin only) ─────────────────────────
+export const overrideStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!["submitted","edited","auto_leave","pending"].includes(status)) {
+      return res.status(400).json({ success: false, message: "Invalid status." });
+    }
+    const updated = await DailyWorkLog.findByIdAndUpdate(
+      req.params.id,
+      { $set: { status, isAutoLeave: status === "auto_leave", isLocked: true } },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ success: false, message: "Log not found." });
+    res.status(200).json({ success: true, message: `Status updated to ${status}.`, data: updated });
+  } catch (e) { res.status(500).json({ success: false, message: e.message }); }
+};
+
 // ── MANUAL CRON TRIGGER ───────────────────────────────────────
 export const runMidnightCron = async (req, res) => {
   try {
@@ -165,7 +209,12 @@ export const processMidnightAutoLeave = async () => {
   );
 
   // Get all admins
-  const admins = await Admin.find().select("_id name email");
+  const admins = await Admin.find().select("_id name email employeeId");
+
+  // Build a map of admin email → Employee record for employeeId lookup
+  const employees = await Employee.find({}).select("email employeeId");
+  const empIdByEmail = {};
+  employees.forEach(e => { if (e.email) empIdByEmail[e.email.toLowerCase()] = e.employeeId || ""; });
 
   // Who submitted yesterday
   const submitted = await DailyWorkLog.find({
@@ -178,19 +227,22 @@ export const processMidnightAutoLeave = async () => {
 
   for (const admin of admins) {
     if (!submittedIds.has(admin._id.toString())) {
+      // Resolve employee ID: from Admin model first, then Employee model by email
+      const resolvedEmpId = admin.employeeId || empIdByEmail[admin.email?.toLowerCase()] || "";
       await DailyWorkLog.findOneAndUpdate(
         { adminId: admin._id, date: yesterday },
         {
-          adminId:         admin._id,
-          adminName:       admin.name,
-          adminEmail:      admin.email,
-          date:            yesterday,
-          workDescription: "Auto-marked as leave — no work log submitted.",
-          hoursWorked:     0,
-          status:          "auto_leave",
-          isAutoLeave:     true,
-          isLocked:        true,
-          lockedAt:        new Date(),
+          adminId:            admin._id,
+          adminName:          admin.name,
+          adminEmail:         admin.email,
+          adminEmployeeId:    resolvedEmpId,
+          date:               yesterday,
+          workDescription:    "Auto-marked as leave — no work log submitted.",
+          hoursWorked:        0,
+          status:             "auto_leave",
+          isAutoLeave:        true,
+          isLocked:           true,
+          lockedAt:           new Date(),
         },
         { upsert: true, new: true }
       );
@@ -202,4 +254,4 @@ export const processMidnightAutoLeave = async () => {
   return { autoLeaveCount, date: yesterday.toDateString() };
 };
 
-export default { submitWorkLog, getMyTodayLog, getMyHistory, getLogsForDate, getSummaryForDate, reviewLog, runMidnightCron };
+export default { submitWorkLog, getMyTodayLog, getMyHistory, getLogsForDate, getSummaryForDate, reviewLog, overrideStatus, runMidnightCron };

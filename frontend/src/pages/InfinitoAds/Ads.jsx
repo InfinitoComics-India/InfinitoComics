@@ -14,7 +14,7 @@ import NewsletterSection from '../Footer/Newsletter';
 
 const Ads = () => {
   return (
-    <main className="w-full bg-white text-gray-900 font-sans">
+    <main className="w-full bg-white text-gray-900 font-sans overflow-x-hidden">
       <AdsHero />
       <AdsStats />
       <AdsServices />

@@ -2,7 +2,7 @@ import express from "express";
 const router = express.Router();
 import * as productController from "../controller/product-controller.js";
 import upload from '../middleware/multer.js';
-import { uploadToS3 } from '../utils/aws.js';
+import { uploadToS3, getCloudinaryStatus } from '../utils/aws.js';
 import { adminauthenticate } from '../middleware/adminauth.js';
 import { checkRole } from "../middleware/roleCheck.js";
 
@@ -10,42 +10,42 @@ import { checkRole } from "../middleware/roleCheck.js";
 router.post(
   "/",
   adminauthenticate,
-  checkRole(["superadmin", "shop_admin"]),
+  checkRole(["superadmin", "shop_admin", "employee"]),
   productController.createProduct
 );
 
 router.get(
   "/admin/all",
   adminauthenticate,
-  checkRole(["superadmin", "shop_admin"]),
+  checkRole(["superadmin", "shop_admin", "employee"]),
   productController.getAllProducts
 );
 
 router.get(
   "/:id",
   adminauthenticate,
-  checkRole(["superadmin", "shop_admin"]),
+  checkRole(["superadmin", "shop_admin", "employee"]),
   productController.getProductById
 );
 
 router.put(
   "/:id",
   adminauthenticate,
-  checkRole(["superadmin", "shop_admin"]),
+  checkRole(["superadmin", "shop_admin", "employee"]),
   productController.updateProduct
 );
 
 router.delete(
   "/:id",
   adminauthenticate,
-  checkRole(["superadmin", "shop_admin"]),
+  checkRole(["superadmin", "shop_admin", "employee"]),
   productController.deleteProduct
 );
 
 router.patch(
   "/bulk-update",
   adminauthenticate,
-  checkRole(["superadmin", "shop_admin"]),
+  checkRole(["superadmin", "shop_admin", "employee"]),
   productController.bulkUpdateProducts
 );
 
@@ -55,11 +55,21 @@ router.get("/public/featured", productController.getFeaturedProducts);
 router.get("/public/slug/:slug", productController.getProductBySlug);
 router.get("/public/category/:categorySlug", productController.getProductsByCategory);
 
+// Cloudinary health check / diagnostic route
+router.get("/cloudinary-status", async (req, res) => {
+  try {
+    const status = await getCloudinaryStatus();
+    return res.status(200).json({ success: true, ...status });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // Image upload route (Cloudinary backed for permanent persistence)
 router.post(
   "/upload-images",
   adminauthenticate,
-  checkRole(["superadmin", "shop_admin"]),
+  checkRole(["superadmin", "shop_admin", "employee"]),
   upload.array('images', 10),
   async (req, res) => {
     try {

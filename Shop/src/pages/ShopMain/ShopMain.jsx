@@ -19,6 +19,33 @@ const ShopMain = () => {
   const [products, setProducts] = useState([]);
   const [catsLoaded, setCatsLoaded] = useState(false);
   const [productsLoaded, setProductsLoaded] = useState(false);
+  const [promoIndex, setPromoIndex] = useState(0);
+  const [promoBannersList, setPromoBannersList] = useState(() => {
+    try {
+      const raw = localStorage.getItem("infinito_shop_banners");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.promoBanners) && parsed.promoBanners.length > 0) {
+          const enabled = parsed.promoBanners.filter((b) => b && b.isActive !== false);
+          if (enabled.length > 0) return enabled;
+        } else if (parsed.promoBanner && parsed.promoBanner.isActive !== false) {
+          return [parsed.promoBanner];
+        }
+      }
+    } catch { }
+    return [
+      {
+        id: "default-promo",
+        headline: "35% off",
+        subtitle: "on The Crimson Bloodline",
+        buttonText: "Buy Now",
+        buttonLink: "/catalog",
+        bgImageUrl: promoBanner,
+        bgColor: "#800000",
+        isActive: true,
+      },
+    ];
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -50,6 +77,46 @@ const ShopMain = () => {
     };
   }, []);
 
+  // Auto rotate promo banners every 7 seconds
+  useEffect(() => {
+    if (promoBannersList.length <= 1) return;
+    const timer = setInterval(() => {
+      setPromoIndex((prev) => (prev + 1) % promoBannersList.length);
+    }, 7000);
+    return () => clearInterval(timer);
+  }, [promoBannersList.length]);
+
+  // Sync banners across tabs & Admin BroadcastChannel
+  useEffect(() => {
+    const reloadBanners = () => {
+      try {
+        const raw = localStorage.getItem("infinito_shop_banners");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed.promoBanners) && parsed.promoBanners.length > 0) {
+            const enabled = parsed.promoBanners.filter((b) => b && b.isActive !== false);
+            if (enabled.length > 0) {
+              setPromoBannersList(enabled);
+              return;
+            }
+          }
+        }
+      } catch { }
+    };
+
+    window.addEventListener("storage", reloadBanners);
+    let bc;
+    try {
+      bc = new BroadcastChannel("infinito_banners_channel");
+      bc.onmessage = () => reloadBanners();
+    } catch { }
+
+    return () => {
+      window.removeEventListener("storage", reloadBanners);
+      if (bc) bc.close();
+    };
+  }, []);
+
   const scroll = (ref, dir) => {
     if (!ref.current) return;
     ref.current.scrollBy({ left: dir * 320, behavior: "smooth" });
@@ -60,46 +127,76 @@ const ShopMain = () => {
       {/* ─── HERO SLIDER (3 slides) ─────────────────────────── */}
       <HeroSlider />
 
-      {/* ─── PROMO BANNER (Dynamic from Admin Marketing Management) ── */}
+      {/* ─── PROMO BANNERS (Multiple supported from Admin Marketing Management - Sized matching SS2) ── */}
       {(() => {
-        let dynamicPromo = null;
-        try {
-          const raw = localStorage.getItem("infinito_shop_banners");
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            if (parsed.promoBanner && parsed.promoBanner.isActive !== false) {
-              dynamicPromo = parsed.promoBanner;
-            }
-          }
-        } catch {}
-
-        if (dynamicPromo && dynamicPromo.isActive === false) return null;
+        const promoList = promoBannersList;
+        const currentPromo = promoList[promoIndex % promoList.length] || promoList[0];
 
         return (
-          <section className="max-w-[1200px] mx-auto px-4 md:px-12 py-10">
-            <div className="relative w-full">
-              <img
-                src={dynamicPromo?.bgImageUrl || promoBanner}
-                alt=""
-                aria-hidden="true"
-                className="block w-full h-auto"
-              />
-              <div className="absolute inset-0 flex items-center pl-[5%] pr-[50%] text-white">
-                <div>
-                  <h2 className="text-2xl sm:text-3xl md:text-5xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] drop-shadow-lg">
-                    {dynamicPromo?.headline || "35% off"}
+          <section className="py-8 md:py-10">
+            <div className="max-w-[1200px] mx-auto px-4 md:px-12 flex items-center justify-center gap-3 md:gap-5">
+              {/* Navigation button left */}
+              <button
+                type="button"
+                onClick={() => setPromoIndex((prev) => (prev - 1 + promoList.length) % promoList.length)}
+                aria-label="Previous promo"
+                className="w-8 h-8 md:w-9 md:h-9 bg-white border border-gray-300 rounded hover:border-gray-500 hover:text-black text-gray-500 flex items-center justify-center transition shadow-sm shrink-0 cursor-pointer"
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              {/* Exact SS2 Sized Banner */}
+              <div
+                className="relative w-full max-w-[780px] h-[160px] sm:h-[175px] md:h-[180px] rounded-xl overflow-hidden shadow-md flex items-center bg-black bg-cover bg-center shrink-0"
+                style={{
+                  backgroundColor: currentPromo?.bgColor || "#800000",
+                  backgroundImage: currentPromo?.bgImageUrl ? `url(${currentPromo.bgImageUrl})` : `url(${promoBanner})`,
+                }}
+              >
+                {/* Subtle gradient to keep left text readable while right side merch artwork stays clear */}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/25 to-transparent pointer-events-none" />
+
+                {/* Content aligned to left */}
+                <div className="relative z-10 pl-6 sm:pl-8 md:pl-10 max-w-[65%] sm:max-w-[55%] space-y-1 text-white">
+                  {(currentPromo?.badgeText || currentPromo?.discountCode) && (
+                    <span className="inline-block bg-black/70 text-[#DD1215] text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded">
+                      {currentPromo.badgeText || currentPromo.discountCode}
+                    </span>
+                  )}
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight text-white drop-shadow">
+                    {currentPromo?.headline || "35% off"}
                   </h2>
-                  <p className="mt-1 md:mt-2 text-[10px] sm:text-xs md:text-sm uppercase tracking-wide font-dmsans">
-                    {dynamicPromo?.subtitle || "on The Crimson Bloodline"}
+                  <p className="text-[11px] sm:text-xs md:text-sm font-semibold tracking-wide text-gray-200 uppercase drop-shadow">
+                    {currentPromo?.subtitle || "on The Crimson Bloodline"}
                   </p>
-                  <button
-                    onClick={() => navigate(dynamicPromo?.buttonLink || "/shop/catalog")}
-                    className="mt-3 md:mt-5 px-4 md:px-8 py-1.5 md:py-2.5 bg-[#DD1215] hover:bg-red-700 text-white text-[10px] sm:text-xs md:text-sm font-semibold uppercase tracking-wide transition font-dmsans cursor-pointer"
-                  >
-                    {dynamicPromo?.buttonText || "Buy Now"}
-                  </button>
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const link = currentPromo?.buttonLink || "/catalog";
+                        if (link.startsWith("http")) {
+                          window.location.href = link;
+                        } else {
+                          navigate(link);
+                        }
+                      }}
+                      className="px-4 sm:px-5 py-1.5 sm:py-2 bg-[#DD1215] hover:bg-red-700 text-white text-xs font-bold uppercase tracking-wider rounded transition cursor-pointer shadow-sm"
+                    >
+                      {currentPromo?.buttonText || "Buy Now"}
+                    </button>
+                  </div>
                 </div>
               </div>
+
+              {/* Navigation button right */}
+              <button
+                type="button"
+                onClick={() => setPromoIndex((prev) => (prev + 1) % promoList.length)}
+                aria-label="Next promo"
+                className="w-8 h-8 md:w-9 md:h-9 bg-white border border-gray-300 rounded hover:border-gray-500 hover:text-black text-gray-500 flex items-center justify-center transition shadow-sm shrink-0 cursor-pointer"
+              >
+                <ChevronRight size={18} />
+              </button>
             </div>
           </section>
         );

@@ -196,7 +196,7 @@ export const fetchProductsByCategory = async (categorySlug) => {
   }
   try {
     const { data } = await axios.get(
-      `${BACKEND_URL}/shop/products/public/category/${cleanSlug}`
+      `${BACKEND_URL}/shop/products/public/category/${encodeURIComponent(cleanSlug)}`
     );
     const list = Array.isArray(data?.data) ? data.data : [];
     if (list.length > 0) {
@@ -208,14 +208,30 @@ export const fetchProductsByCategory = async (categorySlug) => {
   // Fallback: search in all products
   try {
     const all = await fetchProducts();
+    const normalize = (s) => String(s || "").toLowerCase().replace(/[-\s_]/g, "");
+    const normalizedTarget = normalize(cleanSlug);
+
     return all.filter((p) => {
-      const c = String(p.category || "").toLowerCase();
-      const cn = String(p.categoryName || "").toLowerCase();
+      const c = String(p.category || "").toLowerCase().trim();
+      const cn = String(p.categoryName || "").toLowerCase().trim();
+      const cid = String(p.id || p._id || p.categoryId || "").toLowerCase().trim();
+      const catSlug = String(p.categorySlug || "").toLowerCase().trim();
+
+      const normC = normalize(c);
+      const normCn = normalize(cn);
+      const normCatSlug = normalize(catSlug);
+
       return (
         c === cleanSlug ||
         cn === cleanSlug ||
-        (cleanSlug.length > 2 && c.includes(cleanSlug)) ||
-        (c.length > 2 && cleanSlug.includes(c))
+        catSlug === cleanSlug ||
+        cid === cleanSlug ||
+        normC === normalizedTarget ||
+        normCn === normalizedTarget ||
+        normCatSlug === normalizedTarget ||
+        (normalizedTarget.length >= 2 && (normC.includes(normalizedTarget) || normalizedTarget.includes(normC))) ||
+        (normalizedTarget.length >= 2 && (normCn.includes(normalizedTarget) || normalizedTarget.includes(normCn))) ||
+        (normalizedTarget.length >= 2 && (normCatSlug.includes(normalizedTarget) || normalizedTarget.includes(normCatSlug)))
       );
     });
   } catch (err) {

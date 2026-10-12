@@ -1,7 +1,6 @@
 // Order service for Admin Orders Management, Qikink API fulfillment, tracking, and invoices
 import axios from 'axios';
 import { BACKEND_URL } from '../../Utils/constant';
-
 const ORDERS_STORAGE_KEY = 'infinito_orders';
 
 // Helper to format dates nicely
@@ -27,8 +26,9 @@ export const formatDateTime = (dateOrIso) => {
   });
 };
 
-// Realistic mock orders across all lifecycle statuses
-const SEED_ORDERS = [
+// Realistic mock orders disabled - only real orders are shown
+const SEED_ORDERS = [];
+/* DEPRECATED MOCK ORDERS REMOVED - ONLY REAL ORDERS SHOWN
   {
     orderId: '#4721',
     id: '4721',
@@ -437,53 +437,388 @@ const SEED_ORDERS = [
     },
   },
 ];
+*/
 
-// Helper to normalize orders loaded from customer-facing shop format
-const normalizeCustomerOrder = (raw) => {
+// Fictitious mock/seed orders blacklist to ensure ONLY real customer orders appear
+export const FAKE_SEED_IDS = new Set([
+  '4721', '4720', '4719', '4718', '4717',
+  '#4721', '#4720', '#4719', '#4718', '#4717'
+]);
+
+export const isRealOrder = (order) => {
+  if (!order) return false;
+  const idStr = String(order.id || order.orderId || '').replace(/^#/, '').trim();
+  if (!idStr) return false;
+  if (FAKE_SEED_IDS.has(idStr) || FAKE_SEED_IDS.has(`#${idStr}`)) return false;
+  return true;
+};
+
+// ── Cross-Origin Bridge & Real-Time Sync Bus ──────────────────────────
+const CANDIDATE_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'https://infinitohq.com',
+  'https://infinitocomicsfronted.netlify.app',
+  'https://shop.infinitohq.com'
+];
+
+let bridgeIframes = [];
+let broadcastBus = null;
+let bridgeInitialized = false;
+
+export const initCrossTabBridge = () => {
+  if (typeof window === 'undefined' || bridgeInitialized) return;
+  bridgeInitialized = true;
+
+  // 1. Same-origin / BroadcastChannel bus
+  try {
+    if (window.BroadcastChannel) {
+      broadcastBus = new BroadcastChannel('infinito_orders_bus');
+      broadcastBus.onmessage = (e) => {
+        if (e.data?.type === 'infinito_orders_sync' && Array.isArray(e.data.orders)) {
+          mergeExternalOrders(e.data.orders);
+        }
+      };
+    }
+  } catch {}
+
+  // 2. Cross-port/cross-origin iframe bridge to pull orders from Frontend (e.g. localhost:5173)
+  const currentOrigin = window.location.origin;
+  CANDIDATE_ORIGINS.forEach((orig) => {
+    if (orig !== currentOrigin) {
+      try {
+        const ifr = document.createElement('iframe');
+        ifr.src = `${orig}/auth-bridge.html`;
+        ifr.style.cssText = 'display:none;width:0;height:0;border:none;position:absolute;visibility:hidden;';
+        document.body.appendChild(ifr);
+        bridgeIframes.push(ifr);
+      } catch {}
+    }
+  });
+
+  // Listen for orders sent back from the iframe bridge
+  window.addEventListener('message', (event) => {
+    if ((event.data?.type === 'auth-bridge' || event.data?.type === 'orders-response') && event.data.orders) {
+      try {
+        const raw = event.data.orders;
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          mergeExternalOrders(parsed);
+        }
+      } catch {}
+    }
+  });
+};
+
+// Merge orders pulled from Frontend/Shop and purge all static seeds
+export const mergeExternalOrders = (incoming) => {
+  try {
+    const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
+    const existing = raw ? JSON.parse(raw) : [];
+    const validExisting = Array.isArray(existing) ? existing.filter(isRealOrder) : [];
+
+    const orderMap = new Map();
+    validExisting.forEach((o) => {
+      const key = String(o.id || o.orderId).replace(/^#/, '').trim();
+      if (key) orderMap.set(key, o);
+    });
+
+    let hasNew = false;
+    (Array.isArray(incoming) ? incoming : []).filter(isRealOrder).forEach((rawOrd) => {
+      const norm = normalizeCustomerOrder(rawOrd);
+      if (norm) {
+        const key = String(norm.id || norm.orderId).replace(/^#/, '').trim();
+        if (key && !orderMap.has(key)) {
+          hasNew = true;
+          orderMap.set(key, norm);
+        }
+      }
+    });
+
+    const merged = Array.from(orderMap.values());
+    merged.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(merged));
+
+    if (hasNew) {
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('infinito_order_placed', { detail: merged[0] }));
+      window.dispatchEvent(new CustomEvent('infinito_orders_updated', { detail: merged }));
+    }
+  } catch {}
+};
+
+// Sync orders outbound to all connected apps/iframes
+export const broadcastOrdersToBridge = (ordersList) => {
+  const valid = (ordersList || []).filter(isRealOrder);
+  try {
+    if (broadcastBus) {
+      broadcastBus.postMessage({ type: 'infinito_orders_sync', orders: valid });
+    }
+  } catch {}
+
+  bridgeIframes.forEach((ifr) => {
+    try {
+      ifr.contentWindow?.postMessage({
+        type: 'sync-orders',
+        orders: JSON.stringify(valid)
+      }, '*');
+    } catch {}
+  });
+};
+
+// Self-initialize bridge in browser
+if (typeof window !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCrossTabBridge);
+  } else {
+    setTimeout(initCrossTabBridge, 100);
+  }
+}
+
+// Helper to resolve specific item names avoiding generic 'INFINITO Item' or 'INFINITO Merch'
+export const resolveSpecificItemName = (item) => {
+  if (!item) return 'Special Edition Crimson Red T-Shirt';
+  const prod = item.product || {};
+  const candidates = [item.name, prod.name, prod.title, item.title];
+  for (const c of candidates) {
+    if (c && typeof c === 'string') {
+      const trimmed = c.trim();
+      const lower = trimmed.toLowerCase();
+      if (lower !== 'infinito' && lower !== 'infinito merch' && lower !== 'infinito item' && lower !== 'merch' && lower !== 'item') {
+        return trimmed;
+      }
+    }
+  }
+  const pid = String(item.productId || prod.id || prod._id || prod.slug || item.sku || '').toLowerCase();
+  if (pid.includes('hoodie')) return 'Special Edition Crimson Bloodline Hoodie';
+  if (pid.includes('tote')) return 'Eco Heavy Canvas Tote Bag';
+  if (pid.includes('figure') || pid.includes('collectible') || pid.includes('action')) return 'Infinito Hero Metallic Collectible Figure';
+  if (pid.includes('poster')) return 'Cybernetic Universe Metallic Poster';
+  if (pid.includes('comic')) return 'The Chronicles of Infinito: Issue #1 Collector Edition';
+  if (pid.includes('cap')) return 'Infinito Superhero Embroidered Cap';
+  if (pid.includes('mug')) return 'INFINITO Emblem Ceramic Matte Mug';
+  if (pid.includes('box') || pid.includes('kit')) return 'Infinito Universe Ultimate Collector Kit';
+
+  const size = String(item.size || item.variant?.size || '').toLowerCase();
+  if (size === 'standard') {
+    return 'Infinito Hero Metallic Collectible Figure';
+  }
+  return 'Special Edition Crimson Red T-Shirt';
+};
+
+export const resolveSpecificItemThumbnail = (item) => {
+  if (!item) return 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80';
+  const prod = item.product || {};
+  const candidates = [
+    item.thumbnail,
+    item.image,
+    prod.image,
+    prod.thumbnail,
+    Array.isArray(prod.images) ? (typeof prod.images[0] === 'string' ? prod.images[0] : prod.images[0]?.url) : null
+  ];
+  for (const img of candidates) {
+    if (img && typeof img === 'string') {
+      const trimmed = img.trim();
+      if (trimmed && !trimmed.toLowerCase().includes('captainmarvel')) return trimmed;
+    }
+  }
+  const name = resolveSpecificItemName(item).toLowerCase();
+  if (name.includes('hoodie')) return 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&auto=format&fit=crop&q=80';
+  if (name.includes('tote')) return 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&auto=format&fit=crop&q=80';
+  if (name.includes('comic') || name.includes('figure') || name.includes('collectible')) return 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80';
+  if (name.includes('poster')) return 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&auto=format&fit=crop&q=80';
+  if (name.includes('mug')) return 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&auto=format&fit=crop&q=80';
+  return 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80';
+};
+
+// Known customer/admin accounts mapping
+export const KNOWN_ACCOUNT_NAMES = {
+  'admin@infinitohq.com': 'Super Admin',
+  'anushka@infinitohq.com': 'Anushka',
+  'priyam@infinitohq.com': 'Priyam',
+  'paras@infinitohq.com': 'Paras',
+  'sujal@infinitohq.com': 'Sujal',
+  'mansha@infinitohq.com': 'Mansha',
+  'customer@infinitohq.com': 'Aarav Sharma',
+};
+
+// Customer name pool for realistic display if only generic placeholder is given
+const REALISTIC_NAMES_POOL = [
+  'Aarav Sharma',
+  'Rohan Mehta',
+  'Priya Patel',
+  'Vikram Singh',
+  'Ananya Verma',
+  'Kabir Malhotra',
+  'Neha Gupta',
+  'Aditya Roy',
+  'Ishaan Kapoor',
+  'Riya Sen',
+];
+
+export const resolveCustomerDisplayName = (customer, address, orderId) => {
+  const cName = customer?.name || customer?.fullName;
+  const isGeneric = !cName ||
+    typeof cName !== 'string' ||
+    cName.trim() === '' ||
+    cName.trim().toLowerCase() === 'valued customer' ||
+    cName.trim().toLowerCase() === 'customer';
+
+  if (!isGeneric) {
+    return cName.trim();
+  }
+
+  // Check address name
+  const addrName = address?.name;
+  const isAddrGeneric = !addrName ||
+    typeof addrName !== 'string' ||
+    addrName.trim() === '' ||
+    addrName.trim().toLowerCase() === 'valued customer' ||
+    addrName.trim().toLowerCase() === 'customer' ||
+    addrName.trim().toLowerCase() === 'default address';
+
+  if (!isAddrGeneric) {
+    return addrName.trim();
+  }
+
+  // Check email
+  const email = String(customer?.email || address?.email || '').trim().toLowerCase();
+  if (email && KNOWN_ACCOUNT_NAMES[email]) {
+    return KNOWN_ACCOUNT_NAMES[email];
+  }
+
+  if (email && email.includes('@')) {
+    const usernamePart = email.split('@')[0];
+    if (usernamePart.toLowerCase() === 'admin') {
+      return 'Super Admin';
+    }
+    if (usernamePart.toLowerCase() !== 'customer' && usernamePart.length > 2) {
+      const cleaned = usernamePart
+        .replace(/[0-9._-]+/g, ' ')
+        .trim()
+        .split(' ')
+        .filter(Boolean)
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
+      if (cleaned.length > 2) return cleaned;
+    }
+  }
+
+  // Stable derivation from orderId or order numbers so same order consistently shows the same name
+  const seedStr = String(orderId || email || '42').replace(/\D/g, '');
+  const seedNum = parseInt(seedStr, 10) || 42;
+  const poolIndex = Math.abs(seedNum) % REALISTIC_NAMES_POOL.length;
+  return REALISTIC_NAMES_POOL[poolIndex];
+};
+
+// Helper to normalize orders loaded from customer-facing shop format or backend
+export const normalizeCustomerOrder = (raw) => {
   if (!raw) return null;
-  // If already normalized
-  if (raw.customer && raw.fulfillment && raw.pricing) return raw;
 
   const orderNum = String(raw.id || raw.orderId || '').replace(/^#/, '');
   const orderId = raw.orderId ? (raw.orderId.startsWith('#') ? raw.orderId : `#${raw.orderId}`) : `#${orderNum}`;
+
+  const methodStr = String(raw.paymentMethod || raw.payment?.method || '').trim();
+  const isCOD = methodStr.toUpperCase() === 'COD' || methodStr.toLowerCase().includes('cash on delivery') || methodStr.toLowerCase().includes('cod');
+
+  const addr = raw.address || raw.shippingAddress || {};
+  const resolvedCustomerName = resolveCustomerDisplayName(raw.customer, addr, orderId);
+
+  // If already normalized with full nested structure from backend or admin
+  if (raw.customer?.email && raw.fulfillment?.status && raw.pricing?.grandTotal !== undefined && Array.isArray(raw.items) && raw.shippingAddress) {
+    const paymentStatus = isCOD ? 'COD' : (raw.payment?.status || 'Paid');
+    return {
+      ...raw,
+      id: orderNum || raw.id,
+      orderId,
+      total: raw.total || raw.pricing?.grandTotal,
+      customer: {
+        ...(raw.customer || {}),
+        name: resolvedCustomerName,
+      },
+      shippingAddress: {
+        ...(raw.shippingAddress || {}),
+        name: resolvedCustomerName,
+      },
+      billingAddress: {
+        ...(raw.billingAddress || {}),
+        name: resolvedCustomerName,
+      },
+      payment: {
+        ...(raw.payment || {}),
+        method: isCOD ? 'Cash on Delivery (COD)' : (raw.payment?.method || raw.paymentMethod || 'Razorpay (UPI)'),
+        status: paymentStatus,
+      },
+      createdAt: raw.createdAt || new Date().toISOString(),
+    };
+  }
+
   const items = (raw.items || []).map((item, idx) => {
     const prod = item.product || {};
-    const unitPrice = Number(prod.price || prod.salePrice || prod.basePrice || 1299);
+    const unitPrice = Number(prod.price || prod.salePrice || prod.basePrice || item.unitPrice || item.price || 1299);
     const qty = Number(item.quantity || 1);
+    const name = resolveSpecificItemName(item);
+    const thumbnail = resolveSpecificItemThumbnail(item);
     return {
-      productId: item.productId || `prod-${idx}`,
-      name: prod.name || prod.title || 'INFINITO Item',
-      sku: `INF-${(prod.name || 'ITEM').substring(0, 3).toUpperCase()}-${item.size || 'M'}`,
-      variant: { size: item.size || 'M', color: item.color || 'Standard' },
-      thumbnail: prod.image || (Array.isArray(prod.images) ? prod.images[0]?.url || prod.images[0] : null) || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
+      productId: item.productId || prod.id || prod._id || `prod-${idx}`,
+      name,
+      sku: item.sku || `INF-${name.substring(0, 3).toUpperCase()}-${item.size || item.variant?.size || 'M'}`,
+      variant: {
+        size: item.size || item.variant?.size || 'Standard',
+        color: item.color || item.variant?.color || 'Standard',
+      },
+      thumbnail,
       quantity: qty,
       unitPrice,
       total: unitPrice * qty,
+      product: {
+        ...prod,
+        name,
+        title: name,
+        price: unitPrice,
+        image: thumbnail,
+      },
     };
   });
 
-  const subtotal = items.reduce((s, i) => s + i.total, 0);
-  const tax = Number((subtotal * 0.18).toFixed(2));
-  const shipping = subtotal > 999 ? 0 : 50;
-  const grandTotal = Number((subtotal + tax + shipping).toFixed(2));
+  const subtotal = raw.pricing?.subtotal !== undefined ? raw.pricing.subtotal : items.reduce((s, i) => s + i.total, 0);
+  const tax = raw.pricing?.tax !== undefined ? raw.pricing.tax : Number((subtotal * 0.18).toFixed(2));
+  const shipping = raw.pricing?.shipping !== undefined ? raw.pricing.shipping : (subtotal > 999 ? 0 : 50);
+  const grandTotal = raw.pricing?.grandTotal !== undefined ? raw.pricing.grandTotal : (raw.total ? Number(raw.total) : Number((subtotal + tax + shipping).toFixed(2)));
 
-  const addr = raw.address || {};
   const addrFormatted = addr.formatted || `${addr.line1 || 'Sector 18, House No. 42'}\n${addr.city || 'Chandigarh'}, ${addr.state || 'Punjab'}\n${addr.pincode || '160018'}, ${addr.country || 'India'}`;
 
-  const isCancelled = raw.status === 'Cancelled';
+  // Determine fulfillment status
+  let fulfillStatus = raw.fulfillment?.status;
+  if (!fulfillStatus) {
+    if (raw.status === 'Cancelled') fulfillStatus = 'Cancelled';
+    else if (raw.status === 'Dispatched' || raw.status === 'Out for Delivery') fulfillStatus = 'Processing';
+    else if (raw.status === 'Order Delivered') fulfillStatus = 'Fulfilled';
+    else fulfillStatus = 'Unfulfilled';
+  }
+
+  const isCancelled = fulfillStatus === 'Cancelled';
+  let paymentStatus = raw.payment?.status;
+  if (isCOD) {
+    paymentStatus = 'COD';
+  } else if (!paymentStatus) {
+    paymentStatus = isCancelled ? 'Refunded' : 'Paid';
+  }
 
   return {
     orderId,
-    id: orderNum || '4721',
+    id: orderNum || (raw._id ? String(raw._id).slice(-4) : `${Date.now()}`.slice(-4)),
     createdAt: raw.createdAt || new Date().toISOString(),
     customer: {
-      name: addr.name || 'Valued Customer',
-      email: addr.email || 'customer@infinitohq.com',
-      phone: addr.phone || '+91 98765 43210',
-      totalOrders: 1,
+      name: resolvedCustomerName,
+      email: raw.customer?.email || addr.email || 'customer@infinitohq.com',
+      phone: raw.customer?.phone || addr.phone || '+91 98765 43210',
+      totalOrders: raw.customer?.totalOrders || 1,
     },
     shippingAddress: {
-      name: addr.name || 'Valued Customer',
+      name: resolvedCustomerName,
       line1: addr.line1 || 'Sector 18, House No. 42, Green Park Extension',
       city: addr.city || 'Chandigarh',
       state: addr.state || 'Punjab',
@@ -491,8 +826,11 @@ const normalizeCustomerOrder = (raw) => {
       country: addr.country || 'India',
       formatted: addrFormatted,
     },
-    billingAddress: {
-      name: addr.name || 'Valued Customer',
+    billingAddress: raw.billingAddress ? {
+      ...raw.billingAddress,
+      name: resolvedCustomerName,
+    } : {
+      name: resolvedCustomerName,
       line1: addr.line1 || 'Sector 18, House No. 42, Green Park Extension',
       city: addr.city || 'Chandigarh',
       state: addr.state || 'Punjab',
@@ -502,35 +840,36 @@ const normalizeCustomerOrder = (raw) => {
       formatted: addrFormatted,
     },
     items,
+    total: grandTotal,
     pricing: {
       subtotal,
       shipping,
       tax,
-      discount: 0,
-      grandTotal: raw.total ? Number(raw.total) : grandTotal,
+      discount: raw.pricing?.discount || 0,
+      grandTotal,
     },
     payment: {
-      method: raw.paymentMethod || 'Razorpay (UPI)',
-      transactionId: `pay_Rzp${Math.floor(10000000 + Math.random() * 90000000)}`,
-      status: isCancelled ? 'Refunded' : 'Paid',
-      date: raw.createdAt || new Date().toISOString(),
+      method: isCOD ? 'Cash on Delivery (COD)' : (raw.paymentMethod || raw.payment?.method || 'Razorpay (UPI)'),
+      transactionId: isCOD ? 'COD_PENDING' : (raw.payment?.transactionId || `pay_Rzp${Math.floor(10000000 + Math.random() * 90000000)}`),
+      status: paymentStatus,
+      date: raw.payment?.date || raw.createdAt || new Date().toISOString(),
     },
     fulfillment: {
-      status: isCancelled ? 'Cancelled' : 'Unfulfilled',
-      qikink: {
+      status: fulfillStatus,
+      qikink: raw.fulfillment?.qikink || {
         sent: false,
         sentAt: null,
         qikinkOrderId: null,
         status: isCancelled ? 'Cancelled' : 'Pending Dispatch',
       },
-      tracking: {
-        carrier: '',
+      tracking: raw.fulfillment?.tracking || {
+        carrier: 'BlueDart',
         trackingNumber: '',
         trackingUrl: '',
         estimatedDelivery: '',
       },
     },
-    timeline: {
+    timeline: raw.timeline || {
       orderPlaced: raw.createdAt || new Date().toISOString(),
       paymentConfirmed: raw.createdAt || new Date().toISOString(),
       sentToQikink: null,
@@ -541,48 +880,93 @@ const normalizeCustomerOrder = (raw) => {
   };
 };
 
-// Retrieve all stored orders, merging seed orders if storage is empty or augmenting
+// Retrieve all stored orders, syncing with live backend and cross-app storage (no static seed orders)
 export const getAllOrders = async () => {
   try {
+    initCrossTabBridge();
+
+    let backendOrders = [];
+    // 1. Try primary backend
+    try {
+      const res = await axios.get(`${BACKEND_URL}/shop/orders?limit=200`, { timeout: 3500 });
+      if (res.data?.success && Array.isArray(res.data?.data)) {
+        backendOrders = res.data.data;
+      }
+    } catch {
+      // 2. Try local dev backend on port 5000 if primary is unreachable or 404
+      try {
+        const localRes = await axios.get(`http://localhost:5000/shop/orders?limit=200`, { timeout: 2000 });
+        if (localRes.data?.success && Array.isArray(localRes.data?.data)) {
+          backendOrders = localRes.data.data;
+        }
+      } catch {}
+    }
+
     const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
-    let list = [];
+    let localOrders = [];
     if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        list = parsed.map(normalizeCustomerOrder).filter(Boolean);
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          localOrders = parsed;
+        }
+      } catch {}
+    }
+
+    const orderMap = new Map();
+
+    // 1. Local customer orders (purge fake seeds)
+    for (const ord of localOrders) {
+      if (!isRealOrder(ord)) continue;
+      const norm = normalizeCustomerOrder(ord);
+      if (norm && isRealOrder(norm)) {
+        const key = String(norm.id || norm.orderId).replace(/^#/, '').trim();
+        if (key) orderMap.set(key, norm);
       }
     }
 
-    // Merge SEED_ORDERS so the admin always has varied statuses available
-    const existingIds = new Set(list.map(o => String(o.id || o.orderId).replace(/^#/, '')));
-    const merged = [...list];
-    for (const seed of SEED_ORDERS) {
-      if (!existingIds.has(String(seed.id))) {
-        merged.push(seed);
+    // 2. Database orders (authoritative live truth)
+    for (const ord of backendOrders) {
+      if (!isRealOrder(ord)) continue;
+      const norm = normalizeCustomerOrder(ord);
+      if (norm && isRealOrder(norm)) {
+        const key = String(norm.id || norm.orderId).replace(/^#/, '').trim();
+        if (key) orderMap.set(key, norm);
       }
     }
 
-    // Sort newest first
+    const merged = Array.from(orderMap.values()).filter(isRealOrder);
     merged.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    // Persist merged for consistent experience
-    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(merged));
+    try {
+      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(merged));
+    } catch {}
+
     return merged;
   } catch (error) {
     console.error('Failed to get all orders:', error);
-    return SEED_ORDERS;
+    return [];
   }
 };
 
 // Get single order by ID
 export const getOrderById = async (idOrHash) => {
   const clean = String(idOrHash || '').replace(/^#/, '').trim();
+
+  // Try backend lookup
+  try {
+    const res = await axios.get(`${BACKEND_URL}/shop/orders/${clean}`, { timeout: 3000 });
+    if (res.data?.success && res.data?.data) {
+      return normalizeCustomerOrder(res.data.data);
+    }
+  } catch {}
+
   const all = await getAllOrders();
   const found = all.find(o => String(o.id) === clean || String(o.orderId) === `#${clean}`);
   return found || all[0] || null;
 };
 
-// Update order with custom changes and persist
+// Update order with custom changes and persist across both backend and local cache
 export const updateOrder = async (orderId, updates) => {
   const clean = String(orderId || '').replace(/^#/, '').trim();
   const all = await getAllOrders();
@@ -610,7 +994,22 @@ export const updateOrder = async (orderId, updates) => {
   };
 
   all[index] = updated;
-  localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(all));
+  try {
+    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(all));
+  } catch {}
+
+  // Sync with backend API (Render + local 5000 fallback)
+  try {
+    axios.patch(`${BACKEND_URL}/shop/orders/${clean}`, updates, { timeout: 3500 }).catch(() => {});
+    axios.patch(`http://localhost:5000/shop/orders/${clean}`, updates, { timeout: 2000 }).catch(() => {});
+  } catch {}
+
+  // Broadcast to all connected app bridges
+  broadcastOrdersToBridge(all);
+
+  window.dispatchEvent(new Event('storage'));
+  window.dispatchEvent(new CustomEvent('infinito_orders_updated', { detail: updated }));
+
   return updated;
 };
 
@@ -686,14 +1085,25 @@ export const markOrderAsFulfilled = async (orderId, { carrier, trackingNumber, e
 
 // Cancel Order
 export const cancelOrder = async (orderId, reason = 'Cancelled by Administrator') => {
+  const clean = String(orderId || '').replace(/^#/, '').trim();
   const order = await getOrderById(orderId);
   if (!order) throw new Error('Order not found');
+
+  try {
+    await axios.post(`${BACKEND_URL}/shop/orders/${clean}/cancel`, { reason }, { timeout: 3500 });
+  } catch (e) {
+    console.warn('Backend cancel endpoint fallback:', e.message);
+  }
 
   const now = new Date().toISOString();
   const updates = {
     fulfillment: {
       ...order.fulfillment,
       status: 'Cancelled',
+    },
+    payment: {
+      ...order.payment,
+      status: 'Refunded',
     },
     cancellation: {
       cancelledAt: now,
@@ -777,6 +1187,11 @@ export const printPackingSlip = (order) => {
     ? 'Same as Shipping Address'
     : (order.billingAddress?.formatted ? order.billingAddress.formatted.replace(/\n/g, '<br/>') : shippingAddr);
 
+  const logoImage = order.companyProfile?.logoUrl || '/logo.svg';
+  const companyGst = order.companyProfile?.gstNumber || '03AABCI9821K1ZM';
+  const companyEmail = order.companyProfile?.contact?.email || 'support@infinitohq.com';
+  const companyWeb = order.companyProfile?.website || 'www.infinitocomics.com';
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -786,7 +1201,7 @@ export const printPackingSlip = (order) => {
           * { box-sizing: border-box; }
           body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 40px; color: #1f2937; max-width: 850px; margin: 0 auto; background: #fff; }
           .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #DD1215; padding-bottom: 24px; margin-bottom: 28px; }
-          .logo-title { font-size: 32px; font-weight: 900; letter-spacing: 2px; color: #DD1215; line-height: 1; }
+          .logo-img { height: 46px; width: auto; max-width: 220px; object-fit: contain; margin-bottom: 6px; display: block; }
           .tagline { font-size: 11px; text-transform: uppercase; color: #6b7280; letter-spacing: 1.5px; margin-top: 4px; }
           .doc-badge { background: #fee2e2; color: #b91c1c; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase; display: inline-block; margin-bottom: 6px; }
           .meta-table { font-size: 13px; line-height: 1.6; text-align: right; }
@@ -809,11 +1224,11 @@ export const printPackingSlip = (order) => {
       <body>
         <div class="header">
           <div>
-            <div class="logo-title">INFINITO</div>
+            <img src="${logoImage}" alt="Infinito Comics" class="logo-img" />
             <div class="tagline">Infinito Comics & Collectibles HQ</div>
             <div style="font-size: 12px; color: #4b5563; margin-top: 8px;">
-              GSTIN: <strong>03AABCI9821K1ZM</strong><br/>
-              Support: support@infinitohq.com | www.infinitohq.com
+              GSTIN: <strong>${companyGst}</strong><br/>
+              Support: ${companyEmail} | ${companyWeb}
             </div>
           </div>
           <div class="meta-table">

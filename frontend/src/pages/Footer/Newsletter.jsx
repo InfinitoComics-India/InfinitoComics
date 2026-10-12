@@ -1,24 +1,18 @@
 import React, { useState, useEffect } from "react";
 import NewsletterSectionShimmer from "../../shimmer/landingPageShimmer/NewsletterSectionShimmer";
+<<<<<<< HEAD
 import bgimage from "../../../assets/Images/Newsletter/Newsletter.png";
+=======
+>>>>>>> main
 
 const NewsletterSection = () => {
   const [loading, setLoading] = useState(true);
-  const [email, setEmail] = useState("");
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 2400);
+
     return () => clearTimeout(timer);
   }, []);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!email) return;
-
-    // Add your newsletter submission logic here
-    console.log("Subscribed:", email);
-    setEmail("");
-  };
 
   if (loading) return <NewsletterSectionShimmer />;
 
@@ -29,37 +23,28 @@ const NewsletterSection = () => {
         backgroundImage: `url(${bgimage})`,
       }}
     >
-      {/* Container Alignment */}
       <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 md:px-12">
-        <div className="w-full max-w-lg text-white">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-wide uppercase mb-2">
+        <div className="flex flex-col items-start justify-center text-white">
+          <h2 className="text-3xl sm:text-4xl font-black mb-4 tracking-widest">
             STAY UPDATED
           </h2>
 
-          <p className="text-gray-200 text-sm sm:text-base font-normal mb-6">
+          <p className="text-base sm:text-xl mb-6 max-w-2xl">
             Get the latest news and updates with our newsletter!
           </p>
 
-          {/* Input & Button Form */}
-          <form
-            onSubmit={handleSubmit}
-            className="flex w-full max-w-md shadow-lg"
-          >
+          <form className="flex w-full max-w-md">
             <input
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              required
-              className="w-full min-w-0 px-4 py-3 bg-white text-gray-800 placeholder-gray-400 text-sm focus:outline-none"
+              placeholder="Join Us, Write your mail"
+              className="flex-1 min-w-0 px-4 py-3 rounded-l-md focus:outline-none text-black placeholder-gray-500 bg-white/90"
             />
 
             <button
               type="submit"
-              className="bg-[#d01824] hover:bg-[#b0131d] text-white font-bold text-xs sm:text-sm tracking-wider uppercase px-6 py-3 flex items-center justify-center gap-1 shrink-0 transition-colors duration-200"
+              className="bg-red-600 text-white px-5 sm:px-6 py-3 rounded-r-md font-bold tracking-wider hover:bg-red-700 transition"
             >
-              <span>JOIN NOW</span>
-              <span className="text-xs">&gt;</span>
+              JOIN NOW!
             </button>
           </form>
         </div>

@@ -45,18 +45,37 @@ const AnalyticsDashboard = () => {
 
   useEffect(() => {
     loadAnalytics();
+
+    const handleUpdate = () => {
+      loadAnalytics(true);
+    };
+
+    window.addEventListener('storage', handleUpdate);
+    window.addEventListener('infinito_order_placed', handleUpdate);
+    window.addEventListener('infinito_orders_updated', handleUpdate);
+
+    const interval = setInterval(() => {
+      loadAnalytics(true);
+    }, 15000);
+
+    return () => {
+      window.removeEventListener('storage', handleUpdate);
+      window.removeEventListener('infinito_order_placed', handleUpdate);
+      window.removeEventListener('infinito_orders_updated', handleUpdate);
+      clearInterval(interval);
+    };
   }, [salesDateRange]);
 
-  const loadAnalytics = async () => {
+  const loadAnalytics = async (isBackground = false) => {
     try {
-      setLoading(true);
+      if (!isBackground) setLoading(true);
       const res = await getAnalyticsData(salesDateRange);
       setData(res);
     } catch (err) {
       console.error('Failed to load analytics:', err);
-      message.error('Failed to load analytics data');
+      if (!isBackground) message.error('Failed to load analytics data');
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
 

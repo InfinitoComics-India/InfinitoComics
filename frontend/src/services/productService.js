@@ -224,6 +224,9 @@ const resolveImageUrl = (url) => {
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
     return url;
   }
+  if (url.startsWith('/products/') || url.startsWith('/assets/') || url.startsWith('/banners/') || url.startsWith('/order-assets/')) {
+    return url;
+  }
   const base = BASE_URL?.replace(/\/$/, '') || 'https://infinitocomics-68cr.onrender.com';
   const path = url.startsWith('/') ? url : `/${url}`;
   return `${base}${path}`;
@@ -279,6 +282,7 @@ const mapBackendProduct = (p) => {
     description: p.description || p.shortDescription || 'Official INFINITO merchandise created with high-density premium materials.',
     images: allImgs,
     image: primaryImg,
+    variants: Array.isArray(p.variants) ? p.variants : [],
     sizes: sizes,
     specifications: specs,
     stock: p.stock ?? 10,

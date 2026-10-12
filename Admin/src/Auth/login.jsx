@@ -57,6 +57,14 @@ const LoginPage = () => {
       localStorage.setItem("authToken", token);
       if (admin) {
         localStorage.setItem("Admin", JSON.stringify(admin));
+        if (admin.shopAccess && admin.email) {
+          try {
+            const raw = localStorage.getItem("infinito_shop_allowed_employees");
+            const existing = raw ? JSON.parse(raw) : [];
+            const clean = Array.from(new Set([...existing, String(admin.email).toLowerCase().trim()]));
+            localStorage.setItem("infinito_shop_allowed_employees", JSON.stringify(clean));
+          } catch {}
+        }
       }
 
       setShowSuccess(true);
