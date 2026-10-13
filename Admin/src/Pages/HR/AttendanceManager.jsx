@@ -142,8 +142,8 @@ const AttendanceManager = () => {
             <div className="bg-white border rounded-lg px-5 py-3 flex flex-wrap items-center gap-3">
               <div className="flex flex-col gap-0.5">
                 <label className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Date</label>
-                <input type="date" value={selDate} max={isoDate(now)} onChange={e => setSelDate(e.target.value)}
-                  className="border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-[#DD1215] rounded" max={todayStr()}/>
+                <input type="date" value={selDate} max={todayStr()} onChange={e => setSelDate(e.target.value)}
+                  className="border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-[#DD1215] rounded"/>
               </div>
               <div className="flex items-end gap-2 flex-wrap">
                 {last7.slice(0,6).map(d => {
