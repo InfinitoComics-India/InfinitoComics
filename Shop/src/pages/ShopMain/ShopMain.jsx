@@ -35,13 +35,27 @@ const ShopMain = () => {
     } catch { }
     return [
       {
-        id: "default-promo",
+        id: "promo-1",
         headline: "35% off",
         subtitle: "on The Crimson Bloodline",
+        badgeText: "LIMITED EDITION DROP",
+        discountCode: "CRIMSON35",
         buttonText: "Buy Now",
         buttonLink: "/catalog",
         bgImageUrl: promoBanner,
         bgColor: "#800000",
+        isActive: true,
+      },
+      {
+        id: "promo-2",
+        headline: "FLAT 25% OFF",
+        subtitle: "on ALL COMIC BOOKS & PRINTS",
+        badgeText: "GRAPHIC NOVEL SPECIAL",
+        discountCode: "INFINITOVIP",
+        buttonText: "Explore Now",
+        buttonLink: "/catalog",
+        bgImageUrl: "/products/crimson_tshirt.jpg",
+        bgColor: "#111827",
         isActive: true,
       },
     ];
@@ -77,12 +91,12 @@ const ShopMain = () => {
     };
   }, []);
 
-  // Auto rotate promo banners every 7 seconds
+  // Auto rotate promo banners automatically every 4.5 seconds
   useEffect(() => {
-    if (promoBannersList.length <= 1) return;
+    if (!promoBannersList || promoBannersList.length <= 1) return;
     const timer = setInterval(() => {
       setPromoIndex((prev) => (prev + 1) % promoBannersList.length);
-    }, 7000);
+    }, 4500);
     return () => clearInterval(timer);
   }, [promoBannersList.length]);
 
@@ -163,7 +177,7 @@ const ShopMain = () => {
                       <img
                         src={bannerImg}
                         alt={currentPromo?.headline || "Promotional Banner"}
-                        className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none transition-all duration-300"
+                        className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none transition-all duration-300 scale-[1.08] min-w-full min-h-full"
                       />
                     )}
 

@@ -239,10 +239,23 @@ const MarketingDashboard = () => {
   const handleSaveHeroSlider = async () => {
     try {
       setSavingBanners(true);
-      await updateHeroSlider(heroSlides);
+      const res = await updateHeroSlider(heroSlides);
+      if (res) setBannersConfig(res);
       message.success('Hero Slider slides saved and synced with Shop frontend!');
     } catch (err) {
-      message.error('Failed to save hero slider');
+      console.error('Failed to save hero slider:', err);
+      try {
+        const safe = heroSlides.map((s, idx) => ({
+          ...s,
+          id: s.id || `slide-${idx + 1}`,
+          displayMode: 'custom_overlay',
+          isActive: s.isActive !== false,
+        }));
+        localStorage.setItem('infinito_shop_banners', JSON.stringify({ heroSlider: safe }));
+        message.success('Hero Slider slides saved successfully!');
+      } catch (fallbackErr) {
+        message.error('Failed to save hero slider');
+      }
     } finally {
       setSavingBanners(false);
     }
@@ -273,7 +286,7 @@ const MarketingDashboard = () => {
   };
 
   // ── Image File Compression Helper (avoids LocalStorage quota limits) ────
-  const compressImageFile = (file, maxWidth = 1600, maxHeight = 900, quality = 0.85) => {
+  const compressImageFile = (file, maxWidth = 1200, maxHeight = 600, quality = 0.70) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -885,7 +898,7 @@ const MarketingDashboard = () => {
                         <img
                           src={bg}
                           alt={currentSlide?.title || "Hero Slide Artwork"}
-                          className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none transition-all duration-300"
+                          className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none transition-all duration-300 scale-[1.08] min-w-full min-h-full"
                         />
                       ) : (
                         <div className="absolute inset-0 bg-gradient-to-r from-gray-950 via-[#1c0205] to-gray-950" />
@@ -935,50 +948,42 @@ const MarketingDashboard = () => {
                           : 'bg-gradient-to-r from-black/85 via-black/40 to-transparent'
                       }`} />
 
-                      {/* Text field and button displayed overlaid over the banner */}
+                      {/* Text field and button displayed overlaid over the banner matching Homepage Promo Banner */}
                       <div
-                        className={`relative z-10 max-w-[70%] sm:max-w-[60%] space-y-3 ${
+                        className={`relative z-10 max-w-[70%] sm:max-w-[60%] space-y-2 md:space-y-2.5 text-white ${
                           currentSlide?.alignment === 'right' ? 'ml-auto text-right' : currentSlide?.alignment === 'center' ? 'mx-auto text-center' : 'text-left'
                         }`}
                       >
+                        {/* Slide Badge Tag */}
                         <div className={`flex items-center gap-2 ${
                           currentSlide?.alignment === 'right' ? 'justify-end' : currentSlide?.alignment === 'center' ? 'justify-center' : 'justify-start'
                         }`}>
-                          <span className="text-[10px] font-black uppercase tracking-widest text-[#DD1215] bg-black/70 px-2.5 py-0.5 rounded backdrop-blur-sm">
-                            Slide #{previewSlideIdx + 1} {currentSlide?.isActive ? '• Active' : '• Inactive'}
+                          <span className="inline-block bg-black/75 text-[#DD1215] text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded backdrop-blur-sm border border-red-900/40">
+                            {currentSlide?.highlightText || `SLIDE #${previewSlideIdx + 1}`} {currentSlide?.isActive !== false ? '• ACTIVE' : '• INACTIVE'}
                           </span>
-                          {isArtworkMode && (
-                            <span className="text-[10px] font-semibold text-gray-300 bg-black/60 px-2 py-0.5 rounded">
-                              Full Artwork Mode
-                            </span>
-                          )}
                         </div>
 
-                        {!isArtworkMode ? (
-                          <>
-                            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-wider drop-shadow-md text-white font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] leading-tight">
-                              {renderHighlightedText(currentSlide?.headline || 'Hero Headline', currentSlide?.highlightText)}
-                            </h2>
-                            <p className="text-xs sm:text-sm uppercase tracking-wide text-gray-200 font-semibold max-w-md drop-shadow">
-                              {currentSlide?.subheading || 'Subheading description text'}
-                            </p>
-                            <div className={`pt-2 flex ${
-                              currentSlide?.alignment === 'right' ? 'justify-end' : currentSlide?.alignment === 'center' ? 'justify-center' : 'justify-start'
-                            }`}>
-                              <span className="inline-block px-7 py-2.5 bg-[#DD1215] text-white text-xs font-bold uppercase tracking-widest shadow-md transition font-dmsans rounded cursor-pointer">
-                                {currentSlide?.buttonText || 'Shop Now'}
-                              </span>
-                            </div>
-                          </>
-                        ) : (
-                          <div className={`pt-2 flex ${
-                            currentSlide?.alignment === 'right' ? 'justify-end' : currentSlide?.alignment === 'center' ? 'justify-center' : 'justify-start'
-                          }`}>
-                            <span className="inline-block px-5 py-2 bg-black/60 backdrop-blur text-white text-xs font-bold uppercase tracking-wider border border-white/20 rounded">
-                              {currentSlide?.buttonText || 'Shop Now'} (CTA Button Active)
-                            </span>
-                          </div>
-                        )}
+                        {/* Bold Headline (matching promo banner e.g. "35% off" / "MONTHLY DROP INCOMING") */}
+                        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight text-white drop-shadow-md font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif]">
+                          {renderHighlightedText(currentSlide?.headline || currentSlide?.title || 'Hero Headline', currentSlide?.highlightText)}
+                        </h2>
+
+                        {/* Subtitle / Subheading (matching promo banner e.g. "ON THE CRIMSON BLOODLINE") */}
+                        <p className="text-xs sm:text-sm md:text-base font-semibold tracking-wide text-gray-200 uppercase drop-shadow">
+                          {currentSlide?.subheading || currentSlide?.subtext || 'Only 500 pieces. Book the exclusive merchandise right now.'}
+                        </p>
+
+                        {/* Red CTA Button (matching promo banner e.g. "BUY NOW" / "SHOP NOW") */}
+                        <div className={`pt-2 flex ${
+                          currentSlide?.alignment === 'right' ? 'justify-end' : currentSlide?.alignment === 'center' ? 'justify-center' : 'justify-start'
+                        }`}>
+                          <button
+                            type="button"
+                            className="px-5 sm:px-6 py-2 sm:py-2.5 bg-[#DD1215] hover:bg-red-700 text-white text-xs md:text-sm font-bold uppercase tracking-wider rounded transition cursor-pointer shadow-md"
+                          >
+                            {currentSlide?.buttonText || 'Shop Now'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -1303,7 +1308,7 @@ const MarketingDashboard = () => {
                         <img
                           src={promoBg}
                           alt={currentPromo?.headline || "Promo Banner Artwork"}
-                          className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none transition-all duration-300"
+                          className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none transition-all duration-300 scale-[1.08] min-w-full min-h-full"
                         />
                       ) : (
                         <div
