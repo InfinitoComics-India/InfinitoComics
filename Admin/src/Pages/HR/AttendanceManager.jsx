@@ -23,22 +23,24 @@ const isoDate   = (d) => new Date(d).toISOString().split("T")[0];
 const labelDate = (d) => new Date(d).toLocaleDateString("en-IN", { day:"2-digit", month:"short" });
 
 const AttendanceManager = () => {
-  const now = new Date();
+  // Always use fresh date — don't cache 'now' at mount time
+  const getToday = () => new Date();
+  const todayStr = () => isoDate(getToday());
 
   const [tab,       setTab]      = useState("daily");
-  const [selDate,   setSelDate]  = useState(isoDate(now));
+  const [selDate,   setSelDate]  = useState(todayStr());
   const [dayRecords, setDayRecs] = useState([]);
   const [monthAll,  setMonthAll] = useState({ records: [], employees: [] });
-  const [year,      setYear]     = useState(now.getFullYear());
-  const [month,     setMonth]    = useState(now.getMonth() + 1);
+  const [year,      setYear]     = useState(new Date().getFullYear());
+  const [month,     setMonth]    = useState(new Date().getMonth() + 1);
   const [loading,   setLoading]  = useState(false);
   const [error,     setError]    = useState("");
   const [markModal, setMarkModal]= useState(null);
   const [markForm,  setMarkForm] = useState({ date:"", status:"present", note:"" });
   const [marking,   setMarking]  = useState(false);
-  const [drillEmp,  setDrillEmp] = useState(null); // { emp, rows }
+  const [drillEmp,  setDrillEmp] = useState(null);
 
-  // Last 7 quick-pick dates
+  // Last 7 quick-pick dates — recalculated fresh each render
   const last7 = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(); d.setDate(d.getDate() - (6 - i)); return d;
   });
@@ -98,7 +100,7 @@ const AttendanceManager = () => {
     for (const d of allDays) {
       const r = rows[d];
       const isWknd = new Date(year, month-1, d).getDay() === 0; // Only Sunday is weekend
-      const isFut  = new Date(year, month-1, d) > now;
+      const isFut  = new Date(year, month-1, d) > new Date();
       if (!r && !isWknd && !isFut) absent++;
       if (r?.status === "present" || r?.status === "late") present++;
       if (r?.status === "on_leave") leave++;
@@ -141,7 +143,7 @@ const AttendanceManager = () => {
               <div className="flex flex-col gap-0.5">
                 <label className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Date</label>
                 <input type="date" value={selDate} max={isoDate(now)} onChange={e => setSelDate(e.target.value)}
-                  className="border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-[#DD1215] rounded"/>
+                  className="border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-[#DD1215] rounded" max={todayStr()}/>
               </div>
               <div className="flex items-end gap-2 flex-wrap">
                 {last7.slice(0,6).map(d => {
@@ -153,8 +155,8 @@ const AttendanceManager = () => {
                     </button>
                   );
                 })}
-                <button onClick={() => setSelDate(isoDate(now))}
-                  className={`px-3 py-1.5 text-xs font-bold border rounded transition ${selDate===isoDate(now)?"bg-[#DD1215] text-white border-[#DD1215]":"border-gray-300 text-gray-600 hover:border-[#DD1215] hover:text-[#DD1215]"}`}>
+                <button onClick={() => setSelDate(todayStr())}
+                  className={`px-3 py-1.5 text-xs font-bold border rounded transition ${selDate===todayStr()?"bg-[#DD1215] text-white border-[#DD1215]":"border-gray-300 text-gray-600 hover:border-[#DD1215] hover:text-[#DD1215]"}`}>
                   Today
                 </button>
                 <button onClick={() => loadDay(selDate)}
@@ -323,7 +325,7 @@ const AttendanceManager = () => {
                   const totalHours = Object.values(rows).reduce((s,r)=>s+(r.hoursWorked||0),0);
                   const totalWorkDays = allDays.filter(d => {
                     const dow = new Date(year,month-1,d).getDay();
-                    return dow!==0 && dow!==6 && new Date(year,month-1,d)<=now;
+                    return dow!==0 && dow!==6 && new Date(year,month-1,d)<=new Date();
                   }).length;
                   const attendPct = totalWorkDays>0 ? Math.round((sum.present/totalWorkDays)*100) : 0;
 
@@ -373,7 +375,7 @@ const AttendanceManager = () => {
                             const rec    = rows[d];
                             const dow    = new Date(year,month-1,d).getDay();
                             const isWknd = dow===0; // Only Sunday is weekend
-                            const isFut  = new Date(year,month-1,d)>now;
+                            const isFut  = new Date(year,month-1,d)>new Date();
                             const status = rec?.status||(isWknd?"weekend":null);
                             const dotColor = {present:"bg-green-500",absent:"bg-red-400",late:"bg-green-400",half_day:"bg-orange-400",on_leave:"bg-blue-400",holiday:"bg-purple-400",weekend:"bg-gray-200"}[status]||(isFut?"bg-gray-100":"bg-gray-300");
                             return <div key={d} title={`${d} — ${status||"no record"}`} className={`w-3 h-3 rounded-sm ${dotColor}`}/>;
@@ -447,7 +449,7 @@ const AttendanceManager = () => {
                     const date   = new Date(year, month-1, d);
                     const dow    = date.getDay();
                     const isWknd = dow===0; // Only Sunday is weekend
-                    const isFut  = date>now;
+                    const isFut  = date>new Date();
                     const status = rec?.status||(isWknd?"weekend":null);
                     const s      = STATUS_STYLE[status]||STATUS_STYLE.absent;
                     return (

@@ -49,9 +49,9 @@ router.get("/bydate", adminauthenticate, checkRole(HR_ALL), async (req, res) => 
     const dateStr = req.query.date;
     if (!dateStr) return res.status(400).json({ success: false, message: "date query param required." });
     const [y, m, d] = dateStr.split("-").map(Number);
-    // Records stored as UTC midnight — query exact UTC calendar day
-    const start = new Date(Date.UTC(y, m-1, d, 0, 0, 0, 0));
-    const end   = new Date(Date.UTC(y, m-1, d, 23, 59, 59, 999));
+    // Use IST day boundaries since records are stored at IST midnight (UTC-5:30)
+    const start = new Date(Date.UTC(y, m-1, d-1, 18, 30, 0, 0));   // IST 00:00 = UTC prev day 18:30
+    const end   = new Date(Date.UTC(y, m-1, d,   18, 29, 59, 999)); // IST 23:59 = UTC same day 18:29
     const records = await Attendance.find({ date: { $gte: start, $lte: end } }).sort({ createdAt: 1 });
     const enriched = await enrichRecords(records);
     res.status(200).json({ success: true, data: enriched, count: enriched.length });
