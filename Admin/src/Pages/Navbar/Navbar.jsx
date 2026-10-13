@@ -1,7 +1,7 @@
 import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import URLs from '../../Utils/utils.js';
-import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, ChevronDown, Mail, UserCog, Bell, ScrollText, CalendarDays, CalendarOff, Kanban, UserCheck, FolderKanban, TrendingUp, Target, Award as AwardIcon, Building2, IndianRupee, UserPlus, FileArchive, UserSearch, MessagesSquare, BookMarked, LifeBuoy, Sparkles, ShoppingBag, Package, FolderOpen, BarChart3, ClipboardList, Plus, Megaphone } from "lucide-react";
+import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, ChevronDown, Mail, UserCog, Bell, ScrollText, CalendarDays, CalendarOff, Kanban, UserCheck, FolderKanban, TrendingUp, Target, Award as AwardIcon, Building2, IndianRupee, UserPlus, FileArchive, UserSearch, MessagesSquare, BookMarked, LifeBuoy, Sparkles, ShoppingBag, Package, FolderOpen, BarChart3, ClipboardList, Plus, Megaphone, FileSpreadsheet } from "lucide-react";
 import { message, Popconfirm } from "antd";
 import { getRoles, getAdmin } from '../../Utils/auth.js';
 import { isEmployeeShopAllowed } from '../../services/shopServices/shopAccessService.js';
@@ -82,6 +82,7 @@ const HR_ITEMS = [
   { label: "Chat",           to: "/hr/chat",        icon: MessagesSquare,roles: HR_ALL  },
   { label: "Notifications",  to: "/hr/notifications",icon: Bell,        roles: HR_ALL   },
   { label: "Audit Log",      to: "/hr/audit",       icon: ScrollText,   roles: HR_AUDIT },
+  { label: "Data Export",    to: "/hr/export",      icon: FileSpreadsheet, roles: ["superadmin","hr_manager"] },
 ];
 
 // ── Shop sub-items (shown inside collapsible accordion) ────────

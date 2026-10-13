@@ -219,11 +219,14 @@ const EmployeePortal = () => {
   // Profile state
   const [profile,      setProfile]      = useState(null);
   const [profileForm,  setProfileForm]  = useState({
-    phone:"", dateOfBirth:"", gender:"", address:"",
-    bankName:"", accountHolder:"", accountNumber:"", ifscCode:"",
+    phone:"", dateOfBirth:"", gender:"", fatherName:"", motherName:"",
+    addressLine1:"", addressLine2:"", city:"", country:"India", zipCode:"",
+    bankName:"", accountHolder:"", accountNumber:"", confirmAccountNumber:"", ifscCode:"", swiftCode:"",
     emergencyContact: { name:"", phone:"", relation:"" }
   });
   const [profileSaving, setProfileSaving] = useState(false);
+  const [kycDocs, setKycDocs] = useState({ aadhaarFront:null, aadhaarBack:null, panFront:null });
+  const [kycPreviews, setKycPreviews] = useState({ aadhaarFront:"", aadhaarBack:"", panFront:"" });
 
   useEffect(() => {
     const t = setInterval(() => setCountdown(getCountdown()), 30000);
@@ -349,11 +352,19 @@ const EmployeePortal = () => {
         phone:        d.phone || "",
         dateOfBirth:  d.dateOfBirth ? d.dateOfBirth.split("T")[0] : "",
         gender:       d.gender || "",
-        address:      d.address || "",
+        fatherName:   d.fatherName || "",
+        motherName:   d.motherName || "",
+        addressLine1: d.addressLine1 || d.address || "",
+        addressLine2: d.addressLine2 || "",
+        city:         d.city || "",
+        country:      d.country || "India",
+        zipCode:      d.zipCode || "",
         bankName:     d.bankName || "",
         accountHolder:d.accountHolder || "",
         accountNumber:d.accountNumber || "",
+        confirmAccountNumber: d.accountNumber || "",
         ifscCode:     d.ifscCode || "",
+        swiftCode:    d.swiftCode || "",
         emergencyContact: {
           name:     d.emergencyContact?.name || "",
           phone:    d.emergencyContact?.phone || "",
@@ -1092,7 +1103,7 @@ const EmployeePortal = () => {
 
         {/* ── PROFILE ── */}
         {tab === "profile" && (
-          <form onSubmit={handleSaveProfile} className="space-y-5 max-w-2xl">
+          <form onSubmit={handleSaveProfile} className="space-y-5 max-w-2xl overflow-x-hidden">
 
             {/* Personal Info */}
             <div className="bg-white border rounded-xl p-6 space-y-4">
@@ -1130,11 +1141,52 @@ const EmployeePortal = () => {
                     <option value="prefer_not_to_say">Prefer not to say</option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Father's Name</label>
+                  <input type="text" value={profileForm.fatherName} onChange={e=>setProfileForm(f=>({...f,fatherName:e.target.value}))}
+                    placeholder="Father's full name" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Mother's Name</label>
+                  <input type="text" value={profileForm.motherName} onChange={e=>setProfileForm(f=>({...f,motherName:e.target.value}))}
+                    placeholder="Mother's full name" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Address</label>
-                  <textarea value={profileForm.address} onChange={e=>setProfileForm(f=>({...f,address:e.target.value}))}
-                    rows={2} placeholder="Your full address..."
-                    className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg resize-none"/>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Address Line 1</label>
+                  <input type="text" value={profileForm.addressLine1} onChange={e=>setProfileForm(f=>({...f,addressLine1:e.target.value}))}
+                    placeholder="House / Flat no., Street name" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">
+                    Address Line 2 <span className="normal-case font-normal text-gray-400 ml-1">(optional)</span>
+                  </label>
+                  <input type="text" value={profileForm.addressLine2} onChange={e=>setProfileForm(f=>({...f,addressLine2:e.target.value}))}
+                    placeholder="Area, Landmark" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">City</label>
+                  <input type="text" value={profileForm.city} onChange={e=>setProfileForm(f=>({...f,city:e.target.value}))}
+                    placeholder="e.g. Mumbai" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">ZIP / Postcode</label>
+                  <input type="text" value={profileForm.zipCode} onChange={e=>setProfileForm(f=>({...f,zipCode:e.target.value}))}
+                    placeholder="e.g. 400001" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Country</label>
+                  <select value={profileForm.country} onChange={e=>setProfileForm(f=>({...f,country:e.target.value}))}
+                    className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg bg-white">
+                    <option value="India">India</option>
+                    <option value="United States">United States</option>
+                    <option value="United Kingdom">United Kingdom</option>
+                    <option value="Canada">Canada</option>
+                    <option value="Australia">Australia</option>
+                    <option value="Germany">Germany</option>
+                    <option value="Singapore">Singapore</option>
+                    <option value="UAE">UAE</option>
+                    <option value="Other">Other</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -1165,10 +1217,92 @@ const EmployeePortal = () => {
                     placeholder="e.g. 1234567890" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
                 </div>
                 <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Confirm Account Number *</label>
+                  <input type="password" value={profileForm.confirmAccountNumber} onChange={e=>setProfileForm(f=>({...f,confirmAccountNumber:e.target.value}))}
+                    placeholder="Re-enter account number"
+                    className={`w-full border px-3 py-2.5 text-sm focus:outline-none rounded-lg ${
+                      profileForm.confirmAccountNumber && profileForm.accountNumber === profileForm.confirmAccountNumber
+                        ? "border-green-400 focus:border-green-500"
+                        : profileForm.confirmAccountNumber
+                        ? "border-red-300 focus:border-red-400"
+                        : "border-gray-300 focus:border-[#DD1215]"
+                    }`}/>
+                  {profileForm.confirmAccountNumber && profileForm.accountNumber === profileForm.confirmAccountNumber && (
+                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+                      Account numbers match
+                    </p>
+                  )}
+                  {profileForm.confirmAccountNumber && profileForm.accountNumber !== profileForm.confirmAccountNumber && (
+                    <p className="text-xs text-red-500 mt-1">Account numbers do not match</p>
+                  )}
+                </div>
+                <div>
                   <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">IFSC Code *</label>
                   <input type="text" value={profileForm.ifscCode} onChange={e=>setProfileForm(f=>({...f,ifscCode:e.target.value.toUpperCase()}))}
                     placeholder="e.g. HDFC0001234" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg font-mono"/>
                 </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">
+                    SWIFT / BIC Code <span className="normal-case font-normal text-gray-400 ml-1">(Optional — for international transfers)</span>
+                  </label>
+                  <input type="text" value={profileForm.swiftCode} onChange={e=>setProfileForm(f=>({...f,swiftCode:e.target.value.toUpperCase()}))}
+                    placeholder="e.g. HDFCINBB" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg font-mono"/>
+                </div>
+              </div>
+            </div>
+
+            {/* KYC Documents */}
+            <div className="bg-white border rounded-xl p-6 space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <svg className="w-[18px] h-[18px] text-[#DD1215]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <h3 className="font-black text-gray-900 uppercase tracking-widest text-sm">KYC Documents</h3>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-xs text-blue-800">
+                Upload clear photos or scans. Accepted formats: JPG, PNG, PDF (max 5MB each).
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 cursor-default">
+                {[
+                  { key:"aadhaarFront", label:"Aadhaar Front" },
+                  { key:"aadhaarBack",  label:"Aadhaar Back"  },
+                  { key:"panFront",     label:"PAN Card Front" },
+                ].map(({ key, label }) => (
+                  <div key={key} className="cursor-default">
+                    <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">{label}</label>
+                    <label className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl p-4 cursor-pointer transition
+                      ${kycPreviews[key] ? "border-green-400 bg-green-50" : "border-gray-300 hover:border-[#DD1215] hover:bg-red-50"}`}>
+                      {kycPreviews[key] ? (
+                        <img src={kycPreviews[key]} alt={label} className="w-full h-24 object-contain rounded"/>
+                      ) : (
+                        <>
+                          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+                          </svg>
+                          <span className="text-xs text-gray-500">Click to upload</span>
+                        </>
+                      )}
+                      <input type="file" accept="image/*,application/pdf" className="hidden"
+                        onChange={e => {
+                          const file = e.target.files[0];
+                          if (!file) return;
+                          setKycDocs(d => ({ ...d, [key]: file }));
+                          if (file.type.startsWith("image/")) {
+                            const reader = new FileReader();
+                            reader.onload = ev => setKycPreviews(p => ({ ...p, [key]: ev.target.result }));
+                            reader.readAsDataURL(file);
+                          } else {
+                            setKycPreviews(p => ({ ...p, [key]: "" }));
+                          }
+                        }}/>
+                    </label>
+                    {kycDocs[key] && (
+                      <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+                        {kycDocs[key].name}
+                      </p>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
 
