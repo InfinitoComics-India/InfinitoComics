@@ -963,8 +963,8 @@ const MarketingDashboard = () => {
                           </span>
                         </div>
 
-                        {/* Bold Headline (matching promo banner e.g. "35% off" / "MONTHLY DROP INCOMING") */}
-                        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight text-white drop-shadow-md font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif]">
+                        {/* Bold Headline matching storefront */}
+                        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.05] uppercase text-white drop-shadow-md font-sans">
                           {renderHighlightedText(currentSlide?.headline || currentSlide?.title || 'Hero Headline', currentSlide?.highlightText)}
                         </h2>
 
@@ -1389,7 +1389,7 @@ const MarketingDashboard = () => {
 
                         {!isPromoArtwork ? (
                           <>
-                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-wider leading-tight text-white drop-shadow-lg font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif]">
+                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold uppercase tracking-tight leading-tight text-white drop-shadow font-sans">
                               {currentPromo?.headline || '35% off'}
                             </h2>
                             <p className="text-xs sm:text-sm font-bold tracking-wide text-gray-200 uppercase drop-shadow max-w-md">
