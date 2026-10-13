@@ -241,6 +241,32 @@ router.post("/me/clockout", adminauthenticate, checkRole(HR_ALL), async (req, re
       { $set: { [`${fp}.clockOut`]: now, [`${fp}.hoursWorked`]: sessionHours, clockOut: now, hoursWorked: totalHours, totalHours, status: totalHours >= 4 ? "present" : "half_day" } },
       { new: true }
     );
+
+    // Auto-sync hours to today's work log so employee doesn't have to enter them manually
+    try {
+      const DailyWorkLog = (await import('../models/DailyWorkLog.js')).default;
+      const { start: wlStart } = getISTDayBounds(now);
+      const wlEnd = new Date(wlStart.getTime() + 24*60*60*1000 - 1);
+      const wl = await DailyWorkLog.findOne({ adminId: empId, date: { $gte: wlStart, $lte: wlEnd } });
+      if (wl) {
+        // Update hours if not locked
+        if (!wl.isLocked) await DailyWorkLog.findByIdAndUpdate(wl._id, { $set: { hoursWorked: totalHours } });
+      } else {
+        // Create pending work log with hours pre-filled
+        await DailyWorkLog.create({
+          adminId: empId,
+          adminName: existing.employeeName || "",
+          adminEmail: "",
+          adminEmployeeId: existing.employeeEmpId || "",
+          date: wlStart,
+          workDescription: "",
+          hoursWorked: totalHours,
+          status: "pending",
+          isLocked: false,
+        });
+      }
+    } catch (wlErr) { console.error("[clockout] worklog sync:", wlErr.message); }
+
     return res.status(200).json({ success: true, message: "Clocked out.", data: updated });
   } catch (e) {
     console.error("[me/clockout] error:", e.message);

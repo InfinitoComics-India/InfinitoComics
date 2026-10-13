@@ -266,7 +266,22 @@ const EmployeePortal = () => {
       const r = await axios.get(`${BASE}/hr/worklog/my/today`, auth());
       const log = r.data.data;
       setMyLog(log);
-      if (log && !log.isLocked) { setWorkDesc(log.workDescription||""); setWorkHours(log.hoursWorked?.toString()||""); }
+      if (log && !log.isLocked) {
+        setWorkDesc(log.workDescription||"");
+        // Use attendance hours if work log hours are 0 or not set
+        const logHours = log.hoursWorked || 0;
+        if (logHours > 0) {
+          setWorkHours(logHours.toString());
+        } else {
+          // Try to get hours from today's attendance
+          try {
+            const attRes = await axios.get(`${BASE}/hr/attendance/me/today?_t=${Date.now()}`, auth());
+            const attRec = attRes.data.data;
+            const attHours = attRec?.totalHours || attRec?.hoursWorked || 0;
+            if (attHours > 0) setWorkHours(attHours.toFixed(2));
+          } catch {}
+        }
+      }
     } catch {}
   };
   const loadWorkHistory = async () => {
@@ -713,7 +728,14 @@ const EmployeePortal = () => {
                         placeholder="• Completed task X&#10;• Fixed bug in Y&#10;• Attended team standup&#10;• Reviewed PR from..." required/>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Hours Worked *</label>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-xs font-bold uppercase text-gray-500">Hours Worked *</label>
+                        {todayAttd && (todayAttd.totalHours || todayAttd.hoursWorked) > 0 && (
+                          <span className="text-[10px] text-green-600 font-semibold flex items-center gap-1">
+                            ✅ Auto-filled from attendance ({Number(todayAttd.totalHours || todayAttd.hoursWorked).toFixed(2)}h)
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-3">
                         <input type="number" min="0.5" max="24" step="0.5" value={workHours} onChange={e=>setWorkHours(e.target.value)}
                           className="w-24 border border-gray-300 px-3 py-2 text-sm text-center font-bold focus:outline-none focus:border-[#DD1215]"/>
@@ -722,6 +744,13 @@ const EmployeePortal = () => {
                             <button key={h} type="button" onClick={()=>setWorkHours(h.toString())}
                               className={`px-3 py-1.5 text-xs font-bold border rounded transition ${workHours==h?"bg-[#DD1215] text-white border-[#DD1215]":"border-gray-300 text-gray-600 hover:border-[#DD1215]"}`}>{h}h</button>
                           ))}
+                          {todayAttd && (todayAttd.totalHours || todayAttd.hoursWorked) > 0 && (
+                            <button type="button"
+                              onClick={()=>setWorkHours(Number(todayAttd.totalHours||todayAttd.hoursWorked).toFixed(2))}
+                              className={`px-3 py-1.5 text-xs font-bold border rounded transition bg-green-50 border-green-400 text-green-700 hover:bg-green-100`}>
+                              Use {Number(todayAttd.totalHours||todayAttd.hoursWorked).toFixed(1)}h
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
