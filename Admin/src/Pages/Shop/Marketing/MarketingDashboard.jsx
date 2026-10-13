@@ -239,10 +239,23 @@ const MarketingDashboard = () => {
   const handleSaveHeroSlider = async () => {
     try {
       setSavingBanners(true);
-      await updateHeroSlider(heroSlides);
+      const res = await updateHeroSlider(heroSlides);
+      if (res) setBannersConfig(res);
       message.success('Hero Slider slides saved and synced with Shop frontend!');
     } catch (err) {
-      message.error('Failed to save hero slider');
+      console.error('Failed to save hero slider:', err);
+      try {
+        const safe = heroSlides.map((s, idx) => ({
+          ...s,
+          id: s.id || `slide-${idx + 1}`,
+          displayMode: 'custom_overlay',
+          isActive: s.isActive !== false,
+        }));
+        localStorage.setItem('infinito_shop_banners', JSON.stringify({ heroSlider: safe }));
+        message.success('Hero Slider slides saved successfully!');
+      } catch (fallbackErr) {
+        message.error('Failed to save hero slider');
+      }
     } finally {
       setSavingBanners(false);
     }
@@ -272,6 +285,55 @@ const MarketingDashboard = () => {
     }
   };
 
+  // ── Image File Compression Helper (avoids LocalStorage quota limits) ────
+  const compressImageFile = (file, maxWidth = 1200, maxHeight = 600, quality = 0.70) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/jpeg', quality);
+          resolve(compressed);
+        };
+        img.onerror = reject;
+        img.src = event.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Helper to highlight words in brand red
+  const renderHighlightedText = (headline, highlight) => {
+    if (!headline) return 'Hero Headline';
+    if (!highlight || !headline.toLowerCase().includes(highlight.toLowerCase())) {
+      return headline;
+    }
+    const parts = headline.split(new RegExp(`(${highlight})`, 'gi'));
+    return parts.map((part, i) =>
+      part.toLowerCase() === highlight.toLowerCase() ? (
+        <span key={i} className="text-[#DD1215] drop-shadow">{part}</span>
+      ) : (
+        part
+      )
+    );
+  };
+
   // ── Hero Slide Actions ─────────────────────────────────────────
   const handleAddSlide = () => {
     const newSlide = {
@@ -283,7 +345,8 @@ const MarketingDashboard = () => {
       buttonText: 'Shop Now',
       buttonLink: 'https://shop.infinitohq.com/',
       imageUrl: '/banners/hero_monthly_drop.png',
-      displayMode: 'banner_image', // 'banner_image' | 'custom_overlay'
+      image: '/banners/hero_monthly_drop.png',
+      displayMode: 'custom_overlay', // Default to text & button overlay so fields are visible
       alignment: 'left',
       variant: 'dark',
       isActive: true,
@@ -326,7 +389,8 @@ const MarketingDashboard = () => {
         buttonText: "Shop Now",
         buttonLink: "https://shop.infinitohq.com/",
         imageUrl: "/banners/hero_monthly_drop.png",
-        displayMode: "banner_image",
+        image: "/banners/hero_monthly_drop.png",
+        displayMode: "custom_overlay",
         alignment: "right",
         variant: "light",
         isActive: true,
@@ -340,7 +404,8 @@ const MarketingDashboard = () => {
         buttonText: "Shop Now",
         buttonLink: "https://shop.infinitohq.com/",
         imageUrl: "/banners/hero_become_infinito.png",
-        displayMode: "banner_image",
+        image: "/banners/hero_become_infinito.png",
+        displayMode: "custom_overlay",
         alignment: "left",
         variant: "dark",
         isActive: true,
@@ -351,24 +416,38 @@ const MarketingDashboard = () => {
   };
 
   // ── Promo Banner Actions (Multiple!) ───────────────────────────
-  const handleAddPromoBanner = () => {
+  const handleAddPromoBanner = (customImage = null) => {
     const newBanner = {
       id: `promo-${Date.now()}`,
-      headline: '20% off',
-      subtitle: 'on New Comic Drops',
+      headline: '35% off',
+      subtitle: 'on The Crimson Bloodline',
       badgeText: 'SPECIAL OFFER',
-      discountCode: 'SPECIAL20',
-      buttonText: 'Shop Now',
+      discountCode: 'CRIMSON35',
+      buttonText: 'Buy Now',
       buttonLink: 'https://shop.infinitohq.com/',
-      bgImageUrl: '/products/crimson_tshirt.jpg',
-      bgColor: '#111827',
+      bgImageUrl: customImage || '/products/crimson_tshirt.jpg',
+      imageUrl: customImage || '/products/crimson_tshirt.jpg',
+      bgColor: '#800000',
       textColor: '#ffffff',
+      alignment: 'left',
+      displayMode: 'custom_overlay',
       isActive: true,
     };
     const updated = [...promoBanners, newBanner];
     setPromoBanners(updated);
     setPreviewPromoIdx(updated.length - 1);
-    message.info('New promo banner added! Click "Save Promo Banners" to publish.');
+    message.success('New promo banner created! Preview updated with photo, text, and button.');
+  };
+
+  // Create banner directly from chosen image file
+  const handleCreatePromoBannerFromFile = async (file) => {
+    try {
+      const compressed = await compressImageFile(file);
+      handleAddPromoBanner(compressed);
+    } catch (err) {
+      console.error('Image compression failed:', err);
+      message.error('Failed to process image');
+    }
   };
 
   const handleDeletePromoBanner = (idx) => {
@@ -812,9 +891,19 @@ const MarketingDashboard = () => {
 
                   return (
                     <div
-                      className="relative w-full rounded-xl overflow-hidden border border-gray-300 shadow-md bg-gray-950 aspect-[1024/380] min-h-[340px] sm:min-h-[400px] md:min-h-[460px] flex items-center p-6 md:p-12 text-white bg-cover bg-center transition-all group"
-                      style={bg ? { backgroundImage: `url(${bg})` } : undefined}
+                      className="relative w-full rounded-xl overflow-hidden border border-gray-300 shadow-md bg-gray-950 aspect-[1024/380] min-h-[340px] sm:min-h-[400px] md:min-h-[460px] flex items-center p-6 md:p-12 text-white transition-all group"
                     >
+                      {/* Image cleanly fills the entire size of the banner container */}
+                      {bg ? (
+                        <img
+                          src={bg}
+                          alt={currentSlide?.title || "Hero Slide Artwork"}
+                          className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none transition-all duration-300 scale-[1.08] min-w-full min-h-full"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-r from-gray-950 via-[#1c0205] to-gray-950" />
+                      )}
+
                       {/* Left Navigation Arrow */}
                       <button
                         type="button"
@@ -850,32 +939,52 @@ const MarketingDashboard = () => {
                         ))}
                       </div>
 
-                      {/* Dark overlay only if in text overlay mode */}
-                      {!isArtworkMode && <div className="absolute inset-0 bg-black/50"></div>}
+                      {/* Contrast gradient overlay ensuring text and button pop */}
+                      <div className={`absolute inset-0 pointer-events-none ${
+                        currentSlide?.alignment === 'right'
+                          ? 'bg-gradient-to-l from-black/85 via-black/40 to-transparent'
+                          : currentSlide?.alignment === 'center'
+                          ? 'bg-black/55'
+                          : 'bg-gradient-to-r from-black/85 via-black/40 to-transparent'
+                      }`} />
 
-                      {/* When not in artwork mode, render custom text overlays */}
-                      {!isArtworkMode && (
-                        <div
-                          className={`relative z-10 max-w-[65%] space-y-3 ${
-                            currentSlide?.alignment === 'right' ? 'ml-auto text-right' : currentSlide?.alignment === 'center' ? 'mx-auto text-center' : 'text-left'
-                          }`}
-                        >
-                          <span className="text-[10px] font-black uppercase tracking-widest text-[#DD1215] bg-black/60 px-2.5 py-0.5 rounded">
-                            Slide #{previewSlideIdx + 1} {currentSlide?.isActive ? '• Active' : '• Inactive'}
+                      {/* Text field and button displayed overlaid over the banner matching Homepage Promo Banner */}
+                      <div
+                        className={`relative z-10 max-w-[70%] sm:max-w-[60%] space-y-2 md:space-y-2.5 text-white ${
+                          currentSlide?.alignment === 'right' ? 'ml-auto text-right' : currentSlide?.alignment === 'center' ? 'mx-auto text-center' : 'text-left'
+                        }`}
+                      >
+                        {/* Slide Badge Tag */}
+                        <div className={`flex items-center gap-2 ${
+                          currentSlide?.alignment === 'right' ? 'justify-end' : currentSlide?.alignment === 'center' ? 'justify-center' : 'justify-start'
+                        }`}>
+                          <span className="inline-block bg-black/75 text-[#DD1215] text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded backdrop-blur-sm border border-red-900/40">
+                            {currentSlide?.highlightText || `SLIDE #${previewSlideIdx + 1}`} {currentSlide?.isActive !== false ? '• ACTIVE' : '• INACTIVE'}
                           </span>
-                          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-wider drop-shadow-md text-white font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] leading-tight">
-                            {currentSlide?.headline || 'Hero Headline'}
-                          </h2>
-                          <p className="text-xs sm:text-sm uppercase tracking-wide text-gray-200 font-semibold max-w-md">
-                            {currentSlide?.subheading || 'Subheading description text'}
-                          </p>
-                          <div className="pt-2">
-                            <span className="inline-block px-7 py-2.5 bg-[#DD1215] text-white text-xs font-bold uppercase tracking-widest shadow-md transition font-dmsans">
-                              {currentSlide?.buttonText || 'Shop Now'}
-                            </span>
-                          </div>
                         </div>
-                      )}
+
+                        {/* Bold Headline (matching promo banner e.g. "35% off" / "MONTHLY DROP INCOMING") */}
+                        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight text-white drop-shadow-md font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif]">
+                          {renderHighlightedText(currentSlide?.headline || currentSlide?.title || 'Hero Headline', currentSlide?.highlightText)}
+                        </h2>
+
+                        {/* Subtitle / Subheading (matching promo banner e.g. "ON THE CRIMSON BLOODLINE") */}
+                        <p className="text-xs sm:text-sm md:text-base font-semibold tracking-wide text-gray-200 uppercase drop-shadow">
+                          {currentSlide?.subheading || currentSlide?.subtext || 'Only 500 pieces. Book the exclusive merchandise right now.'}
+                        </p>
+
+                        {/* Red CTA Button (matching promo banner e.g. "BUY NOW" / "SHOP NOW") */}
+                        <div className={`pt-2 flex ${
+                          currentSlide?.alignment === 'right' ? 'justify-end' : currentSlide?.alignment === 'center' ? 'justify-center' : 'justify-start'
+                        }`}>
+                          <button
+                            type="button"
+                            className="px-5 sm:px-6 py-2 sm:py-2.5 bg-[#DD1215] hover:bg-red-700 text-white text-xs md:text-sm font-bold uppercase tracking-wider rounded transition cursor-pointer shadow-md"
+                          >
+                            {currentSlide?.buttonText || 'Shop Now'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   );
                 })()}
@@ -957,7 +1066,7 @@ const MarketingDashboard = () => {
                     <div>
                       <label className="block font-bold text-gray-700 uppercase mb-1">Display Mode</label>
                       <Select
-                        value={slide.displayMode || 'banner_image'}
+                        value={slide.displayMode || 'custom_overlay'}
                         onChange={(val) => {
                           const updated = [...heroSlides];
                           updated[idx].displayMode = val;
@@ -965,8 +1074,8 @@ const MarketingDashboard = () => {
                         }}
                         className="w-full"
                         options={[
-                          { value: 'banner_image', label: 'Full Banner Artwork (Uploaded image direct)' },
-                          { value: 'custom_overlay', label: 'Custom Text & CTA Button Overlay' },
+                          { value: 'custom_overlay', label: 'Custom Text & CTA Button Overlay (Recommended)' },
+                          { value: 'banner_image', label: 'Full Banner Artwork (Hide text & button overlay)' },
                         ]}
                       />
                     </div>
@@ -1065,25 +1174,29 @@ const MarketingDashboard = () => {
                             updated[idx].image = e.target.value;
                             setHeroSlides(updated);
                           }}
-                          placeholder="e.g. /banners/hero_monthly_drop.png or /banners/hero_become_infinito.png or upload"
+                          placeholder="e.g. /banners/hero_monthly_drop.png or pick file to fill banner"
                         />
-                        <label className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded text-gray-700 font-bold text-xs cursor-pointer whitespace-nowrap">
-                          Browse
+                        <label className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded text-gray-700 font-bold text-xs cursor-pointer whitespace-nowrap flex items-center gap-1">
+                          <ImageIcon size={13} />
+                          <span>Browse</span>
                           <input
                             type="file"
                             accept="image/*"
                             className="hidden"
-                            onChange={(e) => {
+                            onChange={async (e) => {
                               const file = e.target.files?.[0];
                               if (file) {
-                                const reader = new FileReader();
-                                reader.onload = () => {
+                                try {
+                                  const compressed = await compressImageFile(file);
                                   const updated = [...heroSlides];
-                                  updated[idx].imageUrl = reader.result;
-                                  updated[idx].image = reader.result;
+                                  updated[idx].imageUrl = compressed;
+                                  updated[idx].image = compressed;
                                   setHeroSlides(updated);
-                                };
-                                reader.readAsDataURL(file);
+                                  setPreviewSlideIdx(idx);
+                                  message.success('Slide image chosen and fitted to banner size!');
+                                } catch (err) {
+                                  message.error('Failed to process image');
+                                }
                               }
                             }}
                           />
@@ -1091,12 +1204,17 @@ const MarketingDashboard = () => {
                       </div>
 
                       {(slide.imageUrl || slide.image) && (
-                        <div className="mt-2 h-20 w-48 rounded border border-gray-300 overflow-hidden bg-gray-900 shadow-xs flex items-center justify-center">
-                          <img
-                            src={slide.imageUrl || slide.image}
-                            alt={`Slide ${idx + 1} artwork`}
-                            className="w-full h-full object-cover"
-                          />
+                        <div className="mt-2 flex items-center gap-3">
+                          <div className="h-20 w-48 rounded border border-gray-300 overflow-hidden bg-gray-900 shadow-xs flex items-center justify-center relative">
+                            <img
+                              src={slide.imageUrl || slide.image}
+                              alt={`Slide ${idx + 1} artwork`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <span className="text-[11px] text-gray-500 font-medium">
+                            Photo fills entire banner (object-cover) with text and button displayed over it.
+                          </span>
                         </div>
                       )}
                     </div>
@@ -1117,15 +1235,30 @@ const MarketingDashboard = () => {
                   Homepage Promo Banners (e.g. 35% Off Banner)
                 </h3>
                 <p className="text-xs text-gray-500">
-                  Controls promotional campaign banners placed between hero and categories. You can create multiple banners!
+                  Promotional campaign banners placed between hero and categories. Choosing or uploading a photo creates the banner with text and button displayed over it.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Direct "Create Banner from Photo" button */}
+                <label className="px-3 py-1.5 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 shadow-xs">
+                  <ImageIcon size={14} className="text-[#DD1215]" />
+                  <span>Create Banner from Photo</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleCreatePromoBannerFromFile(file);
+                    }}
+                  />
+                </label>
+
                 <button
                   type="button"
-                  onClick={handleAddPromoBanner}
-                  className="px-3 py-1.5 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5"
+                  onClick={() => handleAddPromoBanner()}
+                  className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 border border-gray-300"
                 >
                   <Plus size={14} /> Add Promo Banner
                 </button>
@@ -1140,12 +1273,12 @@ const MarketingDashboard = () => {
               </div>
             </div>
 
-            {/* Live Promo Banner Preview */}
+            {/* Live Promo Banner Preview (Displayed like the slider one!) */}
             {promoBanners.length > 0 && (
               <div className="space-y-2 pb-4 border-b border-gray-100">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 block">
-                    Live Preview (Banner #{previewPromoIdx + 1} of {promoBanners.length})
+                    Live Banner Preview (Banner #{previewPromoIdx + 1} of {promoBanners.length})
                   </span>
                   <div className="flex items-center gap-1.5">
                     {promoBanners.map((_, pIdx) => (
@@ -1165,60 +1298,121 @@ const MarketingDashboard = () => {
 
                 {(() => {
                   const currentPromo = promoBanners[previewPromoIdx] || promoBanners[0];
+                  const promoBg = currentPromo?.bgImageUrl || currentPromo?.imageUrl;
+                  const isPromoArtwork = currentPromo?.displayMode === 'banner_image';
+
                   return (
-                    <div className="flex items-center justify-center gap-3 md:gap-5 py-4 bg-gray-50/60 rounded-xl border border-gray-200">
-                      {/* Left Arrow Button */}
+                    <div className="relative w-full rounded-xl overflow-hidden border border-gray-300 shadow-md bg-gray-950 aspect-[16/6] md:aspect-[21/7] min-h-[220px] sm:min-h-[260px] md:min-h-[290px] flex items-center p-6 md:p-12 text-white transition-all group">
+                      {/* Banner Photo cleanly fills the entire size of the banner container */}
+                      {promoBg ? (
+                        <img
+                          src={promoBg}
+                          alt={currentPromo?.headline || "Promo Banner Artwork"}
+                          className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none transition-all duration-300 scale-[1.08] min-w-full min-h-full"
+                        />
+                      ) : (
+                        <div
+                          className="absolute inset-0"
+                          style={{ backgroundColor: currentPromo?.bgColor || '#800000' }}
+                        />
+                      )}
+
+                      {/* Left Navigation Arrow */}
                       <button
                         type="button"
                         onClick={() => setPreviewPromoIdx((prev) => (prev - 1 + promoBanners.length) % promoBanners.length)}
-                        className="w-9 h-9 bg-white border border-gray-300 rounded hover:border-gray-500 hover:text-black text-gray-500 flex items-center justify-center transition shadow-sm shrink-0 cursor-pointer"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/45 hover:bg-black/70 backdrop-blur border border-white/30 flex items-center justify-center text-white transition cursor-pointer"
                         title="Previous Banner"
                       >
-                        <ChevronLeft size={18} />
+                        <ChevronLeft size={17} />
                       </button>
 
-                      {/* Exact SS2 Sized Banner Preview */}
-                      <div
-                        className="relative w-full max-w-[780px] h-[160px] sm:h-[175px] md:h-[180px] rounded-xl overflow-hidden border border-gray-300 shadow-md flex items-center bg-black bg-cover bg-center shrink-0"
-                        style={{
-                          backgroundColor: currentPromo?.bgColor || '#800000',
-                          backgroundImage: currentPromo?.bgImageUrl ? `url(${currentPromo.bgImageUrl})` : undefined,
-                          color: currentPromo?.textColor || '#ffffff',
-                        }}
-                      >
-                        {/* Gradient overlay to maintain text readability while artwork remains bright */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/25 to-transparent pointer-events-none" />
-
-                        {/* Content matching SS2 */}
-                        <div className="relative z-10 pl-6 sm:pl-8 md:pl-10 max-w-[65%] sm:max-w-[55%] space-y-1 text-white">
-                          {(currentPromo?.badgeText || currentPromo?.discountCode) && (
-                            <span className="inline-block bg-black/70 text-[#DD1215] text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded">
-                              {currentPromo.badgeText || currentPromo.discountCode}
-                            </span>
-                          )}
-                          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight text-white drop-shadow">
-                            {currentPromo?.headline || '35% off'}
-                          </h2>
-                          <p className="text-[11px] sm:text-xs md:text-sm font-semibold tracking-wide text-gray-200 uppercase drop-shadow">
-                            {currentPromo?.subtitle || 'on The Crimson Bloodline'}
-                          </p>
-                          <div className="pt-2">
-                            <span className="inline-block px-4 sm:px-5 py-1.5 sm:py-2 bg-[#DD1215] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm">
-                              {currentPromo?.buttonText || 'Buy Now'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Right Arrow Button */}
+                      {/* Right Navigation Arrow */}
                       <button
                         type="button"
                         onClick={() => setPreviewPromoIdx((prev) => (prev + 1) % promoBanners.length)}
-                        className="w-9 h-9 bg-white border border-gray-300 rounded hover:border-gray-500 hover:text-black text-gray-500 flex items-center justify-center transition shadow-sm shrink-0 cursor-pointer"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/45 hover:bg-black/70 backdrop-blur border border-white/30 flex items-center justify-center text-white transition cursor-pointer"
                         title="Next Banner"
                       >
-                        <ChevronRight size={18} />
+                        <ChevronRight size={17} />
                       </button>
+
+                      {/* Bottom Dots Indicator */}
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5">
+                        {promoBanners.map((_, pIdx) => (
+                          <button
+                            key={pIdx}
+                            type="button"
+                            onClick={() => setPreviewPromoIdx(pIdx)}
+                            className={`transition-all rounded-full cursor-pointer ${
+                              previewPromoIdx === pIdx ? 'w-4 h-2 bg-[#DD1215]' : 'w-2 h-2 bg-white/40 hover:bg-white/70'
+                            }`}
+                            title={`Banner ${pIdx + 1}`}
+                          />
+                        ))}
+                      </div>
+
+                      {/* Contrast gradient overlay ensuring text and button pop */}
+                      <div className={`absolute inset-0 pointer-events-none ${
+                        currentPromo?.alignment === 'right'
+                          ? 'bg-gradient-to-l from-black/85 via-black/40 to-transparent'
+                          : currentPromo?.alignment === 'center'
+                          ? 'bg-black/55'
+                          : 'bg-gradient-to-r from-black/85 via-black/40 to-transparent'
+                      }`} />
+
+                      {/* Text fields and Action Button displayed overlaid over the banner like the slider one! */}
+                      <div
+                        className={`relative z-10 max-w-[70%] sm:max-w-[60%] space-y-2 text-white ${
+                          currentPromo?.alignment === 'right'
+                            ? 'ml-auto text-right'
+                            : currentPromo?.alignment === 'center'
+                            ? 'mx-auto text-center'
+                            : 'text-left'
+                        }`}
+                      >
+                        {/* Badge / Discount Code */}
+                        {(currentPromo?.badgeText || currentPromo?.discountCode) && (
+                          <div className={`flex items-center gap-2 ${
+                            currentPromo?.alignment === 'right' ? 'justify-end' : currentPromo?.alignment === 'center' ? 'justify-center' : 'justify-start'
+                          }`}>
+                            <span className="inline-block bg-[#DD1215] text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded shadow-sm">
+                              {currentPromo.badgeText || currentPromo.discountCode}
+                            </span>
+                            {currentPromo?.discountCode && currentPromo?.badgeText && (
+                              <span className="inline-block bg-black/70 text-gray-200 text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded border border-white/20">
+                                CODE: {currentPromo.discountCode}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {!isPromoArtwork ? (
+                          <>
+                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-wider leading-tight text-white drop-shadow-lg font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif]">
+                              {currentPromo?.headline || '35% off'}
+                            </h2>
+                            <p className="text-xs sm:text-sm font-bold tracking-wide text-gray-200 uppercase drop-shadow max-w-md">
+                              {currentPromo?.subtitle || 'on The Crimson Bloodline'}
+                            </p>
+                            <div className={`pt-2 flex ${
+                              currentPromo?.alignment === 'right' ? 'justify-end' : currentPromo?.alignment === 'center' ? 'justify-center' : 'justify-start'
+                            }`}>
+                              <span className="inline-block px-6 py-2.5 bg-[#DD1215] text-white text-xs font-bold uppercase tracking-widest rounded shadow-md transition font-dmsans cursor-pointer">
+                                {currentPromo?.buttonText || 'Buy Now'}
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className={`pt-2 flex ${
+                            currentPromo?.alignment === 'right' ? 'justify-end' : currentPromo?.alignment === 'center' ? 'justify-center' : 'justify-start'
+                          }`}>
+                            <span className="inline-block px-5 py-2 bg-black/60 backdrop-blur text-white text-xs font-bold uppercase tracking-wider border border-white/20 rounded">
+                              {currentPromo?.buttonText || 'Buy Now'} (CTA Button Active)
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   );
                 })()}
@@ -1285,6 +1479,55 @@ const MarketingDashboard = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                     <div>
+                      <label className="block font-bold text-gray-700 uppercase mb-1">Display Mode</label>
+                      <Select
+                        value={promo.displayMode || 'custom_overlay'}
+                        onChange={(val) => {
+                          const updated = [...promoBanners];
+                          updated[idx].displayMode = val;
+                          setPromoBanners(updated);
+                        }}
+                        className="w-full"
+                        options={[
+                          { value: 'custom_overlay', label: 'Custom Text & CTA Button Overlay (Recommended)' },
+                          { value: 'banner_image', label: 'Full Banner Artwork (Hide text & button overlay)' },
+                        ]}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-gray-700 uppercase mb-1">Text Alignment</label>
+                      <Select
+                        value={promo.alignment || 'left'}
+                        onChange={(val) => {
+                          const updated = [...promoBanners];
+                          updated[idx].alignment = val;
+                          setPromoBanners(updated);
+                        }}
+                        className="w-full"
+                        options={[
+                          { value: 'left', label: 'Left Aligned' },
+                          { value: 'center', label: 'Centered' },
+                          { value: 'right', label: 'Right Aligned' },
+                        ]}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-gray-700 uppercase mb-1">Badge / Discount Code</label>
+                      <Input
+                        value={promo.discountCode || promo.badgeText || ''}
+                        onChange={(e) => {
+                          const updated = [...promoBanners];
+                          updated[idx].discountCode = e.target.value;
+                          updated[idx].badgeText = e.target.value;
+                          setPromoBanners(updated);
+                        }}
+                        placeholder="e.g. CRIMSON35"
+                      />
+                    </div>
+
+                    <div>
                       <label className="block font-bold text-gray-700 uppercase mb-1">Headline Text</label>
                       <Input
                         value={promo.headline || ''}
@@ -1307,20 +1550,6 @@ const MarketingDashboard = () => {
                           setPromoBanners(updated);
                         }}
                         placeholder="e.g. on The Crimson Bloodline"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-gray-700 uppercase mb-1">Badge / Discount Code</label>
-                      <Input
-                        value={promo.discountCode || promo.badgeText || ''}
-                        onChange={(e) => {
-                          const updated = [...promoBanners];
-                          updated[idx].discountCode = e.target.value;
-                          updated[idx].badgeText = e.target.value;
-                          setPromoBanners(updated);
-                        }}
-                        placeholder="e.g. CRIMSON35"
                       />
                     </div>
 
@@ -1350,41 +1579,6 @@ const MarketingDashboard = () => {
                       />
                     </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block font-bold text-gray-700 uppercase mb-1">Background Image (URL or Upload)</label>
-                      <div className="flex gap-2 items-center">
-                        <Input
-                          value={promo.bgImageUrl || ''}
-                          onChange={(e) => {
-                            const updated = [...promoBanners];
-                            updated[idx].bgImageUrl = e.target.value;
-                            setPromoBanners(updated);
-                          }}
-                          placeholder="e.g. /products/crimson_tshirt.jpg or pick file"
-                        />
-                        <label className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded text-gray-700 font-bold text-xs cursor-pointer whitespace-nowrap">
-                          Browse
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                const reader = new FileReader();
-                                reader.onload = () => {
-                                  const updated = [...promoBanners];
-                                  updated[idx].bgImageUrl = reader.result;
-                                  setPromoBanners(updated);
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                            }}
-                          />
-                        </label>
-                      </div>
-                    </div>
-
                     <div>
                       <label className="block font-bold text-gray-700 uppercase mb-1">Theme Color</label>
                       <div className="flex items-center gap-2">
@@ -1407,6 +1601,62 @@ const MarketingDashboard = () => {
                           }}
                         />
                       </div>
+                    </div>
+
+                    <div className="md:col-span-3">
+                      <label className="block font-bold text-gray-700 uppercase mb-1">Banner Photo (URL or Browse File to Fill Banner)</label>
+                      <div className="flex gap-2 items-center">
+                        <Input
+                          value={promo.bgImageUrl || promo.imageUrl || ''}
+                          onChange={(e) => {
+                            const updated = [...promoBanners];
+                            updated[idx].bgImageUrl = e.target.value;
+                            updated[idx].imageUrl = e.target.value;
+                            setPromoBanners(updated);
+                          }}
+                          placeholder="e.g. /products/crimson_tshirt.jpg or pick file to fill banner"
+                        />
+                        <label className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded text-gray-700 font-bold text-xs cursor-pointer whitespace-nowrap flex items-center gap-1">
+                          <ImageIcon size={13} />
+                          <span>Browse</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                try {
+                                  const compressed = await compressImageFile(file);
+                                  const updated = [...promoBanners];
+                                  updated[idx].bgImageUrl = compressed;
+                                  updated[idx].imageUrl = compressed;
+                                  setPromoBanners(updated);
+                                  setPreviewPromoIdx(idx);
+                                  message.success('Banner photo updated and fitted to banner size!');
+                                } catch (err) {
+                                  message.error('Failed to process image');
+                                }
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+
+                      {(promo.bgImageUrl || promo.imageUrl) && (
+                        <div className="mt-2 flex items-center gap-3">
+                          <div className="h-20 w-48 rounded border border-gray-300 overflow-hidden bg-gray-900 shadow-xs flex items-center justify-center relative">
+                            <img
+                              src={promo.bgImageUrl || promo.imageUrl}
+                              alt="Promo banner artwork"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <span className="text-[11px] text-gray-500 font-medium">
+                            Photo fills entire banner size (object-cover) with text and button displayed over it.
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

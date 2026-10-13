@@ -125,21 +125,21 @@ const ShopCatalog = () => {
     };
   }, []);
 
-  // Auto rotate hero slides every 6s
+  // Auto rotate hero slides automatically every 4s
   useEffect(() => {
     if (heroSlides.length <= 1) return;
     const interval = setInterval(() => {
       setActiveSlide((prev) => (prev + 1) % heroSlides.length);
-    }, 6000);
+    }, 4000);
     return () => clearInterval(interval);
   }, [heroSlides.length]);
 
-  // Auto rotate promo banners every 7s
+  // Auto rotate promo banners automatically every 4.5s
   useEffect(() => {
     if (promoBanners.length <= 1) return;
     const interval = setInterval(() => {
       setActivePromoIndex((prev) => (prev + 1) % promoBanners.length);
-    }, 7000);
+    }, 4500);
     return () => clearInterval(interval);
   }, [promoBanners.length]);
 
@@ -231,42 +231,49 @@ const ShopCatalog = () => {
             <img
               src={currentSlide.imageUrl}
               alt={currentSlide.title || "Infinito Hero Slide"}
-              className="absolute inset-0 w-full h-full object-cover object-center transition-all duration-700"
+              className="absolute inset-0 w-full h-full object-cover object-center transition-all duration-700 scale-[1.08] min-w-full min-h-full"
             />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-r from-black via-[#1c0205] to-black" />
           )}
 
-          {/* If custom overlay is selected or text overlay requested */}
-          {currentSlide?.displayMode === "custom_overlay" ? (
-            <div className="relative z-10 max-w-[1200px] w-full mx-auto px-4 md:px-12 py-12 flex items-center">
-              <div
-                className={`max-w-xl space-y-4 ${currentSlide.alignment === "right" ? "ml-auto text-right" : "mr-auto text-left"
-                  }`}
-              >
-                <h1 className="text-3xl md:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-none drop-shadow-md">
-                  {currentSlide.headline || "BECOME ONE OF US BECOME INFINITO"}
-                </h1>
-                <p className="text-gray-200 text-xs md:text-sm font-normal leading-relaxed drop-shadow">
-                  {currentSlide.subheading || "Only 500 pieces. Book the exclusive merchandise right now."}
-                </p>
-                <div className={`pt-2 flex ${currentSlide.alignment === "right" ? "justify-end" : "justify-start"}`}>
-                  <button
-                    onClick={() => handleCtaClick(currentSlide.buttonLink || "https://shop.infinitohq.com/")}
-                    className="px-8 py-3 bg-red-600 hover:bg-red-700 text-white font-bold text-sm tracking-wider uppercase transition shadow-xl cursor-pointer"
-                  >
-                    {currentSlide.buttonText || "Shop Now"}
-                  </button>
-                </div>
+          {/* High-contrast gradient scrim ensuring text and button pop */}
+          <div
+            className={`absolute inset-0 pointer-events-none ${
+              currentSlide?.alignment === "right"
+                ? "bg-gradient-to-l from-black/85 via-black/40 to-transparent"
+                : "bg-gradient-to-r from-black/85 via-black/40 to-transparent"
+            }`}
+          />
+
+          {/* Text & button overlay matching Homepage Promo Banner aesthetic */}
+          <div className="relative z-10 max-w-[1200px] w-full mx-auto px-6 sm:px-8 md:px-12 py-10 md:py-16 flex items-center">
+            <div
+              className={`max-w-xl space-y-2 md:space-y-3 ${
+                currentSlide?.alignment === "right" ? "ml-auto text-right" : "mr-auto text-left"
+              }`}
+            >
+              <div className={`flex items-center gap-2 ${currentSlide?.alignment === "right" ? "justify-end" : "justify-start"}`}>
+                <span className="inline-block bg-black/75 text-[#DD1215] text-[10px] md:text-xs font-bold uppercase tracking-widest px-2.5 py-0.5 rounded border border-red-900/40">
+                  {currentSlide?.highlightText || "EXCLUSIVE DROP"}
+                </span>
+              </div>
+              <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold uppercase leading-[0.95] tracking-tight text-white drop-shadow-md font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif]">
+                {currentSlide?.headline || currentSlide?.title || "BECOME ONE OF US BECOME INFINITO"}
+              </h1>
+              <p className="text-xs sm:text-sm md:text-base font-semibold tracking-wide text-gray-200 uppercase drop-shadow max-w-lg">
+                {currentSlide?.subheading || "Only 500 pieces. Book the exclusive merchandise right now."}
+              </p>
+              <div className={`pt-2 flex ${currentSlide?.alignment === "right" ? "justify-end" : "justify-start"}`}>
+                <button
+                  onClick={() => handleCtaClick(currentSlide?.buttonLink || "https://shop.infinitohq.com/")}
+                  className="px-6 sm:px-7 py-2.5 sm:py-3 bg-[#DD1215] hover:bg-red-700 text-white text-xs sm:text-sm font-bold uppercase tracking-wider rounded transition-colors shadow-lg cursor-pointer"
+                >
+                  {currentSlide?.buttonText || "Shop Now"}
+                </button>
               </div>
             </div>
-          ) : (
-            /* Banner image mode: full clickable overlay with action button */
-            <div
-              onClick={() => handleCtaClick(currentSlide?.buttonLink || "https://shop.infinitohq.com/")}
-              className="absolute inset-0 z-10 cursor-pointer"
-            />
-          )}
+          </div>
 
           {/* Carousel Prev/Next Arrows */}
           {heroSlides.length > 1 && (
@@ -330,39 +337,69 @@ const ShopCatalog = () => {
             <ChevronLeft size={18} />
           </button>
 
-          {/* Exact SS2 Sized Banner Card */}
-          <div
-            className="relative w-full max-w-[780px] h-[160px] sm:h-[175px] md:h-[180px] rounded-xl overflow-hidden shadow-md flex items-center bg-black bg-cover bg-center shrink-0"
-            style={{
-              backgroundColor: currentPromo?.bgColor || "#800000",
-              backgroundImage: currentPromo?.bgImageUrl ? `url(${currentPromo.bgImageUrl})` : "none",
-            }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/25 to-transparent pointer-events-none" />
+          {/* Exact Responsive Promo Banner Card - Image fills container cleanly */}
+          {(() => {
+            const isRight = currentPromo?.alignment === "right";
+            const isCenter = currentPromo?.alignment === "center";
 
-            <div className="relative z-10 pl-6 sm:pl-8 md:pl-10 max-w-[65%] sm:max-w-[55%] space-y-1 text-white">
-              {(currentPromo?.badgeText || currentPromo?.discountCode) && (
-                <span className="inline-block bg-black/70 text-[#DD1215] text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded">
-                  {currentPromo.badgeText || currentPromo.discountCode}
-                </span>
-              )}
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight text-white drop-shadow">
-                {currentPromo?.headline || "35% off"}
-              </h2>
-              <p className="text-[11px] sm:text-xs md:text-sm font-semibold tracking-wide text-gray-200 uppercase drop-shadow">
-                {currentPromo?.subtitle || "on THE CRIMSON BLOODLINE"}
-              </p>
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => handleCtaClick(currentPromo?.buttonLink || "https://shop.infinitohq.com/")}
-                  className="px-4 sm:px-5 py-1.5 sm:py-2 bg-[#DD1215] hover:bg-red-700 text-white text-xs font-bold uppercase tracking-wider rounded transition cursor-pointer shadow-sm"
-                >
-                  {currentPromo?.buttonText || "Buy Now"}
-                </button>
+            return (
+              <div
+                className="relative w-full max-w-[840px] min-h-[170px] sm:min-h-[190px] md:min-h-[210px] rounded-xl overflow-hidden shadow-md flex items-center bg-black shrink-0"
+                style={{
+                  backgroundColor: currentPromo?.bgColor || "#800000",
+                }}
+              >
+                {/* The image fills the size of the banner cleanly */}
+                {currentPromo?.bgImageUrl && (
+                  <img
+                    src={currentPromo.bgImageUrl}
+                    alt={currentPromo?.headline || "Promotional Banner"}
+                    className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none transition-all duration-300 scale-[1.08] min-w-full min-h-full"
+                  />
+                )}
+
+                {/* Gradient overlay for readability */}
+                <div className={`absolute inset-0 pointer-events-none ${
+                  isRight
+                    ? "bg-gradient-to-l from-black/85 via-black/40 to-transparent"
+                    : isCenter
+                    ? "bg-black/55"
+                    : "bg-gradient-to-r from-black/85 via-black/40 to-transparent"
+                }`} />
+
+                <div className={`relative z-10 px-6 sm:px-8 md:px-10 py-4 max-w-[70%] sm:max-w-[60%] space-y-1 text-white ${
+                  isRight ? "ml-auto text-right" : isCenter ? "mx-auto text-center" : "text-left"
+                }`}>
+                  {(currentPromo?.badgeText || currentPromo?.discountCode) && (
+                    <div className={`flex items-center gap-2 ${
+                      isRight ? "justify-end" : isCenter ? "justify-center" : "justify-start"
+                    }`}>
+                      <span className="inline-block bg-black/70 text-[#DD1215] text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded">
+                        {currentPromo.badgeText || currentPromo.discountCode}
+                      </span>
+                    </div>
+                  )}
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight text-white drop-shadow font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif]">
+                    {currentPromo?.headline || "35% off"}
+                  </h2>
+                  <p className="text-[11px] sm:text-xs md:text-sm font-semibold tracking-wide text-gray-200 uppercase drop-shadow">
+                    {currentPromo?.subtitle || "on THE CRIMSON BLOODLINE"}
+                  </p>
+                  <div className={`pt-2 flex ${
+                    isRight ? "justify-end" : isCenter ? "justify-center" : "justify-start"
+                  }`}>
+                    <button
+                      type="button"
+                      onClick={() => handleCtaClick(currentPromo?.buttonLink || "https://shop.infinitohq.com/")}
+                      className="px-4 sm:px-5 py-1.5 sm:py-2 bg-[#DD1215] hover:bg-red-700 text-white text-xs font-bold uppercase tracking-wider rounded transition cursor-pointer shadow-sm"
+                    >
+                      {currentPromo?.buttonText || "Buy Now"}
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Right Arrow Button */}
           <button

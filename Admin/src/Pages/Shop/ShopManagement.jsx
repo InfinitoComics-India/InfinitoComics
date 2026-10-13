@@ -21,7 +21,7 @@ const ShopManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('ALL');
   const [accessFilter, setAccessFilter] = useState('ALL');
-  const [togglingEmail, setTogglingEmail] = useState(null);
+  const [togglingId, setTogglingId] = useState(null);
 
   // Load all employees on mount
   const loadEmployees = async () => {
@@ -46,13 +46,23 @@ const ShopManagement = () => {
       bc = new BroadcastChannel('infinito_shop_access_channel');
       bc.onmessage = (e) => {
         if (e.data?.type === 'shop_access_updated') {
-          const allowed = new Set(e.data.allowedEmails || []);
-          setEmployees((prev) =>
-            prev.map((emp) => {
-              const em = String(emp.email || '').toLowerCase().trim();
-              return { ...emp, shopAccess: allowed.has(em) };
-            })
-          );
+          if (Array.isArray(e.data.allowedEmails)) {
+            const allowed = new Set(e.data.allowedEmails.map((em) => String(em).toLowerCase().trim()));
+            setEmployees((prev) =>
+              prev.map((emp) => {
+                const em = String(emp.email || '').toLowerCase().trim();
+                return em ? { ...emp, shopAccess: allowed.has(em) } : emp;
+              })
+            );
+          } else if (e.data.email) {
+            const target = String(e.data.email).toLowerCase().trim();
+            const val = Boolean(e.data.shopAccess);
+            setEmployees((prev) =>
+              prev.map((emp) =>
+                String(emp.email || '').toLowerCase().trim() === target ? { ...emp, shopAccess: val } : emp
+              )
+            );
+          }
         }
       };
     } catch {}
@@ -65,31 +75,34 @@ const ShopManagement = () => {
   // Handle single employee toggle
   const handleToggleAccess = async (emp, checked) => {
     const email = String(emp.email || '').toLowerCase().trim();
-    if (!email) return;
+    const empId = emp.id || emp._id || emp.employeeId;
+    const identifier = empId || email;
+    if (!identifier) return;
 
-    setTogglingEmail(email);
+    setTogglingId(identifier);
     try {
-      // Optimistic state update
+      // Precise optimistic update targeting this specific record
       setEmployees((prev) =>
-        prev.map((e) =>
-          String(e.email || '').toLowerCase().trim() === email ? { ...e, shopAccess: checked } : e
-        )
+        prev.map((e) => {
+          const isTarget = (empId && (e.id === empId || e._id === empId)) ||
+                          (email && String(e.email || '').toLowerCase().trim() === email);
+          return isTarget ? { ...e, shopAccess: checked } : e;
+        })
       );
 
       await toggleEmployeeShopAccess(emp, checked);
 
       if (checked) {
-        message.success(`Granted Shop section access to ${emp.name} (${emp.email})`);
+        message.success(`Granted Shop section access to ${emp.name}`);
       } else {
         message.info(`Revoked Shop section access from ${emp.name}`);
       }
     } catch (err) {
       console.error('Toggle error:', err);
       message.error('Failed to update shop access');
-      // Revert
       loadEmployees();
     } finally {
-      setTogglingEmail(null);
+      setTogglingId(null);
     }
   };
 
@@ -261,7 +274,8 @@ const ShopManagement = () => {
       title: 'SHOP SECTION ACCESS',
       key: 'shopAccess',
       render: (_, record) => {
-        const isToggling = togglingEmail === String(record.email || '').toLowerCase().trim();
+        const rowId = record.id || record._id || record.employeeId || String(record.email || '').toLowerCase().trim();
+        const isToggling = togglingId === rowId || (record.email && togglingId === String(record.email).toLowerCase().trim());
         const hasAccess = record.shopAccess === true;
 
         return (
@@ -444,7 +458,7 @@ const ShopManagement = () => {
         <Table
           columns={columns}
           dataSource={filteredEmployees}
-          rowKey={(record) => record.email || record.id}
+          rowKey={(record, idx) => record.id || record._id || (record.email ? `${record.email}_${record.employeeId || idx}` : `emp_${idx}`)}
           loading={loading}
           pagination={{
             pageSize: 10,

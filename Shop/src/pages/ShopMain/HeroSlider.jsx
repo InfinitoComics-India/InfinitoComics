@@ -6,19 +6,20 @@ const defaultSlides = [
     id: "slide-1",
     title: "Monthly Drop Incoming",
     image: "/banners/hero_monthly_drop.png",
-    hideText: true,
+    hideText: false,
     heading: "MONTHLY DROP INCOMING",
+    highlightText: "MONTHLY DROP",
     subtext: "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
     cta: "Shop Now",
     ctaLink: "https://shop.infinitohq.com/",
     variant: "light",
-    align: "right",
+    align: "left",
   },
   {
     id: "slide-2",
     title: "Become Infinito",
     image: "/banners/hero_become_infinito.png",
-    hideText: true,
+    hideText: false,
     heading: "BECOME ONE OF US BECOME INFINITO",
     highlightText: "ONE OF US",
     subtext: "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
@@ -41,14 +42,14 @@ const loadSlidesFromStorage = () => {
             id: s.id || `slide-${idx + 1}`,
             title: s.title,
             image: s.imageUrl || s.image || (idx === 0 ? "/banners/hero_monthly_drop.png" : "/banners/hero_become_infinito.png"),
-            heading: s.headline,
-            highlightText: s.highlightText,
-            subtext: s.subheading,
-            cta: s.buttonText || "Shop Now",
-            ctaLink: s.buttonLink || "https://shop.infinitohq.com/",
-            hideText: s.displayMode === "banner_image" || s.hideText === true,
+            heading: s.headline || s.title || (idx === 0 ? "MONTHLY DROP INCOMING" : "BECOME ONE OF US BECOME INFINITO"),
+            highlightText: s.highlightText || (idx === 0 ? "MONTHLY DROP" : "ONE OF US"),
+            subtext: s.subheading || s.subtext || "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
+            cta: s.buttonText || s.cta || "Shop Now",
+            ctaLink: s.buttonLink || s.ctaLink || "https://shop.infinitohq.com/",
+            hideText: false,
             variant: s.variant || (idx === 0 ? "light" : "dark"),
-            align: s.alignment || s.align || (idx === 0 ? "right" : "left"),
+            align: s.alignment || s.align || "left",
           }));
         }
       }
@@ -59,18 +60,29 @@ const loadSlidesFromStorage = () => {
 
 const HeroSlider = () => {
   const [slides, setSlides] = useState(loadSlidesFromStorage);
-
   const [active, setActive] = useState(0);
 
-  const goTo = useCallback((i) => setActive((i + slides.length) % slides.length), []);
-  const next = useCallback(() => goTo(active + 1), [active, goTo]);
-  const prev = useCallback(() => goTo(active - 1), [active, goTo]);
+  const goTo = (i) => {
+    if (!slides || slides.length === 0) return;
+    setActive((i + slides.length) % slides.length);
+  };
+  const next = () => {
+    if (!slides || slides.length === 0) return;
+    setActive((prev) => (prev + 1) % slides.length);
+  };
+  const prev = () => {
+    if (!slides || slides.length === 0) return;
+    setActive((prev) => (prev - 1 + slides.length) % slides.length);
+  };
 
-  // Auto-advance every 6s
+  // Automated sliding every 4 seconds
   useEffect(() => {
-    const t = setInterval(next, 6000);
-    return () => clearInterval(t);
-  }, [next]);
+    if (!slides || slides.length <= 1) return;
+    const timer = setInterval(() => {
+      setActive((prev) => (prev + 1) % slides.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [slides.length]);
 
   // Live synchronization across Admin tab and Shop tab
   useEffect(() => {
@@ -136,88 +148,79 @@ const HeroSlider = () => {
 };
 
 const Slide = ({ slide }) => {
-  const isDark = slide.variant === "dark";
   const isRight = slide.align === "right";
 
-  const textColor = isDark ? "text-white" : "text-black";
-
-  // Fallback background when no artwork has been supplied yet — matches
-  // the light / dark variants so text still reads well.
-  const fallbackBg = isDark
-    ? "bg-[radial-gradient(circle_at_65%_50%,#3a0a0a_0%,#000_45%)]"
-    : "bg-[radial-gradient(circle_at_35%_50%,#fde4e4_0%,#fff_55%)]";
-
   return (
-    <div
-      className={`w-full flex-shrink-0 ${textColor} relative ${
-        slide.image ? "bg-black" : fallbackBg
-      }`}
-    >
+    <div className="w-full flex-shrink-0 text-white relative bg-black">
       {slide.image && (
-        <>
-          {/* Full-bleed hero artwork — already includes background, products
-              and lighting so we just render it edge-to-edge. */}
-          <img
-            src={slide.image}
-            alt=""
-            aria-hidden="true"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-
-          {/* Text-readability gradient only makes sense when there's an
-              overlay to protect. Skip it when the artwork already has
-              baked-in copy. */}
-          {!slide.hideText && (
-            <div
-              className={`absolute inset-0 ${
-                isRight
-                  ? "bg-gradient-to-l from-white/60 via-white/10 to-transparent"
-                  : "bg-gradient-to-r from-black/70 via-black/20 to-transparent"
-              }`}
-            />
-          )}
-        </>
+        <img
+          src={slide.image}
+          alt={slide.title || "Hero Slide"}
+          className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none scale-[1.08] min-w-full min-h-full"
+        />
       )}
 
-      {slide.hideText ? (
-        // Artwork already carries heading, subtext and CTA — reserve
-        // the same vertical space and stay out of the way matching SS1 aspect ratio.
-        <div className="w-full aspect-[1024/380] min-h-[340px] sm:min-h-[420px] md:min-h-[500px]" />
-      ) : (
-        <div className="relative max-w-[1200px] mx-auto px-4 md:px-12 w-full aspect-[1024/380] min-h-[340px] sm:min-h-[420px] md:min-h-[500px] flex items-center">
-          <div
-            className={`w-full md:w-1/2 py-14 md:py-20 ${
-              isRight ? "md:ml-auto md:text-right" : "md:mr-auto md:text-left"
-            }`}
-          >
-            {slide.eyebrow && (
-              <div className={`inline-block mb-5 ${isRight ? "md:ml-auto" : ""}`}>
-                <span className="inline-block bg-[#DD1215] text-white px-3 py-1 text-sm md:text-base font-black tracking-widest font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif]">
-                  {slide.eyebrow}
-                </span>
-              </div>
-            )}
+      {/* Contrast gradient scrim ensuring text and button pop */}
+      <div
+        className={`absolute inset-0 pointer-events-none ${
+          isRight
+            ? "bg-gradient-to-l from-black/85 via-black/40 to-transparent"
+            : "bg-gradient-to-r from-black/85 via-black/40 to-transparent"
+        }`}
+      />
 
-            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black uppercase leading-[0.9] tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] drop-shadow-lg">
-              {slide.heading}
-            </h1>
+      {/* Content overlaid on banner matching Homepage Promo Banner aesthetic */}
+      <div className="relative max-w-[1200px] mx-auto px-6 sm:px-8 md:px-12 w-full aspect-[1024/380] min-h-[340px] sm:min-h-[420px] md:min-h-[500px] flex items-center">
+        <div
+          className={`w-full md:w-3/5 py-10 md:py-16 space-y-2 md:space-y-3 ${
+            isRight ? "md:ml-auto md:text-right" : "md:mr-auto md:text-left"
+          }`}
+        >
+          {/* Badge / Tag */}
+          <div className={`flex items-center gap-2 ${isRight ? "justify-end" : "justify-start"}`}>
+            <span className="inline-block bg-black/75 text-[#DD1215] text-[10px] md:text-xs font-bold uppercase tracking-widest px-2.5 py-0.5 rounded border border-red-900/40">
+              {slide.highlightText || slide.eyebrow || "LIMITED EDITION DROP"}
+            </span>
+          </div>
 
-            <p
-              className={`mt-6 text-sm md:text-base max-w-md font-dmsans ${
-                isRight ? "md:ml-auto" : ""
-              } ${isDark ? "text-white/85" : "text-black/75"}`}
+          {/* Bold Headline (matching promo banner e.g. "35% off" / "MONTHLY DROP INCOMING") */}
+          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold uppercase leading-[0.95] tracking-tight text-white drop-shadow-md font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif]">
+            {(() => {
+              const heading = slide.heading || slide.title || "INFINITO";
+              const hl = slide.highlightText;
+              if (!hl || !heading.toLowerCase().includes(hl.toLowerCase())) return heading;
+              const parts = heading.split(new RegExp(`(${hl})`, 'gi'));
+              return parts.map((part, i) =>
+                part.toLowerCase() === hl.toLowerCase() ? (
+                  <span key={i} className="text-[#DD1215]">{part}</span>
+                ) : (
+                  part
+                )
+              );
+            })()}
+          </h1>
+
+          {/* Subtitle (matching promo banner e.g. "ON THE CRIMSON BLOODLINE") */}
+          <p className="text-xs sm:text-sm md:text-base font-semibold tracking-wide text-gray-200 uppercase drop-shadow max-w-lg">
+            {slide.subtext || "Only 500 pieces. Book the exclusive merchandise right now."}
+          </p>
+
+          {/* Red CTA Button (matching promo banner e.g. "BUY NOW" / "SHOP NOW") */}
+          <div className={`pt-2 flex ${isRight ? "justify-end" : "justify-start"}`}>
+            <button
+              type="button"
+              onClick={() => {
+                const link = slide.ctaLink || "https://shop.infinitohq.com/";
+                if (link.startsWith("http")) window.location.href = link;
+                else window.location.pathname = link;
+              }}
+              className="px-6 sm:px-7 py-2.5 sm:py-3 bg-[#DD1215] hover:bg-red-700 text-white text-xs sm:text-sm font-bold uppercase tracking-wider rounded transition-colors shadow-lg cursor-pointer"
             >
-              {slide.subtext}
-            </p>
-
-            <div className={`mt-8 flex ${isRight ? "md:justify-end" : ""}`}>
-              <button className="px-8 py-3 bg-[#DD1215] hover:bg-red-700 text-white text-sm font-bold uppercase tracking-widest transition-colors font-dmsans">
-                {slide.cta}
-              </button>
-            </div>
+              {slide.cta || "Shop Now"}
+            </button>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

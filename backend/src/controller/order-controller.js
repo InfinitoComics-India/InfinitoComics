@@ -2,6 +2,25 @@ import ShopOrder from '../models/ShopOrder.js';
 import Product from '../models/Product.js';
 import qikinkService from '../services/qikink-service.js';
 
+// Helper to derive username/person name from email
+export const deriveNameFromEmail = (email) => {
+  if (!email || typeof email !== 'string') return 'Customer';
+  const clean = email.trim().toLowerCase();
+  if (clean === 'admin@infinitohq.com') return 'Super Admin';
+  if (clean === 'anushka@infinitohq.com') return 'Anushka';
+  if (!clean.includes('@')) return clean;
+  const userPart = clean.split('@')[0];
+  if (userPart === 'admin' || userPart === 'superadmin') return 'Super Admin';
+  const formatted = userPart
+    .replace(/[0-9._-]+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter(Boolean)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+  return formatted || userPart;
+};
+
 // Format helper
 const formatOrderNumber = () => {
   return String(Math.floor(1000 + Math.random() * 9000));
@@ -13,13 +32,18 @@ export const createOrder = async (req, res) => {
     const orderNum = body.id || body.orderNumber || formatOrderNumber();
     const orderId = body.orderId ? (body.orderId.startsWith('#') ? body.orderId : `#${body.orderId}`) : `#${orderNum}`;
 
-    // Normalize customer info
+    // Normalize customer info - derive from actual person's email/username
     const reqEmail = String(body.customer?.email || body.address?.email || '').trim().toLowerCase();
-    const fallbackName = reqEmail === 'admin@infinitohq.com' ? 'Super Admin' : (reqEmail === 'anushka@infinitohq.com' ? 'Anushka' : 'Aarav Sharma');
-    const rawCustomerName = body.customer?.name || body.address?.name;
-    const resolvedName = (rawCustomerName && String(rawCustomerName).toLowerCase() !== 'valued customer' && String(rawCustomerName).toLowerCase() !== 'customer')
-      ? rawCustomerName
-      : fallbackName;
+    const rawCustomerName = String(body.customer?.name || body.address?.name || '').trim();
+    const isPlaceholder = !rawCustomerName ||
+      rawCustomerName.toLowerCase() === 'valued customer' ||
+      rawCustomerName.toLowerCase() === 'customer' ||
+      rawCustomerName.toLowerCase() === 'aarav sharma';
+
+    let resolvedName = rawCustomerName;
+    if (isPlaceholder || reqEmail === 'admin@infinitohq.com' || rawCustomerName.toLowerCase() === 'aarav sharma') {
+      resolvedName = deriveNameFromEmail(reqEmail);
+    }
 
     // Sanitize customer and shipping phone (clean 10 digits for India / Qikink)
     const rawCustomerPhone = String(body.customer?.phone || body.address?.phone || body.shippingAddress?.phone || '9876543210').replace(/\D/g, '');
@@ -194,10 +218,30 @@ export const getAllOrders = async (req, res) => {
       .limit(Number(limit))
       .lean();
 
+    // Sanitize any existing orders that had the Aarav Sharma placeholder
+    const sanitizedOrders = orders.map((ord) => {
+      let custName = String(ord.customer?.name || '').trim();
+      const email = String(ord.customer?.email || '').trim().toLowerCase();
+      if (!custName || custName.toLowerCase() === 'aarav sharma' || custName.toLowerCase() === 'valued customer' || email === 'admin@infinitohq.com') {
+        custName = deriveNameFromEmail(email);
+      }
+      return {
+        ...ord,
+        customer: {
+          ...(ord.customer || {}),
+          name: custName,
+        },
+        shippingAddress: {
+          ...(ord.shippingAddress || {}),
+          name: ord.shippingAddress?.name && ord.shippingAddress.name.toLowerCase() !== 'aarav sharma' ? ord.shippingAddress.name : custName,
+        },
+      };
+    });
+
     return res.status(200).json({
       success: true,
-      data: orders,
-      count: orders.length,
+      data: sanitizedOrders,
+      count: sanitizedOrders.length,
     });
   } catch (error) {
     console.error('Error fetching shop orders:', error);
@@ -229,9 +273,27 @@ export const getOrderById = async (req, res) => {
       });
     }
 
+    let custName = String(order.customer?.name || '').trim();
+    const email = String(order.customer?.email || '').trim().toLowerCase();
+    if (!custName || custName.toLowerCase() === 'aarav sharma' || custName.toLowerCase() === 'valued customer' || email === 'admin@infinitohq.com') {
+      custName = deriveNameFromEmail(email);
+    }
+
+    const sanitizedOrder = {
+      ...order,
+      customer: {
+        ...(order.customer || {}),
+        name: custName,
+      },
+      shippingAddress: {
+        ...(order.shippingAddress || {}),
+        name: order.shippingAddress?.name && order.shippingAddress.name.toLowerCase() !== 'aarav sharma' ? order.shippingAddress.name : custName,
+      },
+    };
+
     return res.status(200).json({
       success: true,
-      data: order,
+      data: sanitizedOrder,
     });
   } catch (error) {
     console.error('Error fetching order by ID:', error);

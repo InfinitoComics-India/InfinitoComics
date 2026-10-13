@@ -10,6 +10,8 @@ export const BACKEND_URL =
   import.meta.env.BACKEND_URL ||
   "https://infinitocomics-68cr.onrender.com";
 
+export const BASE_URL = BACKEND_URL;
+
 export const RESEARCH_BASE_URL =
   import.meta.env.VITE_RESEARCH_BASE_URL || "https://research.infinitohq.com";
 

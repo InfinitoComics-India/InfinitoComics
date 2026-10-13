@@ -13,7 +13,19 @@ export const KNOWN_ACCOUNT_NAMES = {
   'paras@infinitohq.com': 'Paras',
   'sujal@infinitohq.com': 'Sujal',
   'mansha@infinitohq.com': 'Mansha',
-  'customer@infinitohq.com': 'Aarav Sharma',
+};
+
+export const deriveNameFromEmail = (email) => {
+  if (!email || typeof email !== 'string') return '';
+  const em = email.toLowerCase().trim();
+  if (em === 'admin@infinitohq.com') return 'Super Admin';
+  if (KNOWN_ACCOUNT_NAMES[em]) return KNOWN_ACCOUNT_NAMES[em];
+  const usernamePart = em.split('@')[0] || '';
+  const cleaned = usernamePart.replace(/[._\-+0-9]+/g, ' ').trim();
+  if (cleaned) {
+    return cleaned.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  }
+  return usernamePart ? usernamePart.charAt(0).toUpperCase() + usernamePart.slice(1) : 'Customer';
 };
 
 export const getLoggedInUserName = () => {
@@ -21,17 +33,18 @@ export const getLoggedInUserName = () => {
     const raw = localStorage.getItem("user");
     if (raw) {
       const u = JSON.parse(raw);
-      if (u.name && u.name.trim() && u.name.toLowerCase() !== 'valued customer') return u.name.trim();
-      if (u.username && u.username.trim()) return u.username.trim();
-      if (u.fullName && u.fullName.trim()) return u.fullName.trim();
-      if (u.email && KNOWN_ACCOUNT_NAMES[u.email.toLowerCase()]) return KNOWN_ACCOUNT_NAMES[u.email.toLowerCase()];
+      if (u.email && u.email.toLowerCase() === 'admin@infinitohq.com') return 'Super Admin';
+      if (u.name && u.name.trim() && u.name.toLowerCase() !== 'valued customer' && u.name.toLowerCase() !== 'aarav sharma') return u.name.trim();
+      if (u.username && u.username.trim() && u.username.toLowerCase() !== 'aarav sharma') return u.username.trim();
+      if (u.fullName && u.fullName.trim() && u.fullName.toLowerCase() !== 'aarav sharma') return u.fullName.trim();
+      if (u.email) return deriveNameFromEmail(u.email);
     }
   } catch {}
-  return "Aarav Sharma";
+  return "Customer";
 };
 
 export const DEFAULT_ADDRESS = {
-  name: "Aarav Sharma",
+  name: "",
   phone: "+91 98765 43210",
   line1: "Sector 18, House No. 42, Green Park Extension, Sector 18",
   city: "Chandigarh",
@@ -44,9 +57,15 @@ export const DEFAULT_ADDRESS = {
 export const getDeliveryAddress = () => {
   try {
     const raw = localStorage.getItem(ADDRESS_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (!parsed.name || parsed.name.toLowerCase() === 'aarav sharma' || parsed.name.toLowerCase() === 'valued customer') {
+        parsed.name = getLoggedInUserName();
+      }
+      return parsed;
+    }
   } catch {}
-  return DEFAULT_ADDRESS;
+  return { ...DEFAULT_ADDRESS, name: getLoggedInUserName() };
 };
 
 export const sanitizePhoneNumber = (raw) => {
@@ -489,8 +508,28 @@ export const normalizeOrder = (ord) => {
   const method = String(ord.paymentMethod || ord.payment?.method || "").toUpperCase();
   const isCOD = method === "COD" || method.includes("CASH ON DELIVERY");
 
+  const custEmail = ord.customer?.email || '';
+  let custName = ord.customer?.name || '';
+  if (!custName || custName.toLowerCase() === 'aarav sharma' || custName.toLowerCase() === 'valued customer' || custEmail === 'admin@infinitohq.com') {
+    custName = custEmail === 'admin@infinitohq.com' ? 'Super Admin' : (deriveNameFromEmail(custEmail) || 'Customer');
+  }
+
+  let addrName = ord.address?.name || '';
+  if (!addrName || addrName.toLowerCase() === 'aarav sharma' || addrName.toLowerCase() === 'valued customer' || custEmail === 'admin@infinitohq.com') {
+    addrName = custName;
+  }
+
   return {
     ...ord,
+    customer: {
+      ...(ord.customer || {}),
+      name: custName,
+      email: custEmail,
+    },
+    address: {
+      ...(ord.address || {}),
+      name: addrName,
+    },
     total,
     subtotal: ord.subtotal || Math.round(total / 1.18),
     pricing: {
@@ -539,7 +578,7 @@ export const formatOrderDate = (baseDate = new Date(), daysToAdd = 0) => {
   return `${day} ${month}, ${year}`;
 };
 
-export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" }) => {
+export const createOrder = ({ items = [], address = null, paymentMethod = "UPI", coupon = null, discount = 0 }) => {
   const orderNumber = Math.floor(1000 + Math.random() * 9000);
   const orderId = `#${orderNumber}`;
   const now = new Date();
@@ -580,7 +619,9 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
   });
 
   const subtotal = cleanItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  const total = Number((subtotal * 1.18).toFixed(2));
+  const tax = Number((subtotal * 0.18).toFixed(2));
+  const discountAmount = Number(discount || coupon?.discount || coupon?.discountAmount || 0);
+  const total = Number(Math.max(0, subtotal + tax - discountAmount).toFixed(2));
   const cancellationFee = 199;
   const refundAmount = Number(Math.max(0, total - cancellationFee).toFixed(2));
 
@@ -595,18 +636,32 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
     const userRaw = localStorage.getItem("user");
     if (userRaw) {
       const u = JSON.parse(userRaw);
-      const uName = u.name || u.username || u.fullName || '';
+      const uEmail = (u.email || customerInfo.email).toLowerCase().trim();
+      const uName = (u.name || u.username || u.fullName || '').trim();
+      let resolvedName = loggedInName;
+      if (uEmail === 'admin@infinitohq.com') {
+        resolvedName = 'Super Admin';
+      } else if (uName && uName.toLowerCase() !== 'valued customer' && uName.toLowerCase() !== 'aarav sharma') {
+        resolvedName = uName;
+      } else if (uEmail) {
+        resolvedName = deriveNameFromEmail(uEmail);
+      }
       customerInfo = {
-        name: (uName && uName.toLowerCase() !== 'valued customer' ? uName : customerInfo.name),
-        email: u.email || customerInfo.email,
+        name: resolvedName,
+        email: uEmail,
         phone: sanitizePhoneNumber(u.phone) || customerInfo.phone,
       };
     }
   } catch {}
 
   const activeAddr = address || getDeliveryAddress();
-  if (activeAddr.name && activeAddr.name.trim() && activeAddr.name.toLowerCase() !== 'valued customer') {
-    customerInfo.name = activeAddr.name.trim();
+  if (activeAddr.name && activeAddr.name.trim() && activeAddr.name.toLowerCase() !== 'valued customer' && activeAddr.name.toLowerCase() !== 'aarav sharma') {
+    if (customerInfo.email !== 'admin@infinitohq.com') {
+      customerInfo.name = activeAddr.name.trim();
+    }
+  }
+  if (!customerInfo.name || customerInfo.name.toLowerCase() === 'aarav sharma') {
+    customerInfo.name = customerInfo.email === 'admin@infinitohq.com' ? 'Super Admin' : (deriveNameFromEmail(customerInfo.email) || 'Customer');
   }
   const cleanPhone = sanitizePhoneNumber(activeAddr.phone || customerInfo.phone) || '9876543210';
   const cleanPin = sanitizePinCode(activeAddr.pincode) || '160018';
@@ -638,10 +693,19 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI" 
     },
     subtotal,
     taxPercent: 18,
+    discount: discountAmount,
+    coupon: coupon ? {
+      code: coupon.code,
+      discount: discountAmount,
+      type: coupon.type,
+      title: coupon.title,
+    } : null,
     total,
     pricing: {
       subtotal,
-      tax: Number((subtotal * 0.18).toFixed(2)),
+      tax,
+      discount: discountAmount,
+      discountCode: coupon?.code || '',
       shipping: 0,
       grandTotal: total,
     },

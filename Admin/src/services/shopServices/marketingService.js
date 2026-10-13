@@ -94,8 +94,8 @@ const DEFAULT_BANNERS_CONFIG = {
       buttonText: "Shop Now",
       buttonLink: "https://shop.infinitohq.com/",
       imageUrl: "/banners/hero_monthly_drop.png",
-      displayMode: "banner_image", // 'banner_image' | 'custom_overlay'
-      alignment: "right",
+      displayMode: "custom_overlay", // Custom text & button overlay matching promo banner
+      alignment: "left",
       variant: "light",
       isActive: true,
     },
@@ -108,7 +108,7 @@ const DEFAULT_BANNERS_CONFIG = {
       buttonText: "Shop Now",
       buttonLink: "https://shop.infinitohq.com/",
       imageUrl: "/banners/hero_become_infinito.png",
-      displayMode: "banner_image", // 'banner_image' | 'custom_overlay'
+      displayMode: "custom_overlay", // Custom text & button overlay matching promo banner
       alignment: "left",
       variant: "dark",
       isActive: true,
@@ -272,11 +272,26 @@ export const getMarketingBanners = async () => {
       const merged = {
         ...DEFAULT_BANNERS_CONFIG,
         ...parsed,
-        heroSlider: Array.isArray(parsed.heroSlider) && parsed.heroSlider.length > 0 && parsed.heroSlider[0].imageUrl
-          ? parsed.heroSlider
+        heroSlider: Array.isArray(parsed.heroSlider) && parsed.heroSlider.length > 0
+          ? parsed.heroSlider.map((s, idx) => ({
+              ...s,
+              id: s.id || `slide-${idx + 1}`,
+              imageUrl: s.imageUrl || s.image || '',
+              image: s.imageUrl || s.image || '',
+              displayMode: s.displayMode || 'custom_overlay',
+              alignment: s.alignment || 'left',
+              isActive: s.isActive !== false,
+            }))
           : DEFAULT_BANNERS_CONFIG.heroSlider,
         promoBanners: Array.isArray(parsed.promoBanners) && parsed.promoBanners.length > 0
-          ? parsed.promoBanners
+          ? parsed.promoBanners.map((b, idx) => ({
+              ...b,
+              id: b.id || `promo-${idx + 1}`,
+              bgImageUrl: b.bgImageUrl || b.imageUrl || b.image || '',
+              alignment: b.alignment || 'left',
+              displayMode: b.displayMode || 'custom_overlay',
+              isActive: b.isActive !== false,
+            }))
           : DEFAULT_BANNERS_CONFIG.promoBanners,
         promoBars: Array.isArray(parsed.promoBars) && parsed.promoBars.length > 0
           ? parsed.promoBars
@@ -295,23 +310,70 @@ export const getMarketingBanners = async () => {
 
 export const updateHeroSlider = async (slides) => {
   const current = await getMarketingBanners();
+  const safeSlides = Array.isArray(slides) ? slides : [];
+  const normalizedSlides = safeSlides.map((s, idx) => ({
+    ...s,
+    id: s.id || `slide-${idx + 1}`,
+    imageUrl: s.imageUrl || s.image || '',
+    image: s.imageUrl || s.image || '',
+    headline: s.headline || s.title || '',
+    highlightText: s.highlightText || '',
+    subheading: s.subheading || s.subtext || '',
+    buttonText: s.buttonText || s.cta || 'Shop Now',
+    buttonLink: s.buttonLink || s.ctaLink || 'https://shop.infinitohq.com/',
+    displayMode: 'custom_overlay', // Always ensure custom text & button overlay is active
+    alignment: s.alignment || s.align || 'left',
+    isActive: s.isActive !== false,
+  }));
   const updated = {
     ...current,
-    heroSlider: slides,
+    heroSlider: normalizedSlides,
   };
-  localStorage.setItem(BANNERS_KEY, JSON.stringify(updated));
+  try {
+    localStorage.setItem(BANNERS_KEY, JSON.stringify(updated));
+  } catch (err) {
+    console.warn("Storage write failed (possibly quota), attempting trimmed save", err);
+    try {
+      const trimmed = {
+        ...current,
+        heroSlider: normalizedSlides.map(s => ({
+          ...s,
+          imageUrl: (s.imageUrl || '').length > 400000 ? s.imageUrl.slice(0, 400000) : s.imageUrl,
+          image: (s.image || '').length > 400000 ? s.image.slice(0, 400000) : s.image,
+        }))
+      };
+      localStorage.setItem(BANNERS_KEY, JSON.stringify(trimmed));
+    } catch (e2) {
+      console.warn("Trimmed save also failed, falling back to sessionStorage", e2);
+      try {
+        sessionStorage.setItem(BANNERS_KEY, JSON.stringify(updated));
+      } catch {}
+    }
+  }
   broadcastBanners(updated);
   return updated;
 };
 
 export const updatePromoBanners = async (banners) => {
   const current = await getMarketingBanners();
+  const normalizedBanners = banners.map((b, idx) => ({
+    ...b,
+    id: b.id || `promo-${idx + 1}`,
+    bgImageUrl: b.bgImageUrl || b.imageUrl || b.image || '',
+    alignment: b.alignment || 'left',
+    displayMode: b.displayMode || 'custom_overlay',
+    isActive: b.isActive !== false,
+  }));
   const updated = {
     ...current,
-    promoBanners: banners,
-    promoBanner: banners[0] || current.promoBanner,
+    promoBanners: normalizedBanners,
+    promoBanner: normalizedBanners[0] || current.promoBanner,
   };
-  localStorage.setItem(BANNERS_KEY, JSON.stringify(updated));
+  try {
+    localStorage.setItem(BANNERS_KEY, JSON.stringify(updated));
+  } catch (err) {
+    console.warn("Storage write failed", err);
+  }
   broadcastBanners(updated);
   return updated;
 };
@@ -323,7 +385,11 @@ export const updatePromoBars = async (bars) => {
     promoBars: bars,
     promoBar: bars[0] || current.promoBar,
   };
-  localStorage.setItem(BANNERS_KEY, JSON.stringify(updated));
+  try {
+    localStorage.setItem(BANNERS_KEY, JSON.stringify(updated));
+  } catch (err) {
+    console.warn("Storage write failed", err);
+  }
   broadcastBanners(updated);
   return updated;
 };

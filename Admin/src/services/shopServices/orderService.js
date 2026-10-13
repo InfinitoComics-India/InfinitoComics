@@ -35,13 +35,13 @@ const SEED_ORDERS = [];
     id: '4721',
     createdAt: new Date(Date.now() - 1000 * 60 * 35).toISOString(), // 35 mins ago
     customer: {
-      name: 'Aarav Sharma',
+      name: 'Sample Customer',
       email: 'aarav.sharma@example.com',
       phone: '+91 98765 43210',
       totalOrders: 3,
     },
     shippingAddress: {
-      name: 'Aarav Sharma',
+      name: 'Sample Customer',
       line1: 'Flat 402, Lotus Residency, Road No. 12',
       city: 'Hyderabad',
       state: 'Telangana',
@@ -50,7 +50,7 @@ const SEED_ORDERS = [];
       formatted: 'Flat 402, Lotus Residency, Road No. 12, Hyderabad, Telangana 500034, India',
     },
     billingAddress: {
-      name: 'Aarav Sharma',
+      name: 'Sample Customer',
       line1: 'Flat 402, Lotus Residency, Road No. 12',
       city: 'Hyderabad',
       state: 'Telangana',
@@ -642,76 +642,68 @@ export const KNOWN_ACCOUNT_NAMES = {
   'paras@infinitohq.com': 'Paras',
   'sujal@infinitohq.com': 'Sujal',
   'mansha@infinitohq.com': 'Mansha',
-  'customer@infinitohq.com': 'Aarav Sharma',
 };
 
-// Customer name pool for realistic display if only generic placeholder is given
-const REALISTIC_NAMES_POOL = [
-  'Aarav Sharma',
-  'Rohan Mehta',
-  'Priya Patel',
-  'Vikram Singh',
-  'Ananya Verma',
-  'Kabir Malhotra',
-  'Neha Gupta',
-  'Aditya Roy',
-  'Ishaan Kapoor',
-  'Riya Sen',
-];
+// Helper to derive a clean display name from an email username
+export const deriveUsernameFromEmail = (email) => {
+  if (!email || typeof email !== 'string') return '';
+  const clean = email.trim().toLowerCase();
+  if (KNOWN_ACCOUNT_NAMES[clean]) return KNOWN_ACCOUNT_NAMES[clean];
+  if (!clean.includes('@')) return clean;
+  const userPart = clean.split('@')[0];
+  if (userPart === 'admin' || userPart === 'superadmin') return 'Super Admin';
+  const formatted = userPart
+    .replace(/[0-9._-]+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter(Boolean)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+  return formatted || userPart;
+};
 
 export const resolveCustomerDisplayName = (customer, address, orderId) => {
-  const cName = customer?.name || customer?.fullName;
-  const isGeneric = !cName ||
-    typeof cName !== 'string' ||
-    cName.trim() === '' ||
-    cName.trim().toLowerCase() === 'valued customer' ||
-    cName.trim().toLowerCase() === 'customer';
-
-  if (!isGeneric) {
-    return cName.trim();
-  }
-
-  // Check address name
-  const addrName = address?.name;
-  const isAddrGeneric = !addrName ||
-    typeof addrName !== 'string' ||
-    addrName.trim() === '' ||
-    addrName.trim().toLowerCase() === 'valued customer' ||
-    addrName.trim().toLowerCase() === 'customer' ||
-    addrName.trim().toLowerCase() === 'default address';
-
-  if (!isAddrGeneric) {
-    return addrName.trim();
-  }
-
-  // Check email
   const email = String(customer?.email || address?.email || '').trim().toLowerCase();
+  const cName = String(customer?.name || customer?.fullName || '').trim();
+  const addrName = String(address?.name || '').trim();
+
+  // If email is an admin/known account, immediately use that identity
+  if (email === 'admin@infinitohq.com') {
+    return 'Super Admin';
+  }
   if (email && KNOWN_ACCOUNT_NAMES[email]) {
     return KNOWN_ACCOUNT_NAMES[email];
   }
 
-  if (email && email.includes('@')) {
-    const usernamePart = email.split('@')[0];
-    if (usernamePart.toLowerCase() === 'admin') {
-      return 'Super Admin';
-    }
-    if (usernamePart.toLowerCase() !== 'customer' && usernamePart.length > 2) {
-      const cleaned = usernamePart
-        .replace(/[0-9._-]+/g, ' ')
-        .trim()
-        .split(' ')
-        .filter(Boolean)
-        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-        .join(' ');
-      if (cleaned.length > 2) return cleaned;
-    }
+  // Check if customer name is a placeholder
+  const isCNamePlaceholder = !cName ||
+    cName.toLowerCase() === 'valued customer' ||
+    cName.toLowerCase() === 'customer' ||
+    cName.toLowerCase() === 'aarav sharma';
+
+  // If customer has a real valid name (not Aarav Sharma placeholder)
+  if (!isCNamePlaceholder) {
+    return cName;
   }
 
-  // Stable derivation from orderId or order numbers so same order consistently shows the same name
-  const seedStr = String(orderId || email || '42').replace(/\D/g, '');
-  const seedNum = parseInt(seedStr, 10) || 42;
-  const poolIndex = Math.abs(seedNum) % REALISTIC_NAMES_POOL.length;
-  return REALISTIC_NAMES_POOL[poolIndex];
+  // Check address name
+  const isAddrPlaceholder = !addrName ||
+    addrName.toLowerCase() === 'valued customer' ||
+    addrName.toLowerCase() === 'customer' ||
+    addrName.toLowerCase() === 'default address' ||
+    addrName.toLowerCase() === 'aarav sharma';
+
+  if (!isAddrPlaceholder) {
+    return addrName;
+  }
+
+  // Derive the person's name directly from their email username
+  if (email && email.includes('@')) {
+    const derived = deriveUsernameFromEmail(email);
+    if (derived) return derived;
+  }
+
+  return 'Customer';
 };
 
 // Helper to normalize orders loaded from customer-facing shop format or backend
