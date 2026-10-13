@@ -422,7 +422,7 @@ const EmployeePortal = () => {
   const handleWorkSubmit = async (e) => {
     e.preventDefault();
     if (!workDesc.trim()) { setError("Work description required."); return; }
-    if (!workHours || parseFloat(workHours)<=0) { setError("Enter valid hours."); return; }
+    if (!workHours || parseFloat(workHours) <= 0) { setError("Enter valid hours."); return; }
     try { setWorkSaving(true); setError(""); setSuccess("");
       const r = await axios.post(`${BASE}/hr/worklog/submit`, { workDescription:workDesc.trim(), hoursWorked:parseFloat(workHours) }, auth());
       setMyLog(r.data.data); setSuccess(myLog?"✅ Updated!":"✅ Submitted!"); loadWorkHistory();
@@ -737,7 +737,7 @@ const EmployeePortal = () => {
                         )}
                       </div>
                       <div className="flex items-center gap-3">
-                        <input type="number" min="0.5" max="24" step="0.5" value={workHours} onChange={e=>setWorkHours(e.target.value)}
+                        <input type="number" min="0.5" max="24" step="0.01" value={workHours} onChange={e=>setWorkHours(e.target.value)}
                           className="w-24 border border-gray-300 px-3 py-2 text-sm text-center font-bold focus:outline-none focus:border-[#DD1215]"/>
                         <div className="flex gap-1.5">
                           {[3,4,6,8].map(h=>(
