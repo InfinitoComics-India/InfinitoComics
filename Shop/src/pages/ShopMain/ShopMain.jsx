@@ -203,7 +203,7 @@ const ShopMain = () => {
                           </span>
                         </div>
                       )}
-                      <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight text-white drop-shadow font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif]">
+                      <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight uppercase text-white drop-shadow font-sans">
                         {currentPromo?.headline || "35% off"}
                       </h2>
                       <p className="text-[11px] sm:text-xs md:text-sm font-semibold tracking-wide text-gray-200 uppercase drop-shadow">
