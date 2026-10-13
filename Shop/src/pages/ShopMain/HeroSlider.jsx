@@ -160,16 +160,16 @@ const Slide = ({ slide }) => {
         />
       )}
 
-      {/* Contrast gradient scrim ensuring text and button pop */}
+      {/* Contrast gradient scrim ensuring text and button pop and masking background */}
       <div
         className={`absolute inset-0 pointer-events-none ${
           isRight
-            ? "bg-gradient-to-l from-black/85 via-black/40 to-transparent"
-            : "bg-gradient-to-r from-black/85 via-black/40 to-transparent"
+            ? "bg-gradient-to-l from-black/95 via-black/60 to-transparent"
+            : "bg-gradient-to-r from-black/95 via-black/60 to-transparent"
         }`}
       />
 
-      {/* Content overlaid on banner matching Homepage Promo Banner aesthetic */}
+      {/* Content overlaid on banner matching Live Carousel Preview aesthetic exactly */}
       <div className="relative max-w-[1200px] mx-auto px-6 sm:px-8 md:px-12 w-full aspect-[1024/380] min-h-[340px] sm:min-h-[420px] md:min-h-[500px] flex items-center">
         <div
           className={`w-full md:w-3/5 py-10 md:py-16 space-y-2 md:space-y-3 ${
@@ -178,13 +178,13 @@ const Slide = ({ slide }) => {
         >
           {/* Badge / Tag */}
           <div className={`flex items-center gap-2 ${isRight ? "justify-end" : "justify-start"}`}>
-            <span className="inline-block bg-black/75 text-[#DD1215] text-[10px] md:text-xs font-bold uppercase tracking-widest px-2.5 py-0.5 rounded border border-red-900/40">
-              {slide.highlightText || slide.eyebrow || "LIMITED EDITION DROP"}
+            <span className="inline-block bg-black/75 text-[#DD1215] text-[10px] md:text-xs font-bold uppercase tracking-widest px-2.5 py-0.5 rounded backdrop-blur-sm border border-red-900/40">
+              {slide.highlightText || slide.eyebrow || "ONE OF US"} • ACTIVE
             </span>
           </div>
 
-          {/* Bold Headline (matching promo banner e.g. "35% off" / "MONTHLY DROP INCOMING") */}
-          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold uppercase leading-[0.95] tracking-tight text-white drop-shadow-md font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif]">
+          {/* Bold Headline matching Live Carousel Preview */}
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold uppercase leading-[1.05] tracking-tight text-white drop-shadow-md font-sans">
             {(() => {
               const heading = slide.heading || slide.title || "INFINITO";
               const hl = slide.highlightText;
@@ -192,7 +192,7 @@ const Slide = ({ slide }) => {
               const parts = heading.split(new RegExp(`(${hl})`, 'gi'));
               return parts.map((part, i) =>
                 part.toLowerCase() === hl.toLowerCase() ? (
-                  <span key={i} className="text-[#DD1215]">{part}</span>
+                  <span key={i} className="text-[#DD1215] drop-shadow">{part}</span>
                 ) : (
                   part
                 )
@@ -200,12 +200,12 @@ const Slide = ({ slide }) => {
             })()}
           </h1>
 
-          {/* Subtitle (matching promo banner e.g. "ON THE CRIMSON BLOODLINE") */}
+          {/* Subtitle */}
           <p className="text-xs sm:text-sm md:text-base font-semibold tracking-wide text-gray-200 uppercase drop-shadow max-w-lg">
-            {slide.subtext || "Only 500 pieces. Book the exclusive merchandise right now."}
+            {slide.subtext || "Only 500 pieces. Book the exclusive INFINITO merchandise right now."}
           </p>
 
-          {/* Red CTA Button (matching promo banner e.g. "BUY NOW" / "SHOP NOW") */}
+          {/* Red CTA Button */}
           <div className={`pt-2 flex ${isRight ? "justify-end" : "justify-start"}`}>
             <button
               type="button"
@@ -214,7 +214,7 @@ const Slide = ({ slide }) => {
                 if (link.startsWith("http")) window.location.href = link;
                 else window.location.pathname = link;
               }}
-              className="px-6 sm:px-7 py-2.5 sm:py-3 bg-[#DD1215] hover:bg-red-700 text-white text-xs sm:text-sm font-bold uppercase tracking-wider rounded transition-colors shadow-lg cursor-pointer"
+              className="px-5 sm:px-6 py-2 sm:py-2.5 bg-[#DD1215] hover:bg-red-700 text-white text-xs md:text-sm font-bold uppercase tracking-wider rounded transition-colors shadow-md cursor-pointer"
             >
               {slide.cta || "Shop Now"}
             </button>

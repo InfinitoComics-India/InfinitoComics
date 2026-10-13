@@ -103,6 +103,21 @@ const ShopCatalog = () => {
     }
   };
 
+  const renderHighlightedText = (headline, highlight) => {
+    if (!headline) return "BECOME ONE OF US BECOME INFINITO";
+    if (!highlight || !headline.toLowerCase().includes(highlight.toLowerCase())) {
+      return headline;
+    }
+    const parts = headline.split(new RegExp(`(${highlight})`, "gi"));
+    return parts.map((part, i) =>
+      part.toLowerCase() === highlight.toLowerCase() ? (
+        <span key={i} className="text-[#DD1215] drop-shadow">{part}</span>
+      ) : (
+        part
+      )
+    );
+  };
+
   useEffect(() => {
     loadMarketingBanners();
 
@@ -237,29 +252,29 @@ const ShopCatalog = () => {
             <div className="absolute inset-0 bg-gradient-to-r from-black via-[#1c0205] to-black" />
           )}
 
-          {/* High-contrast gradient scrim ensuring text and button pop */}
+          {/* High-contrast gradient scrim ensuring text and button pop and masking background */}
           <div
             className={`absolute inset-0 pointer-events-none ${
               currentSlide?.alignment === "right"
-                ? "bg-gradient-to-l from-black/85 via-black/40 to-transparent"
-                : "bg-gradient-to-r from-black/85 via-black/40 to-transparent"
+                ? "bg-gradient-to-l from-black/95 via-black/60 to-transparent"
+                : "bg-gradient-to-r from-black/95 via-black/60 to-transparent"
             }`}
           />
 
-          {/* Text & button overlay matching Homepage Promo Banner aesthetic */}
+          {/* Text & button overlay matching Live Carousel Preview exactly */}
           <div className="relative z-10 max-w-[1200px] w-full mx-auto px-6 sm:px-8 md:px-12 py-10 md:py-16 flex items-center">
             <div
-              className={`max-w-xl space-y-2 md:space-y-3 ${
+              className={`w-full md:w-3/5 space-y-2 md:space-y-3 ${
                 currentSlide?.alignment === "right" ? "ml-auto text-right" : "mr-auto text-left"
               }`}
             >
               <div className={`flex items-center gap-2 ${currentSlide?.alignment === "right" ? "justify-end" : "justify-start"}`}>
-                <span className="inline-block bg-black/75 text-[#DD1215] text-[10px] md:text-xs font-bold uppercase tracking-widest px-2.5 py-0.5 rounded border border-red-900/40">
-                  {currentSlide?.highlightText || "EXCLUSIVE DROP"}
+                <span className="inline-block bg-black/75 text-[#DD1215] text-[10px] md:text-xs font-bold uppercase tracking-widest px-2.5 py-0.5 rounded backdrop-blur-sm border border-red-900/40">
+                  {currentSlide?.highlightText || "ONE OF US"} {currentSlide?.isActive !== false ? "• ACTIVE" : ""}
                 </span>
               </div>
-              <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold uppercase leading-[0.95] tracking-tight text-white drop-shadow-md font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif]">
-                {currentSlide?.headline || currentSlide?.title || "BECOME ONE OF US BECOME INFINITO"}
+              <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold uppercase leading-[1.05] tracking-tight text-white drop-shadow-md font-sans">
+                {renderHighlightedText(currentSlide?.headline || currentSlide?.title, currentSlide?.highlightText)}
               </h1>
               <p className="text-xs sm:text-sm md:text-base font-semibold tracking-wide text-gray-200 uppercase drop-shadow max-w-lg">
                 {currentSlide?.subheading || "Only 500 pieces. Book the exclusive merchandise right now."}
@@ -267,7 +282,7 @@ const ShopCatalog = () => {
               <div className={`pt-2 flex ${currentSlide?.alignment === "right" ? "justify-end" : "justify-start"}`}>
                 <button
                   onClick={() => handleCtaClick(currentSlide?.buttonLink || "https://shop.infinitohq.com/")}
-                  className="px-6 sm:px-7 py-2.5 sm:py-3 bg-[#DD1215] hover:bg-red-700 text-white text-xs sm:text-sm font-bold uppercase tracking-wider rounded transition-colors shadow-lg cursor-pointer"
+                  className="px-5 sm:px-6 py-2 sm:py-2.5 bg-[#DD1215] hover:bg-red-700 text-white text-xs md:text-sm font-bold uppercase tracking-wider rounded transition-colors shadow-md cursor-pointer"
                 >
                   {currentSlide?.buttonText || "Shop Now"}
                 </button>
@@ -379,7 +394,7 @@ const ShopCatalog = () => {
                       </span>
                     </div>
                   )}
-                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight text-white drop-shadow font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif]">
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight uppercase text-white drop-shadow font-sans">
                     {currentPromo?.headline || "35% off"}
                   </h2>
                   <p className="text-[11px] sm:text-xs md:text-sm font-semibold tracking-wide text-gray-200 uppercase drop-shadow">
