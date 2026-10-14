@@ -25,8 +25,14 @@ class PayrollService {
       const salary = await this.salaryRepo.getByEmployee(employeeId);
       if (!salary) throw new Error("No salary structure found. Set salary first.");
 
-      // Get attendance for the month
-      const attendance = await this.attendanceRepo.getMonthlyForEmployee(employeeId, year, month);
+      // Get attendance for the month — check both Employee ID and Admin ID
+      const Attendance = (await import('../models/Attendance.js')).default;
+      const attStart = new Date(Date.UTC(year, month - 1, 1));
+      const attEnd   = new Date(Date.UTC(year, month, 0, 23, 59, 59));
+      const attendance   = await Attendance.find({
+        employeeId: employeeId,
+        date: { $gte: attStart, $lte: attEnd }
+      });
 
       // Build a set of dates where employee was present (from attendance)
       const presentDates   = new Set();
@@ -35,10 +41,12 @@ class PayrollService {
 
       for (const rec of attendance) {
         const d    = new Date(rec.date);
-        const iso  = d.toISOString().split("T")[0];
-        const isSunday = d.getDay() === 0;
+        // Add IST offset to get correct day of week
+        const istD = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
+        const iso  = istD.toISOString().split("T")[0];
+        const isSunday = istD.getUTCDay() === 0;
 
-        if (["present","late"].includes(rec.status)) {
+        if (["present","late","half_day"].includes(rec.status)) {
           presentDates.add(iso);
           if (isSunday) sundayWorkedDays++;
         } else if (rec.status === "on_leave") {
@@ -63,11 +71,12 @@ class PayrollService {
       }).select("date");
 
       for (const wl of worklogs) {
-        const d   = new Date(wl.date);
-        const iso = d.toISOString().split("T")[0];
+        const d    = new Date(wl.date);
+        const istD = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
+        const iso  = istD.toISOString().split("T")[0];
         if (!presentDates.has(iso) && !leaveDates.has(iso)) {
           presentDates.add(iso);
-          if (d.getDay() === 0) sundayWorkedDays++; // Sunday work log
+          if (istD.getUTCDay() === 0) sundayWorkedDays++;
         }
       }
 
