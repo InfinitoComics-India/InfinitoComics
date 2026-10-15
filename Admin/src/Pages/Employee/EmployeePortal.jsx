@@ -172,6 +172,8 @@ const EmployeePortal = () => {
   const [workDesc,   setWorkDesc]   = useState("");
   const [workHours,  setWorkHours]  = useState("");
   const [workSaving, setWorkSaving] = useState(false);
+  const [proofFiles, setProofFiles] = useState([]); // File objects selected by user
+  const [proofPreviews, setProofPreviews] = useState([]); // local preview URLs
 
   // Leave state
   const [leaves,     setLeaves]     = useState([]);
@@ -423,10 +425,22 @@ const EmployeePortal = () => {
     e.preventDefault();
     if (!workDesc.trim()) { setError("Work description required."); return; }
     if (!workHours || parseFloat(workHours) <= 0) { setError("Enter valid hours."); return; }
+    // Mandatory: at least 1 proof image if not already submitted
+    if (!myLog && proofFiles.length === 0) { setError("Please upload at least 1 screenshot as proof of work."); return; }
     try { setWorkSaving(true); setError(""); setSuccess("");
-      const r = await axios.post(`${BASE}/hr/worklog/submit`, { workDescription:workDesc.trim(), hoursWorked:parseFloat(workHours) }, auth());
-      setMyLog(r.data.data); setSuccess(myLog?"✅ Updated!":"✅ Submitted!"); loadWorkHistory();
-    } catch (e) { setError(e.response?.data?.message||"Failed."); } finally { setWorkSaving(false); }
+      const fd = new FormData();
+      fd.append("workDescription", workDesc.trim());
+      fd.append("hoursWorked", parseFloat(workHours));
+      proofFiles.forEach(f => fd.append("proofImages", f));
+      const r = await axios.post(`${BASE}/hr/worklog/submit`, fd, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}`, "Content-Type": "multipart/form-data" }
+      });
+      setMyLog(r.data.data);
+      setProofFiles([]);
+      setProofPreviews([]);
+      setSuccess(myLog ? "✅ Updated!" : "✅ Submitted!");
+      loadWorkHistory();
+    } catch (e) { setError(e.response?.data?.message || "Failed."); } finally { setWorkSaving(false); }
   };
 
   const handleApplyLeave = async () => {
@@ -754,6 +768,67 @@ const EmployeePortal = () => {
                         </div>
                       </div>
                     </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">
+                        Proof of Work *
+                        <span className="ml-2 text-gray-400 font-normal normal-case">
+                          {myLog ? "(Upload more screenshots)" : "(Min. 1 screenshot required)"}
+                        </span>
+                      </label>
+
+                      {/* Existing proof images already submitted */}
+                      {myLog?.proofImages?.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {myLog.proofImages.map((url, i) => (
+                            <a key={i} href={url} target="_blank" rel="noreferrer">
+                              <img src={url} alt={`proof-${i+1}`}
+                                className="w-20 h-20 object-cover rounded border border-gray-200 hover:opacity-80 transition" />
+                            </a>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* New image previews */}
+                      {proofPreviews.length > 0 && (
+                        <div className="flex flex-wrap gap-3 mb-2">
+                          {proofPreviews.map((url, i) => (
+                            <div key={i} className="relative" style={{ overflow: "visible" }}>
+                              <img src={url} alt={`new-${i+1}`}
+                                className="w-20 h-20 object-cover rounded border-2 border-[#DD1215]" />
+                              <button type="button"
+                                onClick={() => {
+                                  setProofFiles(prev => prev.filter((_, j) => j !== i));
+                                  setProofPreviews(prev => prev.filter((_, j) => j !== i));
+                                }}
+                                className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-black shadow-md hover:bg-red-800 transition"
+                                style={{ zIndex: 10, lineHeight: 1 }}>
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <label className={`flex items-center gap-2 border-2 border-dashed px-4 py-3 rounded cursor-pointer transition text-sm
+                        ${proofFiles.length === 0 && !myLog ? "border-red-300 bg-red-50 hover:bg-red-100 text-red-500" : "border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-500"}`}>
+                        <Plus size={16} />
+                        <span className="text-xs font-semibold">
+                          {proofFiles.length > 0 ? `${proofFiles.length} image(s) selected — click to add more` : "Click to upload screenshots (JPG, PNG, max 5MB each)"}
+                        </span>
+                        <input type="file" accept="image/*" multiple className="hidden"
+                          onChange={e => {
+                            const newFiles = Array.from(e.target.files || []).slice(0, 5 - proofFiles.length);
+                            setProofFiles(prev => [...prev, ...newFiles].slice(0, 5));
+                            setProofPreviews(prev => [
+                              ...prev,
+                              ...newFiles.map(f => URL.createObjectURL(f))
+                            ].slice(0, 5));
+                            e.target.value = "";
+                          }} />
+                      </label>
+                      <p className="text-[10px] text-gray-400 mt-1">Up to 5 images. Show your work — screenshots, completed tasks, designs, etc.</p>
+                    </div>
+
                     <button type="submit" disabled={workSaving}
                       className="w-full bg-[#DD1215] text-white py-3 text-xs font-black uppercase tracking-widest hover:bg-red-700 transition disabled:opacity-50 flex items-center justify-center gap-2">
                       <Send size={14}/>{workSaving?"Saving...":workSubmitted?"Update Work Log":"Submit Work Log"}

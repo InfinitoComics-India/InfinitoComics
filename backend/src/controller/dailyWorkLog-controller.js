@@ -2,6 +2,7 @@ import DailyWorkLog from "../models/DailyWorkLog.js";
 import Admin from "../models/Admin.js";
 import Attendance from "../models/Attendance.js";
 import Employee from "../models/Employee.js";
+import { uploadToS3 } from "../utils/aws.js";
 
 // ── Helper: today's date at midnight IST ─────────────────────
 const getTodayIST = () => {
@@ -31,17 +32,31 @@ export const submitWorkLog = async (req, res) => {
 
     if (!workDescription?.trim()) return res.status(400).json({ success: false, message: "Work description is required." });
 
+    // ── Upload proof images to Cloudinary ─────────────────────
+    let proofImages = [];
+    if (req.files && req.files.length > 0) {
+      const uploads = await Promise.allSettled(
+        req.files.map(f =>
+          uploadToS3(f.buffer, f.originalname, f.mimetype)
+        )
+      );
+      proofImages = uploads
+        .filter(r => r.status === "fulfilled")
+        .map(r => r.value.Location);
+    }
+
     const today = getTodayIST();
     const existing = await DailyWorkLog.findOne({ adminId, date: today });
 
     if (existing) {
-      // Allow updating auto_leave records — save work but keep auto_leave status
-      // Only superadmin can change status from auto_leave (via review endpoint)
       if (existing.isLocked && existing.status !== "auto_leave") {
         return res.status(403).json({ success: false, message: "Today's work log is locked. Submissions are closed after midnight IST." });
       }
       existing.workDescription = workDescription.trim();
-      // If auto_leave, keep the status — superadmin reviews and overrides manually
+      // Append new images to existing ones (don't replace)
+      if (proofImages.length > 0) {
+        existing.proofImages = [...(existing.proofImages || []), ...proofImages].slice(0, 10);
+      }
       if (existing.status !== "auto_leave") {
         existing.status = "edited";
       }
@@ -60,6 +75,7 @@ export const submitWorkLog = async (req, res) => {
       adminEmployeeId,
       date:            today,
       workDescription: workDescription.trim(),
+      proofImages,
       status:          "submitted",
       submittedAt:     new Date(),
     });

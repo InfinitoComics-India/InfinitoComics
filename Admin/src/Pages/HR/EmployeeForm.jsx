@@ -41,10 +41,7 @@ const EmployeeForm = () => {
         if (isEdit) {
           const res = await getEmployeeById(id);
           const e = res.data.data;
-          const fullName = `${e.firstName || ""} ${e.lastName || ""}`.trim().toLowerCase();
-          const jDate = (fullName.includes("arpit") && fullName.includes("chhabra"))
-            ? "2026-10-06"
-            : (e.joiningDate ? e.joiningDate.split("T")[0] : "");
+          const jDate = e.joiningDate ? e.joiningDate.split("T")[0] : "";
           setForm({
             ...EMPTY, ...e,
             joiningDate: jDate,

@@ -31,66 +31,15 @@ const getCountdown = () => {
   return { minsLeft, timeStr: `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}` };
 };
 
-// Initial / persistent work logs
-const INITIAL_WORKLOGS = [
-  {
-    _id: "wl-arshiya-2026-10-07",
-    adminId: "arshiya-singh-emp",
-    adminName: "Arshiya Singh",
-    adminEmail: "singh.arshiya128@gmail.com",
-    adminEmployeeId: "ASH0011",
-    date: "2026-10-07T00:00:00.000Z",
-    workDescription: `• Resolved Navbar navigation issues for Banners & Promotions and fixed the "View All" routing to the product catalog.\n• Enhanced Hero section preview slider and fixed Add Product active state feedback.\n• Verified Cloudinary media storage workflows for deployment persistence.\n• Ran production build verification and synced codebase repositories.`,
-    hoursWorked: 8,
-    status: "submitted",
-    isLocked: true,
-    submittedAt: "2026-10-07T13:00:00.000Z",
-    reviewStatus: "approved",
-    reviewComment: "Verified and approved.",
-    reviewerName: "Super Admin",
-  },
-  {
-    _id: "wl-arshiya-2026-10-06",
-    adminId: "arshiya-singh-emp",
-    adminName: "Arshiya Singh",
-    adminEmail: "singh.arshiya128@gmail.com",
-    adminEmployeeId: "ASH0011",
-    date: "2026-10-06T00:00:00.000Z",
-    workDescription: `• Fixed Admin Orders dynamism: Removed all hardcoded static/seed orders (#4721–#4717) and made the orders page strictly display genuine placed orders.\n• Implemented cross-origin synchronization (via auth-bridge & BroadcastChannel) connecting the User Dashboard/Member Portal to the Admin Panel in real time.\n• Made the Shop Analytics, Overview, and Sales Report dashboards fully dynamic, calculating live revenue and order metrics from real customer data.\n• Resolved Navbar navigation issues for Banners & Promotions and fixed the "View All" routing to the product catalog.\n• Enhanced Hero section preview slider and fixed Add Product active state feedback.\n• Verified Cloudinary media storage workflows for deployment persistence.\n• Ran production build verification and synced codebase repositories.`,
-    hoursWorked: 8,
-    status: "submitted",
-    isLocked: true,
-    submittedAt: "2026-10-06T16:30:00.000Z",
-    reviewStatus: "approved",
-    reviewComment: "Approved.",
-    reviewerName: "Super Admin",
-  }
-];
 
 const getStoredLogs = () => {
   try {
     const raw = localStorage.getItem("infinito_daily_worklogs_store");
-    if (!raw) {
-      localStorage.setItem("infinito_daily_worklogs_store", JSON.stringify(INITIAL_WORKLOGS));
-      return INITIAL_WORKLOGS;
-    }
-    let parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) parsed = [];
-    
-    // Ensure Arshiya's 7 Oct 2026 log is present with the latest required work description
-    const oct7Idx = parsed.findIndex(p => {
-      const pDate = p.date ? new Date(p.date).toISOString().split('T')[0] : '';
-      return pDate === "2026-10-07" && p.adminEmail?.toLowerCase() === "singh.arshiya128@gmail.com";
-    });
-    if (oct7Idx === -1) {
-      parsed.unshift(INITIAL_WORKLOGS[0]);
-    } else {
-      parsed[oct7Idx] = { ...parsed[oct7Idx], ...INITIAL_WORKLOGS[0] };
-    }
-    localStorage.setItem("infinito_daily_worklogs_store", JSON.stringify(parsed));
-    return parsed;
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return INITIAL_WORKLOGS;
+    return [];
   }
 };
 
@@ -124,15 +73,14 @@ const DailyWorkLog = () => {
 
   // Admin view
   const [adminDate, setAdminDate] = useState(() => {
-    // Default to 2026-10-07 or today
     const istMs = Date.now() + 5.5 * 60 * 60 * 1000;
-    const todayStr = new Date(istMs).toISOString().split("T")[0];
-    return todayStr === "2026-10-07" ? "2026-10-07" : todayStr;
+    return new Date(istMs).toISOString().split("T")[0];
   });
   const [expandedLog,  setExpandedLog]  = useState(null);
   const [reviewForm,   setReviewForm]   = useState({ status:"", comment:"" });
   const [reviewingId,  setReviewingId]  = useState(null);
   const [exportOpen,   setExportOpen]   = useState(false);
+  const [lightbox,     setLightbox]     = useState(null); // { images: [], index: 0 }
   const exportRef = useRef(null);
 
   // Live countdown
@@ -280,8 +228,8 @@ const DailyWorkLog = () => {
           _id: `wl-local-${Date.now()}`,
           adminId: admin?._id || "local-user",
           adminName: myName,
-          adminEmail: admin?.email || "singh.arshiya128@gmail.com",
-          adminEmployeeId: admin?.employeeId || "ASH0011",
+          adminEmail: admin?.email || "",
+          adminEmployeeId: admin?.employeeId || "",
           date: new Date().toISOString(),
           workDescription: work.trim(),
           hoursWorked: 8,
@@ -381,6 +329,7 @@ const DailyWorkLog = () => {
   const isCritical = minsLeft < 15;
 
   return (
+    <>
     <div className="bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
@@ -798,7 +747,21 @@ const DailyWorkLog = () => {
                                 {log.status === "auto_leave" ? (
                                   <span className="text-red-400 italic">Not submitted — auto leave</span>
                                 ) : (
-                                  <div className="line-clamp-2 leading-relaxed">{log.workDescription || "—"}</div>
+                                  <div>
+                                    <div className="line-clamp-2 leading-relaxed">{log.workDescription || "—"}</div>
+                                    {log.proofImages?.length > 0 && (
+                                      <div className="flex gap-1 mt-1 flex-wrap">
+                                        {log.proofImages.map((url, i) => (
+                                          <button key={i} type="button"
+                                            onClick={() => setLightbox({ images: log.proofImages, index: i })}
+                                            title="View proof image">
+                                            <img src={url} alt={`proof-${i+1}`}
+                                              className="w-8 h-8 object-cover rounded border border-gray-300 hover:opacity-75 hover:border-[#DD1215] transition cursor-zoom-in" />
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
                                 )}
                               </td>
                               {/* Submitted at */}
@@ -857,6 +820,21 @@ const DailyWorkLog = () => {
                             {isReviewing && (
                               <tr className="bg-blue-50">
                                 <td colSpan={11} className="border border-blue-200 px-5 py-3">
+                                  {/* Proof images — full size view for reviewer */}
+                                  {log.proofImages?.length > 0 && (
+                                    <div className="mb-4">
+                                      <p className="text-[10px] font-bold uppercase text-blue-600 mb-2">Proof of Work ({log.proofImages.length} image{log.proofImages.length > 1 ? "s" : ""})</p>
+                                      <div className="flex gap-2 flex-wrap">
+                                        {log.proofImages.map((url, i) => (
+                                          <button key={i} type="button"
+                                            onClick={() => setLightbox({ images: log.proofImages, index: i })}>
+                                            <img src={url} alt={`proof-${i+1}`}
+                                              className="h-28 w-auto object-cover rounded border border-blue-200 hover:opacity-80 hover:border-[#DD1215] transition cursor-zoom-in" />
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                   <div className="flex items-start gap-4 flex-wrap">
                                     <div>
                                       <p className="text-[10px] font-bold uppercase text-blue-600 mb-1.5">Review Status</p>
@@ -934,6 +912,62 @@ const DailyWorkLog = () => {
         )}
       </div>
     </div>
+
+    {/* ── Lightbox Modal ── */}
+    {lightbox && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+        onClick={() => setLightbox(null)}
+      >
+        <div
+          className="relative bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col"
+          style={{ maxWidth: "70vw", maxHeight: "80vh", minWidth: "320px" }}
+          onClick={e => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-2.5 border-b bg-gray-50">
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-600">
+              Proof of Work — {lightbox.index + 1} / {lightbox.images.length}
+            </p>
+            <button onClick={() => setLightbox(null)}
+              className="text-gray-400 hover:text-gray-800 text-lg font-bold leading-none px-1">✕</button>
+          </div>
+
+          {/* Image */}
+          <div className="flex-1 overflow-auto flex items-center justify-center bg-gray-100 p-4">
+            <img
+              src={lightbox.images[lightbox.index]}
+              alt={`proof-${lightbox.index + 1}`}
+              className="max-w-full max-h-[60vh] object-contain rounded shadow"
+            />
+          </div>
+
+          {/* Navigation */}
+          {lightbox.images.length > 1 && (
+            <div className="flex items-center justify-center gap-3 px-4 py-3 border-t bg-gray-50">
+              <button
+                onClick={() => setLightbox(l => ({ ...l, index: (l.index - 1 + l.images.length) % l.images.length }))}
+                className="px-4 py-1.5 text-xs font-bold border border-gray-300 rounded hover:bg-gray-100 transition">
+                ← Prev
+              </button>
+              <div className="flex gap-1.5">
+                {lightbox.images.map((_, i) => (
+                  <button key={i}
+                    onClick={() => setLightbox(l => ({ ...l, index: i }))}
+                    className={`w-2 h-2 rounded-full transition ${i === lightbox.index ? "bg-[#DD1215]" : "bg-gray-300 hover:bg-gray-400"}`} />
+                ))}
+              </div>
+              <button
+                onClick={() => setLightbox(l => ({ ...l, index: (l.index + 1) % l.images.length }))}
+                className="px-4 py-1.5 text-xs font-bold border border-gray-300 rounded hover:bg-gray-100 transition">
+                Next →
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 
