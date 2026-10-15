@@ -6,7 +6,7 @@ import NotificationRepository from "../repository/notification-repository.js";
 import EmployeeRepository from "../repository/employee-repository.js";
 import DailyWorkLog from "../models/DailyWorkLog.js";
 
-const WORKING_DAYS = 30; // Fixed 30 working days per month
+const WORKING_DAYS = 26; // All days working — use 26 as monthly base (avg working days)
 
 class PayrollService {
   constructor() {
@@ -52,6 +52,7 @@ class PayrollService {
         } else if (rec.status === "on_leave") {
           leaveDates.add(iso);
         }
+        // NOTE: Every day is a working day — Sunday is NOT a weekend
       }
 
       // Also check work log — if employee submitted work log for a day, count as present
@@ -115,19 +116,20 @@ class PayrollService {
       }
 
       // Days in this period that count toward attendance (elapsed AND employed).
+      // ALL days including Sundays are working days.
       const countableDays = Math.max(0, lastElapsedDay - firstEmployedDay + 1);
 
       // Absent = countable days - present - leave (can't go below 0)
       const absentDays = Math.max(0, countableDays - presentDays - leaveDays);
 
       // ── Salary calculation ──────────────────────────────────
-      // Per day rate based on gross / 30
+      // Per day rate based on gross / WORKING_DAYS
       const perDayRate = salary.grossSalary / WORKING_DAYS;
 
-      // Loss of pay for absent days
+      // Loss of pay for absent days (each absent day = 1x per day rate)
       const lossOfPay = Math.round(perDayRate * absentDays);
 
-      // Sunday overtime bonus: 1.5x per day rate - 1x (the extra 0.5x)
+      // Sunday bonus: extra 0.5x for each Sunday worked (total 1.5x instead of 1x)
       const sundayBonus = Math.round(perDayRate * 0.5 * sundayWorkedDays);
 
       const totalDeductions = salary.pf + salary.esic + salary.tds + salary.otherDeductions + lossOfPay;

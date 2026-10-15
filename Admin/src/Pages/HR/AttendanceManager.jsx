@@ -99,7 +99,7 @@ const AttendanceManager = () => {
     let present=0, absent=0, leave=0, halfDay=0;
     for (const d of allDays) {
       const r = rows[d];
-      const isWknd = new Date(year, month-1, d).getDay() === 0; // Only Sunday is weekend
+      const isWknd = false; // All days are working days including Sunday
       const isFut  = new Date(year, month-1, d) > new Date();
       if (!r && !isWknd && !isFut) absent++;
       if (r?.status === "present" || r?.status === "late") present++;
@@ -374,7 +374,7 @@ const AttendanceManager = () => {
                           {allDays.map(d => {
                             const rec    = rows[d];
                             const dow    = new Date(year,month-1,d).getDay();
-                            const isWknd = dow===0; // Only Sunday is weekend
+                            const isWknd = false; // All days working including Sunday
                             const isFut  = new Date(year,month-1,d)>new Date();
                             const status = rec?.status||(isWknd?"weekend":null);
                             const dotColor = {present:"bg-green-500",absent:"bg-red-400",late:"bg-green-400",half_day:"bg-orange-400",on_leave:"bg-blue-400",holiday:"bg-purple-400",weekend:"bg-gray-200"}[status]||(isFut?"bg-gray-100":"bg-gray-300");
@@ -448,7 +448,7 @@ const AttendanceManager = () => {
                     const rec    = drillEmp.rows[d];
                     const date   = new Date(year, month-1, d);
                     const dow    = date.getDay();
-                    const isWknd = dow===0; // Only Sunday is weekend
+                    const isWknd = false; // All days working including Sunday
                     const isFut  = date>new Date();
                     const status = rec?.status||(isWknd?"weekend":null);
                     const s      = STATUS_STYLE[status]||STATUS_STYLE.absent;
