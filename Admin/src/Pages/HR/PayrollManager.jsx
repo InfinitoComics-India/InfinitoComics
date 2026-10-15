@@ -39,11 +39,11 @@ const PayrollManager = () => {
     const joinDate = new Date(emp.joiningDate);
     if (isNaN(joinDate.getTime())) return daysPassedDefault;
     const sameMonth = joinDate.getFullYear() === now.getFullYear() && joinDate.getMonth() === now.getMonth();
-    if (sameMonth) return Math.max(1, now.getDate() - joinDate.getDate() + 1);
-    const joinDay = joinDate.getDate();
-    const daysInThisMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const effectiveJoinDay = Math.min(joinDay, daysInThisMonth);
-    if (now.getDate() >= effectiveJoinDay) return now.getDate() - effectiveJoinDay + 1;
+    if (sameMonth) {
+      // Joined this month — count from join day to today
+      return Math.max(1, now.getDate() - joinDate.getDate() + 1);
+    }
+    // Joined before this month — count all elapsed days from day 1
     return daysPassedDefault;
   };
   const earnedSoFar = (sal, emp) => sal ? Math.round((daysPassedFor(emp) / MONTH_BASE) * sal.netSalary) : 0;
