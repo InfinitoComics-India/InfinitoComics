@@ -250,6 +250,9 @@ const EmployeePortal = () => {
     if (tab === "shop")        loadShopMetrics();
   }, [tab]);
 
+  // Always load today's work log on mount so review alert shows on any tab
+  useEffect(() => { loadMyLog(); }, []);
+
   useEffect(() => { if (tab === "attendance") loadMonthlyAttd(); }, [attdMonth, attdYear]);
 
   // ── Loaders ──────────────────────────────────────────────────
@@ -552,6 +555,30 @@ const EmployeePortal = () => {
         {error   && <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded flex items-center gap-2"><AlertTriangle size={14}/>{error}<button onClick={()=>setError("")} className="ml-auto text-red-400 hover:text-red-700">✕</button></div>}
         {success && <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded">{success}</div>}
 
+        {/* ── Global Work Log Review Alert — shows only on attendance & worklog tabs ── */}
+        {(tab === "attendance" || tab === "worklog") && myLog?.reviewStatus === "rejected" && (
+          <button onClick={() => setTab("worklog")}
+            className="w-full bg-red-600 text-white px-4 py-3 rounded-lg flex items-center gap-3 hover:bg-red-700 transition text-left">
+            <span className="text-xl shrink-0">❌</span>
+            <div className="flex-1">
+              <p className="font-black text-sm">Your work log was marked — Redo Required</p>
+              {myLog.reviewComment && <p className="text-xs text-red-200 mt-0.5">"{myLog.reviewComment}" — {myLog.reviewerName || "Admin"}</p>}
+            </div>
+            <span className="text-xs font-bold uppercase tracking-wide bg-white text-red-600 px-3 py-1 rounded shrink-0">View →</span>
+          </button>
+        )}
+        {(tab === "attendance" || tab === "worklog") && myLog?.reviewStatus === "needs_improvement" && (
+          <button onClick={() => setTab("worklog")}
+            className="w-full bg-yellow-500 text-white px-4 py-3 rounded-lg flex items-center gap-3 hover:bg-yellow-600 transition text-left">
+            <span className="text-xl shrink-0">⚠️</span>
+            <div className="flex-1">
+              <p className="font-black text-sm">Your work log needs improvement</p>
+              {myLog.reviewComment && <p className="text-xs text-yellow-100 mt-0.5">"{myLog.reviewComment}" — {myLog.reviewerName || "Admin"}</p>}
+            </div>
+            <span className="text-xs font-bold uppercase tracking-wide bg-white text-yellow-600 px-3 py-1 rounded shrink-0">View →</span>
+          </button>
+        )}
+
         {/* ── ATTENDANCE ── */}
         {tab === "attendance" && (
           <div className="space-y-5">
@@ -716,11 +743,40 @@ const EmployeePortal = () => {
             <div className="lg:col-span-2 bg-white border rounded-xl overflow-hidden">
               <div className="bg-gray-900 text-white px-6 py-4 flex items-center justify-between">
                 <div><p className="font-black text-lg">{fmt(new Date())}</p><p className="text-xs text-gray-400">Your daily work update</p></div>
-                {workLocked && <div className="flex items-center gap-1.5 bg-red-900/50 text-red-300 px-3 py-1.5 rounded text-xs font-semibold"><Lock size={12}/>Locked</div>}
-                {isAutoLeave && <div className="flex items-center gap-1.5 bg-orange-900/50 text-orange-300 px-3 py-1.5 rounded text-xs font-semibold"><AlertTriangle size={12}/>Auto Leave — Submit to override</div>}
-                {workSubmitted && !workLocked && !isAutoLeave && <div className="flex items-center gap-1.5 bg-green-900/50 text-green-300 px-3 py-1.5 rounded text-xs font-semibold"><CheckCircle size={12}/>Submitted {fmtTime(myLog.submittedAt)}</div>}
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  {workLocked && <div className="flex items-center gap-1.5 bg-red-900/50 text-red-300 px-3 py-1.5 rounded text-xs font-semibold"><Lock size={12}/>Locked</div>}
+                  {isAutoLeave && <div className="flex items-center gap-1.5 bg-orange-900/50 text-orange-300 px-3 py-1.5 rounded text-xs font-semibold"><AlertTriangle size={12}/>Auto Leave — Submit to override</div>}
+                  {workSubmitted && !workLocked && !isAutoLeave && <div className="flex items-center gap-1.5 bg-green-900/50 text-green-300 px-3 py-1.5 rounded text-xs font-semibold"><CheckCircle size={12}/>Submitted {fmtTime(myLog.submittedAt)}</div>}
+                  {/* Review status badge */}
+                  {myLog?.reviewStatus === "approved" && (
+                    <div className="flex items-center gap-1.5 bg-green-700/60 text-green-200 px-3 py-1.5 rounded text-xs font-bold">✅ Approved</div>
+                  )}
+                  {myLog?.reviewStatus === "needs_improvement" && (
+                    <div className="flex items-center gap-1.5 bg-yellow-700/60 text-yellow-200 px-3 py-1.5 rounded text-xs font-bold">⚠️ Needs Improvement</div>
+                  )}
+                  {myLog?.reviewStatus === "rejected" && (
+                    <div className="flex items-center gap-1.5 bg-red-600/80 text-white px-3 py-1.5 rounded text-xs font-bold animate-pulse">❌ Redo Required</div>
+                  )}
+                </div>
               </div>
               <div className="p-6">
+                {/* Review feedback banner — shown prominently when admin left a comment */}
+                {myLog?.reviewStatus && myLog?.reviewComment && (
+                  <div className={`mb-4 px-4 py-3 rounded border text-sm flex items-start gap-2 ${
+                    myLog.reviewStatus === "approved"          ? "bg-green-50 border-green-200 text-green-800" :
+                    myLog.reviewStatus === "needs_improvement" ? "bg-yellow-50 border-yellow-200 text-yellow-800" :
+                                                                 "bg-red-50 border-red-200 text-red-800"
+                  }`}>
+                    <span className="text-base">
+                      {myLog.reviewStatus === "approved" ? "✅" : myLog.reviewStatus === "needs_improvement" ? "⚠️" : "❌"}
+                    </span>
+                    <div>
+                      <p className="font-bold text-xs uppercase tracking-wide mb-0.5">Reviewer Feedback</p>
+                      <p>"{myLog.reviewComment}"</p>
+                      {myLog.reviewerName && <p className="text-[10px] mt-1 opacity-70">— {myLog.reviewerName}</p>}
+                    </div>
+                  </div>
+                )}
                 {workLocked ? (
                   <div className="text-center py-12 text-gray-400">
                     <Lock size={36} className="mx-auto mb-3 opacity-30"/>
@@ -849,12 +905,30 @@ const EmployeePortal = () => {
                       <p className="text-xs font-semibold text-gray-700">{fmtShort(l.date)}</p>
                       <div className="flex items-center gap-1.5">
                         {l.hoursWorked>0&&<span className="text-[10px] text-gray-400">{l.hoursWorked}h</span>}
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${l.status==="auto_leave"?"bg-red-100 text-red-700":l.status==="pending"?"bg-yellow-100 text-yellow-700":"bg-green-100 text-green-700"}`}>
-                          {l.status==="auto_leave"?"Leave":l.status==="pending"?"Pending":"Done"}
-                        </span>
+                        {/* Review status takes priority over submission status */}
+                        {l.reviewStatus === "rejected" ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-red-100 text-red-700">❌ Redo</span>
+                        ) : l.reviewStatus === "needs_improvement" ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-yellow-100 text-yellow-700">⚠️ Improve</span>
+                        ) : l.reviewStatus === "approved" ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-green-100 text-green-700">✅ OK</span>
+                        ) : l.status==="auto_leave" ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-red-100 text-red-700">Leave</span>
+                        ) : l.status==="pending" ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-yellow-100 text-yellow-700">Pending</span>
+                        ) : (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-green-100 text-green-700">Done</span>
+                        )}
                       </div>
                     </div>
                     <p className="text-[10px] text-gray-400 truncate">{l.workDescription||"—"}</p>
+                    {/* Show reviewer comment inline if rejected */}
+                    {l.reviewStatus === "rejected" && l.reviewComment && (
+                      <p className="text-[10px] text-red-500 mt-0.5 truncate">💬 "{l.reviewComment}"</p>
+                    )}
+                    {l.reviewStatus === "needs_improvement" && l.reviewComment && (
+                      <p className="text-[10px] text-yellow-600 mt-0.5 truncate">💬 "{l.reviewComment}"</p>
+                    )}
                   </div>
                 ))}
               </div>
