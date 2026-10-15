@@ -30,40 +30,23 @@ const EMPTY_SALARY = { basic:0, hra:0, ta:0, medical:0, special:0, otherAllowanc
 
 const PayrollManager = () => {
   const now = new Date();
-  // Days passed in current month (today's date) — fallback when no joining date
   const daysPassedDefault = now.getDate();
+  const MONTH_BASE = 26; // Salary base days (all 7 days working)
 
-  // Earned so far — counts from the employee's joining day-of-month, not the 1st.
-  // - If they joined THIS month: count from their join day up to today (first month, partial pay).
-  // - If their join day hasn't occurred yet this month (e.g. joined on the 22nd, today is the
-  //   7th): they already completed a full first month earlier, so just use days elapsed this
-  //   month (same as default) — there's no partial cycle to apply here.
-  // - If their join day already occurred this month and they joined in an earlier month: count
-  //   from their join day of THIS month up to today — this keeps every employee's "earned so far"
-  //   anchored to their personal pay-cycle date instead of always starting from the 1st.
+  // Earned so far based on days elapsed this month from joining date
   const daysPassedFor = (emp) => {
     if (!emp?.joiningDate) return daysPassedDefault;
     const joinDate = new Date(emp.joiningDate);
     if (isNaN(joinDate.getTime())) return daysPassedDefault;
-
     const sameMonth = joinDate.getFullYear() === now.getFullYear() && joinDate.getMonth() === now.getMonth();
-    if (sameMonth) {
-      // Joined this month — first (partial) pay cycle, count from join day to today.
-      return Math.max(1, now.getDate() - joinDate.getDate() + 1);
-    }
-
+    if (sameMonth) return Math.max(1, now.getDate() - joinDate.getDate() + 1);
     const joinDay = joinDate.getDate();
     const daysInThisMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     const effectiveJoinDay = Math.min(joinDay, daysInThisMonth);
-
-    if (now.getDate() >= effectiveJoinDay) {
-      // This month's pay-cycle anchor day has already passed — count from that day.
-      return now.getDate() - effectiveJoinDay + 1;
-    }
-    // Anchor day hasn't come up yet this month — fall back to days elapsed this month.
+    if (now.getDate() >= effectiveJoinDay) return now.getDate() - effectiveJoinDay + 1;
     return daysPassedDefault;
   };
-  const earnedSoFar = (sal, emp) => sal ? Math.round((daysPassedFor(emp) / 30) * sal.netSalary) : 0;
+  const earnedSoFar = (sal, emp) => sal ? Math.round((daysPassedFor(emp) / MONTH_BASE) * sal.netSalary) : 0;
   const [tab,    setTab]    = useState("payroll");
   const [month,  setMonth]  = useState(now.getMonth() + 1);
   const [year,   setYear]   = useState(now.getFullYear());
