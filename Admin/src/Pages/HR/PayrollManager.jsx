@@ -33,20 +33,21 @@ const PayrollManager = () => {
   const daysPassedDefault = now.getDate();
   const MONTH_BASE = 26; // Salary base days (all 7 days working)
 
-  // Earned so far based on days elapsed this month from joining date
-  const daysPassedFor = (emp) => {
-    if (!emp?.joiningDate) return daysPassedDefault;
-    const joinDate = new Date(emp.joiningDate);
-    if (isNaN(joinDate.getTime())) return daysPassedDefault;
-    const sameMonth = joinDate.getFullYear() === now.getFullYear() && joinDate.getMonth() === now.getMonth();
-    if (sameMonth) {
-      // Joined this month — count from join day to today
-      return Math.max(1, now.getDate() - joinDate.getDate() + 1);
-    }
-    // Joined before this month — count all elapsed days from day 1
-    return daysPassedDefault;
+  // Earned so far based on actual present days from attendance
+  const earnedSoFar = (sal, emp) => {
+    if (!sal) return 0;
+    const perDay = sal.netSalary / MONTH_BASE;
+    // Look up actual attendance for this employee
+    const empId = emp?._id?.toString();
+    const att = attSummary[empId] || { presentDays: 0, sundayDays: 0 };
+    const normalDays = att.presentDays - att.sundayDays;
+    const earned = Math.round((normalDays * perDay) + (att.sundayDays * perDay * 1.5));
+    return earned;
   };
-  const earnedSoFar = (sal, emp) => sal ? Math.round((daysPassedFor(emp) / MONTH_BASE) * sal.netSalary) : 0;
+  const presentDaysFor = (emp) => {
+    const empId = emp?._id?.toString();
+    return attSummary[empId]?.presentDays || 0;
+  };
   const [tab,    setTab]    = useState("payroll");
   const [month,  setMonth]  = useState(now.getMonth() + 1);
   const [year,   setYear]   = useState(now.getFullYear());
@@ -54,6 +55,7 @@ const PayrollManager = () => {
   const [summary,  setSummary]  = useState([]);
   const [employees, setEmployees] = useState([]);
   const [salaries,  setSalaries]  = useState([]);
+  const [attSummary, setAttSummary] = useState({}); // empId → { presentDays, sundayDays }
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState("");
   const [success,  setSuccess]  = useState("");
@@ -80,12 +82,29 @@ const PayrollManager = () => {
 
   const loadSalaries = async () => {
     try { setLoading(true); setError("");
-      const [sRes, empRes] = await Promise.all([
+      const [sRes, empRes, attRes] = await Promise.all([
         axios.get(`${BASE}/hr/salary/getall`, auth()),
         axios.get(`${BASE}/hr/employees/getall`, auth()),
+        axios.get(`${BASE}/hr/attendance/monthly-all`, { ...auth(), params: { year: new Date().getFullYear(), month: new Date().getMonth()+1 } }),
       ]);
       setSalaries(sRes.data.data || []);
       setEmployees(empRes.data.data || []);
+
+      // Build attendance summary per employee
+      const recs = attRes.data.data?.records || [];
+      const summary = {};
+      for (const rec of recs) {
+        const empId = rec._empInfo?._id ?? rec.employeeId?._id ?? rec.employeeId;
+        if (!empId) continue;
+        const k = empId.toString();
+        if (!summary[k]) summary[k] = { presentDays: 0, sundayDays: 0 };
+        if (['present','late','half_day'].includes(rec.status)) {
+          summary[k].presentDays++;
+          const istD = new Date(new Date(rec.date).getTime() + 5.5*60*60*1000);
+          if (istD.getUTCDay() === 0) summary[k].sundayDays++;
+        }
+      }
+      setAttSummary(summary);
     } catch { setError("Failed to load salaries."); } finally { setLoading(false); }
   };
 
@@ -542,7 +561,7 @@ const PayrollManager = () => {
                             {sal ? (
                               <div>
                                 <p className="text-xs font-black text-blue-700">{INR(earnedSoFar(sal, emp))}</p>
-                                <p className="text-[10px] text-blue-400">{daysPassedFor(emp)} of 30 days</p>
+                                <p className="text-[10px] text-blue-400">{presentDaysFor(emp)} days present</p>
                               </div>
                             ) : <span className="text-gray-300">—</span>}
                           </td>
