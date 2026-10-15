@@ -70,7 +70,7 @@ const EmployeePortal = () => {
   const myName   = admin?.name || admin?.email?.split("@")[0] || "Employee";
   const myEmail  = admin?.email || "";
   const location = useLocation();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Read tab from URL search param ?tab=xxx, fallback to "attendance"
   const tab = searchParams.get("tab") || "attendance";

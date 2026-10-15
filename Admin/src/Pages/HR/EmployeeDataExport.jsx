@@ -4,29 +4,32 @@ import * as XLSX from "xlsx";
 import { getAllEmployees } from "../../services/hrServices";
 
 // ── Column definitions ─────────────────────────────────────
+
+// Sheet 1 — Personal Information only (what the employee filled in My Profile → Personal section)
 const SHEET1_COLS = [
-  // HR / System Info
   { key: "employeeId",    label: "Employee ID" },
   { key: "firstName",     label: "First Name" },
   { key: "lastName",      label: "Last Name" },
   { key: "email",         label: "Email" },
-  { key: "phone",         label: "Phone" },
-  { key: "designation",   label: "Designation" },
-  { key: "department",    label: "Department" },
-  { key: "employmentType",label: "Employment Type" },
-  { key: "hrRole",        label: "Role" },
-  { key: "status",        label: "Status" },
-  { key: "joiningDate",   label: "Joining Date" },
-  { key: "salaryGrade",   label: "Salary Grade" },
+  { key: "phone",         label: "Phone Number" },
+  { key: "dateOfBirth",   label: "Date of Birth" },
+  { key: "gender",        label: "Gender" },
+  { key: "fatherName",    label: "Father's Name" },
+  { key: "motherName",    label: "Mother's Name" },
+  { key: "addressLine1",  label: "Address Line 1" },
+  { key: "addressLine2",  label: "Address Line 2" },
+  { key: "city",          label: "City" },
+  { key: "zipCode",       label: "ZIP / Postcode" },
+  { key: "country",       label: "Country" },
 ];
 
+// Sheet 2 — All details filled by the employee (Personal + Emergency Contact + Bank Details)
 const SHEET2_COLS = [
-  // Everything the employee filled in My Profile
   { key: "employeeId",    label: "Employee ID" },
   { key: "firstName",     label: "First Name" },
   { key: "lastName",      label: "Last Name" },
   { key: "email",         label: "Email" },
-  { key: "phone",         label: "Phone" },
+  { key: "phone",         label: "Phone Number" },
   { key: "dateOfBirth",   label: "Date of Birth" },
   { key: "gender",        label: "Gender" },
   { key: "fatherName",    label: "Father's Name" },
@@ -116,7 +119,7 @@ const EmployeeDataExport = () => {
   const downloadExcel = () => {
     const rows = getSelectedEmployees();
     const cols  = activeTab === "hr" ? SHEET1_COLS : SHEET2_COLS;
-    const sheetName = activeTab === "hr" ? "HR Data" : "Profile Data";
+    const sheetName = activeTab === "hr" ? "Personal Information" : "All Employee Details";
 
     // Build worksheet data
     const header = cols.map(c => c.label);
@@ -166,7 +169,7 @@ const EmployeeDataExport = () => {
               activeTab === "hr" ? "bg-[#DD1215] text-white shadow-sm" : "bg-white text-gray-600 border hover:bg-gray-50"
             }`}
           >
-            📋 Sheet 1 — HR Info
+            👤 Sheet 1 — Personal Information
           </button>
           <button
             onClick={() => setActiveTab("profile")}
@@ -174,7 +177,7 @@ const EmployeeDataExport = () => {
               activeTab === "profile" ? "bg-[#DD1215] text-white shadow-sm" : "bg-white text-gray-600 border hover:bg-gray-50"
             }`}
           >
-            👤 Sheet 2 — Profile & Bank Details
+            🏦 Sheet 2 — All Details (Personal + Bank)
           </button>
         </div>
 
@@ -285,19 +288,7 @@ const EmployeeDataExport = () => {
           </div>
         )}
 
-        {/* Column preview */}
-        <div className="mt-6 bg-white rounded-xl border border-gray-100 p-5">
-          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
-            Columns in {activeTab === "hr" ? "Sheet 1 — HR Info" : "Sheet 2 — Profile & Bank Details"}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {(activeTab === "hr" ? SHEET1_COLS : SHEET2_COLS).map(c => (
-              <span key={c.key} className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">
-                {c.label}
-              </span>
-            ))}
-          </div>
-        </div>
+
 
       </div>
     </div>

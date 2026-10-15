@@ -295,9 +295,9 @@ const AttendanceManager = () => {
                 <div className="ml-auto flex items-center gap-5 mt-4">
                   {[
                     { label:"Employees", val: mEmployees.length, color:"text-gray-900" },
-                    { label:"Total Present", val: mEmployees.reduce((s,e)=>s+empSummary(e._id.toString()).present,0), color:"text-green-700" },
-                    { label:"Total Absent",  val: mEmployees.reduce((s,e)=>s+empSummary(e._id.toString()).absent,0),  color:"text-red-600"  },
-                    { label:"On Leave",      val: mEmployees.reduce((s,e)=>s+empSummary(e._id.toString()).leave,0),   color:"text-blue-600" },
+                    { label:"Present Days (Total)", val: mEmployees.reduce((s,e)=>s+empSummary(e._id.toString()).present,0), color:"text-green-700" },
+                    { label:"Absent Days (Total)",  val: mEmployees.reduce((s,e)=>s+empSummary(e._id.toString()).absent,0),  color:"text-red-600"  },
+                    { label:"Leave Days (Total)",   val: mEmployees.reduce((s,e)=>s+empSummary(e._id.toString()).leave,0),   color:"text-blue-600" },
                   ].map(({label,val,color})=>(
                     <div key={label} className="text-center">
                       <p className={`text-lg font-black ${color}`}>{val}</p>
