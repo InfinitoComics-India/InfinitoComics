@@ -20,19 +20,21 @@ const SLIDE_DURATION = 5000;
 
 const Home = () => {
   const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    setTimeout(() => setLoading(false), 2400);
-  }, []);
-
   const [current, setCurrent] = useState(0);
 
-  // Auto-advance every 5 seconds (resets whenever 'current' changes)
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 2400);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Auto-advance slides
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % images.length);
     }, SLIDE_DURATION);
+
     return () => clearInterval(timer);
-  }, [current]);
+  }, []);
 
   const handleSelect = (index) => {
     setCurrent(index);
@@ -41,15 +43,17 @@ const Home = () => {
   return loading ? (
     <LandingShimmer />
   ) : (
-    <div className="w-full text-white">
+    <div className="w-full text-white overflow-x-clip">
       <style>{`
         @keyframes progressBarAnim {
           from { width: 0%; }
           to { width: 100%; }
         }
       `}</style>
-      <div className="relative w-full h-[80vh] overflow-hidden">
-        {/* Slides with crossfade */}
+
+      {/* Main Carousel */}
+      <div className="relative w-full h-[55vh] sm:h-[68vh] md:h-[80vh] min-h-[380px] overflow-hidden">
+        {/* Slides */}
         {images.map((image, index) => (
           <img
             key={image.id}
@@ -61,20 +65,20 @@ const Home = () => {
           />
         ))}
 
-        {/* Bottom gradient */}
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/70 to-transparent z-20 pointer-events-none" />
+        {/* Bottom Gradient */}
+        <div className="absolute bottom-0 left-0 right-0 h-20 sm:h-24 bg-gradient-to-t from-black/75 to-transparent z-20 pointer-events-none" />
 
-        {/* 🌟 Bottom Navigation (Centered White Box) 🌟 */}
-        <div className="absolute bottom-1 md:bottom-2 left-0 right-0 z-30 flex items-center justify-center px-4">
-          {/* Centered White Box (Compact & Shifted Down) */}
-          <div className="w-full max-w-5xl lg:max-w-6xl bg-white/80 backdrop-blur-md py-2 md:py-2.5 px-4 sm:px-8 md:px-10 shadow-xl flex justify-between items-center gap-3 sm:gap-6 rounded-sm">
+        {/* Bottom Navigation */}
+        <div className="absolute bottom-2 sm:bottom-3 left-0 right-0 z-30 flex justify-center px-2 sm:px-6 md:px-12">
+          <div className="w-full max-w-[1200px] bg-white/85 backdrop-blur-md py-1.5 sm:py-2 md:py-2.5 px-2 sm:px-6 md:px-8 shadow-xl flex justify-between items-center gap-1.5 sm:gap-4 md:gap-6 rounded-sm">
             {images.map((image, index) => (
               <button
                 key={image.id}
                 onClick={() => handleSelect(index)}
-                className="flex-1 text-left relative cursor-pointer px-1 group"
+                className="flex-1 min-w-0 text-left relative cursor-pointer px-0.5 sm:px-1 group"
               >
-                <div className="flex flex-col leading-snug">
+                {/* Desktop/Tablet text */}
+                <div className="hidden sm:flex flex-col leading-snug">
                   <span className="block text-xs sm:text-[13px] md:text-[15px] font-medium text-black truncate">
                     {image.title}
                   </span>
@@ -83,11 +87,18 @@ const Home = () => {
                   </span>
                 </div>
 
+                {/* Mobile slide number indicator */}
+                <div className="sm:hidden text-center">
+                  <span className={`block text-[10px] font-bold tracking-wider ${current === index ? 'text-red-600' : 'text-black'}`}>
+                    0{image.id}
+                  </span>
+                </div>
+
                 {/* Progress Line */}
-                <div className="w-full mt-2 h-[2.5px] bg-neutral-300 overflow-hidden relative">
+                <div className="w-full mt-1 sm:mt-2 h-[2px] sm:h-[2.5px] bg-neutral-300 overflow-hidden relative">
                   {current === index ? (
                     <div
-                      key={current} // Resets animation on slide change
+                      key={current}
                       className="h-full bg-red-600"
                       style={{
                         animation: `progressBarAnim ${SLIDE_DURATION}ms linear forwards`,
@@ -108,7 +119,7 @@ const Home = () => {
         <img
           src={belowImage}
           alt="Below Carousel"
-          className="w-full object-cover relative z-0"
+          className="relative z-0 block w-full h-auto object-cover"
         />
       </div>
     </div>
