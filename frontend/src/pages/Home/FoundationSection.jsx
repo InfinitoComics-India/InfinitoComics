@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import FoundationSectionShimmer from "../../shimmer/landingPageShimmer/FoundationSectionShimmer";
+import foundationBg from "../../../assets/Images/Foundation/foundationbg.png";
 
 const FoundationSection = () => {
   const [loading, setLoading] = useState(true);
@@ -29,8 +30,7 @@ const FoundationSection = () => {
       <div
         className="relative w-full min-h-[290px] sm:min-h-[350px] md:min-h-[410px] bg-cover bg-[position:75%_center] sm:bg-center bg-no-repeat overflow-hidden"
         style={{
-          backgroundImage:
-            "url('../../../assets/Images/Foundation/foundationbg.png')",
+          backgroundImage: `url(${foundationBg})`,
         }}
       >
         {/* Responsive readable overlay for mobile */}
