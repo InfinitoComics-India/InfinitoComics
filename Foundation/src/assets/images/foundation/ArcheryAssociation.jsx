@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import logo from "../../assets/images/foundation/logo.png";
 import img1 from "../../assets/images/foundation/img1.png";
 import img2 from "../../assets/images/foundation/img2.png";
@@ -8,14 +8,9 @@ import img5 from "../../assets/images/foundation/img5.png";
 import img6 from "../../assets/images/foundation/img6.png";
 import img7 from "../../assets/images/foundation/img7.png";
 import img8 from "../../assets/images/foundation/img8.png";
-import ArcheryAssociationShimmer from '../../shimmer/Foundation/ArcheryAssociationShimmer'
 
 const ArcheryAssociation = () => {
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    setTimeout(() => setLoading(false), 2400); 
-  }, []);
-  return loading ? <ArcheryAssociationShimmer/>: (
+  return (
     <>
       <div className="flex flex-col my-8 md:my-14">
         <div>

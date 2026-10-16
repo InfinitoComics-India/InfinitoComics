@@ -1,3 +1,22 @@
+html,
+body,
+#root {
+  min-width: 0;
+  min-height: 100%;
+}
+
+html {
+  overflow-x: clip;
+  overscroll-behavior-y: none;
+  background: #121212;
+}
+
+body {
+  margin: 0;
+  overflow-x: clip;
+  background: #121212;
+}
+
 /* index.css mein custom class */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

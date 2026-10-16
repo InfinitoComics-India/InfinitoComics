@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import './App.css';
 import Body from './components/Body';
+import { BrowserRouter } from 'react-router-dom';
 import { addUser } from './redux/userSlice';
 import { useDispatch } from 'react-redux';
 import { FRONTEND_BASE_URL } from './utils/constants.js';
@@ -41,10 +42,9 @@ useEffect(() => {
 
 
   return (
-    <>
-    <Body/>
-
-    </>
+    <BrowserRouter>
+      <Body />
+    </BrowserRouter>
   )
 }
 
