@@ -82,18 +82,19 @@ const FeaturedCharactersCarousel = () => {
   if (loading) return <CharacterCarouselShimmer />;
 
   return (
-    <div className="w-full py-8 sm:py-12 bg-white">
-      <div className="w-full max-w-[1200px] mx-auto px-6 lg:px-12">
+    <div className="w-full py-6 sm:py-12 bg-white">
+      <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-12">
         {/* Title & View All */}
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-10 gap-4">
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold tracking-widest uppercase text-center sm:text-left">
-            Featured Characters
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-10 gap-3 sm:gap-4">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-wider uppercase text-center sm:text-left">
+            <span className="text-black">INFINITO </span>
+            <span className="text-red-600">CHARACTERS</span>
           </h2>
           <Link
             to="/characters"
-            className="text-sm sm:text-base md:text-lg text-red-600 hover:underline"
+            className="text-xs sm:text-sm font-bold text-red-600 uppercase hover:underline tracking-widest"
           >
-            View All ›
+            VIEW ALL &gt;
           </Link>
         </div>
 
@@ -102,9 +103,10 @@ const FeaturedCharactersCarousel = () => {
           <button
             onClick={prevSlide}
             disabled={sliding}
-            className="absolute left-2 sm:-left-4 lg:-left-8 top-1/2 transform -translate-y-1/2 bg-white border p-1 sm:p-2 z-20 shadow-md"
+            className="absolute left-0 sm:-left-4 lg:-left-8 top-1/2 transform -translate-y-1/2 bg-white/90 border border-gray-300 p-1.5 sm:p-2 z-20 shadow-md rounded-full cursor-pointer hover:bg-white transition"
+            aria-label="Previous character"
           >
-            <ChevronLeft size={20} />
+            <ChevronLeft size={18} />
           </button>
 
           {/* Carousel */}
@@ -115,7 +117,7 @@ const FeaturedCharactersCarousel = () => {
                 : slidesToShow === 2
                 ? "grid-cols-1 sm:grid-cols-2"
                 : "grid-cols-1 sm:grid-cols-2 md:grid-cols-4"
-            } gap-4 sm:gap-6 md:gap-8 px-2 sm:px-4 md:px-6 ${
+            } gap-4 sm:gap-6 md:gap-8 px-8 sm:px-4 md:px-6 ${
               sliding
                 ? "opacity-0 transform translate-x-[-10px]"
                 : "opacity-100 transform translate-x-0"
@@ -149,21 +151,22 @@ const FeaturedCharactersCarousel = () => {
           <button
             onClick={nextSlide}
             disabled={sliding}
-            className="absolute right-2 sm:-right-4 lg:-right-8 top-1/2 transform -translate-y-1/2 bg-white border p-1 sm:p-2 z-20 shadow-md"
+            className="absolute right-0 sm:-right-4 lg:-right-8 top-1/2 transform -translate-y-1/2 bg-white/90 border border-gray-300 p-1.5 sm:p-2 z-20 shadow-md rounded-full cursor-pointer hover:bg-white transition"
+            aria-label="Next character"
           >
-            <ChevronRight size={20} />
+            <ChevronRight size={18} />
           </button>
         </div>
 
         {/* Pagination Dots */}
-        <div className="flex justify-center mt-6 gap-2">
+        <div className="flex flex-wrap justify-center mt-6 gap-1.5 sm:gap-2 max-w-full px-4">
           {Array.from({ length: totalGroups }).map((_, index) => (
             <div
               key={index}
-              className={`w-4 h-2 rounded-full transition-all duration-300 ${
+              className={`w-3.5 sm:w-4 h-1.5 sm:h-2 rounded-full transition-all duration-300 ${
                 index === currentIndex / slidesToShow
                   ? "bg-red-600"
-                  : "bg-gray-300 border border-black"
+                  : "bg-gray-300 border border-black/40"
               }`}
             ></div>
           ))}
