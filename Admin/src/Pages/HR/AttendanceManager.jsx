@@ -324,10 +324,11 @@ const AttendanceManager = () => {
                   const rows = monthMap[eid] || {};
                   const totalHours = Object.values(rows).reduce((s,r)=>s+(r.hoursWorked||0),0);
                   const totalWorkDays = allDays.filter(d => {
-                    const dow = new Date(year,month-1,d).getDay();
-                    return dow!==0 && dow!==6 && new Date(year,month-1,d)<=new Date();
+                    return new Date(year, month-1, d) <= new Date();
                   }).length;
-                  const attendPct = totalWorkDays>0 ? Math.round((sum.present/totalWorkDays)*100) : 0;
+                  const attendPct = totalWorkDays > 0
+                    ? Math.min(100, Math.round(((sum.present + sum.halfDay * 0.5) / totalWorkDays) * 100))
+                    : 0;
 
                   return (
                     <div key={eid} onClick={()=>setDrillEmp({emp,rows})}
