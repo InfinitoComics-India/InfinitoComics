@@ -98,13 +98,14 @@ const AttendanceManager = () => {
     const rows = monthMap[empId] || {};
     let present=0, absent=0, leave=0, halfDay=0;
     for (const d of allDays) {
-      const r = rows[d];
-      const isWknd = false; // All days are working days including Sunday
+      const r      = rows[d];
+      const isSun  = new Date(year, month-1, d).getDay() === 0; // Sunday = holiday
       const isFut  = new Date(year, month-1, d) > new Date();
-      if (!r && !isWknd && !isFut) absent++;
-      if (r?.status === "present" || r?.status === "late") present++;
-      if (r?.status === "on_leave") leave++;
-      if (r?.status === "half_day") halfDay++;
+      if (isSun || isFut) continue; // skip Sundays and future days entirely
+      if (!r) absent++;
+      else if (r.status === "present" || r.status === "late") present++;
+      else if (r.status === "on_leave") leave++;
+      else if (r.status === "half_day") halfDay++;
     }
     return { present, absent, leave, halfDay };
   };
@@ -324,7 +325,8 @@ const AttendanceManager = () => {
                   const rows = monthMap[eid] || {};
                   const totalHours = Object.values(rows).reduce((s,r)=>s+(r.hoursWorked||0),0);
                   const totalWorkDays = allDays.filter(d => {
-                    return new Date(year, month-1, d) <= new Date();
+                    const date = new Date(year, month-1, d);
+                    return date.getDay() !== 0 && date <= new Date(); // exclude Sundays and future
                   }).length;
                   const attendPct = totalWorkDays > 0
                     ? Math.min(100, Math.round(((sum.present + sum.halfDay * 0.5) / totalWorkDays) * 100))
