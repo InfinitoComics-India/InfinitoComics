@@ -115,6 +115,7 @@ export const getLogsForDate = async (req, res) => {
 
     const logs = await DailyWorkLog.find({
       date: { $gte: targetDate, $lt: nextDay },
+      adminName: { $not: /super admin/i }, // exclude Super Admin
     }).sort({ status: 1, adminName: 1 });
 
     // For any log missing adminEmployeeId, try to look it up from Employee model by email
