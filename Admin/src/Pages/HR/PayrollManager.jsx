@@ -459,7 +459,7 @@ const PayrollManager = () => {
                         <th className="px-3 py-3">
                           <input type="checkbox" checked={selected.size===payslips.length&&payslips.length>0} onChange={selectAll} className="accent-[#DD1215]"/>
                         </th>
-                        {["Employee","Dept","Gross","Deductions","LOP","Net Pay","Days","Status","Actions"].map(h => (
+                        {["Employee","Dept","Gross","Deductions","Net Pay","Days Present","Status","Actions"].map(h => (
                           <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                         ))}
                       </tr>
@@ -487,9 +487,13 @@ const PayrollManager = () => {
                             <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{emp?.department}</td>
                             <td className="px-4 py-3 text-xs font-semibold text-gray-800 whitespace-nowrap">{INR(slip.grossSalary)}</td>
                             <td className="px-4 py-3 text-xs text-red-600 whitespace-nowrap">{INR(slip.totalDeductions)}</td>
-                            <td className="px-4 py-3 text-xs text-orange-600 whitespace-nowrap">{INR(slip.lossOfPay)}</td>
                             <td className="px-4 py-3 text-xs font-black text-green-700 whitespace-nowrap">{INR(slip.netSalary)}</td>
-                            <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{slip.presentDays}/{slip.workingDays}</td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <div>
+                                <p className="text-xs font-bold text-gray-800">{slip.presentDays} days</p>
+                                <p className="text-[10px] text-gray-400">of {slip.workingDays} working</p>
+                              </div>
+                            </td>
                             <td className="px-4 py-3 whitespace-nowrap">
                               <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold w-fit ${s.bg} ${s.text}`}>
                                 <SI size={10}/> {slip.status}
