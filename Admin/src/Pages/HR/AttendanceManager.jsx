@@ -232,7 +232,6 @@ const AttendanceManager = () => {
                                 <div className="w-7 h-7 rounded-full bg-[#DD1215] text-white flex items-center justify-center text-xs font-bold shrink-0">{init}</div>
                                 <div>
                                   <p className="font-semibold text-gray-900 text-xs">{name}</p>
-                                  <p className="text-[10px] text-gray-400">{empId}{emp?.designation ? ` · ${emp.designation}` : ""}</p>
                                 </div>
                               </div>
                             </td>
