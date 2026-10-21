@@ -7,7 +7,7 @@ import {
   ClipboardList, Headphones, TrendingUp, Lock, MessageCircle, Inbox,
   SendHorizonal, Trash2, Plus, X, ChevronDown, ShoppingBag, Package,
   FolderOpen, BarChart3, Sparkles, Building2, ExternalLink, ArrowRight,
-  ShieldCheck, RefreshCw, Check
+  ShieldCheck, RefreshCw, Check, Video
 } from "lucide-react";
 import { isEmployeeShopAllowed } from "../../services/shopServices/shopAccessService";
 import { getAllProducts } from "../../services/shopServices/productService";
@@ -54,6 +54,7 @@ const getCountdown = () => {
 const TABS = [
   { key:"attendance",  label:"Attendance",  icon:Clock          },
   { key:"worklog",     label:"Work Log",     icon:ClipboardList  },
+  { key:"meetings",    label:"Meetings",     icon:Video          },
   { key:"leave",       label:"My Leave",     icon:CalendarOff    },
   { key:"payslips",    label:"Payslips",     icon:IndianRupee    },
   { key:"goals",       label:"My Goals",     icon:Target         },
@@ -1157,6 +1158,11 @@ const EmployeePortal = () => {
           </div>
         )}
 
+        {/* ── MEETINGS ── */}
+        {tab === "meetings" && (
+          <MeetingsTab />
+        )}
+
         {/* ── MESSAGES ── */}
         {tab === "messages" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -1905,5 +1911,91 @@ const EmployeePortal = () => {
 };
 
 const inp = "w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-[#DD1215] bg-white";
+
+// ── Employee Meetings Tab ─────────────────────────────────────
+const MeetingsTab = () => {
+  const [meetings, setMeetings] = useState([]);
+  const [loading, setLoading]  = useState(true);
+  const BASE2 = import.meta.env.VITE_BASE_URL;
+  const auth2 = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` } });
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const r = await axios.get(`${BASE2}/hr/meetings`, auth2());
+        setMeetings(r.data.data || []);
+      } catch {} finally { setLoading(false); }
+    };
+    load();
+  }, []);
+
+  const fmt2 = (d) => d ? new Date(d).toLocaleString("en-IN", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit", hour12:true }) : "—";
+
+  const upcoming = meetings.filter(m => new Date(m.scheduledAt) >= new Date() && m.status !== "cancelled");
+  const past     = meetings.filter(m => new Date(m.scheduledAt) < new Date() || m.status === "completed");
+
+  if (loading) return <div className="flex justify-center py-16"><Loader size={24} className="animate-spin text-blue-600"/></div>;
+
+  return (
+    <div className="space-y-5">
+      {upcoming.length === 0 && past.length === 0 && (
+        <div className="bg-white border rounded-xl text-center py-16 text-gray-400">
+          <Video size={36} className="mx-auto mb-3 opacity-20"/>
+          <p className="font-semibold">No meetings scheduled yet.</p>
+          <p className="text-xs mt-1">Your manager will notify you when a meeting is scheduled.</p>
+        </div>
+      )}
+
+      {upcoming.length > 0 && (
+        <div>
+          <p className="text-xs font-black uppercase tracking-widest text-gray-500 mb-3">Upcoming Meetings</p>
+          <div className="space-y-3">
+            {upcoming.map(m => (
+              <div key={m._id} className="bg-white border border-blue-100 rounded-xl p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <p className="font-black text-gray-900">{m.title}</p>
+                    {m.agenda && <p className="text-xs text-gray-500 mt-0.5">{m.agenda}</p>}
+                    <div className="flex flex-wrap gap-3 mt-2 text-xs text-gray-500">
+                      <span>📅 {fmt2(m.scheduledAt)}</span>
+                      <span>⏱ {m.duration} min</span>
+                      <span>👥 {m.participantNames?.length || 0} participants</span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold shrink-0">{m.status}</span>
+                </div>
+                {m.meetLink && (
+                  <a href={m.meetLink} target="_blank" rel="noreferrer"
+                    className="mt-3 flex items-center justify-center gap-2 w-full bg-blue-600 text-white py-2.5 rounded-lg text-xs font-black uppercase tracking-wider hover:bg-blue-700 transition">
+                    <Video size={14}/> Join Google Meet
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {past.length > 0 && (
+        <div>
+          <p className="text-xs font-black uppercase tracking-widest text-gray-500 mb-3">Past Meetings</p>
+          <div className="space-y-2">
+            {past.map(m => (
+              <div key={m._id} className="bg-white border rounded-xl p-4 opacity-70">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-gray-800 text-sm">{m.title}</p>
+                    <p className="text-[10px] text-gray-400">{fmt2(m.scheduledAt)}</p>
+                  </div>
+                  <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-bold">{m.status}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default EmployeePortal;

@@ -37,6 +37,7 @@ import GoalTracker from './Pages/HR/GoalTracker.jsx';
 import RecognitionWall from './Pages/HR/RecognitionWall.jsx';
 import PayrollManager from './Pages/HR/PayrollManager.jsx';
 import OnboardingManager from './Pages/HR/OnboardingManager.jsx';
+import MeetingManager from './Pages/HR/MeetingManager.jsx';
 import DocumentManager from './Pages/HR/DocumentManager.jsx';
 import RecruitmentPipeline from './Pages/HR/RecruitmentPipeline.jsx';
 import InternalChat from './Pages/HR/InternalChat.jsx';
@@ -250,6 +251,9 @@ function App() {
           } />
           <Route path="/hr/onboarding" element={
             <ProtectedRoute allowedRoles={HR_VIEW}><OnboardingManager /></ProtectedRoute>
+          } />
+          <Route path="/hr/meetings" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><MeetingManager /></ProtectedRoute>
           } />
           <Route path="/hr/documents" element={
             <ProtectedRoute allowedRoles={HR_VIEW}><DocumentManager /></ProtectedRoute>

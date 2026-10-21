@@ -1,7 +1,7 @@
 import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import URLs from '../../Utils/utils.js';
-import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, ChevronDown, Mail, UserCog, Bell, ScrollText, CalendarDays, CalendarOff, Kanban, UserCheck, FolderKanban, TrendingUp, Target, Award as AwardIcon, Building2, IndianRupee, UserPlus, FileArchive, UserSearch, MessagesSquare, BookMarked, LifeBuoy, Sparkles, ShoppingBag, Package, FolderOpen, BarChart3, ClipboardList, Plus, Megaphone, FileSpreadsheet } from "lucide-react";
+import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, ChevronDown, Mail, UserCog, Bell, ScrollText, CalendarDays, CalendarOff, Kanban, UserCheck, FolderKanban, TrendingUp, Target, Award as AwardIcon, Building2, IndianRupee, UserPlus, FileArchive, UserSearch, MessagesSquare, BookMarked, LifeBuoy, Sparkles, ShoppingBag, Package, FolderOpen, BarChart3, ClipboardList, Plus, Megaphone, FileSpreadsheet, Video } from "lucide-react";
 import { message, Popconfirm } from "antd";
 import { getRoles, getAdmin } from '../../Utils/auth.js';
 import { isEmployeeShopAllowed } from '../../services/shopServices/shopAccessService.js';
@@ -57,6 +57,7 @@ const HR_ITEMS = [
   { label: "Attendance",     to: "/hr/attendance",  icon: Clock,        roles: HR_ALL   },
   { label: "Leaves",         to: "/hr/leaves",      icon: CalendarOff,  roles: HR_ALL   },
   { label: "Calendar",       to: "/hr/calendar",    icon: CalendarDays, roles: HR_ALL   },
+  { label: "Meetings",       to: "/hr/meetings",    icon: Video,        roles: HR_ALL   },
   { label: "Work Log",       to: "/hr/worklog",     icon: ClipboardList,roles: HR_ALL   },
 
   // ── Tasks & Projects ──────────────────────────────────────
