@@ -72,6 +72,10 @@ const RecruitmentPipelineSchema = new mongoose.Schema(
     internalNotes: { type: String, default: "" },
     assignedTo:    { type: mongoose.Schema.Types.ObjectId, ref: "Employee" },
     createdBy:     { type: mongoose.Schema.Types.ObjectId },
+
+    // ── Conversion tracking ───────────────────────────────────
+    convertedToEmployeeId: { type: mongoose.Schema.Types.ObjectId, ref: "Employee", default: null },
+    convertedAt:           { type: Date, default: null },
   },
   { timestamps: true }
 );

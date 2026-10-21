@@ -220,7 +220,7 @@ const Cart = () => {
 
   return (
     <div className="bg-white min-h-screen text-black font-sans pb-20">
-      <div className="max-w-[1240px] mx-auto px-4 md:px-8 pt-8">
+      <div className="max-w-[1200px] mx-auto px-4 md:px-12 pt-8">
         
         {/* ─── HEADER: MY CART + SHARE CART ─── */}
         <div className="flex items-center justify-between pb-6 border-b border-transparent">
@@ -251,7 +251,7 @@ const Cart = () => {
               Looks like you haven't added anything yet. Explore our latest official merch and streetwear below!
             </p>
             <button
-              onClick={() => navigate("/shop")}
+              onClick={() => { window.location.href = "https://shop.infinitohq.com/"; }}
               className="px-8 py-3 bg-[#DD1215] hover:bg-red-700 text-white font-bold text-xs uppercase tracking-widest transition cursor-pointer"
             >
               Continue Shopping

@@ -8,14 +8,155 @@ import { addToCart } from '../../redux/cartSlice';
 
 import heroTshirt from '../../../assets/Images/merch/MerchModel.png';
 
+const DEFAULT_HERO_SLIDES = [
+  {
+    id: "slide-1",
+    title: "Monthly Drop Incoming",
+    headline: "MONTHLY DROP INCOMING",
+    highlightText: "MONTHLY DROP",
+    subheading: "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
+    buttonText: "Shop Now",
+    buttonLink: "https://shop.infinitohq.com/",
+    imageUrl: "/banners/hero_monthly_drop.png",
+    displayMode: "banner_image",
+    variant: "light",
+    alignment: "right",
+    isActive: true,
+  },
+  {
+    id: "slide-2",
+    title: "Become Infinito",
+    headline: "BECOME ONE OF US BECOME INFINITO",
+    highlightText: "ONE OF US",
+    subheading: "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
+    buttonText: "Shop Now",
+    buttonLink: "https://shop.infinitohq.com/",
+    imageUrl: "/banners/hero_become_infinito.png",
+    displayMode: "banner_image",
+    variant: "dark",
+    alignment: "left",
+    isActive: true,
+  },
+];
+
+const DEFAULT_PROMO_BANNERS = [
+  {
+    id: "promo-1",
+    badgeText: "LIMITED EDITION DROP",
+    discountCode: "CRIMSON35",
+    headline: "35% off",
+    subtitle: "on THE CRIMSON BLOODLINE",
+    buttonText: "Buy Now",
+    buttonLink: "https://shop.infinitohq.com/",
+    bgImageUrl: "/products/crimson_tshirt.jpg",
+    bgColor: "#800000",
+    isActive: true,
+  },
+  {
+    id: "promo-2",
+    badgeText: "GRAPHIC NOVEL SPECIAL",
+    discountCode: "INFINITOVIP",
+    headline: "FLAT 25% OFF",
+    subtitle: "on ALL COMIC BOOKS & PRINTS",
+    buttonText: "Explore Now",
+    buttonLink: "https://shop.infinitohq.com/",
+    bgImageUrl: "",
+    bgColor: "#111827",
+    isActive: true,
+  },
+];
+
 const ShopCatalog = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [activeSlide, setActiveSlide] = useState(0);
+  const [activePromoIndex, setActivePromoIndex] = useState(0);
+  const [heroSlides, setHeroSlides] = useState(DEFAULT_HERO_SLIDES);
+  const [promoBanners, setPromoBanners] = useState(DEFAULT_PROMO_BANNERS);
   const [categories, setCategories] = useState([]);
   const [trendingProducts, setTrendingProducts] = useState([]);
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const loadMarketingBanners = () => {
+    try {
+      const stored = localStorage.getItem("infinito_shop_banners");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed.heroSlider) && parsed.heroSlider.length > 0) {
+          const activeSlides = parsed.heroSlider.filter((s) => s.isActive !== false);
+          if (activeSlides.length > 0) {
+            setHeroSlides(activeSlides);
+          }
+        }
+        if (Array.isArray(parsed.promoBanners) && parsed.promoBanners.length > 0) {
+          const activePromos = parsed.promoBanners.filter((b) => b.isActive !== false);
+          if (activePromos.length > 0) {
+            setPromoBanners(activePromos);
+          }
+        } else if (parsed.promoBanner && parsed.promoBanner.isActive !== false) {
+          setPromoBanners([parsed.promoBanner]);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to parse infinito_shop_banners in ShopCatalog", e);
+    }
+  };
+
+  const renderHighlightedText = (headline, highlight) => {
+    if (!headline) return "BECOME ONE OF US BECOME INFINITO";
+    if (!highlight || !headline.toLowerCase().includes(highlight.toLowerCase())) {
+      return headline;
+    }
+    const parts = headline.split(new RegExp(`(${highlight})`, "gi"));
+    return parts.map((part, i) =>
+      part.toLowerCase() === highlight.toLowerCase() ? (
+        <span key={i} className="text-[#DD1215] drop-shadow">{part}</span>
+      ) : (
+        part
+      )
+    );
+  };
+
+  useEffect(() => {
+    loadMarketingBanners();
+
+    const handleStorage = (e) => {
+      if (e.key === "infinito_shop_banners") loadMarketingBanners();
+    };
+    window.addEventListener("storage", handleStorage);
+
+    let channel;
+    if (typeof BroadcastChannel !== "undefined") {
+      try {
+        channel = new BroadcastChannel("infinito_banners_channel");
+        channel.onmessage = () => loadMarketingBanners();
+      } catch (err) { }
+    }
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      if (channel) channel.close();
+    };
+  }, []);
+
+  // Auto rotate hero slides automatically every 4s
+  useEffect(() => {
+    if (heroSlides.length <= 1) return;
+    const interval = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [heroSlides.length]);
+
+  // Auto rotate promo banners automatically every 4.5s
+  useEffect(() => {
+    if (promoBanners.length <= 1) return;
+    const interval = setInterval(() => {
+      setActivePromoIndex((prev) => (prev + 1) % promoBanners.length);
+    }, 4500);
+    return () => clearInterval(interval);
+  }, [promoBanners.length]);
 
   useEffect(() => {
     let isMounted = true;
@@ -60,8 +201,8 @@ const ShopCatalog = () => {
         quantity: 1,
         product: {
           id: product._id || product.id || product.slug,
-          name: product.title || product.name || 'INFINITO',
-          title: product.subtitle || product.title || product.name || 'INFINITO',
+          name: product.name || product.title || 'Special Edition Crimson Red T-Shirt',
+          title: product.name || product.title || 'Special Edition Crimson Red T-Shirt',
           price: cleanPrice,
           mrp: cleanMrp,
           image: primaryImg,
@@ -70,7 +211,7 @@ const ShopCatalog = () => {
         },
       })
     );
-    toast.success(`Added ${product.subtitle || product.title || 'item'} to cart!`);
+    toast.success(`Added ${product.name || product.title || 'item'} to cart!`);
   };
 
   const handleCategoryClick = (cat) => {
@@ -82,103 +223,213 @@ const ShopCatalog = () => {
     navigate(`/product/${prod.slug || prod.id}`);
   };
 
+  const currentSlide = heroSlides[activeSlide % heroSlides.length] || heroSlides[0];
+  const currentPromo = promoBanners[activePromoIndex % promoBanners.length] || promoBanners[0];
+
+  const handleCtaClick = (link) => {
+    if (!link) return;
+    if (link.startsWith('http')) {
+      window.location.href = link;
+    } else {
+      navigate(link);
+    }
+  };
+
   return (
     <div className="w-full bg-white text-black min-h-screen font-sans">
-      
+
       {/* 1. HERO SLIDER CAROUSEL SECTION */}
-      <section className="relative w-full bg-[#0a0a0a] text-white py-12 px-6 md:px-16 overflow-hidden">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-center min-h-[420px]">
-          
-          {/* Left Text */}
-          <div className="space-y-4 z-10">
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-none">
-              BECOME <br />
-              <span className="text-red-600">ONE OF US</span> <br />
-              BECOME <br />
-              <span className="text-red-600">INFINITO</span>
-            </h1>
-            <p className="text-gray-300 text-xs md:text-sm max-w-md font-normal leading-relaxed">
-              Only 500 RED BOXES. Be part of the 1st 500 INFINITO fans to receive high-value merchandise rights.
-            </p>
-            <div className="pt-2">
-              <button
-                onClick={() => navigate('/product/crimson-red-tshirt')}
-                className="px-8 py-3 bg-red-600 hover:bg-red-700 text-white font-bold text-sm tracking-wider uppercase transition shadow-lg cursor-pointer"
-              >
-                Buy Now
-              </button>
+      <section className="relative w-full bg-[#0a0a0a] text-white overflow-hidden select-none">
+        {/* Full Artwork / Visual Slide */}
+        <div className="relative w-full min-h-[380px] sm:min-h-[460px] md:min-h-[540px] flex items-center justify-center">
+          {currentSlide?.imageUrl ? (
+            <img
+              src={currentSlide.imageUrl}
+              alt={currentSlide.title || "Infinito Hero Slide"}
+              className="absolute inset-0 w-full h-full object-cover object-center transition-all duration-700 scale-[1.08] min-w-full min-h-full"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-[#1c0205] to-black" />
+          )}
+
+          {/* High-contrast gradient scrim ensuring text and button pop and masking background */}
+          <div
+            className={`absolute inset-0 pointer-events-none ${
+              currentSlide?.alignment === "right"
+                ? "bg-gradient-to-l from-black/95 via-black/60 to-transparent"
+                : "bg-gradient-to-r from-black/95 via-black/60 to-transparent"
+            }`}
+          />
+
+          {/* Text & button overlay matching Live Carousel Preview exactly */}
+          <div className="relative z-10 max-w-[1200px] w-full mx-auto px-6 sm:px-8 md:px-12 py-10 md:py-16 flex items-center">
+            <div
+              className={`w-full md:w-3/5 space-y-2 md:space-y-3 ${
+                currentSlide?.alignment === "right" ? "ml-auto text-right" : "mr-auto text-left"
+              }`}
+            >
+              <div className={`flex items-center gap-2 ${currentSlide?.alignment === "right" ? "justify-end" : "justify-start"}`}>
+                <span className="inline-block bg-black/75 text-[#DD1215] text-[10px] md:text-xs font-bold uppercase tracking-widest px-2.5 py-0.5 rounded backdrop-blur-sm border border-red-900/40">
+                  {currentSlide?.highlightText || "ONE OF US"} {currentSlide?.isActive !== false ? "• ACTIVE" : ""}
+                </span>
+              </div>
+              <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold uppercase leading-[1.05] tracking-tight text-white drop-shadow-md font-sans">
+                {renderHighlightedText(currentSlide?.headline || currentSlide?.title, currentSlide?.highlightText)}
+              </h1>
+              <p className="text-xs sm:text-sm md:text-base font-semibold tracking-wide text-gray-200 uppercase drop-shadow max-w-lg">
+                {currentSlide?.subheading || "Only 500 pieces. Book the exclusive merchandise right now."}
+              </p>
+              <div className={`pt-2 flex ${currentSlide?.alignment === "right" ? "justify-end" : "justify-start"}`}>
+                <button
+                  onClick={() => handleCtaClick(currentSlide?.buttonLink || "https://shop.infinitohq.com/")}
+                  className="px-5 sm:px-6 py-2 sm:py-2.5 bg-[#DD1215] hover:bg-red-700 text-white text-xs md:text-sm font-bold uppercase tracking-wider rounded transition-colors shadow-md cursor-pointer"
+                >
+                  {currentSlide?.buttonText || "Shop Now"}
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Right Product Spotlight Image */}
-          <div className="relative w-full h-[320px] md:h-[400px] flex items-center justify-center z-10">
-            <div className="absolute w-[260px] h-[260px] md:w-[340px] md:h-[340px] rounded-full border-4 border-red-600/40 shadow-[0_0_50px_rgba(225,29,72,0.4)] animate-pulse"></div>
-            <img
-              src={heroTshirt}
-              alt="Infinito Hero Merch"
-              className="w-full h-full object-contain z-10 filter drop-shadow-[0_15px_30px_rgba(0,0,0,0.8)]"
-            />
-          </div>
-        </div>
+          {/* Carousel Prev/Next Arrows */}
+          {heroSlides.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+                }}
+                className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/50 hover:bg-black/80 backdrop-blur text-white flex items-center justify-center transition border border-white/20 cursor-pointer shadow-lg"
+                aria-label="Previous Hero Slide"
+              >
+                <ChevronLeft size={22} />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveSlide((prev) => (prev + 1) % heroSlides.length);
+                }}
+                className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/50 hover:bg-black/80 backdrop-blur text-white flex items-center justify-center transition border border-white/20 cursor-pointer shadow-lg"
+                aria-label="Next Hero Slide"
+              >
+                <ChevronRight size={22} />
+              </button>
+            </>
+          )}
 
-        {/* Carousel Dots */}
-        <div className="flex justify-center items-center gap-2 mt-6 relative z-10">
-          {[0, 1, 2, 3].map((dot) => (
-            <button
-              key={dot}
-              onClick={() => setActiveSlide(dot)}
-              className={`w-2 h-2 rounded-full transition-all ${
-                activeSlide === dot ? 'bg-red-600 w-4' : 'bg-gray-600'
-              }`}
-            />
-          ))}
+          {/* Carousel Dots */}
+          {heroSlides.length > 1 && (
+            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20">
+              {heroSlides.map((_, dot) => (
+                <button
+                  key={dot}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveSlide(dot);
+                  }}
+                  className={`h-2.5 rounded-full transition-all cursor-pointer ${activeSlide === dot ? "bg-red-600 w-8" : "bg-white/50 hover:bg-white/80 w-2.5"
+                    }`}
+                  aria-label={`Slide ${dot + 1}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* 2. PROMO BANNER BOX SECTION */}
-      <section className="max-w-5xl mx-auto my-10 px-4">
-        <div className="relative border-2 border-cyan-400 bg-gradient-to-r from-[#800000] via-[#a00000] to-[#600000] rounded-sm text-white p-6 md:p-8 flex flex-col md:flex-row items-center justify-between shadow-xl">
-          {/* Navigation arrow left */}
-          <button className="hidden md:flex absolute -left-5 top-12 w-9 h-9 bg-white text-black border border-gray-300 rounded-sm items-center justify-center shadow-md hover:bg-gray-100">
-            <ChevronLeft size={20} />
+      {/* 2. PROMO BANNER BOX SECTION (MULTIPLE PROMOS SUPPORTED - MATCHING SS2) */}
+      <section className="my-8 md:my-10">
+        <div className="max-w-[1200px] mx-auto px-4 md:px-12 flex items-center justify-center gap-3 md:gap-5">
+          {/* Left Arrow Button */}
+          <button
+            type="button"
+            onClick={() => setActivePromoIndex((prev) => (prev - 1 + promoBanners.length) % promoBanners.length)}
+            className="w-8 h-8 md:w-9 md:h-9 bg-white border border-gray-300 rounded hover:border-gray-500 hover:text-black text-gray-500 flex items-center justify-center transition shadow-sm shrink-0 cursor-pointer"
+            aria-label="Previous promo"
+          >
+            <ChevronLeft size={18} />
           </button>
 
-          {/* Left Text */}
-          <div className="space-y-2 text-center md:text-left z-10">
-            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
-              35% off
-            </h2>
-            <p className="text-sm md:text-base font-bold tracking-wider uppercase text-gray-200">
-              on THE CRIMSON BLOODLINE
-            </p>
-            <div className="pt-2">
-              <button
-                onClick={() => navigate('/product/crimson-red-tshirt')}
-                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-widest shadow-md cursor-pointer"
+          {/* Exact Responsive Promo Banner Card - Image fills container cleanly */}
+          {(() => {
+            const isRight = currentPromo?.alignment === "right";
+            const isCenter = currentPromo?.alignment === "center";
+
+            return (
+              <div
+                className="relative w-full max-w-[840px] min-h-[170px] sm:min-h-[190px] md:min-h-[210px] rounded-xl overflow-hidden shadow-md flex items-center bg-black shrink-0"
+                style={{
+                  backgroundColor: currentPromo?.bgColor || "#800000",
+                }}
               >
-                Buy Now
-              </button>
-            </div>
-          </div>
+                {/* The image fills the size of the banner cleanly */}
+                {currentPromo?.bgImageUrl && (
+                  <img
+                    src={currentPromo.bgImageUrl}
+                    alt={currentPromo?.headline || "Promotional Banner"}
+                    className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none transition-all duration-300 scale-[1.08] min-w-full min-h-full"
+                  />
+                )}
 
-          {/* Right Banner Product Image */}
-          <div className="relative w-48 h-36 md:w-64 md:h-44 mt-4 md:mt-0 flex items-center justify-center">
-            <img
-              src="/products/crimson_tshirt.jpg"
-              alt="Crimson Bloodline Offer"
-              className="w-full h-full object-contain filter drop-shadow-lg"
-            />
-          </div>
+                {/* Gradient overlay for readability */}
+                <div className={`absolute inset-0 pointer-events-none ${
+                  isRight
+                    ? "bg-gradient-to-l from-black/85 via-black/40 to-transparent"
+                    : isCenter
+                    ? "bg-black/55"
+                    : "bg-gradient-to-r from-black/85 via-black/40 to-transparent"
+                }`} />
 
-          {/* Navigation arrow right */}
-          <button className="hidden md:flex absolute -right-5 top-12 w-9 h-9 bg-white text-black border border-gray-300 rounded-sm items-center justify-center shadow-md hover:bg-gray-100">
-            <ChevronRight size={20} />
+                <div className={`relative z-10 px-6 sm:px-8 md:px-10 py-4 max-w-[70%] sm:max-w-[60%] space-y-1 text-white ${
+                  isRight ? "ml-auto text-right" : isCenter ? "mx-auto text-center" : "text-left"
+                }`}>
+                  {(currentPromo?.badgeText || currentPromo?.discountCode) && (
+                    <div className={`flex items-center gap-2 ${
+                      isRight ? "justify-end" : isCenter ? "justify-center" : "justify-start"
+                    }`}>
+                      <span className="inline-block bg-black/70 text-[#DD1215] text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded">
+                        {currentPromo.badgeText || currentPromo.discountCode}
+                      </span>
+                    </div>
+                  )}
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight uppercase text-white drop-shadow font-sans">
+                    {currentPromo?.headline || "35% off"}
+                  </h2>
+                  <p className="text-[11px] sm:text-xs md:text-sm font-semibold tracking-wide text-gray-200 uppercase drop-shadow">
+                    {currentPromo?.subtitle || "on THE CRIMSON BLOODLINE"}
+                  </p>
+                  <div className={`pt-2 flex ${
+                    isRight ? "justify-end" : isCenter ? "justify-center" : "justify-start"
+                  }`}>
+                    <button
+                      type="button"
+                      onClick={() => handleCtaClick(currentPromo?.buttonLink || "https://shop.infinitohq.com/")}
+                      className="px-4 sm:px-5 py-1.5 sm:py-2 bg-[#DD1215] hover:bg-red-700 text-white text-xs font-bold uppercase tracking-wider rounded transition cursor-pointer shadow-sm"
+                    >
+                      {currentPromo?.buttonText || "Buy Now"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Right Arrow Button */}
+          <button
+            type="button"
+            onClick={() => setActivePromoIndex((prev) => (prev + 1) % promoBanners.length)}
+            className="w-8 h-8 md:w-9 md:h-9 bg-white border border-gray-300 rounded hover:border-gray-500 hover:text-black text-gray-500 flex items-center justify-center transition shadow-sm shrink-0 cursor-pointer"
+            aria-label="Next promo"
+          >
+            <ChevronRight size={18} />
           </button>
         </div>
       </section>
 
       {/* 3. CATEGORIES SECTION */}
-      <section className="max-w-6xl mx-auto py-10 px-4">
+      <section className="max-w-[1200px] mx-auto py-10 px-4 md:px-12">
         <div className="flex items-center justify-between mb-8 pb-2 border-b border-gray-100">
           <h2 className="text-2xl md:text-3xl font-extrabold text-black tracking-tight">
             Categories
@@ -217,7 +468,7 @@ const ShopCatalog = () => {
       </section>
 
       {/* 4. TOP TRENDING SECTION */}
-      <section className="max-w-6xl mx-auto py-10 px-4 relative">
+      <section className="max-w-[1200px] mx-auto py-10 px-4 md:px-12 relative">
         <h2 className="text-2xl md:text-3xl font-extrabold text-center text-black tracking-tight mb-8">
           Top Trending
         </h2>
@@ -271,7 +522,7 @@ const ShopCatalog = () => {
       </section>
 
       {/* 5. ULTIMATE KIT SECTION */}
-      <section className="max-w-5xl mx-auto my-12 px-4">
+      <section className="max-w-[1240px] mx-auto my-12 px-4 md:px-8">
         <h2 className="text-2xl md:text-3xl font-extrabold text-center text-black tracking-tight mb-8">
           ULTIMATE KIT
         </h2>

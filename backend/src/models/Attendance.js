@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 
 const SessionSchema = new mongoose.Schema({
   clockIn:     { type: Date, required: true },
@@ -13,7 +13,7 @@ const AttendanceSchema = new mongoose.Schema(
       ref: "Employee",
       required: true,
     },
-    // Snapshot — name shows even when employeeId ref doesn't populate
+    // Snapshot ΓÇö name shows even when employeeId ref doesn't populate
     employeeName:  { type: String, default: "" },
     employeeEmpId: { type: String, default: "" }, // e.g. INF-002
 
@@ -22,18 +22,18 @@ const AttendanceSchema = new mongoose.Schema(
       required: true,
     },
 
-    // ── Multiple Clock In/Out Sessions ────────────────────────
+    // ΓöÇΓöÇ Multiple Clock In/Out Sessions ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     sessions: { type: [SessionSchema], default: [] },
 
     // Total hours across all sessions
     totalHours: { type: Number, default: 0 },
 
-    // ── Legacy single clock in/out (kept for backward compat) ─
+    // ΓöÇΓöÇ Legacy single clock in/out (kept for backward compat) ΓöÇ
     clockIn:     { type: Date },
     clockOut:    { type: Date },
     hoursWorked: { type: Number, default: 0 },
 
-    // ── Status ────────────────────────────────────────────────
+    // ΓöÇΓöÇ Status ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     // present = totalHours >= 4, half_day = totalHours > 0 but < 4
     status: {
       type: String,

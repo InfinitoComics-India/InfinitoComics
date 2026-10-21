@@ -55,6 +55,9 @@ const Footer = () => {
               <Link to="/comics">
                 <span>COMICS</span>
               </Link>
+              <Link to="/ads">
+                <span>INFINITO ADS</span>
+              </Link>
 
               {/* <Link to="/privacy-policy"><span>PRIVACY POLICY</span></Link>
               <Link to="/refund-policy"><span>REFUND POLICY</span></Link> */}
@@ -69,9 +72,6 @@ const Footer = () => {
               </a>
               <Link to="/support-us">
                 <span>SUPPORT US</span>
-              </Link>
-              <Link to="/contact-us">
-                <span>CONTACT US</span>
               </Link>
               {/* <Link to="/terms-of-service"><span>TERMS OF SERVICE</span></Link> */}
             </div>
@@ -135,7 +135,7 @@ const Footer = () => {
              <Link to="/contact-us">CONTACT US</Link>
              <a href={`${RESEARCH_BASE_URL}/research`}> <span>RESEARCH</span></a>
             <Link to="/support-us">SUPPORT US</Link>
-            <Link to="/contact-us">CONTACT US</Link>
+            <Link to="/ads">INFINITO ADS</Link>
           </div>
 
           <div className="mt-8 w-full flex rounded overflow-hidden gap-1  px-1 py-1 h-28">

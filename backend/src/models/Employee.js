@@ -36,6 +36,10 @@ const EmployeeSchema = new mongoose.Schema(
       enum: ["employee", "team_lead", "manager", "hr_manager", "finance", "superadmin"],
       default: "employee",
     },
+    shopAccess: {
+      type: Boolean,
+      default: false,
+    },
 
     // ── Status ────────────────────────────────────────────────
     status: {
@@ -50,12 +54,28 @@ const EmployeeSchema = new mongoose.Schema(
     // ── Personal Info ─────────────────────────────────────────
     dateOfBirth:       { type: Date },
     gender:            { type: String, enum: ["male", "female", "other", "prefer_not_to_say"] },
-    address:           { type: String },
+    fatherName:        { type: String, default: "" },
+    motherName:        { type: String, default: "" },
+    // Address (structured)
+    addressLine1:      { type: String, default: "" },
+    addressLine2:      { type: String, default: "" },
+    city:              { type: String, default: "" },
+    country:           { type: String, default: "India" },
+    zipCode:           { type: String, default: "" },
+    // Legacy flat address kept for backward compat
+    address:           { type: String, default: "" },
     emergencyContact:  {
-      name:  { type: String },
-      phone: { type: String },
+      name:     { type: String },
+      phone:    { type: String },
       relation: { type: String },
     },
+
+    // ── Bank Details ──────────────────────────────────────────
+    bankName:          { type: String, default: "" },
+    accountHolder:     { type: String, default: "" },
+    accountNumber:     { type: String, default: "" },
+    ifscCode:          { type: String, default: "" },
+    swiftCode:         { type: String, default: "" },
 
     // ── Skills & Links ────────────────────────────────────────
     skills:       { type: [String], default: [] },

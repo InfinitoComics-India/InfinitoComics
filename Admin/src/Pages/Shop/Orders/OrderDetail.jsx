@@ -15,8 +15,11 @@ import {
   refundOrder,
   resendOrderEmail,
   printPackingSlip,
+  testQikinkConnection,
+  triggerQikinkWebhookSimulation,
   formatOrderDate,
   formatDateTime,
+  resolveCustomerDisplayName,
 } from '../../../services/shopServices/orderService';
 
 const OrderDetail = () => {
@@ -30,6 +33,16 @@ const OrderDetail = () => {
   // Modals & Action loading states
   const [qikinkModalOpen, setQikinkModalOpen] = useState(false);
   const [qikinkLoading, setQikinkLoading] = useState(false);
+  const [qikinkAllowSimulation, setQikinkAllowSimulation] = useState(true);
+  const [testingQikink, setTestingQikink] = useState(false);
+  const [qikinkTestResult, setQikinkTestResult] = useState(null);
+
+  // Webhook Simulation Modal state
+  const [webhookModalOpen, setWebhookModalOpen] = useState(false);
+  const [webhookStatus, setWebhookStatus] = useState('Dispatched');
+  const [webhookCourier, setWebhookCourier] = useState('BlueDart Express');
+  const [webhookAwb, setWebhookAwb] = useState('');
+  const [webhookSimulating, setWebhookSimulating] = useState(false);
 
   const [fulfillModalOpen, setFulfillModalOpen] = useState(false);
   const [fulfillCarrier, setFulfillCarrier] = useState('BlueDart');
@@ -100,15 +113,60 @@ const OrderDetail = () => {
   const handleSendToQikink = async () => {
     try {
       setQikinkLoading(true);
-      const updated = await sendOrderToQikink(order.orderId);
+      const updated = await sendOrderToQikink(order.orderId, {
+        allowSandboxSimulation: qikinkAllowSimulation,
+      });
       setOrder(updated);
       setQikinkModalOpen(false);
       message.success(`Order successfully sent to Qikink POD! Assigned ID: ${updated.fulfillment?.qikink?.qikinkOrderId}`);
     } catch (err) {
       console.error(err);
-      message.error('Failed to transmit order to Qikink');
+      message.error(err.message || 'Failed to transmit order to Qikink');
     } finally {
       setQikinkLoading(false);
+    }
+  };
+
+  const handleTestQikink = async () => {
+    try {
+      setTestingQikink(true);
+      const res = await testQikinkConnection();
+      setQikinkTestResult(res);
+      if (res?.success) {
+        message.success(`Connected to Qikink API (${res.environment}) successfully!`);
+      } else {
+        message.error(`Qikink API Error: ${res?.message || 'Check credentials'}`);
+      }
+    } catch (e) {
+      message.error('Failed to ping Qikink API');
+    } finally {
+      setTestingQikink(false);
+    }
+  };
+
+  const handleSimulateWebhook = async () => {
+    try {
+      setWebhookSimulating(true);
+      const awb = webhookAwb || `BD-${Math.floor(10000000 + Math.random() * 90000000)}`;
+      const payload = {
+        order_number: order.orderId,
+        order_id: order.fulfillment?.qikink?.qikinkOrderId || `QIK-${order.id}`,
+        status: webhookStatus,
+        courier_name: webhookCourier,
+        awb_number: awb,
+        tracking_url: `https://${webhookCourier.toLowerCase().replace(/\s+/g, '')}.com/track/${awb}`,
+        estimated_delivery: formatOrderDate(new Date(), 3),
+      };
+
+      const updated = await triggerQikinkWebhookSimulation(payload);
+      setOrder(updated);
+      setWebhookModalOpen(false);
+      message.success(`Webhook received: Order updated to ${webhookStatus} with AWB ${awb}!`);
+    } catch (err) {
+      console.error(err);
+      message.error(err.message || 'Webhook simulation failed');
+    } finally {
+      setWebhookSimulating(false);
     }
   };
 
@@ -188,10 +246,19 @@ const OrderDetail = () => {
   }
 
   // Status helper badges
-  const getPaymentStatusTag = (status) => {
-    switch ((status || '').toLowerCase()) {
+  const getPaymentStatusTag = (status, method) => {
+    const s = String(status || '').toLowerCase().trim();
+    const m = String(method || '').toLowerCase().trim();
+    const isCOD = s === 'cod' || m === 'cod' || m.includes('cash on delivery') || m.includes('cod');
+
+    if (isCOD && s !== 'paid') {
+      return <Tag color="warning" className="px-3 py-1 font-bold uppercase text-xs">COD</Tag>;
+    }
+    switch (s) {
       case 'paid':
         return <Tag color="success" className="px-3 py-1 font-bold uppercase text-xs">Paid</Tag>;
+      case 'cod':
+        return <Tag color="warning" className="px-3 py-1 font-bold uppercase text-xs">COD</Tag>;
       case 'pending':
         return <Tag color="warning" className="px-3 py-1 font-bold uppercase text-xs">Pending</Tag>;
       case 'failed':
@@ -220,6 +287,8 @@ const OrderDetail = () => {
   };
 
   // Timeline Step calculation
+  const isCODOrder = String(order.payment?.status || '').toLowerCase() === 'cod' || String(order.payment?.method || order.paymentMethod || '').toLowerCase().includes('cod');
+
   const timelineSteps = [
     {
       key: 'orderPlaced',
@@ -230,10 +299,10 @@ const OrderDetail = () => {
     },
     {
       key: 'paymentConfirmed',
-      title: 'Payment Confirmed',
-      description: order.payment?.method || 'Razorpay Gateway',
-      date: order.timeline?.paymentConfirmed,
-      completed: (order.payment?.status || '').toLowerCase() === 'paid' || !!order.timeline?.paymentConfirmed,
+      title: isCODOrder ? 'Payment Method: COD' : 'Payment Confirmed',
+      description: isCODOrder ? 'Cash to be collected upon delivery' : (order.payment?.method || 'Razorpay Gateway'),
+      date: isCODOrder ? null : (order.timeline?.paymentConfirmed || order.payment?.date),
+      completed: !isCODOrder && ((order.payment?.status || '').toLowerCase() === 'paid' || !!order.timeline?.paymentConfirmed),
     },
     {
       key: 'sentToQikink',
@@ -426,6 +495,17 @@ const OrderDetail = () => {
                 <div className="flex justify-between">
                   <span>Qikink Status:</span>
                   <span className="font-semibold text-emerald-700">{order.fulfillment?.qikink?.status || 'In Production'}</span>
+                </div>
+                <div className="pt-2 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      setWebhookAwb(order.fulfillment?.tracking?.trackingNumber || `BD-${Math.floor(10000000 + Math.random() * 90000000)}`);
+                      setWebhookModalOpen(true);
+                    }}
+                    className="w-full py-1.5 px-2 bg-white border border-gray-300 hover:bg-gray-100 rounded text-[11px] font-bold text-gray-700 flex items-center justify-center gap-1 transition shadow-xs cursor-pointer"
+                  >
+                    <span>⚡ Simulate Qikink Webhook</span>
+                  </button>
                 </div>
               </div>
             ) : (
@@ -679,29 +759,35 @@ const OrderDetail = () => {
                   Payment Information
                 </h3>
               </div>
-              <div>{getPaymentStatusTag(order.payment?.status)}</div>
+              <div>{getPaymentStatusTag(order.payment?.status, order.payment?.method || order.paymentMethod)}</div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div className="p-3 bg-gray-50 rounded-lg space-y-1">
                 <p className="text-gray-400 font-bold uppercase text-[10px]">Payment Method</p>
-                <p className="font-semibold text-gray-900 text-sm">{order.payment?.method || 'Razorpay'}</p>
-                <p className="text-gray-500">Processed securely via Razorpay gateway</p>
+                <p className="font-semibold text-gray-900 text-sm">
+                  {isCODOrder ? 'Cash on Delivery (COD)' : (order.payment?.method || 'Razorpay')}
+                </p>
+                <p className="text-gray-500">
+                  {isCODOrder ? 'Cash to be collected upon order delivery' : 'Processed securely via Razorpay gateway'}
+                </p>
               </div>
 
               <div className="p-3 bg-gray-50 rounded-lg space-y-1">
                 <p className="text-gray-400 font-bold uppercase text-[10px]">Transaction ID</p>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-gray-900 text-xs">
-                    {order.payment?.transactionId || 'pay_RzpDefault'}
+                  <span className={`font-mono font-bold text-xs ${isCODOrder ? 'text-amber-700' : 'text-gray-900'}`}>
+                    {isCODOrder ? 'COD (Collect on Delivery)' : (order.payment?.transactionId || 'pay_RzpDefault')}
                   </span>
-                  <button
-                    onClick={() => copyToClipboard(order.payment?.transactionId, 'Transaction ID')}
-                    className="text-gray-400 hover:text-gray-600"
-                    title="Copy Transaction ID"
-                  >
-                    <Copy size={13} />
-                  </button>
+                  {!isCODOrder && (
+                    <button
+                      onClick={() => copyToClipboard(order.payment?.transactionId, 'Transaction ID')}
+                      className="text-gray-400 hover:text-gray-600"
+                      title="Copy Transaction ID"
+                    >
+                      <Copy size={13} />
+                    </button>
+                  )}
                 </div>
                 <p className="text-gray-500">{formatDateTime(order.payment?.date || order.createdAt)}</p>
               </div>
@@ -736,7 +822,9 @@ const OrderDetail = () => {
             <div className="space-y-3 text-xs">
               <div>
                 <p className="text-gray-400 font-bold uppercase text-[10px]">Name</p>
-                <p className="font-bold text-gray-900 text-sm mt-0.5">{order.customer?.name || 'Customer'}</p>
+                <p className="font-bold text-gray-900 text-sm mt-0.5">
+                  {resolveCustomerDisplayName(order.customer, order.shippingAddress, order.orderId)}
+                </p>
               </div>
 
               <div>
@@ -784,10 +872,12 @@ const OrderDetail = () => {
             </div>
 
             <div className="text-xs text-gray-700 leading-relaxed bg-gray-50 p-3 rounded-lg border border-gray-100">
-              <strong className="block text-gray-900 mb-1">{order.shippingAddress?.name || order.customer?.name}</strong>
+              <strong className="block text-gray-900 mb-1">
+                {resolveCustomerDisplayName(order.shippingAddress, order.customer, order.orderId)}
+              </strong>
               <div className="whitespace-pre-line">{order.shippingAddress?.formatted || order.shippingAddress?.line1}</div>
               <div className="mt-2 text-gray-500">
-                <strong>Phone:</strong> {order.customer?.phone || 'N/A'}
+                <strong>Phone:</strong> {order.shippingAddress?.phone || order.customer?.phone || 'N/A'}
               </div>
             </div>
           </div>
@@ -808,7 +898,9 @@ const OrderDetail = () => {
                 </div>
               ) : (
                 <>
-                  <strong className="block text-gray-900 mb-1">{order.billingAddress?.name || order.customer?.name}</strong>
+                  <strong className="block text-gray-900 mb-1">
+                    {resolveCustomerDisplayName(order.billingAddress, order.customer, order.orderId)}
+                  </strong>
                   <div className="whitespace-pre-line">{order.billingAddress?.formatted || order.billingAddress?.line1}</div>
                 </>
               )}
@@ -835,7 +927,7 @@ const OrderDetail = () => {
       >
         <div className="space-y-4 py-2 text-sm">
           <p className="text-gray-600">
-            This will make an automated API call to Qikink Print-on-Demand service with customer shipping data and apparel print configurations.
+            This transmits the order data directly to Qikink Print-on-Demand API with customer shipping info and item SKU configurations.
           </p>
 
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs space-y-2">
@@ -848,19 +940,59 @@ const OrderDetail = () => {
               <span className="font-semibold text-gray-800">{order.shippingAddress?.name || order.customer?.name}</span>
             </div>
             <div className="flex justify-between">
+              <span className="text-gray-500">Phone:</span>
+              <span className="font-semibold text-gray-800">{order.shippingAddress?.phone || order.customer?.phone || 'N/A'}</span>
+            </div>
+            <div className="flex justify-between">
               <span className="text-gray-500">Destination:</span>
               <span className="text-gray-800">{order.shippingAddress?.city}, {order.shippingAddress?.state} ({order.shippingAddress?.pincode})</span>
             </div>
             <div className="flex justify-between">
+              <span className="text-gray-500">Gateway:</span>
+              <span className={`font-bold ${isCODOrder ? 'text-amber-700' : 'text-emerald-700'}`}>
+                {isCODOrder ? 'COD (Collect on Delivery)' : 'Prepaid'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Total Value:</span>
+              <span className="font-bold text-gray-900">₹{Number(order.pricing?.grandTotal || order.total || 0).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
               <span className="text-gray-500">Print Items:</span>
               <span className="font-bold text-[#DD1215]">
-                {(order.items || []).map(i => `${i.quantity}x ${i.name}`).join(', ')}
+                {(order.items || []).map(i => `${i.quantity}x ${i.name} [SKU: ${i.sku || 'INF-ITEM'}]`).join(', ')}
               </span>
             </div>
           </div>
 
+          <div className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={qikinkAllowSimulation}
+                onChange={(e) => setQikinkAllowSimulation(e.target.checked)}
+                className="rounded text-[#DD1215] focus:ring-red-500 h-4 w-4"
+              />
+              <span className="font-medium">Sandbox Fallback: Simulate if SKU is not yet registered in Sandbox portal</span>
+            </label>
+            <button
+              type="button"
+              onClick={handleTestQikink}
+              disabled={testingQikink}
+              className="px-2.5 py-1 bg-white border border-amber-300 hover:bg-amber-100 rounded text-[11px] font-bold text-amber-800 transition"
+            >
+              {testingQikink ? 'Checking...' : 'Check API Handshake'}
+            </button>
+          </div>
+
+          {qikinkTestResult && (
+            <div className={`p-2.5 rounded-lg text-xs font-mono border ${qikinkTestResult.success ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+              <strong>API Status:</strong> {qikinkTestResult.message} ({qikinkTestResult.environment || 'sandbox'})
+            </div>
+          )}
+
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
-            ℹ️ Status will automatically change to <strong>Processing</strong> and a unique Qikink tracking reference will be attached.
+            ℹ️ On successful dispatch, status will automatically update to <strong>Processing</strong> and a Qikink tracking reference will be recorded.
           </div>
         </div>
       </Modal>
@@ -1003,6 +1135,73 @@ const OrderDetail = () => {
               onChange={(e) => setCancelReason(e.target.value)}
               placeholder="e.g. Customer requested order cancellation..."
             />
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── MODAL: Simulate Qikink Webhook ── */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2 text-base font-bold text-gray-900">
+            <Send className="text-[#DD1215]" size={20} />
+            <span>Simulate Qikink Webhook Callback</span>
+          </div>
+        }
+        open={webhookModalOpen}
+        onOk={handleSimulateWebhook}
+        confirmLoading={webhookSimulating}
+        okText="Send Webhook Event"
+        okButtonProps={{ className: 'bg-[#DD1215] hover:bg-red-700' }}
+        onCancel={() => setWebhookModalOpen(false)}
+        width={520}
+      >
+        <div className="space-y-4 py-2 text-sm">
+          <p className="text-gray-600 text-xs">
+            This tests the live webhook listener (<code>/shop/orders/qikink-webhook</code>) by posting a real tracking event as if dispatched by Qikink's automated print & courier system.
+          </p>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Shipment Milestone Status</label>
+            <Radio.Group
+              value={webhookStatus}
+              onChange={(e) => setWebhookStatus(e.target.value)}
+              className="flex flex-col gap-2"
+            >
+              <Radio value="In Production">
+                <span className="font-semibold text-gray-800">In Production / Printing</span> — Order is being printed & packed
+              </Radio>
+              <Radio value="Dispatched">
+                <span className="font-semibold text-gray-800">Dispatched / Shipped</span> — Courier has picked up parcel & assigned AWB
+              </Radio>
+              <Radio value="Out for Delivery">
+                <span className="font-semibold text-gray-800">Out for Delivery</span> — Courier is delivering to customer today
+              </Radio>
+              <Radio value="Delivered">
+                <span className="font-semibold text-gray-800">Delivered</span> — Customer received the parcel (Fulfillment Complete)
+              </Radio>
+            </Radio.Group>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Courier Carrier</label>
+            <Input
+              value={webhookCourier}
+              onChange={(e) => setWebhookCourier(e.target.value)}
+              placeholder="e.g. BlueDart Express, Delhivery, DTDC"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">AWB Tracking Number</label>
+            <Input
+              value={webhookAwb}
+              onChange={(e) => setWebhookAwb(e.target.value)}
+              placeholder="e.g. BD-89240182"
+            />
+          </div>
+
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs text-emerald-800">
+            ✓ Sending this event will update the database, sync tracking across Admin & Customer storefronts, and mark milestones.
           </div>
         </div>
       </Modal>

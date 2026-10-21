@@ -67,10 +67,12 @@ const ProductForm = () => {
     costPrice: '',
     trackInventory: true,
     stock: '',
+    sku: '',
   });
 
   // Images & Drag-and-drop state
   const [images, setImages] = useState([]);
+  const [imageUrlInput, setImageUrlInput] = useState('');
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
 
@@ -139,6 +141,7 @@ const ProductForm = () => {
         costPrice: product.costPrice || '',
         trackInventory: product.trackInventory !== false,
         stock: product.stock || '',
+        sku: product.sku || '',
       });
 
       const rawImages = Array.isArray(product.images) ? product.images : [];
@@ -219,11 +222,27 @@ const ProductForm = () => {
         };
       });
 
+      // Clean variants: remove empty variants or options with empty values
+      const cleanVariants = (variants || [])
+        .filter(v => v.name && v.name.trim())
+        .map(v => ({
+          name: v.name.trim(),
+          options: (v.options || [])
+            .filter(opt => opt.value && String(opt.value).trim())
+            .map(opt => ({
+              value: String(opt.value).trim(),
+              price: Number(opt.price) || 0,
+              stock: Number(opt.stock) || 0,
+              sku: String(opt.sku || '').trim(),
+            }))
+        }))
+        .filter(v => v.options.length > 0);
+
       const productData = {
         ...formData,
         ...pricing,
         images: finalImages,
-        variants,
+        variants: cleanVariants,
       };
 
       let response;
@@ -271,6 +290,27 @@ const ProductForm = () => {
 
     // Reset input so re-selecting the same file works
     e.target.value = '';
+  };
+
+  const handleAddImageUrl = () => {
+    const trimmed = imageUrlInput.trim();
+    if (!trimmed) return;
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://') && !trimmed.startsWith('data:')) {
+      Swal.fire('Invalid URL', 'Please enter a valid image URL starting with https://', 'warning');
+      return;
+    }
+    const isFirst = images.length === 0;
+    setImages((prev) => [
+      ...prev,
+      {
+        url: trimmed,
+        isNew: false, // Hosted directly (e.g. on Cloudinary)
+        alt: formData.name || 'Product Image',
+        isPrimary: isFirst,
+        id: `url-${Date.now()}-${Math.random()}`,
+      },
+    ]);
+    setImageUrlInput('');
   };
 
   const handleRemoveImage = (index) => {
@@ -353,7 +393,7 @@ const ProductForm = () => {
   const addVariantOption = (variantId) => {
     setVariants(prev => prev.map(v => 
       v.id === variantId 
-        ? { ...v, options: [...v.options, { value: '', price: '', stock: '' }] }
+        ? { ...v, options: [...v.options, { value: '', price: '', stock: '', sku: '' }] }
         : v
     ));
   };
@@ -628,6 +668,27 @@ const ProductForm = () => {
                             </button>
                           </div>
 
+                          <div className="mb-3 bg-indigo-50/80 border border-indigo-200 rounded-lg p-3 text-xs text-indigo-900 flex items-start gap-2.5">
+                            <span className="text-base">📦</span>
+                            <div>
+                              <p className="font-semibold text-indigo-950">Qikink Variant SKU Mapping:</p>
+                              <p className="text-indigo-700 mt-0.5 leading-relaxed">
+                                Enter the exact SKU matching this option in your Qikink Dashboard (e.g., <code className="bg-indigo-150 px-1.5 py-0.5 rounded font-mono font-bold text-indigo-900">INF-TEE-BLK-S</code>). This tells Qikink which item and size to fulfill.
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Column Headers */}
+                          <div className="flex items-center gap-2 mb-1.5 px-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            <span className="flex-1">Option (Size / Color)</span>
+                            <span className="w-48 text-indigo-600 font-bold flex items-center gap-1">
+                              <span>⚡ Qikink SKU</span>
+                            </span>
+                            <span className="w-24">Price (₹)</span>
+                            <span className="w-20">Stock</span>
+                            <span className="w-8"></span>
+                          </div>
+
                           <div className="space-y-2">
                             {variant.options.map((option, oIndex) => (
                               <div key={oIndex} className="flex items-center gap-2">
@@ -635,27 +696,36 @@ const ProductForm = () => {
                                   type="text"
                                   value={option.value}
                                   onChange={(e) => updateVariantOption(variant.id, oIndex, 'value', e.target.value)}
-                                  placeholder="Value (e.g., S, M, L)"
-                                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  placeholder="Option (e.g., S, M, L)"
+                                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                />
+                                <input
+                                  type="text"
+                                  value={option.sku || ''}
+                                  onChange={(e) => updateVariantOption(variant.id, oIndex, 'sku', e.target.value)}
+                                  placeholder="Qikink SKU (e.g., INF-TEE-BLK-M)"
+                                  className="w-48 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-xs"
+                                  title="SKU defined in your Qikink Dashboard"
                                 />
                                 <input
                                   type="number"
                                   value={option.price}
                                   onChange={(e) => updateVariantOption(variant.id, oIndex, 'price', e.target.value)}
-                                  placeholder="Price"
-                                  className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  placeholder="Price (₹)"
+                                  className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                 />
                                 <input
                                   type="number"
                                   value={option.stock}
                                   onChange={(e) => updateVariantOption(variant.id, oIndex, 'stock', e.target.value)}
                                   placeholder="Stock"
-                                  className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                 />
                                 <button
                                   type="button"
                                   onClick={() => removeVariantOption(variant.id, oIndex)}
                                   className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                                  title="Remove option"
                                 >
                                   <X className="w-4 h-4" />
                                 </button>
@@ -728,6 +798,23 @@ const ProductForm = () => {
                           step="0.01"
                         />
                       </div>
+                    </div>
+
+                    {/* Qikink Base SKU */}
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Base Product SKU (Qikink Item Code)
+                      </label>
+                      <input
+                        type="text"
+                        value={pricing.sku}
+                        onChange={(e) => setPricing(prev => ({ ...prev, sku: e.target.value }))}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                        placeholder="e.g. INF-TEE-CRIMSON"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Base SKU matching your Qikink product. If product has sizes/colors, you can set individual variant SKUs in the <strong>Variants</strong> tab.
+                      </p>
                     </div>
                   </div>
 

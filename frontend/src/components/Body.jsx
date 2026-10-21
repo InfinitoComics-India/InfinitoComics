@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Navbar from '../pages/Navbar/Navbar';
 import Footer from '../pages/Footer/Footer';
 import LogoLoader from '../components/loader/logoLoader';
+import TopPromoBar from './TopPromoBar';
 
 const Body = () => {
   const [loading, setLoading] = useState(false);
@@ -33,6 +34,7 @@ const Body = () => {
 
   return (
     <div>
+       {!isReaderView && <TopPromoBar />}
        {!isReaderView && <Navbar />}
       <Outlet />
       {!isReaderView && <Footer />}

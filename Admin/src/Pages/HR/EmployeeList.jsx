@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, RefreshCw, Users, UserCheck, UserX, Filter } from "lucide-react";
+import { Plus, Search, RefreshCw, Users, UserCheck, UserX, Trash2 } from "lucide-react";
 import { getAllEmployees, changeEmployeeStatus, deleteEmployee } from "../../services/hrServices";
 
 const DEPARTMENTS = ["All", "Engineering", "Design", "Marketing", "HR", "Finance", "Operations", "Research", "Content", "Other"];
@@ -21,22 +21,24 @@ const ROLE_COLORS = {
 
 const EmployeeList = () => {
   const navigate = useNavigate();
-  const [employees, setEmployees]   = useState([]);
-  const [loading, setLoading]       = useState(false);
-  const [search, setSearch]         = useState("");
-  const [dept, setDept]             = useState("All");
-  const [error, setError]           = useState("");
-  const [confirmDelete, setConfirmDelete] = useState(null);
-  const [deleting, setDeleting]     = useState(false);
+  const [employees, setEmployees]         = useState([]);
+  const [loading, setLoading]             = useState(false);
+  const [search, setSearch]               = useState("");
+  const [dept, setDept]                   = useState("All");
+  const [error, setError]                 = useState("");
+  const [selected, setSelected]           = useState(new Set());
+  const [confirmDelete, setConfirmDelete] = useState(null); // null | "single" | "bulk"
+  const [deleteTarget, setDeleteTarget]   = useState(null); // single emp obj
+  const [deleting, setDeleting]           = useState(false);
 
   const load = async (params = {}) => {
     try {
       setLoading(true); setError("");
       const res = await getAllEmployees(params);
       setEmployees(res.data.data || []);
-    } catch (e) {
-      setError("Failed to load employees.");
-    } finally { setLoading(false); }
+      setSelected(new Set());
+    } catch { setError("Failed to load employees."); }
+    finally { setLoading(false); }
   };
 
   useEffect(() => { load(); }, []);
@@ -60,16 +62,48 @@ const EmployeeList = () => {
     } catch { setError("Failed to update status."); }
   };
 
-  const handleDelete = async () => {
-    if (!confirmDelete) return;
+  // Toggle single row
+  const toggleSelect = (id) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  // Select / deselect all
+  const toggleAll = () => {
+    if (selected.size === employees.length) setSelected(new Set());
+    else setSelected(new Set(employees.map(e => e._id)));
+  };
+
+  // Single delete (from modal)
+  const handleDeleteSingle = async () => {
+    if (!deleteTarget) return;
     try {
       setDeleting(true);
-      await deleteEmployee(confirmDelete._id);
-      setEmployees(prev => prev.filter(e => e._id !== confirmDelete._id));
-      setConfirmDelete(null);
+      await deleteEmployee(deleteTarget._id);
+      setEmployees(prev => prev.filter(e => e._id !== deleteTarget._id));
+      setSelected(prev => { const n = new Set(prev); n.delete(deleteTarget._id); return n; });
+      setConfirmDelete(null); setDeleteTarget(null);
     } catch { setError("Failed to delete employee."); }
     finally { setDeleting(false); }
   };
+
+  // Bulk delete
+  const handleDeleteBulk = async () => {
+    try {
+      setDeleting(true);
+      await Promise.all([...selected].map(id => deleteEmployee(id)));
+      setEmployees(prev => prev.filter(e => !selected.has(e._id)));
+      setSelected(new Set());
+      setConfirmDelete(null);
+    } catch { setError("Failed to delete some employees."); }
+    finally { setDeleting(false); }
+  };
+
+  const allChecked  = employees.length > 0 && selected.size === employees.length;
+  const someChecked = selected.size > 0 && selected.size < employees.length;
 
   // Summary counts
   const counts = employees.reduce((acc, e) => {
@@ -85,12 +119,22 @@ const EmployeeList = () => {
           <h1 className="text-2xl font-black tracking-widest text-gray-900">EMPLOYEES</h1>
           <p className="text-xs text-gray-400 mt-0.5">Manage all InfinitoComics team members</p>
         </div>
-        <button
-          onClick={() => navigate("/hr/employees/new")}
-          className="flex items-center gap-2 bg-[#DD1215] text-white px-5 py-2 text-xs font-bold uppercase tracking-widest hover:bg-red-700 transition"
-        >
-          <Plus size={14} /> Add Employee
-        </button>
+        <div className="flex items-center gap-3">
+          {selected.size > 0 && (
+            <button
+              onClick={() => setConfirmDelete("bulk")}
+              className="flex items-center gap-2 bg-red-600 text-white px-5 py-2 text-xs font-bold uppercase tracking-widest hover:bg-red-700 transition"
+            >
+              <Trash2 size={14} /> Delete ({selected.size})
+            </button>
+          )}
+          <button
+            onClick={() => navigate("/hr/employees/new")}
+            className="flex items-center gap-2 bg-green-600 text-white px-5 py-2 text-xs font-bold uppercase tracking-widest hover:bg-green-700 transition"
+          >
+            <Plus size={14} /> Add Employee
+          </button>
+        </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
@@ -98,10 +142,10 @@ const EmployeeList = () => {
         {/* Summary Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: "Total",      value: employees.length, icon: Users,     color: "text-blue-600"  },
-            { label: "Active",     value: counts.active || 0, icon: UserCheck, color: "text-green-600" },
-            { label: "On Leave",   value: counts.on_leave || 0, icon: UserX,  color: "text-yellow-600"},
-            { label: "Terminated", value: counts.terminated || 0, icon: UserX, color: "text-red-600"  },
+            { label: "Total",      value: employees.length,       icon: Users,     color: "text-blue-600"   },
+            { label: "Active",     value: counts.active || 0,     icon: UserCheck, color: "text-green-600"  },
+            { label: "On Leave",   value: counts.on_leave || 0,   icon: UserX,     color: "text-yellow-600" },
+            { label: "Terminated", value: counts.terminated || 0, icon: UserX,     color: "text-red-600"    },
           ].map(({ label, value, icon: Icon, color }) => (
             <div key={label} className="bg-white border rounded-lg px-5 py-4 flex items-center gap-4">
               <Icon size={28} className={color} />
@@ -148,9 +192,7 @@ const EmployeeList = () => {
 
         {/* Error */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded">
-            {error}
-          </div>
+          <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded">{error}</div>
         )}
 
         {/* Table */}
@@ -173,6 +215,16 @@ const EmployeeList = () => {
               <table className="min-w-full divide-y divide-gray-100 text-sm">
                 <thead className="bg-gray-50">
                   <tr>
+                    {/* Select All checkbox */}
+                    <th className="px-4 py-3 w-10">
+                      <input
+                        type="checkbox"
+                        checked={allChecked}
+                        ref={el => { if (el) el.indeterminate = someChecked; }}
+                        onChange={toggleAll}
+                        className="w-4 h-4 accent-[#DD1215] cursor-pointer"
+                      />
+                    </th>
                     {["ID", "Name", "Designation", "Department", "Type", "Role", "Status", "Joined", "Actions"].map(h => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
                         {h}
@@ -182,7 +234,16 @@ const EmployeeList = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {employees.map(emp => (
-                    <tr key={emp._id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={emp._id}
+                      className={`hover:bg-gray-50 transition-colors ${selected.has(emp._id) ? "bg-red-50" : ""}`}>
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selected.has(emp._id)}
+                          onChange={() => toggleSelect(emp._id)}
+                          className="w-4 h-4 accent-[#DD1215] cursor-pointer"
+                        />
+                      </td>
                       <td className="px-4 py-3 text-gray-500 font-mono text-xs">{emp.employeeId}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
@@ -223,8 +284,6 @@ const EmployeeList = () => {
                             className="text-xs text-blue-600 hover:underline font-semibold">View</button>
                           <button onClick={() => navigate(`/hr/employees/${emp._id}/edit`)}
                             className="text-xs text-gray-600 hover:underline font-semibold">Edit</button>
-                          <button onClick={() => setConfirmDelete(emp)}
-                            className="text-xs text-red-500 hover:underline font-semibold">Delete</button>
                         </div>
                       </td>
                     </tr>
@@ -236,22 +295,26 @@ const EmployeeList = () => {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal — Single or Bulk */}
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
           <div className="bg-white rounded-xl p-8 max-w-sm w-full shadow-2xl">
-            <h3 className="text-lg font-black uppercase tracking-widest text-gray-900 mb-2">Delete Employee</h3>
+            <h3 className="text-lg font-black uppercase tracking-widest text-gray-900 mb-2">Delete Employee{confirmDelete === "bulk" ? "s" : ""}</h3>
             <p className="text-sm text-gray-600 mb-6">
-              Are you sure you want to permanently delete{" "}
-              <strong>{confirmDelete.firstName} {confirmDelete.lastName}</strong>? This cannot be undone.
+              {confirmDelete === "bulk"
+                ? <>Are you sure you want to permanently delete <strong>{selected.size} employee{selected.size > 1 ? "s" : ""}</strong>? This cannot be undone.</>
+                : <>Are you sure you want to permanently delete <strong>{deleteTarget?.firstName} {deleteTarget?.lastName}</strong>? This cannot be undone.</>
+              }
             </p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmDelete(null)}
+              <button onClick={() => { setConfirmDelete(null); setDeleteTarget(null); }}
                 className="flex-1 border border-gray-300 px-4 py-2 text-xs font-bold uppercase hover:bg-gray-50 transition">
                 Cancel
               </button>
-              <button onClick={handleDelete} disabled={deleting}
-                className="flex-1 bg-[#DD1215] text-white px-4 py-2 text-xs font-bold uppercase hover:bg-red-700 transition disabled:opacity-50">
+              <button
+                onClick={confirmDelete === "bulk" ? handleDeleteBulk : handleDeleteSingle}
+                disabled={deleting}
+                className="flex-1 bg-red-600 text-white px-4 py-2 text-xs font-bold uppercase hover:bg-red-700 transition disabled:opacity-50">
                 {deleting ? "Deleting..." : "Delete"}
               </button>
             </div>

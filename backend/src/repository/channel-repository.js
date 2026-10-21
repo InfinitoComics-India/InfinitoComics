@@ -10,18 +10,15 @@ class ChannelRepository extends CrudRepository {
   }
 
   async getForUser(userId) {
-    // Only return channels this user is explicitly a member of (or DMs)
     return await Channel.find({
       isArchived: false,
       $or: [
+        { type: "public" },
+        { type: "announcement" },
         { members: userId },
         { dmParticipants: userId },
       ],
     }).sort({ lastActivity: -1 });
-  }
-
-  async getAllChannels() {
-    return await Channel.find({ isArchived: false }).sort({ lastActivity: -1 });
   }
 
   async getDM(userId1, userId2) {

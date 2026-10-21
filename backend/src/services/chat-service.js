@@ -26,7 +26,7 @@ class ChatService {
   }
 
   async getAllChannels() {
-    try { return await this.channelRepo.getAllChannels(); }
+    try { return await this.channelRepo.getPublicChannels(); }
     catch (e) { console.error("ChatService.getAllChannels:", e); throw e; }
   }
 

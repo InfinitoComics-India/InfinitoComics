@@ -31,38 +31,33 @@ const Header = () => {
     <NavbarShimmer />
   ) : (
     <div className="text-white font-sans border-b border-gray-800">
-      {/* ── Top promo bar ── */}
-      <div className="border-b bg-[#202020] border-gray-600 text-sm py-3 flex flex-col md:flex-row items-center">
-        <div className="w-full max-w-[1200px] mx-auto px-4 md:px-12 flex justify-between items-center">
-          {/* Promo Text */}
-          <div className="mb-2 md:mb-0 text-center text-xs md:text-sm">
-            Use code <strong>INFINT10</strong> to get 10% off on our shop!
-          </div>
-
+      {/* ── Top bar ── */}
+      <div className="border-b bg-[#202020] border-gray-700/80 text-sm py-2 flex items-center">
+        <div className="w-full max-w-[1200px] mx-auto px-4 md:px-12 flex justify-end items-center">
           {/* Navigation Links */}
-          <div className="hidden md:flex gap-8 text-[0.9rem] text-gray-300">
-            <Link to="/news" className="hover:text-white font-semibold">
+          <div className="flex gap-6 md:gap-8 text-xs md:text-[0.85rem] text-gray-300">
+            <Link to="/news" className="hover:text-white font-medium transition">
               Blogs &amp; News
             </Link>
             <a
               href={FOUNDATION_BASE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-white font-semibold"
+              className="hover:text-white font-medium transition"
             >
               Foundation
             </a>
             <a
               href={`${RESEARCH_BASE_URL}/research/browseResearch`}
-              className="hover:text-white font-semibold"
+              className="hover:text-white font-medium transition"
             >
               Research
             </a>
             <Link
               to="/support-us"
-              className="hover:text-white font-semibold flex items-center gap-1"
+              className="hover:text-white font-medium flex items-center gap-1 transition"
             >
-              <Heart size={14} /> Support Us
+              <Heart size={13} /> Support Us
             </Link>
           </div>
         </div>

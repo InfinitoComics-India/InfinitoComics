@@ -67,17 +67,41 @@ const ShopCategory = () => {
     (async () => {
       setLoading(true);
       setPage(1);
-      const [prods, cats] = await Promise.all([
-        fetchProductsByCategory(categoryName),
-        fetchCategories(),
-      ]);
-      if (cancelled) return;
-      const isAll = !categoryName || categoryName.toLowerCase() === "all";
-      const match = Array.isArray(cats)
-        ? cats.find((c) => c.slug === categoryName)
-        : null;
-      setCategoryLabel(isAll ? "All Products" : (match?.name || categoryName));
-      setLoading(false);
+      try {
+        const [prods, cats] = await Promise.all([
+          fetchProductsByCategory(categoryName),
+          fetchCategories(),
+        ]);
+        if (cancelled) return;
+
+        const isAll = !categoryName || categoryName.toLowerCase() === "all";
+        const cleanName = String(categoryName || "").toLowerCase().trim();
+        const normalize = (s) => String(s || "").toLowerCase().replace(/[-\s_]/g, "");
+        const normalizedTarget = normalize(cleanName);
+
+        const match = Array.isArray(cats)
+          ? cats.find((c) => {
+              const cSlug = String(c.slug || "").toLowerCase().trim();
+              const cName = String(c.name || "").toLowerCase().trim();
+              const cId = String(c._id || c.id || "").toLowerCase().trim();
+              return (
+                cSlug === cleanName ||
+                cName === cleanName ||
+                cId === cleanName ||
+                normalize(cSlug) === normalizedTarget ||
+                normalize(cName) === normalizedTarget
+              );
+            })
+          : null;
+
+        setCategoryLabel(isAll ? "All Products" : (match?.name || categoryName));
+        setProducts(Array.isArray(prods) ? prods : []);
+      } catch (err) {
+        console.error("Failed to load products for category:", err);
+        if (!cancelled) setProducts([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => {
       cancelled = true;

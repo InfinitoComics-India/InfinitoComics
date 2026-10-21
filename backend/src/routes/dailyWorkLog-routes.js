@@ -3,12 +3,13 @@ const router = express.Router();
 import DailyWorkLogController from "../controller/dailyWorkLog-controller.js";
 import { adminauthenticate } from "../middleware/adminauth.js";
 import { checkRole } from "../middleware/roleCheck.js";
+import upload from "../middleware/multer.js";
 
 const ALL = ["superadmin","hr_manager","manager","team_lead","comics_admin","character_admin","research_admin","blog_admin","career_admin","shop_admin","employee","shop_admin"];
 const MGR = ["superadmin","hr_manager","manager"];
 
 // ── Employee actions (uses req.user — auto from JWT) ──────────
-router.post  ("/submit",          adminauthenticate, checkRole(ALL), DailyWorkLogController.submitWorkLog);
+router.post  ("/submit",          adminauthenticate, checkRole(ALL), upload.array("proofImages", 5), DailyWorkLogController.submitWorkLog);
 router.get   ("/my/today",        adminauthenticate, checkRole(ALL), DailyWorkLogController.getMyTodayLog);
 router.get   ("/my/history",      adminauthenticate, checkRole(ALL), DailyWorkLogController.getMyHistory);
 

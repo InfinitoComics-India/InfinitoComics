@@ -18,6 +18,11 @@ const variantSchema = new mongoose.Schema({
     stock: {
       type: Number,
       default: 0
+    },
+    sku: {
+      type: String,
+      default: '',
+      trim: true
     }
   }]
 });
@@ -80,6 +85,11 @@ const productSchema = new mongoose.Schema({
     type: Number,
     min: 0,
     default: 0
+  },
+  sku: {
+    type: String,
+    default: '',
+    trim: true
   },
   variants: [variantSchema],
   trackInventory: {

@@ -1,57 +1,80 @@
-import React from 'react';
-import heroImage from '../../../assets/Images/merch/MerchModel.png';
-import modelImg from "../../../assets/Images/merch/MerchModels.png"
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import heroImage from "../../../assets/Images/merch/MerchModels.png";
 
 const MerchHeroSection = () => {
+  const navigate = useNavigate();
+
   return (
-    <section className="bg-white">
-      {/* Heading */}
-      <div className="w-full max-w-7xl mx-auto px-8 md:px-16 py-6">
-        <h2 className="text-[36px] font-bold uppercase">
-          Fashion Corner
-        </h2>
+    <section className="bg-white w-full overflow-x-clip">
+      {/* Heading — aligned with Countdown */}
+      <div className="w-full pt-6 pb-4 sm:pt-10 sm:pb-7">
+        <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 md:px-12">
+          <h2 className="text-xl sm:text-3xl md:text-4xl font-bold uppercase leading-tight">
+            <span className="text-[#0B132B]">INFINITO </span>
+            <span className="text-[#E60000]">FASHION CORNER</span>
+          </h2>
+        </div>
       </div>
 
-      {/* Main Black Section — fixed height so bottom bar stays inside */}
-      <div
-        className="relative w-full bg-[#121212] bg-[radial-gradient(#2a2a2a_1px,transparent_1px)] [background-size:24px_24px]"
-        style={{ height: '420px' }}
-      >
-        {/* Content row */}
-        <div className="w-full max-w-7xl mx-auto px-8 md:px-16 h-full flex items-center justify-between relative z-10 pb-14">
+      {/* Main Black Banner */}
+      <div className="relative w-full bg-[#121212] bg-[radial-gradient(#2a2a2a_1px,transparent_1px)] [background-size:24px_24px] min-h-[290px] sm:min-h-[335px] md:min-h-[345px] flex items-center">
+        {/* Model — right side */}
+        <div className="hidden md:flex absolute right-[12%] lg:right-[16%] xl:right-[18%] bottom-0 z-10 pointer-events-none items-end">
+          <img
+            src={heroImage}
+            alt="Infinito Fashion Model"
+            className="h-[430px] sm:h-[450px] md:h-[465px] lg:h-[475px] w-auto max-w-none object-contain object-bottom"
+          />
 
-          {/* Left text */}
-          <div className="text-white max-w-lg">
-            <h2 className="text-2xl leading-relaxed font-bold">
-              TOP TRENDING
-            </h2>
-            <p className=" mt-8">
-             Discover the most wanted drops from the INFINITO universe. Explore bold graphic T-shirts, premium hoodies, caps, tote bags, collectibles, keychains, and everyday accessories inspired by iconic heroes. Designed for fans who live beyond the panels, every piece brings fearless style and limited-edition energy.
-            </p>
-            <button className="mt-10 px-6 py-3 bg-white text-black font-semibold tracking-wide border border-black hover:bg-black hover:text-white transition">
-              VIEW ALL ›
-            </button>
-          </div>
-
-          {/* Right: model overflows upward out of black section */}
-          <div className="hidden md:flex items-end self-end relative flex-shrink-0">
-            <img
-              src={modelImg}
-              alt="Hero Tee"
-              className="w-auto object-contain object-bottom"
-              style={{ height: '540px', marginBottom: '-56px', marginTop: '-180px' }}
+          {/* Color Swatches */}
+          <div className="flex flex-col gap-3 ml-5 mb-14 md:mb-16 pointer-events-auto">
+            <div
+              className="w-[32px] h-[32px] sm:w-[34px] sm:h-[34px] border-[3px] border-white shadow-sm"
+              style={{ backgroundColor: "#d4ea6b" }}
             />
-            {/* Color swatches */}
-            <div className="flex flex-col gap-4 ml-4 mb-20 self-center">
-              <div className="w-12 h-12 border-[8px] border-white" style={{ backgroundColor: '#e3f172' }} />
-              <div className="w-12 h-12 border-[4px] border-white" style={{ backgroundColor: '#a0a7f1' }} />
-              <div className="w-12 h-12 border-[4px] border-white" style={{ backgroundColor: '#d5a26c' }} />
-            </div>
+
+            <div
+              className="w-[32px] h-[32px] sm:w-[34px] sm:h-[34px] border-[3px] border-white shadow-sm"
+              style={{ backgroundColor: "#9ea7ec" }}
+            />
+
+            <div
+              className="w-[32px] h-[32px] sm:w-[34px] sm:h-[34px] border-[3px] border-white shadow-sm"
+              style={{ backgroundColor: "#d5a26c" }}
+            />
           </div>
         </div>
 
-       
-    
+        {/* Content — same horizontal alignment as Countdown */}
+        <div className="relative w-full max-w-[1200px] mx-auto px-4 sm:px-6 md:px-12 py-6 sm:py-7 md:py-8">
+          <div className="relative flex items-center">
+            {/* Left Content */}
+            <div className="relative z-20 w-full md:w-[48%] text-white">
+              <h1 className="uppercase font-bold text-[28px] sm:text-[36px] md:text-[38px] leading-[1.07] tracking-tight">
+                <span className="block text-[#E60000]">Become</span>
+                <span className="block text-white">One of Us</span>
+                <span className="block text-[#E60000]">Become</span>
+                <span className="block text-white">Infinito</span>
+              </h1>
+
+              <p className="mt-2 sm:mt-2.5 max-w-[390px] text-xs sm:text-[12px] leading-[1.5] font-medium text-gray-200">
+                Brings you stylish, trendy, and timeless fashion that expresses
+                your personality and celebrates your unique style.
+              </p>
+
+              {/* Shop Button */}
+              <button
+                type="button"
+                onClick={() => navigate("/shop")}
+                className="mt-4 sm:mt-6 flex items-center justify-between gap-6 min-w-[165px] px-5 py-2.5 bg-[#E60000] hover:bg-red-700 text-white text-xs sm:text-sm font-bold uppercase tracking-wider rounded-sm transition-all shadow-md cursor-pointer"
+              >
+                <span>INFINITO SHOP</span>
+                <span>&gt;</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );

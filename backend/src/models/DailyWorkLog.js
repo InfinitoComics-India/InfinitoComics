@@ -17,6 +17,7 @@ const DailyWorkLogSchema = new mongoose.Schema(
     // ── Work Entry ────────────────────────────────────────────
     workDescription: { type: String, default: "" },
     hoursWorked:     { type: Number, default: 0, min: 0, max: 24 },
+    proofImages:     [{ type: String }], // Cloudinary URLs — proof of work screenshots
 
     // ── Status ────────────────────────────────────────────────
     status: {

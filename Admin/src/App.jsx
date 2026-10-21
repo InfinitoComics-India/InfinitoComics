@@ -1,5 +1,5 @@
 import './App.css'
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Body from './components/Body';
 import ProtectedRoute from './components/ProtectedRoute';
 import CreateBlog from './Pages/Blogs/CreateBlog.jsx';
@@ -20,69 +20,79 @@ import Unauthorized from './Pages/Unauthorized/Unauthorized.jsx';
 import ContactQueries from './Pages/ContactQueries/ContactQueries.jsx';
 
 // ── HR System imports ─────────────────────────────────────────
-import EmployeeList      from './Pages/HR/EmployeeList.jsx';
-import EmployeeForm      from './Pages/HR/EmployeeForm.jsx';
-import EmployeeProfile   from './Pages/HR/EmployeeProfile.jsx';
+import EmployeeList from './Pages/HR/EmployeeList.jsx';
+import HRDashboard from './Pages/HR/HRDashboard.jsx';
+import EmployeeForm from './Pages/HR/EmployeeForm.jsx';
+import EmployeeProfile from './Pages/HR/EmployeeProfile.jsx';
 import NotificationsPage from './Pages/HR/Notifications.jsx';
-import AuditLogPage      from './Pages/HR/AuditLog.jsx';
+import AuditLogPage from './Pages/HR/AuditLog.jsx';
 import AttendanceManager from './Pages/HR/AttendanceManager.jsx';
-import LeaveManagement   from './Pages/HR/LeaveManagement.jsx';
-import CompanyCalendar   from './Pages/HR/CompanyCalendar.jsx';
-import KanbanBoard       from './Pages/HR/KanbanBoard.jsx';
-import WorkAssignment    from './Pages/HR/WorkAssignment.jsx';
-import ProjectManager    from './Pages/HR/ProjectManager.jsx';
+import LeaveManagement from './Pages/HR/LeaveManagement.jsx';
+import CompanyCalendar from './Pages/HR/CompanyCalendar.jsx';
+import KanbanBoard from './Pages/HR/KanbanBoard.jsx';
+import WorkAssignment from './Pages/HR/WorkAssignment.jsx';
+import ProjectManager from './Pages/HR/ProjectManager.jsx';
 import PerformanceDashboard from './Pages/HR/PerformanceDashboard.jsx';
-import GoalTracker       from './Pages/HR/GoalTracker.jsx';
-import RecognitionWall   from './Pages/HR/RecognitionWall.jsx';
-import PayrollManager    from './Pages/HR/PayrollManager.jsx';
+import GoalTracker from './Pages/HR/GoalTracker.jsx';
+import RecognitionWall from './Pages/HR/RecognitionWall.jsx';
+import PayrollManager from './Pages/HR/PayrollManager.jsx';
 import OnboardingManager from './Pages/HR/OnboardingManager.jsx';
-import DocumentManager   from './Pages/HR/DocumentManager.jsx';
+import MeetingManager from './Pages/HR/MeetingManager.jsx';
+import DocumentManager from './Pages/HR/DocumentManager.jsx';
 import RecruitmentPipeline from './Pages/HR/RecruitmentPipeline.jsx';
-import InternalChat      from './Pages/HR/InternalChat.jsx';
-import KnowledgeBase     from './Pages/HR/KnowledgeBase.jsx';
+import InternalChat from './Pages/HR/InternalChat.jsx';
+import KnowledgeBase from './Pages/HR/KnowledgeBase.jsx';
 import SelfServicePortal from './Pages/HR/SelfServicePortal.jsx';
-import AIAssistant       from './Pages/HR/AIAssistant.jsx';
-import DailyWorkLog      from './Pages/HR/DailyWorkLog.jsx';
-import DirectMessages    from './Pages/Messages/DirectMessages.jsx';
-import EmployeePortal    from './Pages/Employee/EmployeePortal.jsx';
-import { isEmployee }    from './Utils/auth.js';
+import AIAssistant from './Pages/HR/AIAssistant.jsx';
+import DailyWorkLog from './Pages/HR/DailyWorkLog.jsx';
+import DirectMessages from './Pages/Messages/DirectMessages.jsx';
+import EmployeePortal from './Pages/Employee/EmployeePortal.jsx';
+import EmployeeDataExport from './Pages/HR/EmployeeDataExport.jsx';
+import { isEmployee } from './Utils/auth.js';
 
 // ── Shop imports ──────────────────────────────────────────────
-import AllProducts       from './Pages/Shop/AllProducts.jsx';
-import ProductForm       from './Pages/Shop/ProductForm.jsx';
-import AllCategories     from './Pages/Shop/AllCategories.jsx';
-import CategoryForm      from './Pages/Shop/CategoryForm.jsx';
-import Inventory         from './Pages/Shop/Inventory.jsx';
-import AllOrders         from './Pages/Shop/Orders/AllOrders.jsx';
-import OrderDetail       from './Pages/Shop/Orders/OrderDetail.jsx';
+import AllProducts from './Pages/Shop/AllProducts.jsx';
+import ProductForm from './Pages/Shop/ProductForm.jsx';
+import AllCategories from './Pages/Shop/AllCategories.jsx';
+import CategoryForm from './Pages/Shop/CategoryForm.jsx';
+import Inventory from './Pages/Shop/Inventory.jsx';
+import AllOrders from './Pages/Shop/Orders/AllOrders.jsx';
+import OrderDetail from './Pages/Shop/Orders/OrderDetail.jsx';
 import AnalyticsDashboard from './Pages/Shop/Analytics/AnalyticsDashboard.jsx';
 import MarketingDashboard from './Pages/Shop/Marketing/MarketingDashboard.jsx';
+import ShopManagement from './Pages/Shop/ShopManagement.jsx';
+import CompanyProfile from './Pages/Shop/CompanyProfile.jsx';
 
 // Role constants
-const SUPER   = ["superadmin"];
-const COMICS  = ["superadmin", "comics_admin"];
-const CHARS   = ["superadmin", "character_admin"];
-const RESEARCH= ["superadmin", "research_admin"];
-const BLOG    = ["superadmin", "blog_admin"];
-const CAREER  = ["superadmin", "career_admin"];
-const ALL_AUTH= ["superadmin", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin"];
+const SUPER = ["superadmin"];
+const COMICS = ["superadmin", "comics_admin"];
+const CHARS = ["superadmin", "character_admin"];
+const RESEARCH = ["superadmin", "research_admin"];
+const BLOG = ["superadmin", "blog_admin"];
+const CAREER = ["superadmin", "career_admin"];
+const ALL_AUTH = ["superadmin", "shop_admin", "employee", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin"];
 
 // ── HR Role constants ─────────────────────────────────────────
-const HR      = ["superadmin", "hr_manager"];
+const HR = ["superadmin", "hr_manager"];
 const HR_VIEW = ["superadmin", "hr_manager", "manager", "team_lead"];
-const AUDIT   = ["superadmin", "hr_manager"];
-const EMP     = ["employee"];
+const AUDIT = ["superadmin", "hr_manager"];
+const EMP = ["employee", "superadmin"];
 
 // ── Shop Role constants ───────────────────────────────────────
-const SHOP    = ["superadmin", "shop_admin", "admin", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin", "manager", "team_lead"];
+const SHOP = ["superadmin", "shop_admin", "employee", "admin", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin", "manager", "team_lead"];
 
 function App() {
   const basename = import.meta.env.MODE === 'production' ? '/admin' : '';
-  
+
   return (
     <BrowserRouter basename={basename}>
       <Routes>
         <Route path="/" element={<Body />}>
+
+          {/* Dev redirect: If user visits /admin directly on localhost */}
+          <Route path="/admin" element={<Navigate to="/" replace />} />
+          <Route path="/admin/login" element={<Navigate to="/login" replace />} />
+          <Route path="/admin/employee-portal" element={<Navigate to="/employee-portal" replace />} />
 
           {/* Public */}
           <Route path="/login" element={<Login />} />
@@ -161,6 +171,11 @@ function App() {
 
           {/* ── HR System ──────────────────────────────────── */}
 
+          {/* HR Dashboard */}
+          <Route path="/hr" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><HRDashboard /></ProtectedRoute>
+          } />
+
           {/* Employee Management */}
           <Route path="/hr/employees" element={
             <ProtectedRoute allowedRoles={HR_VIEW}><EmployeeList /></ProtectedRoute>
@@ -237,6 +252,9 @@ function App() {
           <Route path="/hr/onboarding" element={
             <ProtectedRoute allowedRoles={HR_VIEW}><OnboardingManager /></ProtectedRoute>
           } />
+          <Route path="/hr/meetings" element={
+            <ProtectedRoute allowedRoles={HR_VIEW}><MeetingManager /></ProtectedRoute>
+          } />
           <Route path="/hr/documents" element={
             <ProtectedRoute allowedRoles={HR_VIEW}><DocumentManager /></ProtectedRoute>
           } />
@@ -246,7 +264,7 @@ function App() {
             <ProtectedRoute allowedRoles={HR_VIEW}><RecruitmentPipeline /></ProtectedRoute>
           } />
           <Route path="/hr/chat" element={
-            <ProtectedRoute allowedRoles={[...HR_VIEW,"employee"]}><InternalChat /></ProtectedRoute>
+            <ProtectedRoute allowedRoles={[...HR_VIEW, "employee"]}><InternalChat /></ProtectedRoute>
           } />
 
           {/* ── HR Phase 7 ─────────────────────────────────── */}
@@ -264,12 +282,15 @@ function App() {
           <Route path="/hr/worklog" element={
             <ProtectedRoute allowedRoles={HR_VIEW}><DailyWorkLog /></ProtectedRoute>
           } />
+          <Route path="/hr/export" element={
+            <ProtectedRoute allowedRoles={["superadmin","hr_manager"]}><EmployeeDataExport /></ProtectedRoute>
+          } />
           <Route path="/messages" element={
-            <ProtectedRoute allowedRoles={[...HR_VIEW,"employee"]}><DirectMessages /></ProtectedRoute>
+            <ProtectedRoute allowedRoles={[...HR_VIEW, "employee"]}><DirectMessages /></ProtectedRoute>
           } />
 
           {/* ── Shop System ────────────────────────────────── */}
-          
+
           {/* Products Management */}
           <Route path="/shop/products" element={
             <ProtectedRoute allowedRoles={SHOP}><AllProducts /></ProtectedRoute>
@@ -320,6 +341,19 @@ function App() {
           <Route path="/shop/marketing/:subTab" element={
             <ProtectedRoute allowedRoles={SHOP}><MarketingDashboard /></ProtectedRoute>
           } />
+
+          {/* Shop Staff Access Management (Super Admin only) */}
+          <Route path="/shop/management" element={
+            <ProtectedRoute allowedRoles={SUPER}><ShopManagement /></ProtectedRoute>
+          } />
+
+          {/* Company Profile (Legal, GST, Bank Details, etc.) */}
+          <Route path="/shop/company-profile" element={
+            <ProtectedRoute allowedRoles={SHOP}><CompanyProfile /></ProtectedRoute>
+          } />
+
+          {/* Catch-all: redirect any unknown route to home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
 
         </Route>
       </Routes>

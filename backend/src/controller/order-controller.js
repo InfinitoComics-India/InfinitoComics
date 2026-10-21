@@ -1,5 +1,25 @@
 import ShopOrder from '../models/ShopOrder.js';
 import Product from '../models/Product.js';
+import qikinkService from '../services/qikink-service.js';
+
+// Helper to derive username/person name from email
+export const deriveNameFromEmail = (email) => {
+  if (!email || typeof email !== 'string') return 'Customer';
+  const clean = email.trim().toLowerCase();
+  if (clean === 'admin@infinitohq.com') return 'Super Admin';
+  if (clean === 'anushka@infinitohq.com') return 'Anushka';
+  if (!clean.includes('@')) return clean;
+  const userPart = clean.split('@')[0];
+  if (userPart === 'admin' || userPart === 'superadmin') return 'Super Admin';
+  const formatted = userPart
+    .replace(/[0-9._-]+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter(Boolean)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+  return formatted || userPart;
+};
 
 // Format helper
 const formatOrderNumber = () => {
@@ -12,25 +32,45 @@ export const createOrder = async (req, res) => {
     const orderNum = body.id || body.orderNumber || formatOrderNumber();
     const orderId = body.orderId ? (body.orderId.startsWith('#') ? body.orderId : `#${body.orderId}`) : `#${orderNum}`;
 
-    // Normalize customer info
+    // Normalize customer info - derive from actual person's email/username
+    const reqEmail = String(body.customer?.email || body.address?.email || '').trim().toLowerCase();
+    const rawCustomerName = String(body.customer?.name || body.address?.name || '').trim();
+    const isPlaceholder = !rawCustomerName ||
+      rawCustomerName.toLowerCase() === 'valued customer' ||
+      rawCustomerName.toLowerCase() === 'customer' ||
+      rawCustomerName.toLowerCase() === 'aarav sharma';
+
+    let resolvedName = rawCustomerName;
+    if (isPlaceholder || reqEmail === 'admin@infinitohq.com' || rawCustomerName.toLowerCase() === 'aarav sharma') {
+      resolvedName = deriveNameFromEmail(reqEmail);
+    }
+
+    // Sanitize customer and shipping phone (clean 10 digits for India / Qikink)
+    const rawCustomerPhone = String(body.customer?.phone || body.address?.phone || body.shippingAddress?.phone || '9876543210').replace(/\D/g, '');
+    let cleanCustomerPhone = rawCustomerPhone.length > 10 && rawCustomerPhone.startsWith('91') ? rawCustomerPhone.slice(2) : rawCustomerPhone;
+    cleanCustomerPhone = cleanCustomerPhone.slice(-10) || '9876543210';
+
     const customer = {
-      name: body.customer?.name || body.address?.name || 'Valued Customer',
-      email: body.customer?.email || body.address?.email || 'customer@infinitohq.com',
-      phone: body.customer?.phone || body.address?.phone || '+91 98765 43210',
+      name: resolvedName,
+      email: reqEmail || 'customer@infinitohq.com',
+      phone: cleanCustomerPhone,
       totalOrders: body.customer?.totalOrders || 1,
     };
 
     // Normalize shipping address
     const addr = body.address || body.shippingAddress || {};
-    const formattedAddr = addr.formatted || [addr.line1, addr.city, addr.state, addr.pincode, addr.country || 'India'].filter(Boolean).join(', ');
+    const rawPin = String(addr.pincode || addr.zip || '160018').replace(/\D/g, '').slice(0, 6);
+    const cleanPin = rawPin.length === 6 ? rawPin : '160018';
+
+    const formattedAddr = addr.formatted || [addr.line1 || 'Sector 18, House No. 42', addr.city || 'Chandigarh', addr.state || 'Punjab', cleanPin, addr.country || 'India'].filter(Boolean).join(', ');
 
     const shippingAddress = {
       name: addr.name || customer.name,
-      phone: addr.phone || customer.phone,
+      phone: cleanCustomerPhone,
       line1: addr.line1 || 'Sector 18, House No. 42',
       city: addr.city || 'Chandigarh',
       state: addr.state || 'Punjab',
-      pincode: addr.pincode || '160018',
+      pincode: cleanPin,
       country: addr.country || 'India',
       formatted: formattedAddr,
     };
@@ -46,7 +86,7 @@ export const createOrder = async (req, res) => {
       return {
         productId: String(item.productId || prod.id || prod._id || `prod-${idx}`),
         name: prodName,
-        sku: item.sku || `INF-${prodName.substring(0, 3).toUpperCase()}-${item.size || 'M'}`,
+        sku: item.sku || prod.sku || `INF-${prodName.substring(0, 3).toUpperCase()}-${item.size || 'M'}`,
         variant: {
           size: item.size || item.variant?.size || 'M',
           color: item.color || item.variant?.color || 'Standard',
@@ -62,6 +102,10 @@ export const createOrder = async (req, res) => {
     const tax = body.pricing?.tax !== undefined ? Number(body.pricing.tax) : Number((subtotal * 0.18).toFixed(2));
     const shipping = body.pricing?.shipping !== undefined ? Number(body.pricing.shipping) : (subtotal > 999 ? 0 : 50);
     const grandTotal = body.total ? Number(body.total) : (body.pricing?.grandTotal || Number((subtotal + tax + shipping).toFixed(2)));
+
+    const isCOD = String(body.paymentMethod || body.payment?.method || '').toUpperCase() === 'COD' ||
+                  String(body.paymentMethod || body.payment?.method || '').toLowerCase().includes('cash on delivery') ||
+                  String(body.payment?.status || '').toUpperCase() === 'COD';
 
     const now = new Date();
     const orderData = {
@@ -80,9 +124,9 @@ export const createOrder = async (req, res) => {
         grandTotal,
       },
       payment: {
-        method: body.paymentMethod || body.payment?.method || 'Razorpay (UPI)',
-        transactionId: body.payment?.transactionId || `pay_Rzp${Math.floor(10000000 + Math.random() * 90000000)}`,
-        status: body.payment?.status || 'Paid',
+        method: isCOD ? 'Cash on Delivery (COD)' : (body.paymentMethod || body.payment?.method || 'Razorpay (UPI)'),
+        transactionId: isCOD ? 'COD_PENDING' : (body.payment?.transactionId || `pay_Rzp${Math.floor(10000000 + Math.random() * 90000000)}`),
+        status: isCOD ? 'COD' : (body.payment?.status || 'Paid'),
         date: now,
       },
       fulfillment: {
@@ -174,10 +218,30 @@ export const getAllOrders = async (req, res) => {
       .limit(Number(limit))
       .lean();
 
+    // Sanitize any existing orders that had the Aarav Sharma placeholder
+    const sanitizedOrders = orders.map((ord) => {
+      let custName = String(ord.customer?.name || '').trim();
+      const email = String(ord.customer?.email || '').trim().toLowerCase();
+      if (!custName || custName.toLowerCase() === 'aarav sharma' || custName.toLowerCase() === 'valued customer' || email === 'admin@infinitohq.com') {
+        custName = deriveNameFromEmail(email);
+      }
+      return {
+        ...ord,
+        customer: {
+          ...(ord.customer || {}),
+          name: custName,
+        },
+        shippingAddress: {
+          ...(ord.shippingAddress || {}),
+          name: ord.shippingAddress?.name && ord.shippingAddress.name.toLowerCase() !== 'aarav sharma' ? ord.shippingAddress.name : custName,
+        },
+      };
+    });
+
     return res.status(200).json({
       success: true,
-      data: orders,
-      count: orders.length,
+      data: sanitizedOrders,
+      count: sanitizedOrders.length,
     });
   } catch (error) {
     console.error('Error fetching shop orders:', error);
@@ -209,9 +273,27 @@ export const getOrderById = async (req, res) => {
       });
     }
 
+    let custName = String(order.customer?.name || '').trim();
+    const email = String(order.customer?.email || '').trim().toLowerCase();
+    if (!custName || custName.toLowerCase() === 'aarav sharma' || custName.toLowerCase() === 'valued customer' || email === 'admin@infinitohq.com') {
+      custName = deriveNameFromEmail(email);
+    }
+
+    const sanitizedOrder = {
+      ...order,
+      customer: {
+        ...(order.customer || {}),
+        name: custName,
+      },
+      shippingAddress: {
+        ...(order.shippingAddress || {}),
+        name: order.shippingAddress?.name && order.shippingAddress.name.toLowerCase() !== 'aarav sharma' ? order.shippingAddress.name : custName,
+      },
+    };
+
     return res.status(200).json({
       success: true,
-      data: order,
+      data: sanitizedOrder,
     });
   } catch (error) {
     console.error('Error fetching order by ID:', error);
@@ -329,5 +411,185 @@ export const cancelOrder = async (req, res) => {
       success: false,
       message: error.message || 'Failed to cancel order',
     });
+  }
+};
+
+/**
+ * Dispatch an order to Qikink Fulfillment API
+ */
+export const dispatchOrderToQikink = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const cleanId = String(id).replace(/^#/, '');
+    const options = req.body || {};
+
+    const order = await ShopOrder.findOne({
+      $or: [
+        { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null },
+        { orderId: `#${cleanId}` },
+        { orderId: cleanId },
+        { id: cleanId },
+      ].filter(Boolean),
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found',
+      });
+    }
+
+    if (order.fulfillment?.status === 'Cancelled') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot dispatch a cancelled order to Qikink',
+      });
+    }
+
+    // Call Qikink Service to create order
+    const result = await qikinkService.createOrder(order.toObject(), options);
+
+    // Update order fulfillment status
+    const now = new Date();
+    order.fulfillment = {
+      ...(order.fulfillment?.toObject() || {}),
+      status: 'Processing',
+      qikink: {
+        sent: true,
+        sentAt: now,
+        qikinkOrderId: result.qikinkOrderId,
+        status: result.isSimulation ? 'Sandbox Simulated' : 'In Production',
+        rawResponse: result.rawResponse,
+        environment: result.environment,
+      },
+    };
+
+    order.timeline = {
+      ...(order.timeline?.toObject() || {}),
+      sentToQikink: now,
+      printed: order.timeline?.printed || new Date(Date.now() + 1000 * 60 * 60 * 6),
+    };
+
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: result.message || 'Order dispatched to Qikink successfully',
+      data: order,
+      qikink: result,
+    });
+  } catch (error) {
+    console.error('Error dispatching order to Qikink:', error);
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || 'Failed to dispatch order to Qikink',
+      details: error.response || error.payload || null,
+    });
+  }
+};
+
+/**
+ * Test Qikink API connection and credentials
+ */
+export const testQikinkConnection = async (req, res) => {
+  try {
+    const result = await qikinkService.testConnection();
+    return res.status(result.success ? 200 : 400).json(result);
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to test Qikink connection',
+    });
+  }
+};
+
+/**
+ * Handle incoming webhooks from Qikink for shipment and AWB tracking updates
+ */
+export const handleQikinkWebhook = async (req, res) => {
+  try {
+    const payload = req.body || {};
+    const rawNum = String(payload.order_number || payload.order_id || payload.qikink_order_id || payload.client_order_id || '').trim();
+    const cleanNum = rawNum.replace(/^INF/i, '').replace(/^#/, '').trim();
+
+    if (!cleanNum && !payload.order_id && !payload.qikink_order_id) {
+      return res.status(400).json({ success: false, message: 'Missing order_number or order_id in webhook payload' });
+    }
+
+    const order = await ShopOrder.findOne({
+      $or: [
+        cleanNum ? { orderId: `#${cleanNum}` } : null,
+        cleanNum ? { orderId: cleanNum } : null,
+        cleanNum ? { orderId: `INF${cleanNum}` } : null,
+        cleanNum ? { id: cleanNum } : null,
+        payload.order_id ? { 'fulfillment.qikink.qikinkOrderId': payload.order_id } : null,
+        payload.qikink_order_id ? { 'fulfillment.qikink.qikinkOrderId': payload.qikink_order_id } : null,
+      ].filter(Boolean),
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: `Order not found for identifier: ${rawNum || payload.order_id || payload.qikink_order_id}`,
+      });
+    }
+
+    // Ensure sub-objects exist
+    order.fulfillment = order.fulfillment || {};
+    order.fulfillment.tracking = order.fulfillment.tracking || {};
+    order.fulfillment.qikink = order.fulfillment.qikink || {};
+    order.timeline = order.timeline || {};
+
+    const status = String(payload.status || payload.current_status || payload.shipment_status || '').toLowerCase();
+    const awb = payload.awb_number || payload.tracking_number || payload.awb || payload.tracking_code;
+    const courier = payload.courier_name || payload.courier || payload.shipping_carrier || payload.logistics_partner;
+    const edd = payload.estimated_delivery || payload.edd || payload.estimated_delivery_date;
+
+    if (awb) {
+      order.fulfillment.tracking.trackingNumber = String(awb).trim();
+      order.fulfillment.tracking.carrier = courier || order.fulfillment.tracking.carrier || 'BlueDart Express';
+      order.fulfillment.tracking.trackingUrl = payload.tracking_url || payload.tracking_link || `https://${(courier || 'bluedart').toLowerCase().replace(/\s+/g, '')}.com/track/${awb}`;
+    }
+
+    if (edd) {
+      order.fulfillment.tracking.estimatedDelivery = String(edd);
+    }
+
+    const now = new Date();
+    order.fulfillment.qikink.lastWebhookAt = now;
+    order.fulfillment.qikink.rawResponse = payload;
+
+    if (status.includes('deliver')) {
+      order.fulfillment.status = 'Fulfilled';
+      order.timeline.delivered = now;
+      order.fulfillment.qikink.status = 'Delivered';
+    } else if (status.includes('dispatch') || status.includes('transit') || status.includes('shipped') || status.includes('out for delivery')) {
+      order.fulfillment.status = 'Processing';
+      order.timeline.shipped = order.timeline.shipped || now;
+      order.fulfillment.qikink.status = status.includes('out') ? 'Out for Delivery' : 'Dispatched';
+    } else if (status.includes('print') || status.includes('production') || status.includes('manufactur')) {
+      order.timeline.printed = order.timeline.printed || now;
+      order.fulfillment.qikink.status = 'In Production';
+    } else if (status.includes('cancel')) {
+      order.fulfillment.status = 'Cancelled';
+      order.fulfillment.qikink.status = 'Cancelled';
+    } else if (status) {
+      order.fulfillment.qikink.status = payload.status;
+    }
+
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Order updated from Qikink webhook successfully',
+      orderId: order.orderId,
+      status: order.fulfillment.status,
+      qikinkStatus: order.fulfillment.qikink.status,
+      tracking: order.fulfillment.tracking,
+      data: order,
+    });
+  } catch (error) {
+    console.error('Error handling Qikink webhook:', error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };

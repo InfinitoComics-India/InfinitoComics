@@ -2,7 +2,9 @@ import React, { useEffect } from 'react';
 import LandingComponent from './LandingComponent';
 import CharacterSpotlight from './CharacterSpotlight';
 import TodaySpotlight from './TodaySpotlight';
+import InfinitoAnimation from './InfinitoAnimation';
 import HeroSection from './Merch';
+import NewsAndBlogs from './NewsAndBlogs';
 import LandingMerch from './LandingMerch';
 import JoinUltimate from './JoinUltimate';
 import PremiumPlans from './PremiumPlans';
@@ -13,8 +15,8 @@ import ExclusiveContent from './ExclusiveContent';
 import NewsletterSection from '../Footer/Newsletter';
 import Comic from '../../components/Comics/Comic.jsx';
 import CharacterCarousel from '../Characters/CharacterCarousel';
+import Countdown from './Countdown';
 import KitComponent from './KitComponent.jsx';
-import ResearchSection from './ReasearchSection.jsx';
 
 const Home = () => {
   const user = JSON.parse(localStorage.getItem('user'));
@@ -28,66 +30,63 @@ const Home = () => {
       {/* 1. Hero Banner */}
       <LandingComponent />
 
-      {/* 2. Know Our Characters */}
-      <CharacterCarousel />
+      {/* Countdown Timer & Characters with Side Ads */}
+      <div className="w-full bg-white overflow-x-hidden">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 flex items-start justify-center gap-4 lg:gap-6 xl:gap-8">
+          {/* Left Ad */}
+          <div className="hidden lg:flex w-20 xl:w-24 h-[550px] bg-[#D0D0D0] shrink-0 items-center justify-center mt-24 sm:mt-28 select-none">
+            <span className="text-white font-bold text-sm tracking-widest uppercase">
+              AD
+            </span>
+          </div>
 
-      {/* 3. Character Spotlight */}
-      <CharacterSpotlight />
+          {/* Center Column: Countdown + Characters */}
+          <div className="flex-1 max-w-[1200px] min-w-0 flex flex-col">
+            <Countdown />
+            <CharacterCarousel />
+          </div>
 
-      {/* 4. Today's Spotlight with Left & Right AD Banners */}
-      <div className="w-full bg-white flex items-stretch justify-between">
-        {/* Left AD */}
-        <div className="hidden md:flex w-16 lg:w-24 xl:w-32 bg-[#D1D5DB] shrink-0 items-center justify-center select-none">
-          <span className="text-white font-bold text-lg md:text-xl lg:text-2xl tracking-widest">
-            AD
-          </span>
-        </div>
-
-        {/* Center: Today's Spotlight */}
-        <div className="flex-1 min-w-0">
-          <TodaySpotlight />
-        </div>
-
-        {/* Right AD */}
-        <div className="hidden md:flex w-16 lg:w-24 xl:w-32 bg-[#D1D5DB] shrink-0 items-center justify-center select-none">
-          <span className="text-white font-bold text-lg md:text-xl lg:text-2xl tracking-widest">
-            AD
-          </span>
+          {/* Right Ad */}
+          <div className="hidden lg:flex w-20 xl:w-24 h-[550px] bg-[#D0D0D0] shrink-0 items-center justify-center mt-24 sm:mt-28 select-none">
+            <span className="text-white font-bold text-sm tracking-widest uppercase">
+              AD
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* 5. Style Yourself Like a Super Hero */}
-      <HeroSection />
+      
       <KitComponent/>
 
+      {/* 4. Character Spotlight */}
+      <CharacterSpotlight />
 
-      {/* 6. Collector's Paradise */}
-      {/* <LandingMerch /> */}
+      
 
-      {/* 7. Join the Ultimate Universe */}
-      {/* <JoinUltimate />
+      {/* 5. Today's Spotlight */}
+      <TodaySpotlight />
 
-      {/* 8. Premium Plans */}
-      {/* <PremiumPlans /> */}
+      {/* Infinito Animation */}
+      <InfinitoAnimation />
 
-      {/* 9. Fan Favourites */}
-      {/* <Comic /> */} */
+      {/* 6. Style Yourself Like a Super Hero */}
+      <HeroSection />
 
-      {/* 10. Spotlight (video) */}
-      <Spotlight />
+      {/* 7. Infinito News & Blogs */}
+      <NewsAndBlogs />
 
-      {/* 11. Upcoming Events */}
-      {/* <UpcomingEvents /> */}
-      <ResearchSection/>
-      {/* 12. Foundation Section */}
       <FoundationSection />
 
-      {/* 13. Check Out Our App */}
-      <ExclusiveContent />
+      
 
-      {/* 14. Newsletter */}
-      <NewsletterSection/>
-      {/* {user && !user.newsLetter && <NewsletterSection />} */}
+      
+
+     
+      
+     {/* 8. Join the Ultimate Universe */}
+       <JoinUltimate />
+      {/* 9. Newsletter */}
+      <NewsletterSection />
     </div>
   );
 };

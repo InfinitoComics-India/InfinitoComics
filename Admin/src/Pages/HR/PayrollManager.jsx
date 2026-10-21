@@ -30,6 +30,24 @@ const EMPTY_SALARY = { basic:0, hra:0, ta:0, medical:0, special:0, otherAllowanc
 
 const PayrollManager = () => {
   const now = new Date();
+  const daysPassedDefault = now.getDate();
+  const MONTH_BASE = 26; // Salary base days (all 7 days working)
+
+  // Earned so far based on actual present days from attendance
+  const earnedSoFar = (sal, emp) => {
+    if (!sal) return 0;
+    const perDay = sal.netSalary / MONTH_BASE;
+    // Look up actual attendance for this employee
+    const empId = emp?._id?.toString();
+    const att = attSummary[empId] || { presentDays: 0, sundayDays: 0 };
+    const normalDays = att.presentDays - att.sundayDays;
+    const earned = Math.round((normalDays * perDay) + (att.sundayDays * perDay * 1.5));
+    return earned;
+  };
+  const presentDaysFor = (emp) => {
+    const empId = emp?._id?.toString();
+    return attSummary[empId]?.presentDays || 0;
+  };
   const [tab,    setTab]    = useState("payroll");
   const [month,  setMonth]  = useState(now.getMonth() + 1);
   const [year,   setYear]   = useState(now.getFullYear());
@@ -37,6 +55,7 @@ const PayrollManager = () => {
   const [summary,  setSummary]  = useState([]);
   const [employees, setEmployees] = useState([]);
   const [salaries,  setSalaries]  = useState([]);
+  const [attSummary, setAttSummary] = useState({}); // empId → { presentDays, sundayDays }
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState("");
   const [success,  setSuccess]  = useState("");
@@ -63,12 +82,29 @@ const PayrollManager = () => {
 
   const loadSalaries = async () => {
     try { setLoading(true); setError("");
-      const [sRes, empRes] = await Promise.all([
+      const [sRes, empRes, attRes] = await Promise.all([
         axios.get(`${BASE}/hr/salary/getall`, auth()),
         axios.get(`${BASE}/hr/employees/getall`, auth()),
+        axios.get(`${BASE}/hr/attendance/monthly-all`, { ...auth(), params: { year: new Date().getFullYear(), month: new Date().getMonth()+1 } }),
       ]);
       setSalaries(sRes.data.data || []);
       setEmployees(empRes.data.data || []);
+
+      // Build attendance summary per employee
+      const recs = attRes.data.data?.records || [];
+      const summary = {};
+      for (const rec of recs) {
+        const empId = rec._empInfo?._id ?? rec.employeeId?._id ?? rec.employeeId;
+        if (!empId) continue;
+        const k = empId.toString();
+        if (!summary[k]) summary[k] = { presentDays: 0, sundayDays: 0 };
+        if (['present','late','half_day'].includes(rec.status)) {
+          summary[k].presentDays++;
+          const istD = new Date(new Date(rec.date).getTime() + 5.5*60*60*1000);
+          if (istD.getUTCDay() === 0) summary[k].sundayDays++;
+        }
+      }
+      setAttSummary(summary);
     } catch { setError("Failed to load salaries."); } finally { setLoading(false); }
   };
 
@@ -145,80 +181,153 @@ const PayrollManager = () => {
     finally { setSaving(false); }
   };
 
+  // Convert number to words (Indian system)
+  const numToWords = (n) => {
+    const a = ["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
+    const b = ["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
+    const inWords = (num) => {
+      if (num === 0) return "";
+      if (num < 20) return a[num] + " ";
+      if (num < 100) return b[Math.floor(num/10)] + " " + a[num%10] + " ";
+      return a[Math.floor(num/100)] + " Hundred " + inWords(num%100);
+    };
+    if (!n || n === 0) return "Zero Only";
+    let str = "";
+    if (n >= 10000000) { str += inWords(Math.floor(n/10000000)) + "Crore "; n %= 10000000; }
+    if (n >= 100000)   { str += inWords(Math.floor(n/100000))   + "Lakh ";  n %= 100000;   }
+    if (n >= 1000)     { str += inWords(Math.floor(n/1000))     + "Thousand "; n %= 1000;  }
+    str += inWords(n);
+    return str.trim() + " Only";
+  };
+
   // Download payslip as PDF (HTML print)
-  const downloadPayslip = (slip) => {
+  const downloadPayslip = (slip, salData) => {
     const emp = slip.employeeId;
+    const INRf  = (v) => `₹${Number(v||0).toLocaleString("en-IN")}`;
+    const R     = (label, value, bold=false, red=false) =>
+      `<tr style="${bold?"font-weight:bold;background:#f8f8f8;":""}">
+        <td style="padding:6px 10px;border:1px solid #e0e0e0;${bold?"font-weight:bold;":""}">${label}</td>
+        <td style="padding:6px 10px;border:1px solid #e0e0e0;text-align:right;${bold?"font-weight:bold;":""}${red?"color:#c62828;":""}"> ${value}</td>
+      </tr>`;
+    const joiningFmt = emp?.joiningDate ? new Date(emp.joiningDate).toLocaleDateString("en-IN",{day:"2-digit",month:"2-digit",year:"numeric"}) : "—";
     const html = `<!DOCTYPE html>
-<html><head><title>Payslip - ${MONTHS[slip.month-1]} ${slip.year}</title>
+<html><head><meta charset="UTF-8"><title>Payslip - ${MONTHS[slip.month-1]} ${slip.year}</title>
 <style>
-  body{font-family:Arial,sans-serif;margin:0;padding:0;color:#111}
-  .header{background:#DD1215;color:white;padding:20px 30px;display:flex;justify-content:space-between;align-items:center}
-  .header h1{margin:0;font-size:22px;letter-spacing:2px}
-  .header p{margin:0;font-size:11px;opacity:0.8}
-  .body{padding:24px 30px}
-  .emp-block{display:flex;justify-content:space-between;margin-bottom:20px;background:#f9f9f9;padding:16px;border-radius:8px}
-  .emp-block div p{margin:2px 0;font-size:12px}
-  .emp-block div .name{font-size:16px;font-weight:bold}
-  .section-title{font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:8px;margin-top:16px}
-  .att-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
-  .att-box{background:#f3f3f3;border-radius:6px;padding:10px;text-align:center}
-  .att-box .val{font-size:20px;font-weight:900}
-  .att-box .lbl{font-size:9px;text-transform:uppercase;color:#888;margin-top:2px}
-  table{width:100%;border-collapse:collapse;font-size:12px}
-  td{padding:7px 10px;border-bottom:1px solid #f0f0f0}
-  .bold-row td{font-weight:bold;border-top:2px solid #ddd;font-size:13px}
-  .net-box{background:#e8f5e9;border:2px solid #4caf50;border-radius:8px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin-top:20px}
-  .net-box .label{font-weight:bold;font-size:13px;text-transform:uppercase;letter-spacing:1px;color:#2e7d32}
-  .net-box .amount{font-size:22px;font-weight:900;color:#2e7d32}
-  .status-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:10px;font-weight:bold;text-transform:uppercase;background:${slip.status==="paid"?"#dcfce7":slip.status==="approved"?"#dbeafe":"#fef9c3"};color:${slip.status==="paid"?"#166534":slip.status==="approved"?"#1e40af":"#854d0e"}}
-  .footer{margin-top:30px;padding-top:16px;border-top:1px solid #eee;font-size:10px;color:#aaa;text-align:center}
-  @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Arial,sans-serif;font-size:12px;color:#111;background:#fff}
+  .page{max-width:780px;margin:0 auto;padding:20px}
+  .header{background:#CC0000;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:0}
+  .header h1{font-size:20px;font-weight:900;letter-spacing:3px;margin:0}
+  .header p{font-size:10px;opacity:0.85;margin:2px 0 0}
+  .header-right{text-align:right}
+  .header-right .title{font-size:18px;font-weight:900;letter-spacing:2px}
+  .header-right .sub{font-size:11px}
+  .subheader{background:#111;color:white;text-align:center;padding:5px;font-size:11px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px}
+  table.info{width:100%;border-collapse:collapse;margin-bottom:10px}
+  table.info td{padding:5px 8px;border:1px solid #ccc;font-size:11px}
+  table.info td.lbl{background:#f0f0f0;font-weight:bold;width:16%}
+  table.info td.val{width:17%}
+  table.earn{width:100%;border-collapse:collapse;margin-bottom:10px}
+  table.earn th{padding:7px 10px;border:1px solid #ccc;background:#222;color:#fff;font-size:11px;text-align:left}
+  table.earn th.right{text-align:right}
+  table.earn td{padding:6px 10px;border:1px solid #e0e0e0;font-size:11px}
+  .section-hdr{background:#333;color:#fff;text-align:center;font-weight:bold;font-size:11px;letter-spacing:1px;padding:5px;margin:8px 0 0}
+  .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid #ccc;margin-bottom:8px}
+  .summary-box{text-align:center;padding:8px 4px;border-right:1px solid #ccc}
+  .summary-box:last-child{border-right:none}
+  .summary-box .big{font-size:18px;font-weight:900}
+  .summary-box .small{font-size:9px;text-transform:uppercase;color:#555;margin-top:2px}
+  .net-row{background:#1b5e20;color:white;display:flex;justify-content:space-between;align-items:center;padding:10px 16px;margin-top:10px}
+  .net-row .lbl{font-weight:bold;font-size:12px;letter-spacing:1px;text-transform:uppercase}
+  .net-row .amt{font-size:20px;font-weight:900}
+  .words-row{border:1px solid #ccc;padding:6px 10px;font-size:11px;margin-top:6px}
+  .words-row span{font-weight:bold}
+  .bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid #ccc;margin-top:6px}
+  .bottom-cell{padding:6px 10px;border-right:1px solid #ccc;font-size:11px}
+  .bottom-cell:last-child{border-right:none}
+  .bottom-cell .lbl{font-weight:bold;color:#555;font-size:10px}
+  .bottom-cell .val{font-size:12px;font-weight:bold}
+  .footer{margin-top:20px;text-align:center;font-size:10px;color:#999;border-top:1px solid #eee;padding-top:10px}
+  @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{padding:10px}}
 </style></head>
-<body>
+<body><div class="page">
+
+  <!-- Header -->
   <div class="header">
-    <div><h1>INFINITO COMICS</h1><p>Miraya Corporation Pvt. Ltd.</p></div>
-    <div style="text-align:right"><p style="font-size:16px;font-weight:bold;margin:0">PAYSLIP</p><p>${MONTHS[slip.month-1]} ${slip.year}</p></div>
+    <div><h1>INFINITO COMICS</h1><p>Miraya Corporation Pvt. Ltd.</p><p>career@infinitohq.com · infinitohq.com</p></div>
+    <div class="header-right"><div class="title">PAYSLIP</div><div class="sub">${MONTHS[slip.month-1]} ${slip.year}</div><div class="sub" style="margin-top:4px">Status: <strong>${(slip.status||"").toUpperCase()}</strong>${slip.paidAt?` | Paid: ${new Date(slip.paidAt).toLocaleDateString("en-IN")}`:""}</div></div>
   </div>
-  <div class="body">
-    <div class="emp-block">
-      <div>
-        <p class="name">${emp?.firstName||""} ${emp?.lastName||""}</p>
-        <p>${emp?.designation||""} · ${emp?.department||""}</p>
-        <p>Emp ID: ${emp?.employeeId||"—"}</p>
-      </div>
-      <div style="text-align:right">
-        <p><strong>Pay Period:</strong> ${MONTHS[slip.month-1]} ${slip.year}</p>
-        <p><strong>Status:</strong> <span class="status-badge">${slip.status}</span></p>
-        ${slip.paidAt?`<p><strong>Paid On:</strong> ${new Date(slip.paidAt).toLocaleDateString("en-IN")}</p>`:""}
-      </div>
-    </div>
-    <div class="section-title">Attendance Summary</div>
-    <div class="att-grid">
-      <div class="att-box"><div class="val">${slip.workingDays}</div><div class="lbl">Working Days</div></div>
-      <div class="att-box"><div class="val">${slip.presentDays}</div><div class="lbl">Present</div></div>
-      <div class="att-box"><div class="val">${slip.absentDays}</div><div class="lbl">Absent</div></div>
-      <div class="att-box"><div class="val">${slip.leaveDays}</div><div class="lbl">On Leave</div></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
-      <div>
-        <div class="section-title">Earnings</div>
-        <table>${[["Basic Salary",slip.basic],["HRA",slip.hra],["Travel Allowance",slip.ta],["Medical Allowance",slip.medical],["Special Allowance",slip.special],["Other Allowances",slip.otherAllowances]].filter(([,v])=>v>0).map(([l,v])=>`<tr><td>${l}</td><td style="text-align:right">₹${Number(v||0).toLocaleString("en-IN")}</td></tr>`).join("")}
-        <tr class="bold-row"><td>Gross Salary</td><td style="text-align:right">₹${Number(slip.grossSalary||0).toLocaleString("en-IN")}</td></tr></table>
-      </div>
-      <div>
-        <div class="section-title">Deductions</div>
-        <table>${[["Provident Fund",slip.pf],["ESIC",slip.esic],["TDS",slip.tds],["Other Deductions",slip.otherDeductions],["Loss of Pay",slip.lossOfPay]].filter(([,v])=>v>0).map(([l,v])=>`<tr><td>${l}</td><td style="text-align:right;color:#dc2626">- ₹${Number(v||0).toLocaleString("en-IN")}</td></tr>`).join("")}
-        <tr class="bold-row"><td>Total Deductions</td><td style="text-align:right;color:#dc2626">- ₹${Number(slip.totalDeductions||0).toLocaleString("en-IN")}</td></tr></table>
-      </div>
-    </div>
-    <div class="net-box">
-      <span class="label">Net Salary Payable</span>
-      <span class="amount">₹${Number(slip.netSalary||0).toLocaleString("en-IN")}</span>
-    </div>
-    <div class="footer">This is a computer generated payslip and does not require a signature. · InfinitoComics India · career@infinitohq.com</div>
+  <div class="subheader">Salary Slip for the Month of ${MONTHS[slip.month-1]} ${slip.year}</div>
+
+  <!-- Employee Info Table -->
+  <table class="info">
+    <tr>
+      <td class="lbl">Employee Name</td><td class="val" style="font-weight:bold">${emp?.firstName||""} ${emp?.lastName||""}</td>
+      <td class="lbl">Employee Code</td><td class="val">${emp?.employeeId||"—"}</td>
+      <td class="lbl">PAN No.</td><td class="val">${emp?.pan||"—"}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Bank Name</td><td class="val">${salData?.bankName||"—"}</td>
+      <td class="lbl">Joining Date</td><td class="val">${joiningFmt}</td>
+      <td class="lbl">Designation</td><td class="val">${emp?.designation||"—"}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Bank A/C No.</td><td class="val">${salData?.accountNumber||"—"}</td>
+      <td class="lbl">Department</td><td class="val">${emp?.department||"—"}</td>
+      <td class="lbl">IFSC Code</td><td class="val">${salData?.ifscCode||"—"}</td>
+    </tr>
+  </table>
+
+  <!-- Attendance Summary -->
+  <div class="section-hdr">Attendance Summary</div>
+  <div class="summary-grid" style="margin-top:0">
+    <div class="summary-box"><div class="big">${slip.presentDays||0}</div><div class="small">Day Present</div></div>
+    <div class="summary-box"><div class="big">${slip.absentDays||0}</div><div class="small">Day Absent</div></div>
+    <div class="summary-box"><div class="big">${slip.leaveDays||0}</div><div class="small">Total Leave</div></div>
+    <div class="summary-box"><div class="big">${(slip.presentDays||0)+(slip.leaveDays||0)}</div><div class="small">Total Day Paid</div></div>
   </div>
-  <script>window.onload=()=>window.print();</script>
-</body></html>`;
+
+  <!-- Earnings & Deductions side by side -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px">
+    <div>
+      <table class="earn">
+        <tr><th>Earnings</th><th class="right">Amount (₹)</th></tr>
+        ${[["Basic Pay",slip.basic],["House Allowance (HRA)",slip.hra],["Travel Allowance",slip.ta],["Medical Allowance",slip.medical],["Special Allowance",slip.special],["Other Allowances",slip.otherAllowances]].filter(([,v])=>Number(v)>0).map(([l,v])=>`<tr><td style="padding:6px 10px;border:1px solid #e0e0e0">${l}</td><td style="padding:6px 10px;border:1px solid #e0e0e0;text-align:right">${INRf(v)}</td></tr>`).join("")}
+        <tr style="background:#f0f0f0;font-weight:bold"><td style="padding:6px 10px;border:1px solid #ccc">Total Earnings</td><td style="padding:6px 10px;border:1px solid #ccc;text-align:right">${INRf(slip.grossSalary)}</td></tr>
+      </table>
+    </div>
+    <div>
+      <table class="earn">
+        <tr><th>Deductions</th><th class="right">Amount (₹)</th></tr>
+        ${[["Provident Fund (PF)",slip.pf],["ESIC",slip.esic],["TDS",slip.tds],["Loss of Pay (LOP)",slip.lossOfPay],["Other Deductions",slip.otherDeductions]].filter(([,v])=>Number(v)>0).map(([l,v])=>`<tr><td style="padding:6px 10px;border:1px solid #e0e0e0">${l}</td><td style="padding:6px 10px;border:1px solid #e0e0e0;text-align:right;color:#c62828">- ${INRf(v)}</td></tr>`).join("")}
+        ${[["Provident Fund (PF)",slip.pf],["ESIC",slip.esic],["TDS",slip.tds],["Loss of Pay (LOP)",slip.lossOfPay],["Other Deductions",slip.otherDeductions]].filter(([,v])=>Number(v)>0).length===0?`<tr><td style="padding:6px 10px;border:1px solid #e0e0e0;color:#999" colspan="2">No deductions</td></tr>`:""}
+        <tr style="background:#f0f0f0;font-weight:bold"><td style="padding:6px 10px;border:1px solid #ccc">Gross Deduction</td><td style="padding:6px 10px;border:1px solid #ccc;text-align:right;color:#c62828">${INRf(slip.totalDeductions)}</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Bottom summary -->
+  <div class="bottom-grid" style="margin-top:8px">
+    <div class="bottom-cell"><div class="lbl">Gross Earning</div><div class="val">${INRf(slip.grossSalary)}</div></div>
+    <div class="bottom-cell"><div class="lbl">Gross Deduction</div><div class="val" style="color:#c62828">${INRf(slip.totalDeductions)}</div></div>
+  </div>
+  <div class="bottom-grid">
+    <div class="bottom-cell"><div class="lbl">Net Salary</div><div class="val" style="color:#1b5e20;font-size:14px">${INRf(slip.netSalary)}</div></div>
+    <div class="bottom-cell"><div class="lbl">Mode of Payment</div><div class="val">${salData?.bankName ? "Bank Transfer" : "Cash"}</div></div>
+  </div>
+
+  <!-- Net Salary Banner -->
+  <div class="net-row">
+    <span class="lbl">Net Salary Payable</span>
+    <span class="amt">${INRf(slip.netSalary)}</span>
+  </div>
+
+  <!-- Amount in Words -->
+  <div class="words-row">Amount in Words: <span>${numToWords(Math.round(slip.netSalary||0))}</span></div>
+
+  <div class="footer">This is a computer generated payslip and does not require a signature. &nbsp;·&nbsp; InfinitoComics India (Miraya Corporation Pvt. Ltd.) &nbsp;·&nbsp; career@infinitohq.com</div>
+
+</div><script>window.onload=()=>window.print();</script></body></html>`;
     const blob = new Blob([html], {type:"text/html"});
     const url = URL.createObjectURL(blob);
     window.open(url, "_blank");
@@ -389,7 +498,7 @@ const PayrollManager = () => {
                             <td className="px-4 py-3 whitespace-nowrap">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <button onClick={() => setSlipModal(slip)} className="text-xs text-blue-600 hover:underline font-semibold">View</button>
-                                <button onClick={() => downloadPayslip(slip)} title="Download PDF" className="text-gray-400 hover:text-gray-700"><Download size={13}/></button>
+                                <button onClick={() => downloadPayslip(slip, salaries.find(s=>s.employeeId?._id===slip.employeeId?._id||s.employeeId===slip.employeeId?._id))} title="Download PDF" className="text-gray-400 hover:text-gray-700"><Download size={13}/></button>
                                 {slip.status === "draft"    && <button onClick={() => handleAction(slip._id,"approve")} className="text-xs text-green-600 hover:underline font-semibold">Approve</button>}
                                 {slip.status === "approved" && <button onClick={() => handleAction(slip._id,"paid")}   className="text-xs text-[#DD1215] hover:underline font-semibold">Paid</button>}
                               </div>
@@ -422,8 +531,8 @@ const PayrollManager = () => {
                 <table className="min-w-full divide-y divide-gray-100 text-sm">
                   <thead className="bg-gray-50">
                     <tr>
-                      {["Employee","Designation","Dept","Basic","HRA","PF","Gross","Net","Bank","Pay Day","Actions"].map(h => (
-                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                      {["Employee","Designation","Dept","Basic","HRA","PF","Gross","Net","Earned So Far","Bank","Pay Day","Actions"].map(h => (
+                        <th key={h} className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap ${h==="Earned So Far"?"text-blue-600 bg-blue-50":"text-gray-500"}`}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -448,6 +557,14 @@ const PayrollManager = () => {
                           <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{sal ? INR(sal.pf) : <span className="text-gray-300">—</span>}</td>
                           <td className="px-4 py-3 text-xs font-semibold text-gray-800 whitespace-nowrap">{sal ? INR(sal.grossSalary) : <span className="text-gray-300">—</span>}</td>
                           <td className="px-4 py-3 text-xs font-black text-green-700 whitespace-nowrap">{sal ? INR(sal.netSalary) : <span className="text-gray-300">—</span>}</td>
+                          <td className="px-4 py-3 whitespace-nowrap bg-blue-50/40">
+                            {sal ? (
+                              <div>
+                                <p className="text-xs font-black text-blue-700">{INR(earnedSoFar(sal, emp))}</p>
+                                <p className="text-[10px] text-blue-400">{presentDaysFor(emp)} days present</p>
+                              </div>
+                            ) : <span className="text-gray-300">—</span>}
+                          </td>
                           <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{sal?.bankName || <span className="text-gray-300">Not set</span>}</td>
                           <td className="px-4 py-3 text-xs text-gray-500 text-center">{sal?.payDay || <span className="text-gray-300">—</span>}</td>
                           <td className="px-4 py-3 whitespace-nowrap">
@@ -487,7 +604,7 @@ const PayrollManager = () => {
                 <p className="text-xs text-gray-300">{slipModal.employeeId?.designation} · {slipModal.employeeId?.department}</p>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => downloadPayslip(slipModal)} title="Download PDF"
+                <button onClick={() => downloadPayslip(slipModal, salaries.find(s=>s.employeeId?._id===slipModal.employeeId?._id||s.employeeId===slipModal.employeeId?._id))} title="Download PDF"
                   className="flex items-center gap-1 bg-green-700 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-green-800">
                   <Download size={12}/> PDF
                 </button>
@@ -544,7 +661,7 @@ const PayrollManager = () => {
               <div className="flex gap-3 pt-1">
                 {slipModal.status === "draft"    && <button onClick={() => handleAction(slipModal._id,"approve")} className="flex-1 bg-blue-600 text-white py-2 text-xs font-bold uppercase hover:bg-blue-700 transition rounded">Approve</button>}
                 {slipModal.status === "approved" && <button onClick={() => handleAction(slipModal._id,"paid")}   className="flex-1 bg-green-600 text-white py-2 text-xs font-bold uppercase hover:bg-green-700 transition rounded">Mark as Paid</button>}
-                <button onClick={() => downloadPayslip(slipModal)} className="flex items-center justify-center gap-1.5 flex-1 border border-gray-300 py-2 text-xs font-bold uppercase hover:bg-gray-50 transition rounded">
+                <button onClick={() => downloadPayslip(slipModal, salaries.find(s=>s.employeeId?._id===slipModal.employeeId?._id||s.employeeId===slipModal.employeeId?._id))} className="flex items-center justify-center gap-1.5 flex-1 border border-gray-300 py-2 text-xs font-bold uppercase hover:bg-gray-50 transition rounded">
                   <Download size={13}/> Download PDF
                 </button>
                 <button onClick={() => setSlipModal(null)} className="flex-1 border border-gray-300 py-2 text-xs font-bold uppercase hover:bg-gray-50 transition rounded">Close</button>
@@ -595,6 +712,10 @@ const PayrollManager = () => {
                 <div className="flex items-center justify-between border-t pt-2">
                   <span className="text-xs font-bold text-gray-700">Net Salary</span>
                   <span className="text-base font-black text-green-700">{INR(["basic","hra","ta","medical","special","otherAllowances"].reduce((s,k)=>s+(salaryForm[k]||0),0) - ["pf","esic","tds","otherDeductions"].reduce((s,k)=>s+(salaryForm[k]||0),0))}</span>
+                </div>
+                <div className="flex items-center justify-between border-t pt-2 bg-blue-50 rounded px-2 py-1.5">
+                  <span className="text-xs font-bold text-blue-700">Per Day Rate <span className="font-normal text-blue-500">(Gross ÷ 30)</span></span>
+                  <span className="text-sm font-black text-blue-700">{INR(Math.round(["basic","hra","ta","medical","special","otherAllowances"].reduce((s,k)=>s+(salaryForm[k]||0),0) / 30))}</span>
                 </div>
               </div>
               <p className="text-xs font-bold uppercase text-gray-400 pt-2">Bank Details</p>

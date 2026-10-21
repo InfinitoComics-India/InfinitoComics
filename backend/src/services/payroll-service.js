@@ -3,9 +3,10 @@ import SalaryRepository from "../repository/salary-repository.js";
 import AttendanceRepository from "../repository/attendance-repository.js";
 import AuditLogRepository from "../repository/auditLog-repository.js";
 import NotificationRepository from "../repository/notification-repository.js";
+import EmployeeRepository from "../repository/employee-repository.js";
 import DailyWorkLog from "../models/DailyWorkLog.js";
 
-const WORKING_DAYS = 30; // Fixed 30 working days per month
+const WORKING_DAYS = 26; // All days working — use 26 as monthly base (avg working days)
 
 class PayrollService {
   constructor() {
@@ -14,6 +15,7 @@ class PayrollService {
     this.attendanceRepo   = new AttendanceRepository();
     this.auditRepo        = new AuditLogRepository();
     this.notificationRepo = new NotificationRepository();
+    this.employeeRepo     = new EmployeeRepository();
   }
 
   // ── Generate payslip for one employee for a month ─────────
@@ -23,8 +25,14 @@ class PayrollService {
       const salary = await this.salaryRepo.getByEmployee(employeeId);
       if (!salary) throw new Error("No salary structure found. Set salary first.");
 
-      // Get attendance for the month
-      const attendance = await this.attendanceRepo.getMonthlyForEmployee(employeeId, year, month);
+      // Get attendance for the month — check both Employee ID and Admin ID
+      const Attendance = (await import('../models/Attendance.js')).default;
+      const attStart = new Date(Date.UTC(year, month - 1, 1));
+      const attEnd   = new Date(Date.UTC(year, month, 0, 23, 59, 59));
+      const attendance   = await Attendance.find({
+        employeeId: employeeId,
+        date: { $gte: attStart, $lte: attEnd }
+      });
 
       // Build a set of dates where employee was present (from attendance)
       const presentDates   = new Set();
@@ -33,15 +41,18 @@ class PayrollService {
 
       for (const rec of attendance) {
         const d    = new Date(rec.date);
-        const iso  = d.toISOString().split("T")[0];
-        const isSunday = d.getDay() === 0;
+        // Add IST offset to get correct day of week
+        const istD = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
+        const iso  = istD.toISOString().split("T")[0];
+        const isSunday = istD.getUTCDay() === 0;
 
-        if (["present","late"].includes(rec.status)) {
+        if (["present","late","half_day"].includes(rec.status)) {
           presentDates.add(iso);
           if (isSunday) sundayWorkedDays++;
         } else if (rec.status === "on_leave") {
           leaveDates.add(iso);
         }
+        // NOTE: Every day is a working day — Sunday is NOT a weekend
       }
 
       // Also check work log — if employee submitted work log for a day, count as present
@@ -61,28 +72,64 @@ class PayrollService {
       }).select("date");
 
       for (const wl of worklogs) {
-        const d   = new Date(wl.date);
-        const iso = d.toISOString().split("T")[0];
+        const d    = new Date(wl.date);
+        const istD = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
+        const iso  = istD.toISOString().split("T")[0];
         if (!presentDates.has(iso) && !leaveDates.has(iso)) {
           presentDates.add(iso);
-          if (d.getDay() === 0) sundayWorkedDays++; // Sunday work log
+          if (istD.getUTCDay() === 0) sundayWorkedDays++;
         }
       }
 
       const presentDays = presentDates.size;
       const leaveDays   = leaveDates.size;
 
-      // Absent = 30 - present - leave (can't go below 0)
-      const absentDays  = Math.max(0, WORKING_DAYS - presentDays - leaveDays);
+      // ── Determine how many days should actually be counted ───
+      // Days that haven't happened yet (future days in the current month) and days
+      // before the employee's joining date must NOT be treated as absent — otherwise
+      // a brand-new employee or an employee with no attendance marked yet gets the
+      // full month counted as absent, wiping out their net pay.
+      const employee = await this.employeeRepo.getById(employeeId);
+      const today    = new Date();
+      const monthEnd = new Date(year, month, 0); // last calendar day of the payroll month
+      const isCurrentOrFutureMonth =
+        year > today.getFullYear() ||
+        (year === today.getFullYear() && month - 1 >= today.getMonth());
+
+      // Last day of the period that has actually elapsed (inclusive).
+      let lastElapsedDay = monthEnd.getDate(); // default: whole month has elapsed (past period)
+      if (isCurrentOrFutureMonth) {
+        const sameMonth = today.getFullYear() === year && today.getMonth() === month - 1;
+        lastElapsedDay = sameMonth ? today.getDate() : 0; // future month → nothing elapsed yet
+      }
+
+      // First day of the period the employee was actually employed (inclusive).
+      let firstEmployedDay = 1;
+      if (employee?.joiningDate) {
+        const join = new Date(employee.joiningDate);
+        if (join.getFullYear() === year && join.getMonth() === month - 1) {
+          firstEmployedDay = join.getDate();
+        } else if (join.getFullYear() > year || (join.getFullYear() === year && join.getMonth() > month - 1)) {
+          // Employee joins after this payroll period entirely — no days to count.
+          firstEmployedDay = monthEnd.getDate() + 1;
+        }
+      }
+
+      // Days in this period that count toward attendance (elapsed AND employed).
+      // ALL days including Sundays are working days.
+      const countableDays = Math.max(0, lastElapsedDay - firstEmployedDay + 1);
+
+      // Absent = countable days - present - leave (can't go below 0)
+      const absentDays = Math.max(0, countableDays - presentDays - leaveDays);
 
       // ── Salary calculation ──────────────────────────────────
-      // Per day rate based on gross / 30
+      // Per day rate based on gross / WORKING_DAYS
       const perDayRate = salary.grossSalary / WORKING_DAYS;
 
-      // Loss of pay for absent days
+      // Loss of pay for absent days (each absent day = 1x per day rate)
       const lossOfPay = Math.round(perDayRate * absentDays);
 
-      // Sunday overtime bonus: 1.5x per day rate - 1x (the extra 0.5x)
+      // Sunday bonus: extra 0.5x for each Sunday worked (total 1.5x instead of 1x)
       const sundayBonus = Math.round(perDayRate * 0.5 * sundayWorkedDays);
 
       const totalDeductions = salary.pf + salary.esic + salary.tds + salary.otherDeductions + lossOfPay;
@@ -110,7 +157,7 @@ class PayrollService {
         status: "draft",
         generatedBy: performedBy,
         // Store extra info in remarks for transparency
-        remarks: `PerDay:₹${Math.round(perDayRate)} | Present:${presentDays} | Absent:${absentDays} | Leave:${leaveDays} | SundayBonus(${sundayWorkedDays}days):₹${sundayBonus}`,
+        remarks: `PerDay:₹${Math.round(perDayRate)} | Countable:${countableDays} | Present:${presentDays} | Absent:${absentDays} | Leave:${leaveDays} | SundayBonus(${sundayWorkedDays}days):₹${sundayBonus}`,
       });
 
       await this.auditRepo.create({ performedBy, performedByName, action: "CREATE", entity: "Payroll", entityId: payslip._id, description: `Generated payslip for ${month}/${year}. Present:${presentDays}/30, Sunday:${sundayWorkedDays}days, Net:₹${netSalary}` });

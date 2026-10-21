@@ -109,19 +109,14 @@ const Header = () => {
 
   return (
     <div className="text-white font-dmsans">
-      {/* ── Top promo bar ── */}
-      <div className="border-b bg-[#202020] border-gray-600 text-sm py-4 flex flex-col md:flex-row items-center">
-        <div className="w-full max-w-[1200px] mx-auto px-4 md:px-12 flex justify-between items-center">
-          {/* Promo Text */}
-          <div className="mb-2 md:mb-0 text-center">
-            Use code <strong>INFINT10</strong> to get 10% off on our shop!
-          </div>
-
+      {/* ── Top bar ── */}
+      <div className="border-b bg-[#202020] border-gray-700/80 text-sm py-2.5 flex items-center">
+        <div className="w-full max-w-[1200px] mx-auto px-4 md:px-12 flex justify-end items-center">
           {/* Navigation Links */}
-          <div className="hidden md:flex gap-10 text-[1rem] text-gray-300">
+          <div className="flex gap-6 md:gap-10 text-xs md:text-[0.95rem] text-gray-300">
             <a
               href={`${FRONTEND_BASE_URL}/news`}
-              className="hover:text-white font-bold"
+              className="hover:text-white font-medium transition"
             >
               Blogs &amp; News
             </a>
@@ -129,19 +124,19 @@ const Header = () => {
               href={FOUNDATION_BASE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-white font-bold"
+              className="hover:text-white font-medium transition"
             >
               Foundation
             </a>
             <a
               href={`${RESEARCH_BASE_URL}/research`}
-              className="hover:text-white font-bold"
+              className="hover:text-white font-medium transition"
             >
               Research
             </a>
             <a
               href={`${FRONTEND_BASE_URL}/support-us`}
-              className="hover:text-white font-bold flex items-center gap-1"
+              className="hover:text-white font-medium flex items-center gap-1 transition"
             >
               <Heart size={14} /> Support Us
             </a>

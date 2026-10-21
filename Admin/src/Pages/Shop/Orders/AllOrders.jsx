@@ -13,6 +13,7 @@ import {
   printPackingSlip,
   formatOrderDate,
   formatDateTime,
+  resolveCustomerDisplayName,
 } from '../../../services/shopServices/orderService';
 
 const AllOrders = () => {
@@ -98,7 +99,9 @@ const AllOrders = () => {
       const q = searchTerm.toLowerCase().trim();
       result = result.filter((order) => {
         const orderIdMatch = (order.orderId || '').toLowerCase().includes(q) || (order.id || '').toLowerCase().includes(q);
+        const resolvedName = resolveCustomerDisplayName(order.customer, order.shippingAddress, order.orderId);
         const customerMatch =
+          resolvedName.toLowerCase().includes(q) ||
           (order.customer?.name || '').toLowerCase().includes(q) ||
           (order.customer?.email || '').toLowerCase().includes(q) ||
           (order.customer?.phone || '').toLowerCase().includes(q);
@@ -145,10 +148,19 @@ const AllOrders = () => {
   const stats = calculateStats();
 
   // Status tag styling helpers
-  const getPaymentStatusTag = (status) => {
-    switch ((status || '').toLowerCase()) {
+  const getPaymentStatusTag = (status, method) => {
+    const s = String(status || '').toLowerCase().trim();
+    const m = String(method || '').toLowerCase().trim();
+    const isCOD = s === 'cod' || m === 'cod' || m.includes('cash on delivery') || m.includes('cod');
+
+    if (isCOD && s !== 'paid') {
+      return <Tag color="warning" className="px-2.5 py-0.5 font-bold uppercase text-xs">COD</Tag>;
+    }
+    switch (s) {
       case 'paid':
         return <Tag color="success" className="px-2.5 py-0.5 font-bold uppercase text-xs">Paid</Tag>;
+      case 'cod':
+        return <Tag color="warning" className="px-2.5 py-0.5 font-bold uppercase text-xs">COD</Tag>;
       case 'pending':
         return <Tag color="warning" className="px-2.5 py-0.5 font-bold uppercase text-xs">Pending</Tag>;
       case 'failed':
@@ -193,7 +205,7 @@ const AllOrders = () => {
       fetchOrders();
     } catch (err) {
       console.error(err);
-      message.error('Failed to send order to Qikink');
+      message.error(err.message || 'Failed to send order to Qikink');
     } finally {
       setSendingToQikink(false);
     }
@@ -205,7 +217,7 @@ const AllOrders = () => {
     return list.map((o) => ({
       'Order #': o.orderId,
       'Date': formatDateTime(o.createdAt),
-      'Customer Name': o.customer?.name || 'N/A',
+      'Customer Name': resolveCustomerDisplayName(o.customer, o.shippingAddress, o.orderId),
       'Customer Email': o.customer?.email || 'N/A',
       'Customer Phone': o.customer?.phone || 'N/A',
       'Items Count': (o.items || []).reduce((sum, i) => sum + (i.quantity || 1), 0),
@@ -547,7 +559,7 @@ const AllOrders = () => {
                       {/* Customer */}
                       <td className="py-3.5 px-4 max-w-xs">
                         <div className="font-semibold text-gray-900 truncate">
-                          {order.customer?.name || 'Customer'}
+                          {resolveCustomerDisplayName(order.customer, order.shippingAddress, order.orderId)}
                         </div>
                         <div className="text-xs text-gray-400 truncate">
                           {order.customer?.email || 'N/A'}
@@ -587,7 +599,7 @@ const AllOrders = () => {
 
                       {/* Payment Status */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        {getPaymentStatusTag(order.payment?.status)}
+                        {getPaymentStatusTag(order.payment?.status, order.payment?.method || order.paymentMethod)}
                       </td>
 
                       {/* Fulfillment Status */}
@@ -598,8 +610,8 @@ const AllOrders = () => {
                       {/* Actions */}
                       <td className="py-3.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1.5">
-                          {/* Send to Qikink quick button if unfulfilled/paid */}
-                          {isPaid && isUnfulfilled && !isQikinkSent && (
+                          {/* Send to Qikink quick button if unfulfilled */}
+                          {isUnfulfilled && !isQikinkSent && (
                             <button
                               onClick={(e) => handleOpenQikinkModal(order, e)}
                               className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#DD1215] hover:bg-red-700 text-white rounded text-xs font-bold transition shadow-xs"

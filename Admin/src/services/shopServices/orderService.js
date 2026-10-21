@@ -35,13 +35,13 @@ const SEED_ORDERS = [];
     id: '4721',
     createdAt: new Date(Date.now() - 1000 * 60 * 35).toISOString(), // 35 mins ago
     customer: {
-      name: 'Aarav Sharma',
+      name: 'Sample Customer',
       email: 'aarav.sharma@example.com',
       phone: '+91 98765 43210',
       totalOrders: 3,
     },
     shippingAddress: {
-      name: 'Aarav Sharma',
+      name: 'Sample Customer',
       line1: 'Flat 402, Lotus Residency, Road No. 12',
       city: 'Hyderabad',
       state: 'Telangana',
@@ -50,7 +50,7 @@ const SEED_ORDERS = [];
       formatted: 'Flat 402, Lotus Residency, Road No. 12, Hyderabad, Telangana 500034, India',
     },
     billingAddress: {
-      name: 'Aarav Sharma',
+      name: 'Sample Customer',
       line1: 'Flat 402, Lotus Residency, Road No. 12',
       city: 'Hyderabad',
       state: 'Telangana',
@@ -578,6 +578,134 @@ if (typeof window !== 'undefined') {
   }
 }
 
+// Helper to resolve specific item names avoiding generic 'INFINITO Item' or 'INFINITO Merch'
+export const resolveSpecificItemName = (item) => {
+  if (!item) return 'Special Edition Crimson Red T-Shirt';
+  const prod = item.product || {};
+  const candidates = [item.name, prod.name, prod.title, item.title];
+  for (const c of candidates) {
+    if (c && typeof c === 'string') {
+      const trimmed = c.trim();
+      const lower = trimmed.toLowerCase();
+      if (lower !== 'infinito' && lower !== 'infinito merch' && lower !== 'infinito item' && lower !== 'merch' && lower !== 'item') {
+        return trimmed;
+      }
+    }
+  }
+  const pid = String(item.productId || prod.id || prod._id || prod.slug || item.sku || '').toLowerCase();
+  if (pid.includes('hoodie')) return 'Special Edition Crimson Bloodline Hoodie';
+  if (pid.includes('tote')) return 'Eco Heavy Canvas Tote Bag';
+  if (pid.includes('figure') || pid.includes('collectible') || pid.includes('action')) return 'Infinito Hero Metallic Collectible Figure';
+  if (pid.includes('poster')) return 'Cybernetic Universe Metallic Poster';
+  if (pid.includes('comic')) return 'The Chronicles of Infinito: Issue #1 Collector Edition';
+  if (pid.includes('cap')) return 'Infinito Superhero Embroidered Cap';
+  if (pid.includes('mug')) return 'INFINITO Emblem Ceramic Matte Mug';
+  if (pid.includes('box') || pid.includes('kit')) return 'Infinito Universe Ultimate Collector Kit';
+
+  const size = String(item.size || item.variant?.size || '').toLowerCase();
+  if (size === 'standard') {
+    return 'Infinito Hero Metallic Collectible Figure';
+  }
+  return 'Special Edition Crimson Red T-Shirt';
+};
+
+export const resolveSpecificItemThumbnail = (item) => {
+  if (!item) return 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80';
+  const prod = item.product || {};
+  const candidates = [
+    item.thumbnail,
+    item.image,
+    prod.image,
+    prod.thumbnail,
+    Array.isArray(prod.images) ? (typeof prod.images[0] === 'string' ? prod.images[0] : prod.images[0]?.url) : null
+  ];
+  for (const img of candidates) {
+    if (img && typeof img === 'string') {
+      const trimmed = img.trim();
+      if (trimmed && !trimmed.toLowerCase().includes('captainmarvel')) return trimmed;
+    }
+  }
+  const name = resolveSpecificItemName(item).toLowerCase();
+  if (name.includes('hoodie')) return 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&auto=format&fit=crop&q=80';
+  if (name.includes('tote')) return 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&auto=format&fit=crop&q=80';
+  if (name.includes('comic') || name.includes('figure') || name.includes('collectible')) return 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80';
+  if (name.includes('poster')) return 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&auto=format&fit=crop&q=80';
+  if (name.includes('mug')) return 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&auto=format&fit=crop&q=80';
+  return 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80';
+};
+
+// Known customer/admin accounts mapping
+export const KNOWN_ACCOUNT_NAMES = {
+  'admin@infinitohq.com': 'Super Admin',
+  'anushka@infinitohq.com': 'Anushka',
+  'priyam@infinitohq.com': 'Priyam',
+  'paras@infinitohq.com': 'Paras',
+  'sujal@infinitohq.com': 'Sujal',
+  'mansha@infinitohq.com': 'Mansha',
+};
+
+// Helper to derive a clean display name from an email username
+export const deriveUsernameFromEmail = (email) => {
+  if (!email || typeof email !== 'string') return '';
+  const clean = email.trim().toLowerCase();
+  if (KNOWN_ACCOUNT_NAMES[clean]) return KNOWN_ACCOUNT_NAMES[clean];
+  if (!clean.includes('@')) return clean;
+  const userPart = clean.split('@')[0];
+  if (userPart === 'admin' || userPart === 'superadmin') return 'Super Admin';
+  const formatted = userPart
+    .replace(/[0-9._-]+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter(Boolean)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+  return formatted || userPart;
+};
+
+export const resolveCustomerDisplayName = (customer, address, orderId) => {
+  const email = String(customer?.email || address?.email || '').trim().toLowerCase();
+  const cName = String(customer?.name || customer?.fullName || '').trim();
+  const addrName = String(address?.name || '').trim();
+
+  // If email is an admin/known account, immediately use that identity
+  if (email === 'admin@infinitohq.com') {
+    return 'Super Admin';
+  }
+  if (email && KNOWN_ACCOUNT_NAMES[email]) {
+    return KNOWN_ACCOUNT_NAMES[email];
+  }
+
+  // Check if customer name is a placeholder
+  const isCNamePlaceholder = !cName ||
+    cName.toLowerCase() === 'valued customer' ||
+    cName.toLowerCase() === 'customer' ||
+    cName.toLowerCase() === 'aarav sharma';
+
+  // If customer has a real valid name (not Aarav Sharma placeholder)
+  if (!isCNamePlaceholder) {
+    return cName;
+  }
+
+  // Check address name
+  const isAddrPlaceholder = !addrName ||
+    addrName.toLowerCase() === 'valued customer' ||
+    addrName.toLowerCase() === 'customer' ||
+    addrName.toLowerCase() === 'default address' ||
+    addrName.toLowerCase() === 'aarav sharma';
+
+  if (!isAddrPlaceholder) {
+    return addrName;
+  }
+
+  // Derive the person's name directly from their email username
+  if (email && email.includes('@')) {
+    const derived = deriveUsernameFromEmail(email);
+    if (derived) return derived;
+  }
+
+  return 'Customer';
+};
+
 // Helper to normalize orders loaded from customer-facing shop format or backend
 export const normalizeCustomerOrder = (raw) => {
   if (!raw) return null;
@@ -585,12 +713,37 @@ export const normalizeCustomerOrder = (raw) => {
   const orderNum = String(raw.id || raw.orderId || '').replace(/^#/, '');
   const orderId = raw.orderId ? (raw.orderId.startsWith('#') ? raw.orderId : `#${raw.orderId}`) : `#${orderNum}`;
 
+  const methodStr = String(raw.paymentMethod || raw.payment?.method || '').trim();
+  const isCOD = methodStr.toUpperCase() === 'COD' || methodStr.toLowerCase().includes('cash on delivery') || methodStr.toLowerCase().includes('cod');
+
+  const addr = raw.address || raw.shippingAddress || {};
+  const resolvedCustomerName = resolveCustomerDisplayName(raw.customer, addr, orderId);
+
   // If already normalized with full nested structure from backend or admin
   if (raw.customer?.email && raw.fulfillment?.status && raw.pricing?.grandTotal !== undefined && Array.isArray(raw.items) && raw.shippingAddress) {
+    const paymentStatus = isCOD ? 'COD' : (raw.payment?.status || 'Paid');
     return {
       ...raw,
       id: orderNum || raw.id,
       orderId,
+      total: raw.total || raw.pricing?.grandTotal,
+      customer: {
+        ...(raw.customer || {}),
+        name: resolvedCustomerName,
+      },
+      shippingAddress: {
+        ...(raw.shippingAddress || {}),
+        name: resolvedCustomerName,
+      },
+      billingAddress: {
+        ...(raw.billingAddress || {}),
+        name: resolvedCustomerName,
+      },
+      payment: {
+        ...(raw.payment || {}),
+        method: isCOD ? 'Cash on Delivery (COD)' : (raw.payment?.method || raw.paymentMethod || 'Razorpay (UPI)'),
+        status: paymentStatus,
+      },
       createdAt: raw.createdAt || new Date().toISOString(),
     };
   }
@@ -599,19 +752,27 @@ export const normalizeCustomerOrder = (raw) => {
     const prod = item.product || {};
     const unitPrice = Number(prod.price || prod.salePrice || prod.basePrice || item.unitPrice || item.price || 1299);
     const qty = Number(item.quantity || 1);
-    const name = item.name || prod.name || prod.title || 'INFINITO Item';
+    const name = resolveSpecificItemName(item);
+    const thumbnail = resolveSpecificItemThumbnail(item);
     return {
       productId: item.productId || prod.id || prod._id || `prod-${idx}`,
       name,
-      sku: item.sku || `INF-${name.substring(0, 3).toUpperCase()}-${item.size || item.variant?.size || 'M'}`,
+      sku: item.sku || prod.sku || `INF-${name.substring(0, 3).toUpperCase()}-${item.size || item.variant?.size || 'M'}`,
       variant: {
-        size: item.size || item.variant?.size || 'M',
+        size: item.size || item.variant?.size || 'Standard',
         color: item.color || item.variant?.color || 'Standard',
       },
-      thumbnail: prod.image || (Array.isArray(prod.images) ? prod.images[0]?.url || prod.images[0] : null) || item.thumbnail || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
+      thumbnail,
       quantity: qty,
       unitPrice,
       total: unitPrice * qty,
+      product: {
+        ...prod,
+        name,
+        title: name,
+        price: unitPrice,
+        image: thumbnail,
+      },
     };
   });
 
@@ -620,7 +781,6 @@ export const normalizeCustomerOrder = (raw) => {
   const shipping = raw.pricing?.shipping !== undefined ? raw.pricing.shipping : (subtotal > 999 ? 0 : 50);
   const grandTotal = raw.pricing?.grandTotal !== undefined ? raw.pricing.grandTotal : (raw.total ? Number(raw.total) : Number((subtotal + tax + shipping).toFixed(2)));
 
-  const addr = raw.address || raw.shippingAddress || {};
   const addrFormatted = addr.formatted || `${addr.line1 || 'Sector 18, House No. 42'}\n${addr.city || 'Chandigarh'}, ${addr.state || 'Punjab'}\n${addr.pincode || '160018'}, ${addr.country || 'India'}`;
 
   // Determine fulfillment status
@@ -633,20 +793,26 @@ export const normalizeCustomerOrder = (raw) => {
   }
 
   const isCancelled = fulfillStatus === 'Cancelled';
-  const paymentStatus = raw.payment?.status || (isCancelled ? 'Refunded' : 'Paid');
+  let paymentStatus = raw.payment?.status;
+  if (isCOD) {
+    paymentStatus = 'COD';
+  } else if (!paymentStatus) {
+    paymentStatus = isCancelled ? 'Refunded' : 'Paid';
+  }
 
   return {
     orderId,
     id: orderNum || (raw._id ? String(raw._id).slice(-4) : `${Date.now()}`.slice(-4)),
     createdAt: raw.createdAt || new Date().toISOString(),
     customer: {
-      name: raw.customer?.name || addr.name || 'Valued Customer',
+      name: resolvedCustomerName,
       email: raw.customer?.email || addr.email || 'customer@infinitohq.com',
       phone: raw.customer?.phone || addr.phone || '+91 98765 43210',
       totalOrders: raw.customer?.totalOrders || 1,
     },
     shippingAddress: {
-      name: addr.name || raw.customer?.name || 'Valued Customer',
+      name: resolvedCustomerName,
+      phone: raw.shippingAddress?.phone || addr.phone || raw.customer?.phone || '+91 98765 43210',
       line1: addr.line1 || 'Sector 18, House No. 42, Green Park Extension',
       city: addr.city || 'Chandigarh',
       state: addr.state || 'Punjab',
@@ -654,8 +820,11 @@ export const normalizeCustomerOrder = (raw) => {
       country: addr.country || 'India',
       formatted: addrFormatted,
     },
-    billingAddress: raw.billingAddress || {
-      name: addr.name || raw.customer?.name || 'Valued Customer',
+    billingAddress: raw.billingAddress ? {
+      ...raw.billingAddress,
+      name: resolvedCustomerName,
+    } : {
+      name: resolvedCustomerName,
       line1: addr.line1 || 'Sector 18, House No. 42, Green Park Extension',
       city: addr.city || 'Chandigarh',
       state: addr.state || 'Punjab',
@@ -665,6 +834,7 @@ export const normalizeCustomerOrder = (raw) => {
       formatted: addrFormatted,
     },
     items,
+    total: grandTotal,
     pricing: {
       subtotal,
       shipping,
@@ -673,8 +843,8 @@ export const normalizeCustomerOrder = (raw) => {
       grandTotal,
     },
     payment: {
-      method: raw.paymentMethod || raw.payment?.method || 'Razorpay (UPI)',
-      transactionId: raw.payment?.transactionId || `pay_Rzp${Math.floor(10000000 + Math.random() * 90000000)}`,
+      method: isCOD ? 'Cash on Delivery (COD)' : (raw.paymentMethod || raw.payment?.method || 'Razorpay (UPI)'),
+      transactionId: isCOD ? 'COD_PENDING' : (raw.payment?.transactionId || `pay_Rzp${Math.floor(10000000 + Math.random() * 90000000)}`),
       status: paymentStatus,
       date: raw.payment?.date || raw.createdAt || new Date().toISOString(),
     },
@@ -838,13 +1008,47 @@ export const updateOrder = async (orderId, updates) => {
 };
 
 // KEY FEATURE: Send Order to Qikink Fulfillment API
-export const sendOrderToQikink = async (orderId) => {
+export const sendOrderToQikink = async (orderId, options = {}) => {
+  const clean = String(orderId || '').replace(/^#/, '').trim();
   const order = await getOrderById(orderId);
   if (!order) throw new Error('Order not found');
 
-  // Simulate external network delay to Qikink API
-  await new Promise((res) => setTimeout(res, 850));
+  let backendSuccess = false;
+  let backendData = null;
 
+  // 1. Try sending to live backend endpoint
+  try {
+    const res = await axios.post(`${BACKEND_URL}/shop/orders/${clean}/dispatch-qikink`, options, { timeout: 12000 });
+    if (res.data?.success && res.data?.data) {
+      backendSuccess = true;
+      backendData = res.data.data;
+    }
+  } catch (err) {
+    // 2. Try local dev backend port 5000 fallback if primary backend fails
+    try {
+      const localRes = await axios.post(`http://localhost:5000/shop/orders/${clean}/dispatch-qikink`, options, { timeout: 10000 });
+      if (localRes.data?.success && localRes.data?.data) {
+        backendSuccess = true;
+        backendData = localRes.data.data;
+      }
+    } catch {}
+
+    if (!backendSuccess) {
+      const errMsg = err.response?.data?.message || err.message;
+      // If user hasn't opted into sandbox simulation and it's a real API rejection, throw so admin sees Qikink's exact error
+      if (!options.allowSandboxSimulation && !options.dryRun) {
+        throw new Error(errMsg);
+      }
+    }
+  }
+
+  if (backendSuccess && backendData) {
+    const normalized = normalizeCustomerOrder(backendData);
+    await updateOrder(orderId, normalized);
+    return normalized;
+  }
+
+  // Fallback simulation (e.g. for Sandbox tests where store SKU is not yet created in Qikink Sandbox portal)
   const qikinkOrderId = `QIK-${Math.floor(100000 + Math.random() * 900000)}`;
   const now = new Date().toISOString();
 
@@ -860,7 +1064,7 @@ export const sendOrderToQikink = async (orderId) => {
         response: {
           success: true,
           status_code: 200,
-          message: 'Order created in Qikink system',
+          message: 'Order created in Qikink system (Sandbox Dry-Run)',
           order_id: qikinkOrderId,
         },
       },
@@ -873,6 +1077,95 @@ export const sendOrderToQikink = async (orderId) => {
   };
 
   return await updateOrder(orderId, updates);
+};
+
+// Test Qikink API Credentials and Connectivity
+export const testQikinkConnection = async () => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/shop/orders/qikink/test-connection`, { timeout: 8000 });
+    return res.data;
+  } catch (err) {
+    try {
+      const localRes = await axios.get(`http://localhost:5000/shop/orders/qikink/test-connection`, { timeout: 5000 });
+      return localRes.data;
+    } catch {
+      return { success: false, message: err.response?.data?.message || err.message };
+    }
+  }
+};
+
+// Simulate incoming Qikink Webhook for tracking and delivery testing
+export const triggerQikinkWebhookSimulation = async (payload) => {
+  let backendSuccess = false;
+  let backendData = null;
+
+  try {
+    const res = await axios.post(`${BACKEND_URL}/shop/orders/qikink-webhook`, payload, { timeout: 8000 });
+    if (res.data?.success) {
+      backendSuccess = true;
+      backendData = res.data.data;
+    }
+  } catch (err) {
+    try {
+      const localRes = await axios.post(`http://localhost:5000/shop/orders/qikink-webhook`, payload, { timeout: 5000 });
+      if (localRes.data?.success) {
+        backendSuccess = true;
+        backendData = localRes.data.data;
+      }
+    } catch {}
+  }
+
+  if (backendSuccess && backendData) {
+    const normalized = normalizeCustomerOrder(backendData);
+    await updateOrder(payload.order_number, normalized);
+    return normalized;
+  }
+
+  // Fallback local update if backend is unreachable
+  const cleanId = String(payload.order_number || payload.order_id || '').replace(/^#/, '');
+  const order = await getOrderById(cleanId);
+  if (!order) throw new Error('Order not found');
+
+  const status = String(payload.status || '').toLowerCase();
+  const awb = payload.awb_number || payload.tracking_number || `BD-${Math.floor(10000000 + Math.random() * 90000000)}`;
+  const courier = payload.courier_name || 'BlueDart Express';
+  const now = new Date().toISOString();
+
+  let fulfillStatus = order.fulfillment?.status || 'Processing';
+  let qikinkStatus = payload.status || 'Dispatched';
+
+  if (status.includes('deliver')) {
+    fulfillStatus = 'Fulfilled';
+    qikinkStatus = 'Delivered';
+  } else if (status.includes('dispatch') || status.includes('shipped') || status.includes('transit')) {
+    fulfillStatus = 'Processing';
+    qikinkStatus = 'Dispatched';
+  }
+
+  const updates = {
+    fulfillment: {
+      ...order.fulfillment,
+      status: fulfillStatus,
+      qikink: {
+        ...(order.fulfillment?.qikink || {}),
+        status: qikinkStatus,
+        lastWebhookAt: now,
+      },
+      tracking: {
+        carrier: courier,
+        trackingNumber: awb,
+        trackingUrl: payload.tracking_url || `https://${courier.toLowerCase().replace(/\s+/g, '')}.com/track/${awb}`,
+        estimatedDelivery: payload.estimated_delivery || formatOrderDate(new Date(), 3),
+      },
+    },
+    timeline: {
+      ...order.timeline,
+      shipped: status.includes('dispatch') || status.includes('shipped') ? (order.timeline?.shipped || now) : order.timeline?.shipped,
+      delivered: status.includes('deliver') ? now : order.timeline?.delivered,
+    },
+  };
+
+  return await updateOrder(cleanId, updates);
 };
 
 // Manual override: Mark as Fulfilled with carrier & tracking
@@ -1011,6 +1304,11 @@ export const printPackingSlip = (order) => {
     ? 'Same as Shipping Address'
     : (order.billingAddress?.formatted ? order.billingAddress.formatted.replace(/\n/g, '<br/>') : shippingAddr);
 
+  const logoImage = order.companyProfile?.logoUrl || '/logo.svg';
+  const companyGst = order.companyProfile?.gstNumber || '03AABCI9821K1ZM';
+  const companyEmail = order.companyProfile?.contact?.email || 'support@infinitohq.com';
+  const companyWeb = order.companyProfile?.website || 'www.infinitocomics.com';
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -1020,7 +1318,7 @@ export const printPackingSlip = (order) => {
           * { box-sizing: border-box; }
           body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 40px; color: #1f2937; max-width: 850px; margin: 0 auto; background: #fff; }
           .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #DD1215; padding-bottom: 24px; margin-bottom: 28px; }
-          .logo-title { font-size: 32px; font-weight: 900; letter-spacing: 2px; color: #DD1215; line-height: 1; }
+          .logo-img { height: 46px; width: auto; max-width: 220px; object-fit: contain; margin-bottom: 6px; display: block; }
           .tagline { font-size: 11px; text-transform: uppercase; color: #6b7280; letter-spacing: 1.5px; margin-top: 4px; }
           .doc-badge { background: #fee2e2; color: #b91c1c; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase; display: inline-block; margin-bottom: 6px; }
           .meta-table { font-size: 13px; line-height: 1.6; text-align: right; }
@@ -1043,11 +1341,11 @@ export const printPackingSlip = (order) => {
       <body>
         <div class="header">
           <div>
-            <div class="logo-title">INFINITO</div>
+            <img src="${logoImage}" alt="Infinito Comics" class="logo-img" />
             <div class="tagline">Infinito Comics & Collectibles HQ</div>
             <div style="font-size: 12px; color: #4b5563; margin-top: 8px;">
-              GSTIN: <strong>03AABCI9821K1ZM</strong><br/>
-              Support: support@infinitohq.com | www.infinitohq.com
+              GSTIN: <strong>${companyGst}</strong><br/>
+              Support: ${companyEmail} | ${companyWeb}
             </div>
           </div>
           <div class="meta-table">

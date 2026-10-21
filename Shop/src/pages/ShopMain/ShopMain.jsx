@@ -19,6 +19,47 @@ const ShopMain = () => {
   const [products, setProducts] = useState([]);
   const [catsLoaded, setCatsLoaded] = useState(false);
   const [productsLoaded, setProductsLoaded] = useState(false);
+  const [promoIndex, setPromoIndex] = useState(0);
+  const [promoBannersList, setPromoBannersList] = useState(() => {
+    try {
+      const raw = localStorage.getItem("infinito_shop_banners");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.promoBanners) && parsed.promoBanners.length > 0) {
+          const enabled = parsed.promoBanners.filter((b) => b && b.isActive !== false);
+          if (enabled.length > 0) return enabled;
+        } else if (parsed.promoBanner && parsed.promoBanner.isActive !== false) {
+          return [parsed.promoBanner];
+        }
+      }
+    } catch { }
+    return [
+      {
+        id: "promo-1",
+        headline: "35% off",
+        subtitle: "on The Crimson Bloodline",
+        badgeText: "LIMITED EDITION DROP",
+        discountCode: "CRIMSON35",
+        buttonText: "Buy Now",
+        buttonLink: "/catalog",
+        bgImageUrl: promoBanner,
+        bgColor: "#800000",
+        isActive: true,
+      },
+      {
+        id: "promo-2",
+        headline: "FLAT 25% OFF",
+        subtitle: "on ALL COMIC BOOKS & PRINTS",
+        badgeText: "GRAPHIC NOVEL SPECIAL",
+        discountCode: "INFINITOVIP",
+        buttonText: "Explore Now",
+        buttonLink: "/catalog",
+        bgImageUrl: "/products/crimson_tshirt.jpg",
+        bgColor: "#111827",
+        isActive: true,
+      },
+    ];
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -50,6 +91,46 @@ const ShopMain = () => {
     };
   }, []);
 
+  // Auto rotate promo banners automatically every 4.5 seconds
+  useEffect(() => {
+    if (!promoBannersList || promoBannersList.length <= 1) return;
+    const timer = setInterval(() => {
+      setPromoIndex((prev) => (prev + 1) % promoBannersList.length);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, [promoBannersList.length]);
+
+  // Sync banners across tabs & Admin BroadcastChannel
+  useEffect(() => {
+    const reloadBanners = () => {
+      try {
+        const raw = localStorage.getItem("infinito_shop_banners");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed.promoBanners) && parsed.promoBanners.length > 0) {
+            const enabled = parsed.promoBanners.filter((b) => b && b.isActive !== false);
+            if (enabled.length > 0) {
+              setPromoBannersList(enabled);
+              return;
+            }
+          }
+        }
+      } catch { }
+    };
+
+    window.addEventListener("storage", reloadBanners);
+    let bc;
+    try {
+      bc = new BroadcastChannel("infinito_banners_channel");
+      bc.onmessage = () => reloadBanners();
+    } catch { }
+
+    return () => {
+      window.removeEventListener("storage", reloadBanners);
+      if (bc) bc.close();
+    };
+  }, []);
+
   const scroll = (ref, dir) => {
     if (!ref.current) return;
     ref.current.scrollBy({ left: dir * 320, behavior: "smooth" });
@@ -60,46 +141,106 @@ const ShopMain = () => {
       {/* ─── HERO SLIDER (3 slides) ─────────────────────────── */}
       <HeroSlider />
 
-      {/* ─── PROMO BANNER (Dynamic from Admin Marketing Management) ── */}
+      {/* ─── PROMO BANNERS (Multiple supported from Admin Marketing Management - Sized matching SS2) ── */}
       {(() => {
-        let dynamicPromo = null;
-        try {
-          const raw = localStorage.getItem("infinito_shop_banners");
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            if (parsed.promoBanner && parsed.promoBanner.isActive !== false) {
-              dynamicPromo = parsed.promoBanner;
-            }
-          }
-        } catch {}
-
-        if (dynamicPromo && dynamicPromo.isActive === false) return null;
+        const promoList = promoBannersList;
+        const currentPromo = promoList[promoIndex % promoList.length] || promoList[0];
 
         return (
-          <section className="max-w-[1200px] mx-auto px-4 md:px-12 py-10">
-            <div className="relative w-full">
-              <img
-                src={dynamicPromo?.bgImageUrl || promoBanner}
-                alt=""
-                aria-hidden="true"
-                className="block w-full h-auto"
-              />
-              <div className="absolute inset-0 flex items-center pl-[5%] pr-[50%] text-white">
-                <div>
-                  <h2 className="text-2xl sm:text-3xl md:text-5xl font-black uppercase tracking-wider font-['Dharma_Gothic_E',_'Bebas_Neue',_sans-serif] drop-shadow-lg">
-                    {dynamicPromo?.headline || "35% off"}
-                  </h2>
-                  <p className="mt-1 md:mt-2 text-[10px] sm:text-xs md:text-sm uppercase tracking-wide font-dmsans">
-                    {dynamicPromo?.subtitle || "on The Crimson Bloodline"}
-                  </p>
-                  <button
-                    onClick={() => navigate(dynamicPromo?.buttonLink || "/shop/catalog")}
-                    className="mt-3 md:mt-5 px-4 md:px-8 py-1.5 md:py-2.5 bg-[#DD1215] hover:bg-red-700 text-white text-[10px] sm:text-xs md:text-sm font-semibold uppercase tracking-wide transition font-dmsans cursor-pointer"
+          <section className="py-8 md:py-10">
+            <div className="max-w-[1200px] mx-auto px-4 md:px-12 flex items-center justify-center gap-3 md:gap-5">
+              {/* Navigation button left */}
+              <button
+                type="button"
+                onClick={() => setPromoIndex((prev) => (prev - 1 + promoList.length) % promoList.length)}
+                aria-label="Previous promo"
+                className="w-8 h-8 md:w-9 md:h-9 bg-white border border-gray-300 rounded hover:border-gray-500 hover:text-black text-gray-500 flex items-center justify-center transition shadow-sm shrink-0 cursor-pointer"
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              {/* Exact Responsive Promo Banner - image fills container completely */}
+              {(() => {
+                const bannerImg = currentPromo?.bgImageUrl || promoBanner;
+                const isRight = currentPromo?.alignment === "right";
+                const isCenter = currentPromo?.alignment === "center";
+
+                return (
+                  <div
+                    className="relative w-full max-w-[840px] min-h-[170px] sm:min-h-[190px] md:min-h-[210px] rounded-xl overflow-hidden shadow-md flex items-center bg-black shrink-0"
+                    style={{
+                      backgroundColor: currentPromo?.bgColor || "#800000",
+                    }}
                   >
-                    {dynamicPromo?.buttonText || "Buy Now"}
-                  </button>
-                </div>
-              </div>
+                    {/* The image fills the size of the banner container */}
+                    {bannerImg && (
+                      <img
+                        src={bannerImg}
+                        alt={currentPromo?.headline || "Promotional Banner"}
+                        className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none transition-all duration-300 scale-[1.08] min-w-full min-h-full"
+                      />
+                    )}
+
+                    {/* Gradient scrim to maintain text readability while artwork remains bright */}
+                    <div className={`absolute inset-0 pointer-events-none ${
+                      isRight
+                        ? "bg-gradient-to-l from-black/85 via-black/40 to-transparent"
+                        : isCenter
+                        ? "bg-black/55"
+                        : "bg-gradient-to-r from-black/85 via-black/40 to-transparent"
+                    }`} />
+
+                    {/* Content overlaid on banner matching slider aesthetic */}
+                    <div className={`relative z-10 px-6 sm:px-8 md:px-10 py-4 max-w-[70%] sm:max-w-[60%] space-y-1 text-white ${
+                      isRight ? "ml-auto text-right" : isCenter ? "mx-auto text-center" : "text-left"
+                    }`}>
+                      {(currentPromo?.badgeText || currentPromo?.discountCode) && (
+                        <div className={`flex items-center gap-2 ${
+                          isRight ? "justify-end" : isCenter ? "justify-center" : "justify-start"
+                        }`}>
+                          <span className="inline-block bg-black/70 text-[#DD1215] text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded">
+                            {currentPromo.badgeText || currentPromo.discountCode}
+                          </span>
+                        </div>
+                      )}
+                      <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight uppercase text-white drop-shadow font-sans">
+                        {currentPromo?.headline || "35% off"}
+                      </h2>
+                      <p className="text-[11px] sm:text-xs md:text-sm font-semibold tracking-wide text-gray-200 uppercase drop-shadow">
+                        {currentPromo?.subtitle || "on The Crimson Bloodline"}
+                      </p>
+                      <div className={`pt-2 flex ${
+                        isRight ? "justify-end" : isCenter ? "justify-center" : "justify-start"
+                      }`}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const link = currentPromo?.buttonLink || "/catalog";
+                            if (link.startsWith("http")) {
+                              window.location.href = link;
+                            } else {
+                              navigate(link);
+                            }
+                          }}
+                          className="px-4 sm:px-5 py-1.5 sm:py-2 bg-[#DD1215] hover:bg-red-700 text-white text-xs font-bold uppercase tracking-wider rounded transition cursor-pointer shadow-sm"
+                        >
+                          {currentPromo?.buttonText || "Buy Now"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Navigation button right */}
+              <button
+                type="button"
+                onClick={() => setPromoIndex((prev) => (prev + 1) % promoList.length)}
+                aria-label="Next promo"
+                className="w-8 h-8 md:w-9 md:h-9 bg-white border border-gray-300 rounded hover:border-gray-500 hover:text-black text-gray-500 flex items-center justify-center transition shadow-sm shrink-0 cursor-pointer"
+              >
+                <ChevronRight size={18} />
+              </button>
             </div>
           </section>
         );

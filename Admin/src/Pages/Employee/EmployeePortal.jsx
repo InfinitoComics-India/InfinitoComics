@@ -5,8 +5,14 @@ import {
   Clock, CheckCircle, AlertTriangle, CalendarOff, IndianRupee,
   Target, FileText, User, Send, Loader, LogIn, LogOut as LogOutIcon,
   ClipboardList, Headphones, TrendingUp, Lock, MessageCircle, Inbox,
-  SendHorizonal, Trash2, Plus, X, ChevronDown
+  SendHorizonal, Trash2, Plus, X, ChevronDown, ShoppingBag, Package,
+  FolderOpen, BarChart3, Sparkles, Building2, ExternalLink, ArrowRight,
+  ShieldCheck, RefreshCw, Check, Video
 } from "lucide-react";
+import { isEmployeeShopAllowed } from "../../services/shopServices/shopAccessService";
+import { getAllProducts } from "../../services/shopServices/productService";
+import { getAllCategories } from "../../services/shopServices/categoryService";
+import { getAllOrders } from "../../services/shopServices/orderService";
 
 const BASE = import.meta.env.VITE_BASE_URL;
 const auth = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` } });
@@ -22,7 +28,11 @@ const STATUS_COLORS = {
   weekend:  "bg-gray-100 text-gray-400",
 };
 const fmt      = (d) => d ? new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "—";
-const fmtTime  = (d) => d ? new Date(d).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}) : "—";
+const fmtTime  = (d) => {
+  if (!d) return "—";
+  // Browser automatically converts UTC to local timezone (IST for Indian users)
+  return new Date(d).toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit", hour12:true });
+};
 const fmtShort = (d) => d ? new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short"}) : "—";
 const fmtAgo   = (d) => {
   if (!d) return "";
@@ -44,6 +54,7 @@ const getCountdown = () => {
 const TABS = [
   { key:"attendance",  label:"Attendance",  icon:Clock          },
   { key:"worklog",     label:"Work Log",     icon:ClipboardList  },
+  { key:"meetings",    label:"Meetings",     icon:Video          },
   { key:"leave",       label:"My Leave",     icon:CalendarOff    },
   { key:"payslips",    label:"Payslips",     icon:IndianRupee    },
   { key:"goals",       label:"My Goals",     icon:Target         },
@@ -60,15 +71,94 @@ const EmployeePortal = () => {
   const myName   = admin?.name || admin?.email?.split("@")[0] || "Employee";
   const myEmail  = admin?.email || "";
   const location = useLocation();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Read tab from URL search param ?tab=xxx, fallback to "attendance"
   const tab = searchParams.get("tab") || "attendance";
-  const setTab = () => {}; // navigation handled by sidebar links
+  const setTab = (newTab) => {
+    setSearchParams({ tab: newTab });
+  };
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState("");
   const [success,    setSuccess]    = useState("");
   const [countdown,  setCountdown]  = useState(getCountdown());
+
+  // Shop Access state & metrics
+  const [empHasShopAccess, setEmpHasShopAccess] = useState(() => isEmployeeShopAllowed(myEmail, admin));
+  const [shopMetrics, setShopMetrics] = useState({
+    products: 0,
+    categories: 0,
+    orders: 0,
+    loading: false,
+    loaded: false,
+  });
+
+  const loadShopMetrics = async () => {
+    try {
+      setShopMetrics((prev) => ({ ...prev, loading: true }));
+      const [prodRes, catRes, ordersRes] = await Promise.allSettled([
+        getAllProducts(),
+        getAllCategories(),
+        getAllOrders(),
+      ]);
+
+      const prods = prodRes.status === "fulfilled"
+        ? (Array.isArray(prodRes.value?.data?.data) ? prodRes.value.data.data : (Array.isArray(prodRes.value?.data) ? prodRes.value.data : []))
+        : [];
+      const cats = catRes.status === "fulfilled"
+        ? (Array.isArray(catRes.value?.data?.data) ? catRes.value.data.data : (Array.isArray(catRes.value?.data) ? catRes.value.data : []))
+        : [];
+      const ords = ordersRes.status === "fulfilled"
+        ? (Array.isArray(ordersRes.value) ? ordersRes.value : [])
+        : [];
+
+      setShopMetrics({
+        products: prods.length,
+        categories: cats.length,
+        orders: ords.length,
+        loading: false,
+        loaded: true,
+      });
+    } catch {
+      setShopMetrics((prev) => ({ ...prev, loading: false, loaded: true }));
+    }
+  };
+
+  useEffect(() => {
+    const checkLiveAccess = () => {
+      const curAdmin = JSON.parse(localStorage.getItem("Admin") || "{}");
+      const allowed = isEmployeeShopAllowed(curAdmin?.email || myEmail, curAdmin);
+      setEmpHasShopAccess(allowed);
+    };
+
+    window.addEventListener("storage", checkLiveAccess);
+    window.addEventListener("focus", checkLiveAccess);
+
+    let bc;
+    try {
+      bc = new BroadcastChannel("infinito_shop_access_channel");
+      bc.onmessage = () => {
+        checkLiveAccess();
+      };
+    } catch {}
+
+    return () => {
+      window.removeEventListener("storage", checkLiveAccess);
+      window.removeEventListener("focus", checkLiveAccess);
+      if (bc) bc.close();
+    };
+  }, [myEmail]);
+
+  useEffect(() => {
+    if (empHasShopAccess && (tab === "shop" || !shopMetrics.loaded)) {
+      loadShopMetrics();
+    }
+  }, [empHasShopAccess, tab]);
+
+  const availableTabs = [
+    ...TABS,
+    ...(empHasShopAccess ? [{ key: "shop", label: "Shop Section", icon: ShoppingBag, badge: "Full Access" }] : []),
+  ];
 
   // Attendance state
   const [todayAttd,  setTodayAttd]  = useState(null);
@@ -83,6 +173,8 @@ const EmployeePortal = () => {
   const [workDesc,   setWorkDesc]   = useState("");
   const [workHours,  setWorkHours]  = useState("");
   const [workSaving, setWorkSaving] = useState(false);
+  const [proofFiles, setProofFiles] = useState([]); // File objects selected by user
+  const [proofPreviews, setProofPreviews] = useState([]); // local preview URLs
 
   // Leave state
   const [leaves,     setLeaves]     = useState([]);
@@ -130,11 +222,14 @@ const EmployeePortal = () => {
   // Profile state
   const [profile,      setProfile]      = useState(null);
   const [profileForm,  setProfileForm]  = useState({
-    phone:"", dateOfBirth:"", gender:"", address:"",
-    bankName:"", accountHolder:"", accountNumber:"", ifscCode:"",
+    phone:"", dateOfBirth:"", gender:"", fatherName:"", motherName:"",
+    addressLine1:"", addressLine2:"", city:"", country:"India", zipCode:"",
+    bankName:"", accountHolder:"", accountNumber:"", confirmAccountNumber:"", ifscCode:"", swiftCode:"",
     emergencyContact: { name:"", phone:"", relation:"" }
   });
   const [profileSaving, setProfileSaving] = useState(false);
+  const [kycDocs, setKycDocs] = useState({ aadhaarFront:null, aadhaarBack:null, panFront:null });
+  const [kycPreviews, setKycPreviews] = useState({ aadhaarFront:"", aadhaarBack:"", panFront:"" });
 
   useEffect(() => {
     const t = setInterval(() => setCountdown(getCountdown()), 30000);
@@ -153,13 +248,21 @@ const EmployeePortal = () => {
     if (tab === "performance") loadPerformance();
     if (tab === "messages")    { loadInbox(); loadSentMsgs(); loadContacts(); loadMsgUnread(); }
     if (tab === "profile")     loadProfile();
+    if (tab === "shop")        loadShopMetrics();
   }, [tab]);
+
+  // Always load today's work log on mount so review alert shows on any tab
+  useEffect(() => { loadMyLog(); }, []);
 
   useEffect(() => { if (tab === "attendance") loadMonthlyAttd(); }, [attdMonth, attdYear]);
 
   // ── Loaders ──────────────────────────────────────────────────
   const loadTodayAttd = async () => {
-    try { const r = await axios.get(`${BASE}/hr/attendance/me/today`, auth()); setTodayAttd(r.data.data); } catch {}
+    try {
+      // Add timestamp to bust browser cache (304 Not Modified issue)
+      const r = await axios.get(`${BASE}/hr/attendance/me/today?_t=${Date.now()}`, auth());
+      setTodayAttd(r.data.data);
+    } catch {}
   };
   const loadMonthlyAttd = async () => {
     try { const r = await axios.get(`${BASE}/hr/attendance/me/monthly`, { ...auth(), params:{ year:attdYear, month:attdMonth } }); setMonthlyAttd(r.data.data||[]); } catch {}
@@ -169,11 +272,51 @@ const EmployeePortal = () => {
       const r = await axios.get(`${BASE}/hr/worklog/my/today`, auth());
       const log = r.data.data;
       setMyLog(log);
-      if (log && !log.isLocked) { setWorkDesc(log.workDescription||""); setWorkHours(log.hoursWorked?.toString()||""); }
+      if (log && !log.isLocked) {
+        setWorkDesc(log.workDescription||"");
+        // Use attendance hours if work log hours are 0 or not set
+        const logHours = log.hoursWorked || 0;
+        if (logHours > 0) {
+          setWorkHours(logHours.toString());
+        } else {
+          // Try to get hours from today's attendance
+          try {
+            const attRes = await axios.get(`${BASE}/hr/attendance/me/today?_t=${Date.now()}`, auth());
+            const attRec = attRes.data.data;
+            const attHours = attRec?.totalHours || attRec?.hoursWorked || 0;
+            if (attHours > 0) setWorkHours(attHours.toFixed(2));
+          } catch {}
+        }
+      }
     } catch {}
   };
   const loadWorkHistory = async () => {
-    try { const r = await axios.get(`${BASE}/hr/worklog/my/history`, auth()); setWorkHistory(r.data.data||[]); } catch {}
+    let list = [];
+    try {
+      const r = await axios.get(`${BASE}/hr/worklog/my/history`, auth());
+      list = r.data.data || [];
+    } catch {}
+
+    try {
+      const raw = localStorage.getItem("infinito_daily_worklogs_store");
+      if (raw) {
+        const stored = JSON.parse(raw);
+        if (Array.isArray(stored)) {
+          stored.forEach(s => {
+            const sDateStr = s.date ? new Date(s.date).toDateString() : '';
+            const existingIdx = list.findIndex(item => item._id === s._id || (item.date && new Date(item.date).toDateString() === sDateStr));
+            if (existingIdx === -1) {
+              list.push(s);
+            } else if (!list[existingIdx].workDescription || list[existingIdx].status === "auto_leave") {
+              list[existingIdx] = { ...list[existingIdx], ...s };
+            }
+          });
+        }
+      }
+    } catch {}
+
+    list.sort((a,b) => new Date(b.date) - new Date(a.date));
+    setWorkHistory(list);
   };
   const loadLeaves = async () => {
     try { const r = await axios.get(`${BASE}/hr/leaves/employee/${myId}`, auth()); setLeaves(r.data.data||[]); } catch {}
@@ -230,11 +373,19 @@ const EmployeePortal = () => {
         phone:        d.phone || "",
         dateOfBirth:  d.dateOfBirth ? d.dateOfBirth.split("T")[0] : "",
         gender:       d.gender || "",
-        address:      d.address || "",
+        fatherName:   d.fatherName || "",
+        motherName:   d.motherName || "",
+        addressLine1: d.addressLine1 || d.address || "",
+        addressLine2: d.addressLine2 || "",
+        city:         d.city || "",
+        country:      d.country || "India",
+        zipCode:      d.zipCode || "",
         bankName:     d.bankName || "",
         accountHolder:d.accountHolder || "",
         accountNumber:d.accountNumber || "",
+        confirmAccountNumber: d.accountNumber || "",
         ifscCode:     d.ifscCode || "",
+        swiftCode:    d.swiftCode || "",
         emergencyContact: {
           name:     d.emergencyContact?.name || "",
           phone:    d.emergencyContact?.phone || "",
@@ -259,14 +410,17 @@ const EmployeePortal = () => {
   const handleClockIn = async () => {
     try { setClocking(true); setError(""); setSuccess("");
       const r = await axios.post(`${BASE}/hr/attendance/me/clockin`, {}, auth());
-      setTodayAttd(r.data.data);
+      // Use response data directly — don't rely on /me/today which may be cached/stale
+      if (r.data.data) setTodayAttd(r.data.data);
+      else await loadTodayAttd();
       setSuccess("✅ Clocked in successfully!");
     } catch (e) { setError(e.response?.data?.message||"Failed to clock in."); } finally { setClocking(false); }
   };
   const handleClockOut = async () => {
     try { setClocking(true); setError(""); setSuccess("");
       const r = await axios.post(`${BASE}/hr/attendance/me/clockout`, {}, auth());
-      setTodayAttd(r.data.data);
+      if (r.data.data) setTodayAttd(r.data.data);
+      else await loadTodayAttd();
       setSuccess("✅ Clocked out successfully!");
     } catch (e) { setError(e.response?.data?.message||"Failed to clock out."); } finally { setClocking(false); }
   };
@@ -274,11 +428,23 @@ const EmployeePortal = () => {
   const handleWorkSubmit = async (e) => {
     e.preventDefault();
     if (!workDesc.trim()) { setError("Work description required."); return; }
-    if (!workHours || parseFloat(workHours)<=0) { setError("Enter valid hours."); return; }
+    if (!workHours || parseFloat(workHours) <= 0) { setError("Enter valid hours."); return; }
+    // Mandatory: at least 1 proof image if not already submitted
+    if (!myLog && proofFiles.length === 0) { setError("Please upload at least 1 screenshot as proof of work."); return; }
     try { setWorkSaving(true); setError(""); setSuccess("");
-      const r = await axios.post(`${BASE}/hr/worklog/submit`, { workDescription:workDesc.trim(), hoursWorked:parseFloat(workHours) }, auth());
-      setMyLog(r.data.data); setSuccess(myLog?"✅ Updated!":"✅ Submitted!"); loadWorkHistory();
-    } catch (e) { setError(e.response?.data?.message||"Failed."); } finally { setWorkSaving(false); }
+      const fd = new FormData();
+      fd.append("workDescription", workDesc.trim());
+      fd.append("hoursWorked", parseFloat(workHours));
+      proofFiles.forEach(f => fd.append("proofImages", f));
+      const r = await axios.post(`${BASE}/hr/worklog/submit`, fd, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}`, "Content-Type": "multipart/form-data" }
+      });
+      setMyLog(r.data.data);
+      setProofFiles([]);
+      setProofPreviews([]);
+      setSuccess(myLog ? "✅ Updated!" : "✅ Submitted!");
+      loadWorkHistory();
+    } catch (e) { setError(e.response?.data?.message || "Failed."); } finally { setWorkSaving(false); }
   };
 
   const handleApplyLeave = async () => {
@@ -336,127 +502,200 @@ const EmployeePortal = () => {
           <h1 className="text-xl font-black tracking-widest text-gray-900">EMPLOYEE PORTAL</h1>
           <p className="text-xs text-gray-400 mt-0.5">Welcome, <strong>{myName}</strong> · {myEmail}</p>
         </div>
-        <div className="text-xs text-gray-500 font-semibold">{timeStr} IST</div>
+        <div className="flex items-center gap-3">
+          {empHasShopAccess && (
+            <button
+              onClick={() => setTab("shop")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition shadow-xs cursor-pointer ${
+                tab === "shop"
+                  ? "bg-[#DD1215] text-white"
+                  : "bg-red-50 hover:bg-red-100 text-[#DD1215] border border-red-200"
+              }`}
+            >
+              <ShoppingBag size={14} />
+              <span>Full Shop Access Active</span>
+            </button>
+          )}
+          <div className="text-xs text-gray-500 font-semibold">{timeStr} IST</div>
+        </div>
       </div>
 
       {/* Tab bar */}
+      <div className="bg-white border-b px-6 overflow-x-auto scrollbar-none shadow-xs">
+        <div className="flex items-center gap-1.5 min-w-max py-2.5">
+          {availableTabs.map((t) => {
+            const Icon = t.icon;
+            const isActive = tab === t.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setTab(t.key)}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                  isActive
+                    ? "bg-[#DD1215] text-white shadow-sm"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                }`}
+              >
+                <Icon size={14} className={isActive ? "text-white" : "text-gray-500"} />
+                <span>{t.label}</span>
+                {t.badge && (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-black uppercase tracking-wider ${
+                    isActive ? "bg-white text-[#DD1215]" : "bg-red-50 text-red-600 border border-red-200"
+                  }`}>
+                    {t.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       <div className="max-w-5xl mx-auto px-6 py-6 space-y-5">
         {error   && <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded flex items-center gap-2"><AlertTriangle size={14}/>{error}<button onClick={()=>setError("")} className="ml-auto text-red-400 hover:text-red-700">✕</button></div>}
         {success && <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded">{success}</div>}
 
+        {/* ── Global Work Log Review Alert — shows only on attendance & worklog tabs ── */}
+        {(tab === "attendance" || tab === "worklog") && myLog?.reviewStatus === "rejected" && (
+          <button onClick={() => setTab("worklog")}
+            className="w-full bg-red-600 text-white px-4 py-3 rounded-lg flex items-center gap-3 hover:bg-red-700 transition text-left">
+            <span className="text-xl shrink-0">❌</span>
+            <div className="flex-1">
+              <p className="font-black text-sm">Your work log was marked — Redo Required</p>
+              {myLog.reviewComment && <p className="text-xs text-red-200 mt-0.5">"{myLog.reviewComment}" — {myLog.reviewerName || "Admin"}</p>}
+            </div>
+            <span className="text-xs font-bold uppercase tracking-wide bg-white text-red-600 px-3 py-1 rounded shrink-0">View →</span>
+          </button>
+        )}
+        {(tab === "attendance" || tab === "worklog") && myLog?.reviewStatus === "needs_improvement" && (
+          <button onClick={() => setTab("worklog")}
+            className="w-full bg-yellow-500 text-white px-4 py-3 rounded-lg flex items-center gap-3 hover:bg-yellow-600 transition text-left">
+            <span className="text-xl shrink-0">⚠️</span>
+            <div className="flex-1">
+              <p className="font-black text-sm">Your work log needs improvement</p>
+              {myLog.reviewComment && <p className="text-xs text-yellow-100 mt-0.5">"{myLog.reviewComment}" — {myLog.reviewerName || "Admin"}</p>}
+            </div>
+            <span className="text-xs font-bold uppercase tracking-wide bg-white text-yellow-600 px-3 py-1 rounded shrink-0">View →</span>
+          </button>
+        )}
+
         {/* ── ATTENDANCE ── */}
         {tab === "attendance" && (
           <div className="space-y-5">
-            {/* Clock in/out card */}
-            <div className="bg-white border rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Today — {fmt(new Date())}</p>
+
+            {/* ── Clock In/Out Card ── */}
+            <div className="bg-white border rounded-xl p-6 space-y-4">
+
+              {/* Header row */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-black text-gray-900">Today — {new Date().toLocaleDateString("en-IN",{weekday:"long",day:"2-digit",month:"long",year:"numeric"})}</p>
+                </div>
                 {todayAttd && (
                   <div className="flex items-center gap-3">
-                    {/* Total hours badge */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5 text-center">
-                      <p className="text-[10px] text-blue-500 font-bold uppercase">Total Hours</p>
-                      <p className="text-lg font-black text-blue-700">{(todayAttd.totalHours || todayAttd.hoursWorked || 0).toFixed(1)}h</p>
+                    <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-2 text-center">
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-blue-400">Total Hours</p>
+                      <p className="text-xl font-black text-blue-700 leading-none mt-0.5">
+                        {Number(todayAttd.totalHours || todayAttd.hoursWorked || 0).toFixed(1)}h
+                      </p>
                     </div>
-                    {/* Status badge */}
                     <span className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize ${STATUS_COLORS[todayAttd.status]||"bg-gray-100 text-gray-600"}`}>
-                      {todayAttd.status?.replace("_"," ")}
+                      {(todayAttd.status||"").replace("_"," ")||"Present"}
                     </span>
                   </div>
                 )}
               </div>
 
-              {/* Sessions list */}
-              {todayAttd?.sessions?.length > 0 ? (
-                <div className="space-y-2 mb-4">
-                  {todayAttd.sessions.map((s, i) => (
-                    <div key={i} className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-2.5 text-xs">
-                      <span className="w-6 h-6 rounded-full bg-[#DD1215] text-white flex items-center justify-center font-black text-[10px] shrink-0">{i+1}</span>
-                      <div className="flex-1">
-                        <span className="text-green-700 font-bold">IN: {fmtTime(s.clockIn)}</span>
-                        {s.clockOut ? (
-                          <span className="text-red-600 font-bold ml-4">OUT: {fmtTime(s.clockOut)}</span>
-                        ) : (
-                          <span className="text-yellow-600 font-semibold ml-4 animate-pulse">● Currently working</span>
-                        )}
+              {/* Sessions */}
+              {(() => {
+                // Unify sessions array + legacy single clockIn/clockOut into one list
+                let sessions = [];
+                if (todayAttd?.sessions?.length > 0) {
+                  sessions = todayAttd.sessions;
+                } else if (todayAttd?.clockIn) {
+                  sessions = [{ clockIn: todayAttd.clockIn, clockOut: todayAttd.clockOut || null, hoursWorked: todayAttd.hoursWorked || 0 }];
+                }
+
+                if (sessions.length === 0) {
+                  return (
+                    <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-5 py-4">
+                      <Clock size={24} className="text-gray-300"/>
+                      <div>
+                        <p className="font-black text-gray-800">Not clocked in yet</p>
+                        <p className="text-xs text-gray-400 mt-0.5">Click Clock In to start your work session</p>
                       </div>
-                      {s.clockOut && <span className="text-gray-500 font-semibold">{s.hoursWorked}h</span>}
                     </div>
-                  ))}
-                  {/* 4hr progress bar */}
-                  <div className="mt-2">
-                    <div className="flex justify-between text-[10px] text-gray-400 mb-1">
-                      <span>Daily target</span>
-                      <span>{Math.min((todayAttd.totalHours||0), 4).toFixed(1)}h / 4h</span>
+                  );
+                }
+
+                const totalHrs = sessions.reduce((sum, s) => sum + Number(s.hoursWorked || 0), 0);
+                const pct = Math.min((totalHrs / 4) * 100, 100);
+
+                return (
+                  <div className="space-y-2">
+                    {sessions.map((s, i) => {
+                      const inTime  = s.clockIn  ? new Date(s.clockIn).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}) : "—";
+                      const outTime = s.clockOut ? new Date(s.clockOut).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}) : null;
+                      return (
+                        <div key={i} className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3">
+                          <div className="w-7 h-7 rounded-full bg-[#DD1215] text-white flex items-center justify-center text-xs font-black shrink-0">{i+1}</div>
+                          <div className="flex-1">
+                            <span className="text-green-700 font-bold text-sm">IN: {inTime}</span>
+                            {outTime
+                              ? <span className="text-red-600 font-bold text-sm ml-4">OUT: {outTime}</span>
+                              : <span className="text-yellow-600 text-sm ml-4 animate-pulse font-semibold">● Working now</span>
+                            }
+                          </div>
+                          {outTime && (
+                            <span className="text-xs text-gray-500 font-semibold">{Number(s.hoursWorked||0).toFixed(2)}h</span>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {/* Progress toward 4h */}
+                    <div className="pt-2">
+                      <div className="flex justify-between text-[10px] text-gray-400 mb-1">
+                        <span>Daily target (4h for Present)</span>
+                        <span>{totalHrs.toFixed(1)}h / 4h</span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-2.5">
+                        <div className={`h-2.5 rounded-full transition-all duration-500 ${pct >= 100 ? "bg-green-500" : "bg-yellow-400"}`} style={{width:`${pct}%`}}/>
+                      </div>
+                      <p className={`text-[11px] font-semibold mt-1 ${pct >= 100 ? "text-green-600" : "text-yellow-600"}`}>
+                        {pct >= 100 ? "✅ Present — daily target met!" : `⚠️ ${(4-totalHrs).toFixed(1)}h more to reach Present status`}
+                      </p>
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2">
-                      <div className={`h-2 rounded-full transition-all ${(todayAttd.totalHours||0) >= 4 ? "bg-green-500" : "bg-yellow-400"}`}
-                        style={{width:`${Math.min(((todayAttd.totalHours||0)/4)*100,100)}%`}}/>
-                    </div>
-                    {(todayAttd.totalHours||0) >= 4
-                      ? <p className="text-[10px] text-green-600 font-bold mt-1">✅ Present — 4h target met</p>
-                      : <p className="text-[10px] text-yellow-600 mt-1">⚠️ {(4-(todayAttd.totalHours||0)).toFixed(1)}h more for Present (Half Day currently)</p>
-                    }
                   </div>
-                </div>
-              ) : todayAttd?.clockIn ? (
-                // Legacy single session display
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-2.5 text-xs">
-                    <span className="w-6 h-6 rounded-full bg-[#DD1215] text-white flex items-center justify-center font-black text-[10px] shrink-0">1</span>
-                    <div className="flex-1">
-                      <span className="text-green-700 font-bold">IN: {fmtTime(todayAttd.clockIn)}</span>
-                      {todayAttd.clockOut ? (
-                        <span className="text-red-600 font-bold ml-4">OUT: {fmtTime(todayAttd.clockOut)}</span>
-                      ) : (
-                        <span className="text-yellow-600 font-semibold ml-4 animate-pulse">● Currently working</span>
-                      )}
-                    </div>
-                    {todayAttd.clockOut && (
-                      <span className="text-gray-500 font-semibold">{todayAttd.hoursWorked}h</span>
-                    )}
-                  </div>
-                </div>
-              ) : !todayAttd ? (
-                <div className="flex items-center gap-2 text-gray-400 mb-4">
-                  <Clock size={20}/>
-                  <div><p className="font-black text-gray-700">Not Clocked In</p><p className="text-xs">Tap Clock In to start your session</p></div>
-                </div>
-              ) : null}
+                );
+              })()}
 
               {/* Buttons */}
-              <div className="flex gap-3 flex-wrap">
-                {(() => {
-                  const sessions = todayAttd?.sessions || [];
-                  const lastSession = sessions[sessions.length - 1];
-                  // Check sessions array OR legacy clockIn/clockOut fields
-                  const isCurrentlyIn = 
-                    (sessions.length > 0 && !lastSession?.clockOut) ||
-                    (sessions.length === 0 && todayAttd?.clockIn && !todayAttd?.clockOut);
-                  if (isCurrentlyIn) {
-                    return (
+              {(() => {
+                const sessions = todayAttd?.sessions || [];
+                const last = sessions[sessions.length - 1];
+                const clocked_in =
+                  sessions.some(s => s.clockIn && !s.clockOut) ||
+                  (sessions.length === 0 && !!todayAttd?.clockIn && !todayAttd?.clockOut);
+                const had_session = sessions.length > 0 || !!todayAttd?.clockOut;
+                return (
+                  <div className="flex items-center gap-3 pt-2 flex-wrap">
+                    {clocked_in ? (
                       <button onClick={handleClockOut} disabled={clocking}
-                        className="flex items-center gap-2 bg-red-600 text-white px-6 py-3 text-xs font-black uppercase tracking-widest hover:bg-red-700 transition disabled:opacity-50 rounded-lg">
-                        <LogOutIcon size={16}/> {clocking ? "Clocking Out..." : "Clock Out"}
+                        className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-7 py-3 rounded-xl text-sm font-black uppercase tracking-wider transition disabled:opacity-50">
+                        <LogOutIcon size={16}/>{clocking ? "Clocking Out..." : "Clock Out"}
                       </button>
-                    );
-                  }
-                  const hasAnySessions = sessions.length > 0 || todayAttd?.clockOut;
-                  return (
-                    <button onClick={handleClockIn} disabled={clocking}
-                      className="flex items-center gap-2 bg-green-600 text-white px-6 py-3 text-xs font-black uppercase tracking-widest hover:bg-green-700 transition disabled:opacity-50 rounded-lg">
-                      <LogIn size={16}/> {clocking ? "Clocking In..." : hasAnySessions ? "Clock In Again" : "Clock In"}
-                    </button>
-                  );
-                })()}
-                {todayAttd && (
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
-                    {todayAttd.isLate && <span className="text-yellow-600 font-semibold">⚠️ Late by {todayAttd.lateByMinutes} mins</span>}
-                    <span>{(todayAttd.sessions||[]).length} session{(todayAttd.sessions||[]).length !== 1 ? "s" : ""} today</span>
+                    ) : (
+                      <button onClick={handleClockIn} disabled={clocking}
+                        className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-7 py-3 rounded-xl text-sm font-black uppercase tracking-wider transition disabled:opacity-50">
+                        <LogIn size={16}/>{clocking ? "Clocking In..." : had_session ? "Clock In Again" : "Clock In"}
+                      </button>
+                    )}
+                    <span className="text-xs text-gray-400">{sessions.length} session{sessions.length!==1?"s":""} today</span>
                   </div>
-                )}
-              </div>
+                );
+              })()}
             </div>
 
             {/* Monthly calendar */}
@@ -505,11 +744,40 @@ const EmployeePortal = () => {
             <div className="lg:col-span-2 bg-white border rounded-xl overflow-hidden">
               <div className="bg-gray-900 text-white px-6 py-4 flex items-center justify-between">
                 <div><p className="font-black text-lg">{fmt(new Date())}</p><p className="text-xs text-gray-400">Your daily work update</p></div>
-                {workLocked && <div className="flex items-center gap-1.5 bg-red-900/50 text-red-300 px-3 py-1.5 rounded text-xs font-semibold"><Lock size={12}/>Locked</div>}
-                {isAutoLeave && <div className="flex items-center gap-1.5 bg-orange-900/50 text-orange-300 px-3 py-1.5 rounded text-xs font-semibold"><AlertTriangle size={12}/>Auto Leave — Submit to override</div>}
-                {workSubmitted && !workLocked && !isAutoLeave && <div className="flex items-center gap-1.5 bg-green-900/50 text-green-300 px-3 py-1.5 rounded text-xs font-semibold"><CheckCircle size={12}/>Submitted {fmtTime(myLog.submittedAt)}</div>}
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  {workLocked && <div className="flex items-center gap-1.5 bg-red-900/50 text-red-300 px-3 py-1.5 rounded text-xs font-semibold"><Lock size={12}/>Locked</div>}
+                  {isAutoLeave && <div className="flex items-center gap-1.5 bg-orange-900/50 text-orange-300 px-3 py-1.5 rounded text-xs font-semibold"><AlertTriangle size={12}/>Auto Leave — Submit to override</div>}
+                  {workSubmitted && !workLocked && !isAutoLeave && <div className="flex items-center gap-1.5 bg-green-900/50 text-green-300 px-3 py-1.5 rounded text-xs font-semibold"><CheckCircle size={12}/>Submitted {fmtTime(myLog.submittedAt)}</div>}
+                  {/* Review status badge */}
+                  {myLog?.reviewStatus === "approved" && (
+                    <div className="flex items-center gap-1.5 bg-green-700/60 text-green-200 px-3 py-1.5 rounded text-xs font-bold">✅ Approved</div>
+                  )}
+                  {myLog?.reviewStatus === "needs_improvement" && (
+                    <div className="flex items-center gap-1.5 bg-yellow-700/60 text-yellow-200 px-3 py-1.5 rounded text-xs font-bold">⚠️ Needs Improvement</div>
+                  )}
+                  {myLog?.reviewStatus === "rejected" && (
+                    <div className="flex items-center gap-1.5 bg-red-600/80 text-white px-3 py-1.5 rounded text-xs font-bold animate-pulse">❌ Redo Required</div>
+                  )}
+                </div>
               </div>
               <div className="p-6">
+                {/* Review feedback banner — shown prominently when admin left a comment */}
+                {myLog?.reviewStatus && myLog?.reviewComment && (
+                  <div className={`mb-4 px-4 py-3 rounded border text-sm flex items-start gap-2 ${
+                    myLog.reviewStatus === "approved"          ? "bg-green-50 border-green-200 text-green-800" :
+                    myLog.reviewStatus === "needs_improvement" ? "bg-yellow-50 border-yellow-200 text-yellow-800" :
+                                                                 "bg-red-50 border-red-200 text-red-800"
+                  }`}>
+                    <span className="text-base">
+                      {myLog.reviewStatus === "approved" ? "✅" : myLog.reviewStatus === "needs_improvement" ? "⚠️" : "❌"}
+                    </span>
+                    <div>
+                      <p className="font-bold text-xs uppercase tracking-wide mb-0.5">Reviewer Feedback</p>
+                      <p>"{myLog.reviewComment}"</p>
+                      {myLog.reviewerName && <p className="text-[10px] mt-1 opacity-70">— {myLog.reviewerName}</p>}
+                    </div>
+                  </div>
+                )}
                 {workLocked ? (
                   <div className="text-center py-12 text-gray-400">
                     <Lock size={36} className="mx-auto mb-3 opacity-30"/>
@@ -531,18 +799,93 @@ const EmployeePortal = () => {
                         placeholder="• Completed task X&#10;• Fixed bug in Y&#10;• Attended team standup&#10;• Reviewed PR from..." required/>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Hours Worked *</label>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-xs font-bold uppercase text-gray-500">Hours Worked *</label>
+                        {todayAttd && (todayAttd.totalHours || todayAttd.hoursWorked) > 0 && (
+                          <span className="text-[10px] text-green-600 font-semibold flex items-center gap-1">
+                            ✅ Auto-filled from attendance ({Number(todayAttd.totalHours || todayAttd.hoursWorked).toFixed(2)}h)
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-3">
-                        <input type="number" min="0.5" max="24" step="0.5" value={workHours} onChange={e=>setWorkHours(e.target.value)}
+                        <input type="number" min="0.5" max="24" step="0.01" value={workHours} onChange={e=>setWorkHours(e.target.value)}
                           className="w-24 border border-gray-300 px-3 py-2 text-sm text-center font-bold focus:outline-none focus:border-[#DD1215]"/>
                         <div className="flex gap-1.5">
                           {[3,4,6,8].map(h=>(
                             <button key={h} type="button" onClick={()=>setWorkHours(h.toString())}
                               className={`px-3 py-1.5 text-xs font-bold border rounded transition ${workHours==h?"bg-[#DD1215] text-white border-[#DD1215]":"border-gray-300 text-gray-600 hover:border-[#DD1215]"}`}>{h}h</button>
                           ))}
+                          {todayAttd && (todayAttd.totalHours || todayAttd.hoursWorked) > 0 && (
+                            <button type="button"
+                              onClick={()=>setWorkHours(Number(todayAttd.totalHours||todayAttd.hoursWorked).toFixed(2))}
+                              className={`px-3 py-1.5 text-xs font-bold border rounded transition bg-green-50 border-green-400 text-green-700 hover:bg-green-100`}>
+                              Use {Number(todayAttd.totalHours||todayAttd.hoursWorked).toFixed(1)}h
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">
+                        Proof of Work *
+                        <span className="ml-2 text-gray-400 font-normal normal-case">
+                          {myLog ? "(Upload more screenshots)" : "(Min. 1 screenshot required)"}
+                        </span>
+                      </label>
+
+                      {/* Existing proof images already submitted */}
+                      {myLog?.proofImages?.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {myLog.proofImages.map((url, i) => (
+                            <a key={i} href={url} target="_blank" rel="noreferrer">
+                              <img src={url} alt={`proof-${i+1}`}
+                                className="w-20 h-20 object-cover rounded border border-gray-200 hover:opacity-80 transition" />
+                            </a>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* New image previews */}
+                      {proofPreviews.length > 0 && (
+                        <div className="flex flex-wrap gap-3 mb-2">
+                          {proofPreviews.map((url, i) => (
+                            <div key={i} className="relative" style={{ overflow: "visible" }}>
+                              <img src={url} alt={`new-${i+1}`}
+                                className="w-20 h-20 object-cover rounded border-2 border-[#DD1215]" />
+                              <button type="button"
+                                onClick={() => {
+                                  setProofFiles(prev => prev.filter((_, j) => j !== i));
+                                  setProofPreviews(prev => prev.filter((_, j) => j !== i));
+                                }}
+                                className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-black shadow-md hover:bg-red-800 transition"
+                                style={{ zIndex: 10, lineHeight: 1 }}>
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <label className={`flex items-center gap-2 border-2 border-dashed px-4 py-3 rounded cursor-pointer transition text-sm
+                        ${proofFiles.length === 0 && !myLog ? "border-red-300 bg-red-50 hover:bg-red-100 text-red-500" : "border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-500"}`}>
+                        <Plus size={16} />
+                        <span className="text-xs font-semibold">
+                          {proofFiles.length > 0 ? `${proofFiles.length} image(s) selected — click to add more` : "Click to upload screenshots (JPG, PNG, max 5MB each)"}
+                        </span>
+                        <input type="file" accept="image/*" multiple className="hidden"
+                          onChange={e => {
+                            const newFiles = Array.from(e.target.files || []).slice(0, 5 - proofFiles.length);
+                            setProofFiles(prev => [...prev, ...newFiles].slice(0, 5));
+                            setProofPreviews(prev => [
+                              ...prev,
+                              ...newFiles.map(f => URL.createObjectURL(f))
+                            ].slice(0, 5));
+                            e.target.value = "";
+                          }} />
+                      </label>
+                      <p className="text-[10px] text-gray-400 mt-1">Up to 5 images. Show your work — screenshots, completed tasks, designs, etc.</p>
+                    </div>
+
                     <button type="submit" disabled={workSaving}
                       className="w-full bg-[#DD1215] text-white py-3 text-xs font-black uppercase tracking-widest hover:bg-red-700 transition disabled:opacity-50 flex items-center justify-center gap-2">
                       <Send size={14}/>{workSaving?"Saving...":workSubmitted?"Update Work Log":"Submit Work Log"}
@@ -563,12 +906,30 @@ const EmployeePortal = () => {
                       <p className="text-xs font-semibold text-gray-700">{fmtShort(l.date)}</p>
                       <div className="flex items-center gap-1.5">
                         {l.hoursWorked>0&&<span className="text-[10px] text-gray-400">{l.hoursWorked}h</span>}
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${l.status==="auto_leave"?"bg-red-100 text-red-700":l.status==="pending"?"bg-yellow-100 text-yellow-700":"bg-green-100 text-green-700"}`}>
-                          {l.status==="auto_leave"?"Leave":l.status==="pending"?"Pending":"Done"}
-                        </span>
+                        {/* Review status takes priority over submission status */}
+                        {l.reviewStatus === "rejected" ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-red-100 text-red-700">❌ Redo</span>
+                        ) : l.reviewStatus === "needs_improvement" ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-yellow-100 text-yellow-700">⚠️ Improve</span>
+                        ) : l.reviewStatus === "approved" ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-green-100 text-green-700">✅ OK</span>
+                        ) : l.status==="auto_leave" ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-red-100 text-red-700">Leave</span>
+                        ) : l.status==="pending" ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-yellow-100 text-yellow-700">Pending</span>
+                        ) : (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-green-100 text-green-700">Done</span>
+                        )}
                       </div>
                     </div>
                     <p className="text-[10px] text-gray-400 truncate">{l.workDescription||"—"}</p>
+                    {/* Show reviewer comment inline if rejected */}
+                    {l.reviewStatus === "rejected" && l.reviewComment && (
+                      <p className="text-[10px] text-red-500 mt-0.5 truncate">💬 "{l.reviewComment}"</p>
+                    )}
+                    {l.reviewStatus === "needs_improvement" && l.reviewComment && (
+                      <p className="text-[10px] text-yellow-600 mt-0.5 truncate">💬 "{l.reviewComment}"</p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -797,6 +1158,11 @@ const EmployeePortal = () => {
           </div>
         )}
 
+        {/* ── MEETINGS ── */}
+        {tab === "meetings" && (
+          <MeetingsTab />
+        )}
+
         {/* ── MESSAGES ── */}
         {tab === "messages" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -921,7 +1287,7 @@ const EmployeePortal = () => {
 
         {/* ── PROFILE ── */}
         {tab === "profile" && (
-          <form onSubmit={handleSaveProfile} className="space-y-5 max-w-2xl">
+          <form onSubmit={handleSaveProfile} className="space-y-5 max-w-2xl overflow-x-hidden">
 
             {/* Personal Info */}
             <div className="bg-white border rounded-xl p-6 space-y-4">
@@ -959,11 +1325,52 @@ const EmployeePortal = () => {
                     <option value="prefer_not_to_say">Prefer not to say</option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Father's Name</label>
+                  <input type="text" value={profileForm.fatherName} onChange={e=>setProfileForm(f=>({...f,fatherName:e.target.value}))}
+                    placeholder="Father's full name" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Mother's Name</label>
+                  <input type="text" value={profileForm.motherName} onChange={e=>setProfileForm(f=>({...f,motherName:e.target.value}))}
+                    placeholder="Mother's full name" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Address</label>
-                  <textarea value={profileForm.address} onChange={e=>setProfileForm(f=>({...f,address:e.target.value}))}
-                    rows={2} placeholder="Your full address..."
-                    className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg resize-none"/>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Address Line 1</label>
+                  <input type="text" value={profileForm.addressLine1} onChange={e=>setProfileForm(f=>({...f,addressLine1:e.target.value}))}
+                    placeholder="House / Flat no., Street name" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">
+                    Address Line 2 <span className="normal-case font-normal text-gray-400 ml-1">(optional)</span>
+                  </label>
+                  <input type="text" value={profileForm.addressLine2} onChange={e=>setProfileForm(f=>({...f,addressLine2:e.target.value}))}
+                    placeholder="Area, Landmark" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">City</label>
+                  <input type="text" value={profileForm.city} onChange={e=>setProfileForm(f=>({...f,city:e.target.value}))}
+                    placeholder="e.g. Mumbai" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">ZIP / Postcode</label>
+                  <input type="text" value={profileForm.zipCode} onChange={e=>setProfileForm(f=>({...f,zipCode:e.target.value}))}
+                    placeholder="e.g. 400001" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Country</label>
+                  <select value={profileForm.country} onChange={e=>setProfileForm(f=>({...f,country:e.target.value}))}
+                    className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg bg-white">
+                    <option value="India">India</option>
+                    <option value="United States">United States</option>
+                    <option value="United Kingdom">United Kingdom</option>
+                    <option value="Canada">Canada</option>
+                    <option value="Australia">Australia</option>
+                    <option value="Germany">Germany</option>
+                    <option value="Singapore">Singapore</option>
+                    <option value="UAE">UAE</option>
+                    <option value="Other">Other</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -994,10 +1401,92 @@ const EmployeePortal = () => {
                     placeholder="e.g. 1234567890" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg"/>
                 </div>
                 <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Confirm Account Number *</label>
+                  <input type="password" value={profileForm.confirmAccountNumber} onChange={e=>setProfileForm(f=>({...f,confirmAccountNumber:e.target.value}))}
+                    placeholder="Re-enter account number"
+                    className={`w-full border px-3 py-2.5 text-sm focus:outline-none rounded-lg ${
+                      profileForm.confirmAccountNumber && profileForm.accountNumber === profileForm.confirmAccountNumber
+                        ? "border-green-400 focus:border-green-500"
+                        : profileForm.confirmAccountNumber
+                        ? "border-red-300 focus:border-red-400"
+                        : "border-gray-300 focus:border-[#DD1215]"
+                    }`}/>
+                  {profileForm.confirmAccountNumber && profileForm.accountNumber === profileForm.confirmAccountNumber && (
+                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+                      Account numbers match
+                    </p>
+                  )}
+                  {profileForm.confirmAccountNumber && profileForm.accountNumber !== profileForm.confirmAccountNumber && (
+                    <p className="text-xs text-red-500 mt-1">Account numbers do not match</p>
+                  )}
+                </div>
+                <div>
                   <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">IFSC Code *</label>
                   <input type="text" value={profileForm.ifscCode} onChange={e=>setProfileForm(f=>({...f,ifscCode:e.target.value.toUpperCase()}))}
                     placeholder="e.g. HDFC0001234" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg font-mono"/>
                 </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">
+                    SWIFT / BIC Code <span className="normal-case font-normal text-gray-400 ml-1">(Optional — for international transfers)</span>
+                  </label>
+                  <input type="text" value={profileForm.swiftCode} onChange={e=>setProfileForm(f=>({...f,swiftCode:e.target.value.toUpperCase()}))}
+                    placeholder="e.g. HDFCINBB" className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#DD1215] rounded-lg font-mono"/>
+                </div>
+              </div>
+            </div>
+
+            {/* KYC Documents */}
+            <div className="bg-white border rounded-xl p-6 space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <svg className="w-[18px] h-[18px] text-[#DD1215]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <h3 className="font-black text-gray-900 uppercase tracking-widest text-sm">KYC Documents</h3>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-xs text-blue-800">
+                Upload clear photos or scans. Accepted formats: JPG, PNG, PDF (max 5MB each).
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 cursor-default">
+                {[
+                  { key:"aadhaarFront", label:"Aadhaar Front" },
+                  { key:"aadhaarBack",  label:"Aadhaar Back"  },
+                  { key:"panFront",     label:"PAN Card Front" },
+                ].map(({ key, label }) => (
+                  <div key={key} className="cursor-default">
+                    <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">{label}</label>
+                    <label className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl p-4 cursor-pointer transition
+                      ${kycPreviews[key] ? "border-green-400 bg-green-50" : "border-gray-300 hover:border-[#DD1215] hover:bg-red-50"}`}>
+                      {kycPreviews[key] ? (
+                        <img src={kycPreviews[key]} alt={label} className="w-full h-24 object-contain rounded"/>
+                      ) : (
+                        <>
+                          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+                          </svg>
+                          <span className="text-xs text-gray-500">Click to upload</span>
+                        </>
+                      )}
+                      <input type="file" accept="image/*,application/pdf" className="hidden"
+                        onChange={e => {
+                          const file = e.target.files[0];
+                          if (!file) return;
+                          setKycDocs(d => ({ ...d, [key]: file }));
+                          if (file.type.startsWith("image/")) {
+                            const reader = new FileReader();
+                            reader.onload = ev => setKycPreviews(p => ({ ...p, [key]: ev.target.result }));
+                            reader.readAsDataURL(file);
+                          } else {
+                            setKycPreviews(p => ({ ...p, [key]: "" }));
+                          }
+                        }}/>
+                    </label>
+                    {kycDocs[key] && (
+                      <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+                        {kycDocs[key].name}
+                      </p>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -1035,6 +1524,312 @@ const EmployeePortal = () => {
               <Send size={14}/> {profileSaving ? "Saving..." : "Save Profile"}
             </button>
           </form>
+        )}
+
+        {/* ── SHOP SECTION (FULL SUPER ADMIN PRIVILEGES ON EMPLOYEE PORTAL) ── */}
+        {tab === "shop" && empHasShopAccess && (
+          <div className="space-y-6">
+            {/* Banner card */}
+            <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-black text-white rounded-2xl p-6 md:p-8 shadow-md border border-gray-800 relative overflow-hidden">
+              <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial from-red-600/20 to-transparent pointer-events-none" />
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                  <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-red-600/30 border border-red-500/40 text-red-400 text-xs font-black uppercase tracking-widest mb-3">
+                    <ShieldCheck size={14} /> Super Admin Shop Privileges Active
+                  </div>
+                  <h2 className="text-2xl md:text-3xl font-black uppercase tracking-wide text-white">
+                    Store Management Center
+                  </h2>
+                  <p className="text-sm text-gray-300 mt-2 max-w-2xl leading-relaxed">
+                    You have been granted complete administrative access to the Infinito Shop. Manage the live product catalog, create categories, process customer orders, monitor warehouse stock inventory, update promotional banners, and review analytics.
+                  </p>
+                </div>
+                <div className="flex flex-wrap md:flex-col gap-2.5 shrink-0">
+                  <a
+                    href="/shop/products/new"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#DD1215] hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-sm"
+                  >
+                    <Plus size={15} />
+                    <span>Add New Product</span>
+                  </a>
+                  <a
+                    href="/shop/orders"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition border border-white/10"
+                  >
+                    <ClipboardList size={15} />
+                    <span>View Orders</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Quick Counter Row */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6 pt-6 border-t border-gray-800">
+                <a href="/shop/products" className="bg-white/5 hover:bg-white/10 p-3.5 rounded-xl border border-white/5 transition block">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400">Products Catalog</div>
+                  <div className="text-2xl font-black text-white mt-1">
+                    {shopMetrics.loading ? '...' : shopMetrics.products}
+                  </div>
+                  <span className="text-[11px] text-red-400 font-semibold mt-1 inline-flex items-center gap-1">
+                    Manage Products →
+                  </span>
+                </a>
+                <a href="/shop/categories" className="bg-white/5 hover:bg-white/10 p-3.5 rounded-xl border border-white/5 transition block">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400">Active Categories</div>
+                  <div className="text-2xl font-black text-white mt-1">
+                    {shopMetrics.loading ? '...' : shopMetrics.categories}
+                  </div>
+                  <span className="text-[11px] text-red-400 font-semibold mt-1 inline-flex items-center gap-1">
+                    View Categories →
+                  </span>
+                </a>
+                <a href="/shop/orders" className="bg-white/5 hover:bg-white/10 p-3.5 rounded-xl border border-white/5 transition block">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400">Total Orders</div>
+                  <div className="text-2xl font-black text-white mt-1">
+                    {shopMetrics.loading ? '...' : shopMetrics.orders}
+                  </div>
+                  <span className="text-[11px] text-red-400 font-semibold mt-1 inline-flex items-center gap-1">
+                    Process Orders →
+                  </span>
+                </a>
+                <a href="/shop/inventory" className="bg-white/5 hover:bg-white/10 p-3.5 rounded-xl border border-white/5 transition block">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400">Warehouse Stock</div>
+                  <div className="text-2xl font-black text-emerald-400 mt-1">
+                    Monitored
+                  </div>
+                  <span className="text-[11px] text-red-400 font-semibold mt-1 inline-flex items-center gap-1">
+                    Stock Alerts →
+                  </span>
+                </a>
+              </div>
+            </div>
+
+            {/* Complete Module Cards Grid */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-base font-black uppercase tracking-wider text-gray-900">
+                    Full Super Admin Shop Modules
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Direct access to all core eCommerce modules available to Super Administrators.
+                  </p>
+                </div>
+                <button
+                  onClick={loadShopMetrics}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition cursor-pointer"
+                  title="Refresh shop status"
+                >
+                  <RefreshCw size={13} className={shopMetrics.loading ? 'animate-spin' : ''} />
+                  <span>Refresh</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* 1. All Products */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-red-50 text-[#DD1215] flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <Package size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Products Catalog</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      View all products, edit pricing, variants, descriptions, tags, and stock statuses.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100 flex items-center gap-2">
+                    <a
+                      href="/shop/products"
+                      className="flex-1 py-2 text-center text-xs font-bold text-white bg-[#DD1215] hover:bg-red-700 rounded-lg transition"
+                    >
+                      View Catalog
+                    </a>
+                    <a
+                      href="/shop/products/new"
+                      className="px-2.5 py-2 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                      title="Add New Product"
+                    >
+                      + Add
+                    </a>
+                  </div>
+                </div>
+
+                {/* 2. Categories */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <FolderOpen size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Categories & Collections</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      Organize store items into Comics, Apparel, Figurines, and Posters categories with cover images.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100 flex items-center gap-2">
+                    <a
+                      href="/shop/categories"
+                      className="flex-1 py-2 text-center text-xs font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                    >
+                      Categories
+                    </a>
+                    <a
+                      href="/shop/categories/new"
+                      className="px-2.5 py-2 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                      title="Add New Category"
+                    >
+                      + Add
+                    </a>
+                  </div>
+                </div>
+
+                {/* 3. Orders */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <ClipboardList size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Orders & Dispatches</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      Manage customer orders, print GST tax invoices & packing slips, and dispatch orders to Qikink.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <a
+                      href="/shop/orders"
+                      className="w-full block py-2 text-center text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition"
+                    >
+                      All Orders ({shopMetrics.orders})
+                    </a>
+                  </div>
+                </div>
+
+                {/* 4. Inventory */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <BarChart3 size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Inventory & Stock</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      Track SKU stock counts in real time, review out-of-stock items, and update physical stock counts.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <a
+                      href="/shop/inventory"
+                      className="w-full block py-2 text-center text-xs font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                    >
+                      Manage Inventory
+                    </a>
+                  </div>
+                </div>
+
+                {/* 5. Analytics & Reports */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <TrendingUp size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Analytics & Reports</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      Monitor revenue trajectories, top revenue items, average order values, and sales breakdowns.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <a
+                      href="/shop/analytics"
+                      className="w-full block py-2 text-center text-xs font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                    >
+                      Open Analytics
+                    </a>
+                  </div>
+                </div>
+
+                {/* 6. Marketing & Promotions */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <Sparkles size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Marketing & Banners</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      Configure Hero Carousel slider slides, discount coupon codes, and promotional banners.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <a
+                      href="/shop/marketing"
+                      className="w-full block py-2 text-center text-xs font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                    >
+                      Hero & Marketing
+                    </a>
+                  </div>
+                </div>
+
+                {/* 7. Company Profile */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-700 flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <Building2 size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Company & Invoicing</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      Store legal company info, GSTIN tax registration, warehouse dispatch address, and logos.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <a
+                      href="/shop/company-profile"
+                      className="w-full block py-2 text-center text-xs font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                    >
+                      Company Profile
+                    </a>
+                  </div>
+                </div>
+
+                {/* 8. Live Storefront */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-red-300 hover:shadow-md transition flex flex-col justify-between group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold mb-3 group-hover:scale-105 transition">
+                      <ExternalLink size={20} />
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900">Live Customer Store</h4>
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                      Inspect the live customer storefront to preview new product drops, categories, and promotions.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <a
+                      href="https://shop.infinitohq.com/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full block py-2 text-center text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition"
+                    >
+                      Open Storefront ↗
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── SHOP ACCESS REQUIRED NOTICE (IF OPENED WITHOUT PERMISSION) ── */}
+        {tab === "shop" && !empHasShopAccess && (
+          <div className="bg-white border rounded-2xl p-8 text-center max-w-xl mx-auto space-y-4 shadow-sm">
+            <div className="w-14 h-14 bg-red-50 text-[#DD1215] rounded-full flex items-center justify-center mx-auto">
+              <ShoppingBag size={28} />
+            </div>
+            <h3 className="text-lg font-black uppercase text-gray-900">Shop Section Access Required</h3>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              Your employee account has not yet been granted Shop Section permissions. A Super Administrator can grant you access instantly under <strong>Shop &gt; Management</strong>.
+            </p>
+            <button
+              onClick={() => setTab("attendance")}
+              className="px-6 py-2.5 bg-[#DD1215] text-white text-xs font-bold uppercase rounded-lg hover:bg-red-700 transition"
+            >
+              Return to Attendance
+            </button>
+          </div>
         )}
       </div>
 
@@ -1116,5 +1911,91 @@ const EmployeePortal = () => {
 };
 
 const inp = "w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-[#DD1215] bg-white";
+
+// ── Employee Meetings Tab ─────────────────────────────────────
+const MeetingsTab = () => {
+  const [meetings, setMeetings] = useState([]);
+  const [loading, setLoading]  = useState(true);
+  const BASE2 = import.meta.env.VITE_BASE_URL;
+  const auth2 = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` } });
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const r = await axios.get(`${BASE2}/hr/meetings`, auth2());
+        setMeetings(r.data.data || []);
+      } catch {} finally { setLoading(false); }
+    };
+    load();
+  }, []);
+
+  const fmt2 = (d) => d ? new Date(d).toLocaleString("en-IN", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit", hour12:true }) : "—";
+
+  const upcoming = meetings.filter(m => new Date(m.scheduledAt) >= new Date() && m.status !== "cancelled");
+  const past     = meetings.filter(m => new Date(m.scheduledAt) < new Date() || m.status === "completed");
+
+  if (loading) return <div className="flex justify-center py-16"><Loader size={24} className="animate-spin text-blue-600"/></div>;
+
+  return (
+    <div className="space-y-5">
+      {upcoming.length === 0 && past.length === 0 && (
+        <div className="bg-white border rounded-xl text-center py-16 text-gray-400">
+          <Video size={36} className="mx-auto mb-3 opacity-20"/>
+          <p className="font-semibold">No meetings scheduled yet.</p>
+          <p className="text-xs mt-1">Your manager will notify you when a meeting is scheduled.</p>
+        </div>
+      )}
+
+      {upcoming.length > 0 && (
+        <div>
+          <p className="text-xs font-black uppercase tracking-widest text-gray-500 mb-3">Upcoming Meetings</p>
+          <div className="space-y-3">
+            {upcoming.map(m => (
+              <div key={m._id} className="bg-white border border-blue-100 rounded-xl p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <p className="font-black text-gray-900">{m.title}</p>
+                    {m.agenda && <p className="text-xs text-gray-500 mt-0.5">{m.agenda}</p>}
+                    <div className="flex flex-wrap gap-3 mt-2 text-xs text-gray-500">
+                      <span>📅 {fmt2(m.scheduledAt)}</span>
+                      <span>⏱ {m.duration} min</span>
+                      <span>👥 {m.participantNames?.length || 0} participants</span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold shrink-0">{m.status}</span>
+                </div>
+                {m.meetLink && (
+                  <a href={m.meetLink} target="_blank" rel="noreferrer"
+                    className="mt-3 flex items-center justify-center gap-2 w-full bg-blue-600 text-white py-2.5 rounded-lg text-xs font-black uppercase tracking-wider hover:bg-blue-700 transition">
+                    <Video size={14}/> Join Google Meet
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {past.length > 0 && (
+        <div>
+          <p className="text-xs font-black uppercase tracking-widest text-gray-500 mb-3">Past Meetings</p>
+          <div className="space-y-2">
+            {past.map(m => (
+              <div key={m._id} className="bg-white border rounded-xl p-4 opacity-70">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-gray-800 text-sm">{m.title}</p>
+                    <p className="text-[10px] text-gray-400">{fmt2(m.scheduledAt)}</p>
+                  </div>
+                  <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-bold">{m.status}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default EmployeePortal;

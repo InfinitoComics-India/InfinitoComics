@@ -28,6 +28,7 @@ export default {
     CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
+    CLOUDINARY_URL: process.env.CLOUDINARY_URL,
     // Hostinger file storage (legacy)
     HOSTINGER_UPLOAD_URL: process.env.HOSTINGER_UPLOAD_URL,
     HOSTINGER_BASE_URL: process.env.HOSTINGER_BASE_URL,
@@ -41,5 +42,9 @@ export default {
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     // Razorpay (optional)
     RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
-    RAZORPAY_SECRET_KEY: process.env.RAZORPAY_SECRET_KEY
+    RAZORPAY_SECRET_KEY: process.env.RAZORPAY_SECRET_KEY,
+    // Qikink Fulfillment API
+    QIKINK_CLIENT_ID: process.env.QIKINK_CLIENT_ID,
+    QIKINK_CLIENT_SECRET: process.env.QIKINK_CLIENT_SECRET,
+    QIKINK_ENV: process.env.QIKINK_ENV || 'sandbox'
 }

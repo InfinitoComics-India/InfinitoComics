@@ -42,6 +42,20 @@ const CategoryForm = () => {
 
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
+  const [imageUrlInput, setImageUrlInput] = useState('');
+
+  const handleSetImageUrl = () => {
+    const trimmed = imageUrlInput.trim();
+    if (!trimmed) return;
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://') && !trimmed.startsWith('data:')) {
+      Swal.fire('Invalid URL', 'Please enter a valid image URL starting with http:// or https://', 'warning');
+      return;
+    }
+    setImagePreview(trimmed);
+    setImageFile(null);
+    setFormData((prev) => ({ ...prev, image: trimmed }));
+    setImageUrlInput('');
+  };
 
   // Load category data in edit mode
   useEffect(() => {
@@ -332,19 +346,21 @@ const CategoryForm = () => {
                 </button>
               </div>
             ) : (
-              <label className="block cursor-pointer mb-4">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition">
-                  <Upload className="w-10 h-10 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">Click to upload image</p>
-                  <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB</p>
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageSelect}
-                  className="hidden"
-                />
-              </label>
+              <div className="space-y-3 mb-4">
+                <label className="block cursor-pointer">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-7 text-center hover:border-blue-500 hover:bg-blue-50/40 transition">
+                    <Upload className="w-9 h-9 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600 font-medium">Click to upload image</p>
+                    <p className="text-xs text-gray-500 mt-1">PNG, JPG, WebP up to 5MB</p>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                  />
+                </label>
+              </div>
             )}
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
