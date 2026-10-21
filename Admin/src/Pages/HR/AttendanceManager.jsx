@@ -214,41 +214,65 @@ const AttendanceManager = () => {
                         const s    = STATUS_STYLE[rec.status] || STATUS_STYLE.absent;
                         const emp  = rec.employeeId;
                         const name = emp?.firstName ? `${emp.firstName} ${emp.lastName}` : rec.employeeName || "Unknown";
-                        const empId= emp?.employeeId || rec.employeeEmpId || "";
                         const init = name !== "Unknown" ? name.split(" ").map(w=>w[0]).join("").substring(0,2).toUpperCase() : "?";
-                        // Use sessions array if available, otherwise fall back to legacy clockIn/clockOut
-                        const sessions = rec.sessions || [];
-                        const firstIn  = sessions.length > 0 ? sessions[0].clockIn : rec.clockIn;
-                        const lastOut  = sessions.length > 0 
-                          ? sessions.filter(s => s.clockOut).slice(-1)[0]?.clockOut 
-                          : rec.clockOut;
-                        const totalHrs = sessions.length > 0
-                          ? sessions.reduce((s, x) => s + (x.hoursWorked || 0), 0)
-                          : rec.hoursWorked;
+                        const sessions = rec.sessions?.length > 0 ? rec.sessions
+                          : rec.clockIn ? [{ clockIn: rec.clockIn, clockOut: rec.clockOut||null, hoursWorked: rec.hoursWorked||0 }]
+                          : [];
+                        const totalHrs = sessions.reduce((t, x) => t + (x.hoursWorked||0), 0);
+
                         return (
-                          <tr key={rec._id} className="hover:bg-gray-50 transition-colors">
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-full bg-[#DD1215] text-white flex items-center justify-center text-xs font-bold shrink-0">{init}</div>
-                                <div>
-                                  <p className="font-semibold text-gray-900 text-xs">{name}</p>
+                          <React.Fragment key={rec._id}>
+                            {/* Employee summary row */}
+                            <tr className="bg-gray-50/80 border-t-2 border-gray-200">
+                              <td className="px-4 py-2.5" colSpan={3}>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-7 h-7 rounded-full bg-[#DD1215] text-white flex items-center justify-center text-xs font-bold shrink-0">{init}</div>
+                                  <p className="font-black text-gray-900 text-xs">{name}</p>
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${s.bg} ${s.text}`}>{s.label}</span>
+                                  {sessions.length > 1 && <span className="text-[9px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full font-bold">{sessions.length} sessions</span>}
                                 </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${s.bg} ${s.text}`}>{s.label}</span></td>
-                            <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{fmt(firstIn)}</td>
-                            <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
-                              {lastOut ? fmt(lastOut) : sessions.some(s => !s.clockOut) ? <span className="text-yellow-600 text-[10px] font-semibold animate-pulse">● Working</span> : "—"}
-                            </td>
-                            <td className="px-4 py-3 text-xs font-semibold text-gray-700">
-                              {totalHrs > 0 ? `${Number(totalHrs).toFixed(2)}h` : "—"}
-                              {sessions.length > 1 && <span className="ml-1 text-[9px] text-blue-500 font-bold">{sessions.length}s</span>}
-                            </td>
-                            <td className="px-4 py-3">
-                              <button onClick={() => { setMarkModal({ recordId: rec._id }); setMarkForm({ date: isoDate(rec.date), status: rec.status, note: rec.note||"" }); }}
-                                className="text-xs text-blue-600 hover:underline font-semibold">Correct</button>
-                            </td>
-                          </tr>
+                              </td>
+                              <td className="px-4 py-2.5 text-right" colSpan={2}>
+                                <span className="text-xs font-black text-gray-700">
+                                  Total: {totalHrs > 0 ? `${totalHrs.toFixed(2)}h` : "—"}
+                                </span>
+                              </td>
+                              <td className="px-4 py-2.5">
+                                <button onClick={() => { setMarkModal({ recordId: rec._id }); setMarkForm({ date: isoDate(rec.date), status: rec.status, note: rec.note||"" }); }}
+                                  className="text-xs text-blue-600 hover:underline font-semibold">Correct</button>
+                              </td>
+                            </tr>
+                            {/* Individual session rows */}
+                            {sessions.map((sess, i) => {
+                              const isOpen = !sess.clockOut;
+                              return (
+                                <tr key={i} className="hover:bg-gray-50 transition-colors">
+                                  <td className="px-4 py-2 pl-12">
+                                    <span className="text-[10px] text-gray-400 font-semibold">Session {i+1}</span>
+                                  </td>
+                                  <td className="px-4 py-2">
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${isOpen ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"}`}>
+                                      {isOpen ? "● Active" : "Done"}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-2 text-xs text-gray-600 whitespace-nowrap">{fmt(sess.clockIn)}</td>
+                                  <td className="px-4 py-2 text-xs text-gray-600 whitespace-nowrap">
+                                    {sess.clockOut ? fmt(sess.clockOut) : <span className="text-yellow-600 text-[10px] font-semibold animate-pulse">● Working now</span>}
+                                    {sess.note && <span className="ml-1 text-[9px] text-gray-400 italic">(auto)</span>}
+                                  </td>
+                                  <td className="px-4 py-2 text-xs font-semibold text-gray-700">
+                                    {sess.hoursWorked > 0 ? `${Number(sess.hoursWorked).toFixed(2)}h` : "—"}
+                                  </td>
+                                  <td className="px-4 py-2"/>
+                                </tr>
+                              );
+                            })}
+                            {sessions.length === 0 && (
+                              <tr>
+                                <td colSpan={6} className="px-4 py-2 pl-12 text-[10px] text-gray-400 italic">No sessions recorded</td>
+                              </tr>
+                            )}
+                          </React.Fragment>
                         );
                       })}
                     </tbody>
