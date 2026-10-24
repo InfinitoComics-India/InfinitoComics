@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Plus, Search, Filter, Grid3x3, List, Edit, Trash2, Eye,
-  Download, FileSpreadsheet, FileText, FileCode, ChevronDown
+  Download, FileSpreadsheet, FileText, FileCode, ChevronDown,
+  Send, Sliders, Star, Upload, Image as ImageIcon, X
 } from 'lucide-react';
-import { message, Popconfirm, Spin, Tag, Dropdown } from 'antd';
+import { message, Popconfirm, Spin, Tag, Dropdown, Modal } from 'antd';
 import * as XLSX from 'xlsx';
-import { getAllProducts, deleteProduct } from '../../services/shopServices/productService';
+import { getAllProducts, deleteProduct, updateProduct, pushQikinkProductToStore, uploadProductImages } from '../../services/shopServices/productService';
 import { getAllCategories } from '../../services/shopServices/categoryService';
 import { BACKEND_URL } from '../../Utils/constant';
 
@@ -45,6 +46,28 @@ const AllProducts = () => {
     status: 'all',
     priceRange: 'all',
   });
+
+  // Qikink Push to Store Modal state
+  const [qikinkPushModalOpen, setQikinkPushModalOpen] = useState(false);
+  const [pushingToStore, setPushingToStore] = useState(false);
+  const [qikinkForm, setQikinkForm] = useState({
+    name: 'INFINITO Cyber Hero Graphic T-Shirt',
+    sku: `INF-TEE-CYBER-${Date.now().toString().slice(-4)}`,
+    basePrice: 999,
+    salePrice: 849,
+    category: '',
+    image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
+    description: 'Custom print-on-demand high density apparel pushed from Qikink fulfillment.',
+  });
+
+  // Quick Edit Category & Images Modal state
+  const [quickEditModalOpen, setQuickEditModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [productImages, setProductImages] = useState([]);
+  const [newImageUrl, setNewImageUrl] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [savingProduct, setSavingProduct] = useState(false);
 
   useEffect(() => {
     fetchAll();
@@ -129,6 +152,127 @@ const AllProducts = () => {
     } catch (error) {
       message.error('Failed to delete product');
       console.error(error);
+    }
+  };
+
+  // ── Qikink Push to Store Handler ──
+  const handlePushQikinkToStore = async () => {
+    try {
+      setPushingToStore(true);
+      const res = await pushQikinkProductToStore(qikinkForm);
+      const newProd = res.data?.data || res.data;
+      if (newProd) {
+        setProducts(prev => {
+          const exists = prev.some(p => p._id === newProd._id || p.sku === newProd.sku);
+          if (exists) {
+            return prev.map(p => (p._id === newProd._id || p.sku === newProd.sku) ? newProd : p);
+          }
+          return [newProd, ...prev];
+        });
+      }
+      message.success('Product successfully pushed from Qikink and reflected in All Products!');
+      setQikinkPushModalOpen(false);
+      fetchAll();
+    } catch (err) {
+      console.error(err);
+      message.error(err.response?.data?.message || err.message || 'Failed to push product from Qikink');
+    } finally {
+      setPushingToStore(false);
+    }
+  };
+
+  // ── Quick Edit: Category & Display Images Handlers ──
+  const handleOpenQuickEdit = (product) => {
+    setEditingProduct(product);
+    setSelectedCategory(product.category?._id || product.category || (categories[0]?._id || ''));
+    if (Array.isArray(product.images) && product.images.length > 0) {
+      setProductImages(product.images.map((img, idx) => ({
+        url: typeof img === 'string' ? img : (img.url || ''),
+        alt: img.alt || productName(product),
+        isPrimary: img.isPrimary === true || idx === 0,
+      })));
+    } else {
+      setProductImages([]);
+    }
+    setQuickEditModalOpen(true);
+  };
+
+  const handleSetPrimaryProductImage = (index) => {
+    setProductImages(prev => prev.map((img, idx) => ({
+      ...img,
+      isPrimary: idx === index,
+    })));
+  };
+
+  const handleRemoveProductImage = (index) => {
+    setProductImages(prev => {
+      const next = prev.filter((_, idx) => idx !== index);
+      if (next.length > 0 && !next.some(img => img.isPrimary)) {
+        next[0].isPrimary = true;
+      }
+      return next;
+    });
+  };
+
+  const handleAddProductImageUrl = () => {
+    if (!newImageUrl.trim()) return;
+    const isFirst = productImages.length === 0;
+    setProductImages(prev => [
+      ...prev,
+      { url: newImageUrl.trim(), alt: editingProduct?.name || 'Product Image', isPrimary: isFirst }
+    ]);
+    setNewImageUrl('');
+  };
+
+  const handleUploadProductImageFiles = async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    try {
+      setUploadingImage(true);
+      const res = await uploadProductImages(Array.from(files));
+      const uploaded = res.data?.data || res.data || [];
+      const newImgs = (Array.isArray(uploaded) ? uploaded : [uploaded]).map((u, i) => ({
+        url: u.url || u,
+        alt: u.alt || 'Uploaded Product Image',
+        isPrimary: productImages.length === 0 && i === 0,
+      }));
+      setProductImages(prev => [...prev, ...newImgs]);
+      message.success('Image(s) uploaded successfully');
+    } catch (err) {
+      Array.from(files).forEach((f) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          setProductImages(prev => [
+            ...prev,
+            { url: reader.result, alt: f.name, isPrimary: prev.length === 0 }
+          ]);
+        };
+        reader.readAsDataURL(f);
+      });
+      message.success('Image added');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleSaveQuickEdit = async () => {
+    if (!editingProduct) return;
+    try {
+      setSavingProduct(true);
+      const res = await updateProduct(editingProduct._id, {
+        category: selectedCategory,
+        images: productImages,
+      });
+      const updated = res.data?.data || res.data || { ...editingProduct, category: selectedCategory, images: productImages };
+      setProducts(prev => prev.map(p => p._id === editingProduct._id ? { ...p, ...updated } : p));
+      message.success('Product category and website display images updated successfully!');
+      setQuickEditModalOpen(false);
+      fetchAll();
+    } catch (err) {
+      console.error(err);
+      message.error(err.response?.data?.message || err.message || 'Failed to update product');
+    } finally {
+      setSavingProduct(false);
     }
   };
 
@@ -283,6 +427,16 @@ const AllProducts = () => {
             </button>
           </Dropdown>
 
+          <button
+            type="button"
+            onClick={() => setQikinkPushModalOpen(true)}
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-medium text-sm shadow-sm cursor-pointer"
+            title="Simulate or manually push a product from Qikink POD catalog"
+          >
+            <Send size={16} />
+            Push from Qikink
+          </button>
+
           <Link
             to="/shop/products/new"
             className="inline-flex items-center gap-2 px-4 py-2 bg-[#DD1215] text-white rounded-lg hover:bg-red-700 transition font-medium text-sm shadow-sm"
@@ -418,6 +572,14 @@ const AllProducts = () => {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenQuickEdit(product)}
+                        className="p-2 text-purple-600 hover:text-purple-800 hover:bg-purple-50 rounded transition"
+                        title="Edit Category & Website Display Images"
+                      >
+                        <Sliders size={16} />
+                      </button>
                       <Link
                         to={`/shop/products/${product._id}`}
                         className="p-2 text-gray-600 hover:text-[#DD1215] hover:bg-gray-100 rounded transition"
@@ -471,11 +633,20 @@ const AllProducts = () => {
                 </div>
 
                 <div className="flex items-center gap-2 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenQuickEdit(product)}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 border border-purple-200 bg-purple-50 text-purple-700 rounded-lg text-xs font-semibold hover:bg-purple-100 transition"
+                    title="Edit Category & Website Display Images"
+                  >
+                    <Sliders size={13} />
+                    Category & Imgs
+                  </button>
                   <Link
                     to={`/shop/products/${product._id}`}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                    className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 transition"
                   >
-                    <Edit size={14} />
+                    <Edit size={13} />
                     Edit
                   </Link>
                   <Popconfirm
@@ -496,6 +667,296 @@ const AllProducts = () => {
           ))}
         </div>
       )}
+      {/* ── Modal 1: Push Product from Qikink to Store ── */}
+      <Modal
+        open={qikinkPushModalOpen}
+        onCancel={() => setQikinkPushModalOpen(false)}
+        title={
+          <div className="flex items-center gap-2 text-purple-700 font-bold text-lg">
+            <Send size={20} className="text-purple-600" />
+            Push Product from Qikink to Store
+          </div>
+        }
+        footer={null}
+        width={650}
+        destroyOnClose
+      >
+        <div className="space-y-4 pt-2">
+          <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg text-xs text-purple-800">
+            <strong>Print-on-Demand Instant Sync:</strong> When you push this product from Qikink, it immediately creates/updates the catalog item in the database and renders live across the store and admin panel.
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Product Title / Name *</label>
+            <input
+              type="text"
+              value={qikinkForm.name}
+              onChange={(e) => setQikinkForm({ ...qikinkForm, name: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="e.g. Infinito Cyber Hero Graphic T-Shirt"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Qikink SKU / Code</label>
+              <input
+                type="text"
+                value={qikinkForm.sku}
+                onChange={(e) => setQikinkForm({ ...qikinkForm, sku: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="INF-TEE-001"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Target Category</label>
+              <select
+                value={qikinkForm.category}
+                onChange={(e) => setQikinkForm({ ...qikinkForm, category: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="">Auto-Assign / Default</option>
+                {categories.map((c) => (
+                  <option key={c._id} value={c._id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Base / MRP Price (₹) *</label>
+              <input
+                type="number"
+                value={qikinkForm.basePrice}
+                onChange={(e) => setQikinkForm({ ...qikinkForm, basePrice: Number(e.target.value) })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Website Sale Price (₹) *</label>
+              <input
+                type="number"
+                value={qikinkForm.salePrice}
+                onChange={(e) => setQikinkForm({ ...qikinkForm, salePrice: Number(e.target.value) })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Qikink Mockup / Image URL</label>
+            <input
+              type="text"
+              value={qikinkForm.image}
+              onChange={(e) => setQikinkForm({ ...qikinkForm, image: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="https://..."
+            />
+            {qikinkForm.image && (
+              <div className="mt-2 flex items-center gap-3 p-2 bg-gray-50 border rounded-lg">
+                <img src={qikinkForm.image} alt="Mockup" className="w-12 h-12 object-cover rounded border" />
+                <span className="text-xs text-gray-500 truncate">{qikinkForm.image}</span>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Description</label>
+            <textarea
+              rows={2}
+              value={qikinkForm.description}
+              onChange={(e) => setQikinkForm({ ...qikinkForm, description: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-3 border-t">
+            <button
+              type="button"
+              onClick={() => setQikinkPushModalOpen(false)}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={pushingToStore}
+              onClick={handlePushQikinkToStore}
+              className="inline-flex items-center gap-2 px-5 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 disabled:opacity-50"
+            >
+              {pushingToStore ? <Spin size="small" /> : <Send size={15} />}
+              Push to Store
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Modal 2: Quick Edit Category & Website Display Images ── */}
+      <Modal
+        open={quickEditModalOpen}
+        onCancel={() => setQuickEditModalOpen(false)}
+        title={
+          <div className="flex items-center gap-2 text-gray-900 font-bold text-lg">
+            <Sliders size={20} className="text-purple-600" />
+            Edit Category & Website Display Images
+          </div>
+        }
+        footer={null}
+        width={750}
+        destroyOnClose
+      >
+        {editingProduct && (
+          <div className="space-y-5 pt-2">
+            <div className="p-3 bg-gray-50 rounded-lg border flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-900">{productName(editingProduct)}</p>
+                <p className="text-xs text-gray-500">ID: {editingProduct._id} | SKU: {editingProduct.sku || 'N/A'}</p>
+              </div>
+              <Tag color={getStatusColor(editingProduct.status)} className="capitalize">
+                {editingProduct.status}
+              </Tag>
+            </div>
+
+            {/* Category Selector */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Category (shown on website navigation & filters) *
+              </label>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                {categories.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.name} {c.slug ? `(/${c.slug})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Website Display Images */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-semibold text-gray-700">
+                  Website Display Images
+                </label>
+                <span className="text-xs text-purple-700 bg-purple-50 px-2 py-0.5 rounded font-medium">
+                  ⭐ Star marks the PRIMARY image shown on product cards
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mb-3">
+                Select which image appears as the main display cover on the website catalog and detail views.
+              </p>
+
+              {/* Images Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
+                {productImages.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className={`relative group border-2 rounded-lg overflow-hidden bg-gray-50 p-1.5 transition ${
+                      img.isPrimary ? 'border-amber-500 shadow-md ring-2 ring-amber-200' : 'border-gray-200 hover:border-gray-400'
+                    }`}
+                  >
+                    <div className="aspect-square w-full rounded overflow-hidden bg-gray-100 flex items-center justify-center">
+                      <img
+                        src={resolveImageUrl(img.url)}
+                        alt={img.alt || `Product Image ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    </div>
+
+                    <div className="mt-1.5 flex items-center justify-between text-xs">
+                      {img.isPrimary ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
+                          <Star size={11} className="fill-amber-500 text-amber-500" />
+                          Primary
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleSetPrimaryProductImage(idx)}
+                          className="text-[11px] text-gray-600 hover:text-purple-600 font-medium"
+                        >
+                          Make Primary
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveProductImage(idx)}
+                        className="text-gray-400 hover:text-red-600 p-0.5"
+                        title="Remove image"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add / Upload Options */}
+              <div className="space-y-2 border-t pt-3">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newImageUrl}
+                    onChange={(e) => setNewImageUrl(e.target.value)}
+                    placeholder="Enter image URL to add (https://...)"
+                    className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddProductImageUrl}
+                    className="px-3 py-1.5 bg-gray-800 text-white rounded-lg text-xs font-medium hover:bg-black"
+                  >
+                    Add URL
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <label className="inline-flex items-center gap-2 px-3 py-1.5 border border-purple-300 bg-purple-50 text-purple-700 rounded-lg text-xs font-semibold hover:bg-purple-100 cursor-pointer transition">
+                    <Upload size={14} />
+                    {uploadingImage ? 'Uploading...' : 'Upload Image File'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleUploadProductImageFiles}
+                      className="hidden"
+                      disabled={uploadingImage}
+                    />
+                  </label>
+                  <span className="text-[11px] text-gray-500">Supports PNG, JPG, WEBP.</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t">
+              <button
+                type="button"
+                onClick={() => setQuickEditModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={savingProduct}
+                onClick={handleSaveQuickEdit}
+                className="inline-flex items-center gap-2 px-5 py-2 bg-[#DD1215] text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50"
+              >
+                {savingProduct && <Spin size="small" />}
+                Save Changes
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

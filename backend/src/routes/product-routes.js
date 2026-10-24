@@ -49,6 +49,11 @@ router.patch(
   productController.bulkUpdateProducts
 );
 
+// Qikink "Push to Store" Webhook & API endpoints (creates or syncs product directly in All Products)
+router.post("/qikink/push-to-store", productController.pushQikinkProductToStore);
+router.post("/qikink-webhook", productController.pushQikinkProductToStore);
+router.post("/qikink-push", productController.pushQikinkProductToStore);
+
 // Public routes (for frontend shop)
 router.get("/public/all", productController.getAllProducts);
 router.get("/public/featured", productController.getFeaturedProducts);

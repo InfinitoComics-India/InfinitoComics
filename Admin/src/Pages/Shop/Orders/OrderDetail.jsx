@@ -4,12 +4,13 @@ import {
   ArrowLeft, Printer, Send, CheckCircle2, AlertCircle, Clock,
   Package, Truck, RotateCcw, XCircle, Mail, MapPin, CreditCard,
   User, Phone, Copy, Check, ExternalLink, Edit3, ShieldAlert,
-  Calendar, Layers, Hash, FileText
+  Calendar, Layers, Hash, FileText, RefreshCw
 } from 'lucide-react';
 import { message, Modal, Spin, Tag, Input, Radio, InputNumber } from 'antd';
 import {
   getOrderById,
   sendOrderToQikink,
+  syncOrderWithQikink,
   markOrderAsFulfilled,
   cancelOrder,
   refundOrder,
@@ -33,9 +34,17 @@ const OrderDetail = () => {
   // Modals & Action loading states
   const [qikinkModalOpen, setQikinkModalOpen] = useState(false);
   const [qikinkLoading, setQikinkLoading] = useState(false);
-  const [qikinkAllowSimulation, setQikinkAllowSimulation] = useState(true);
+  const [qikinkAllowSimulation, setQikinkAllowSimulation] = useState(false);
   const [testingQikink, setTestingQikink] = useState(false);
   const [qikinkTestResult, setQikinkTestResult] = useState(null);
+  const [syncingQikink, setSyncingQikink] = useState(false);
+
+  // Webhook Simulation Modal state
+  const [webhookModalOpen, setWebhookModalOpen] = useState(false);
+  const [webhookStatus, setWebhookStatus] = useState('Dispatched');
+  const [webhookCourier, setWebhookCourier] = useState('BlueDart Express');
+  const [webhookAwb, setWebhookAwb] = useState('');
+  const [webhookSimulating, setWebhookSimulating] = useState(false);
 
   // Webhook Simulation Modal state
   const [webhookModalOpen, setWebhookModalOpen] = useState(false);
@@ -124,6 +133,22 @@ const OrderDetail = () => {
       message.error(err.message || 'Failed to transmit order to Qikink');
     } finally {
       setQikinkLoading(false);
+    }
+  };
+
+  const handleSyncQikink = async () => {
+    try {
+      setSyncingQikink(true);
+      const updated = await syncOrderWithQikink(order.orderId);
+      setOrder(updated);
+      const qStatus = updated?.fulfillment?.qikink?.status || 'Synced';
+      const awb = updated?.fulfillment?.tracking?.trackingNumber;
+      message.success(`Qikink Sync Complete: Status "${qStatus}"${awb ? ` | AWB: ${awb}` : ''}`);
+    } catch (err) {
+      console.error(err);
+      message.error(err.message || 'Failed to sync live status with Qikink');
+    } finally {
+      setSyncingQikink(false);
     }
   };
 
@@ -443,20 +468,33 @@ const OrderDetail = () => {
               <div className="mt-0.5">{getFulfillmentStatusTag(order.fulfillment?.status)}</div>
             </div>
 
-            {/* Send to Qikink Button */}
+            {/* Send to Qikink Button / Sync Live */}
             {!isCancelled && (
-              <button
-                onClick={() => setQikinkModalOpen(true)}
-                disabled={isQikinkSent}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm cursor-pointer ${
-                  isQikinkSent
-                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                    : 'bg-[#DD1215] text-white hover:bg-red-700'
-                }`}
-              >
-                <Send size={14} />
-                <span>{isQikinkSent ? 'Sent to Qikink ✓' : 'Send to Qikink'}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setQikinkModalOpen(true)}
+                  disabled={isQikinkSent}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm cursor-pointer ${
+                    isQikinkSent
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : 'bg-[#DD1215] text-white hover:bg-red-700'
+                  }`}
+                >
+                  <Send size={14} />
+                  <span>{isQikinkSent ? 'Dispatched to Qikink ✓' : 'Push to Qikink'}</span>
+                </button>
+                {isQikinkSent && (
+                  <button
+                    onClick={handleSyncQikink}
+                    disabled={syncingQikink}
+                    title="Fetch live tracking and delivery dates from Qikink API"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-sm cursor-pointer"
+                  >
+                    <RefreshCw size={13} className={syncingQikink ? 'animate-spin' : ''} />
+                    <span>{syncingQikink ? 'Syncing...' : 'Sync Qikink'}</span>
+                  </button>
+                )}
+              </div>
             )}
 
             {/* Mark as Fulfilled button (manual override) */}
@@ -483,7 +521,7 @@ const OrderDetail = () => {
               </span>
             </div>
             {isQikinkSent ? (
-              <div className="space-y-1 text-gray-600">
+              <div className="space-y-1.5 text-gray-600">
                 <div className="flex justify-between">
                   <span>Qikink Order ID:</span>
                   <span className="font-mono font-bold text-gray-900">{order.fulfillment?.qikink?.qikinkOrderId}</span>
@@ -492,9 +530,50 @@ const OrderDetail = () => {
                   <span>Transmitted At:</span>
                   <span className="text-gray-700">{formatDateTime(order.fulfillment?.qikink?.sentAt)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span>Qikink Status:</span>
-                  <span className="font-semibold text-emerald-700">{order.fulfillment?.qikink?.status || 'In Production'}</span>
+                  <span className="font-bold px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[11px]">
+                    {order.fulfillment?.qikink?.status || 'In Production'}
+                  </span>
+                </div>
+                {order.fulfillment?.tracking?.carrier && (
+                  <div className="flex justify-between">
+                    <span>Delivery Partner:</span>
+                    <span className="font-bold text-gray-900">{order.fulfillment?.tracking?.carrier}</span>
+                  </div>
+                )}
+                {order.fulfillment?.tracking?.trackingNumber && (
+                  <div className="flex justify-between items-center">
+                    <span>AWB Number:</span>
+                    <span className="font-mono font-bold text-blue-600 flex items-center gap-1">
+                      {order.fulfillment?.tracking?.trackingNumber}
+                      <button
+                        onClick={() => copyToClipboard(order.fulfillment?.tracking?.trackingNumber, 'AWB')}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <Copy size={11} />
+                      </button>
+                    </span>
+                  </div>
+                )}
+                <div className="pt-2 border-t border-gray-200 space-y-1.5">
+                  <button
+                    onClick={handleSyncQikink}
+                    disabled={syncingQikink}
+                    className="w-full py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-bold flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer"
+                  >
+                    <RefreshCw size={12} className={syncingQikink ? 'animate-spin' : ''} />
+                    <span>{syncingQikink ? 'Syncing with Qikink...' : 'Sync Live Status from Qikink API'}</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setWebhookAwb(order.fulfillment?.tracking?.trackingNumber || `BD-${Math.floor(10000000 + Math.random() * 90000000)}`);
+                      setWebhookModalOpen(true);
+                    }}
+                    className="w-full py-1.5 px-2 bg-white border border-gray-300 hover:bg-gray-100 rounded text-[11px] font-bold text-gray-700 flex items-center justify-center gap-1 transition shadow-xs cursor-pointer"
+                  >
+                    <span>⚡ Simulate Qikink Webhook</span>
+                  </button>
                 </div>
                 <div className="pt-2 border-t border-gray-200">
                   <button
@@ -547,6 +626,17 @@ const OrderDetail = () => {
                 <div className="flex justify-between">
                   <span>Est. Delivery:</span>
                   <span className="font-semibold text-gray-800">{order.fulfillment?.tracking?.estimatedDelivery || 'N/A'}</span>
+                </div>
+                <div className="pt-2 border-t border-gray-200">
+                  <a
+                    href={order.fulfillment?.tracking?.trackingUrl || `https://courierupdates.com/?awb=${order.fulfillment?.tracking?.trackingNumber}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full py-1.5 px-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded text-[11px] font-bold flex items-center justify-center gap-1.5 transition text-center"
+                  >
+                    <span>Track with Courier</span>
+                    <ExternalLink size={12} />
+                  </a>
                 </div>
               </div>
             ) : (
