@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   Search, Filter, ShoppingBag, Eye, Send, Printer, RefreshCw,
   TrendingUp, AlertCircle, CheckCircle2, XCircle, Clock, RotateCcw,
-  Download, FileSpreadsheet, FileText, FileCode, ChevronDown, ExternalLink
+  Download, FileSpreadsheet, FileText, FileCode, ChevronDown, ExternalLink,
+  Edit, Star, Trash2, Plus, Upload, Image as ImageIcon, Sliders
 } from 'lucide-react';
 import { message, Spin, Tag, Dropdown, Modal } from 'antd';
 import * as XLSX from 'xlsx';
@@ -15,7 +16,10 @@ import {
   formatOrderDate,
   formatDateTime,
   resolveCustomerDisplayName,
+  updateOrder,
 } from '../../../services/shopServices/orderService';
+import { getAllCategories } from '../../../services/shopServices/categoryService';
+import { getProductById, updateProduct, uploadProductImages } from '../../../services/shopServices/productService';
 
 const AllOrders = () => {
   const navigate = useNavigate();
@@ -28,6 +32,18 @@ const AllOrders = () => {
   const [selectedOrderForQikink, setSelectedOrderForQikink] = useState(null);
   const [sendingToQikink, setSendingToQikink] = useState(false);
   const [syncingOrderId, setSyncingOrderId] = useState(null);
+
+  // Edit Order Item Category & Display Images State
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [selectedOrderForEdit, setSelectedOrderForEdit] = useState(null);
+  const [editingItemIndex, setEditingItemIndex] = useState(0);
+  const [categoriesList, setCategoriesList] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [itemImages, setItemImages] = useState([]);
+  const [newImageUrl, setNewImageUrl] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [savingProductChanges, setSavingProductChanges] = useState(false);
+  const [currentLoadedProduct, setCurrentLoadedProduct] = useState(null);
 
   useEffect(() => {
     fetchOrders();
@@ -270,6 +286,165 @@ const AllOrders = () => {
       message.error(err.message || 'Failed to sync with Qikink');
     } finally {
       setSyncingOrderId(null);
+    }
+  };
+
+  // ── Quick Edit: Category & Website Display Images Handlers ──
+  const handleOpenEditModal = async (order) => {
+    setSelectedOrderForEdit(order);
+    setEditingItemIndex(0);
+    setEditModalVisible(true);
+
+    try {
+      const catRes = await getAllCategories();
+      const cats = Array.isArray(catRes?.data) ? catRes.data : (Array.isArray(catRes) ? catRes : (catRes?.data?.data || []));
+      setCategoriesList(cats);
+
+      const firstItem = (order.items || [])[0];
+      if (firstItem) {
+        await loadItemProductDetails(firstItem, cats);
+      }
+    } catch (err) {
+      console.error('Failed to load categories or product:', err);
+    }
+  };
+
+  const loadItemProductDetails = async (item, cats = categoriesList) => {
+    let prod = null;
+    if (item.productId && !item.productId.startsWith('prod-')) {
+      try {
+        const pRes = await getProductById(item.productId);
+        prod = pRes?.data?.data || pRes?.data || pRes;
+      } catch {}
+    }
+
+    setCurrentLoadedProduct(prod);
+
+    const assignedCatId = prod?.category?._id || prod?.category || (cats.length > 0 ? cats[0]._id : '');
+    setSelectedCategory(assignedCatId);
+
+    if (prod && Array.isArray(prod.images) && prod.images.length > 0) {
+      setItemImages(prod.images.map(img => ({
+        url: typeof img === 'string' ? img : (img.url || ''),
+        alt: item.name || 'Product Image',
+        isPrimary: img.isPrimary === true,
+      })));
+    } else if (item.thumbnail || item.image) {
+      setItemImages([{
+        url: item.thumbnail || item.image,
+        alt: item.name || 'Product Image',
+        isPrimary: true,
+      }]);
+    } else {
+      setItemImages([]);
+    }
+  };
+
+  const handleSelectItemToEdit = async (idx) => {
+    setEditingItemIndex(idx);
+    const item = selectedOrderForEdit?.items?.[idx];
+    if (item) {
+      await loadItemProductDetails(item);
+    }
+  };
+
+  const handleSetPrimaryImage = (index) => {
+    setItemImages(prev => prev.map((img, idx) => ({
+      ...img,
+      isPrimary: idx === index,
+    })));
+  };
+
+  const handleRemoveImage = (index) => {
+    setItemImages(prev => {
+      const next = prev.filter((_, idx) => idx !== index);
+      if (next.length > 0 && !next.some(img => img.isPrimary)) {
+        next[0].isPrimary = true;
+      }
+      return next;
+    });
+  };
+
+  const handleAddImageUrl = () => {
+    if (!newImageUrl.trim()) return;
+    const isFirst = itemImages.length === 0;
+    setItemImages(prev => [
+      ...prev,
+      { url: newImageUrl.trim(), alt: 'Product Image', isPrimary: isFirst }
+    ]);
+    setNewImageUrl('');
+  };
+
+  const handleUploadImageFiles = async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    try {
+      setUploadingImage(true);
+      const res = await uploadProductImages(Array.from(files));
+      const uploaded = res.data?.data || res.data || [];
+      const newImgs = (Array.isArray(uploaded) ? uploaded : [uploaded]).map((u, i) => ({
+        url: u.url || u,
+        alt: u.alt || 'Uploaded Product Image',
+        isPrimary: itemImages.length === 0 && i === 0,
+      }));
+      setItemImages(prev => [...prev, ...newImgs]);
+      message.success('Image(s) uploaded successfully');
+    } catch (err) {
+      console.warn('Fallback to data URI:', err);
+      Array.from(files).forEach((f) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          setItemImages(prev => [
+            ...prev,
+            { url: reader.result, alt: f.name, isPrimary: prev.length === 0 }
+          ]);
+        };
+        reader.readAsDataURL(f);
+      });
+      message.success('Image added');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleSaveProductAndOrderChanges = async () => {
+    if (!selectedOrderForEdit) return;
+    try {
+      setSavingProductChanges(true);
+      const currentItem = selectedOrderForEdit.items?.[editingItemIndex];
+      const primaryImg = itemImages.find(img => img.isPrimary)?.url || itemImages[0]?.url || currentItem?.thumbnail || '';
+
+      // 1. If product exists in database, update its Category and Images
+      if (currentLoadedProduct?._id) {
+        await updateProduct(currentLoadedProduct._id, {
+          category: selectedCategory,
+          images: itemImages,
+        });
+      }
+
+      // 2. Update Order Item thumbnail
+      const updatedItems = [...(selectedOrderForEdit.items || [])];
+      if (updatedItems[editingItemIndex]) {
+        updatedItems[editingItemIndex] = {
+          ...updatedItems[editingItemIndex],
+          thumbnail: primaryImg,
+          image: primaryImg,
+        };
+      }
+
+      const updatedOrder = await updateOrder(selectedOrderForEdit.orderId, {
+        items: updatedItems,
+      });
+
+      setOrders(prev => prev.map(o => (o.orderId === updatedOrder.orderId || o.id === updatedOrder.id) ? { ...o, ...updatedOrder } : o));
+      message.success('Category and website display image updated successfully!');
+      setEditModalVisible(false);
+      fetchOrders(true);
+    } catch (err) {
+      console.error(err);
+      message.error(err.message || 'Failed to update category and images');
+    } finally {
+      setSavingProductChanges(false);
     }
   };
 
@@ -733,6 +908,18 @@ const AllOrders = () => {
                             <Printer size={16} />
                           </button>
 
+                          {/* Edit Item Category & Website Display Images */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenEditModal(order);
+                            }}
+                            className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition"
+                            title="Edit Category & Website Images"
+                          >
+                            <Edit size={16} />
+                          </button>
+
                           {/* View Detail Page */}
                           <Link
                             to={`/shop/orders/${order.id || order.orderId.replace('#', '')}`}
@@ -811,6 +998,209 @@ const AllOrders = () => {
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
               ℹ️ Upon confirmation, the order fulfillment status will change to <strong>Processing</strong> and a tracking milestone will be created.
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* ── Edit Product Category & Website Display Images Modal ── */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <Sliders className="text-[#DD1215]" size={20} />
+            <span className="font-bold text-gray-900">
+              Edit Product Category & Website Display Images ({selectedOrderForEdit?.orderId})
+            </span>
+          </div>
+        }
+        open={editModalVisible}
+        onCancel={() => setEditModalVisible(false)}
+        width={720}
+        footer={[
+          <button
+            key="cancel"
+            onClick={() => setEditModalVisible(false)}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 mr-2 transition cursor-pointer"
+          >
+            Cancel
+          </button>,
+          <button
+            key="save"
+            onClick={handleSaveProductAndOrderChanges}
+            disabled={savingProductChanges}
+            className="px-5 py-2 bg-[#DD1215] hover:bg-red-700 text-white rounded-lg text-sm font-bold shadow-sm transition disabled:opacity-50 cursor-pointer"
+          >
+            {savingProductChanges ? 'Saving Changes...' : 'Save & Update on Main Website'}
+          </button>,
+        ]}
+      >
+        {selectedOrderForEdit && (
+          <div className="space-y-5 py-2 text-sm max-h-[75vh] overflow-y-auto pr-1">
+            {/* If order has multiple items, allow switching which item to edit */}
+            {(selectedOrderForEdit.items || []).length > 1 && (
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
+                  Select Order Item to Configure:
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {selectedOrderForEdit.items.map((it, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleSelectItemToEdit(idx)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 border transition cursor-pointer ${
+                        editingItemIndex === idx
+                          ? 'bg-red-50 text-[#DD1215] border-[#DD1215]'
+                          : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                      }`}
+                    >
+                      {it.thumbnail && <img src={it.thumbnail} alt="" className="w-5 h-5 rounded object-cover" />}
+                      <span className="truncate max-w-[160px]">{it.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Current Item Summary */}
+            {selectedOrderForEdit.items?.[editingItemIndex] && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs flex items-center justify-between">
+                <div>
+                  <span className="font-bold text-gray-900 text-sm block">
+                    {selectedOrderForEdit.items[editingItemIndex].name}
+                  </span>
+                  <span className="text-gray-500 font-mono text-[11px]">
+                    SKU: {selectedOrderForEdit.items[editingItemIndex].sku || 'N/A'} · Variant: {selectedOrderForEdit.items[editingItemIndex].variant?.size || 'Standard'}
+                  </span>
+                </div>
+                {currentLoadedProduct && (
+                  <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full text-[10px] font-bold">
+                    Catalog Product Linked ✓
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* 1. Category Assignment Dropdown */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
+                Assign Category <span className="text-red-500">*</span>
+              </label>
+              <p className="text-xs text-gray-500">
+                Select which store category this product will appear under on the main website navigation and catalog.
+              </p>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              >
+                <option value="">Select Category...</option>
+                {categoriesList.map((cat) => (
+                  <option key={cat._id} value={cat._id}>
+                    {cat.name} ({cat.slug})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 2. Website Display Images (just like Add Products) */}
+            <div className="space-y-3 pt-2 border-t border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
+                    Website Display Images <span className="text-red-500">*</span>
+                  </label>
+                  <p className="text-xs text-gray-500">
+                    The image marked with <strong className="text-amber-600 font-semibold">Primary</strong> is displayed on the main website shop catalog.
+                  </p>
+                </div>
+                <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-bold transition">
+                  <Upload size={13} />
+                  <span>{uploadingImage ? 'Uploading...' : 'Upload Image'}</span>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleUploadImageFiles}
+                    disabled={uploadingImage}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {/* Add image URL input */}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Or paste image URL (e.g., https://...)"
+                  value={newImageUrl}
+                  onChange={(e) => setNewImageUrl(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddImageUrl())}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddImageUrl}
+                  className="px-3.5 py-2 bg-gray-800 hover:bg-black text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+                >
+                  <Plus size={13} /> Add
+                </button>
+              </div>
+
+              {/* Images Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                {itemImages.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className={`relative rounded-lg border-2 overflow-hidden bg-gray-50 p-1 transition ${
+                      img.isPrimary
+                        ? 'border-amber-500 shadow-sm'
+                        : 'border-gray-200 hover:border-gray-400'
+                    }`}
+                  >
+                    <div className="aspect-square rounded overflow-hidden bg-white flex items-center justify-center relative">
+                      <img
+                        src={img.url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                      {img.isPrimary && (
+                        <div className="absolute top-1 left-1 bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs flex items-center gap-0.5">
+                          <Star size={9} fill="currentColor" /> Primary
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-1.5 flex items-center justify-between gap-1 text-[11px]">
+                      {!img.isPrimary ? (
+                        <button
+                          type="button"
+                          onClick={() => handleSetPrimaryImage(idx)}
+                          className="text-xs text-blue-600 hover:text-blue-800 font-semibold"
+                        >
+                          Make Primary
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-amber-700 font-bold">Main Website Image</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(idx)}
+                        className="text-gray-400 hover:text-red-600 p-0.5 transition"
+                        title="Remove image"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {itemImages.length === 0 && (
+                  <div className="col-span-full p-6 border-2 border-dashed border-gray-200 rounded-lg text-center text-gray-400 text-xs">
+                    No images added yet. Click &quot;Upload Image&quot; or paste an image URL above to set what is shown on the main website.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
