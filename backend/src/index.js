@@ -63,7 +63,7 @@ import categoryRoutes from './routes/category-routes.js';
 import inventoryRoutes from './routes/inventory-routes.js';
 import orderRoutes from './routes/order-routes.js';
 import companyProfileRoutes from './routes/companyProfile-routes.js';
-import adsInquiryRoutes from './routes/adsInquiry-routes.js';
+import marketingRoutes from './routes/marketing-routes.js';
 
 
 const explicitOrigins = [
@@ -137,48 +137,46 @@ app.use('/comic', comicRoutes);
 app.use('/comicChap', comicChapRoutes);
 app.use('/research-application', researchApplicationRoutes);
 app.use('/contact-query', contactQueryRoutes);
-app.use('/character',    characterRoutes);
-app.use('/payment',      paymentRoutes);
-app.use('/games',        gameRoutes);
-app.use('/artists',      artistRoutes);
-app.use('/newsletter',   newsletterRoutes);
-app.use('/search',       searchRoutes);
+app.use('/character', characterRoutes);
+app.use('/payment', paymentRoutes);
+app.use('/games', gameRoutes);
+app.use('/artists', artistRoutes);
+app.use('/newsletter', newsletterRoutes);
+app.use('/search', searchRoutes);
 app.use('/reading-progress', readingProgressRoutes);
-app.use('/wishlist',     wishlistRoutes);
-app.use('/hr/employees',      employeeRoutes);
-app.use('/hr/notifications',  notificationRoutes);
-app.use('/hr/audit',          auditLogRoutes);
-app.use('/hr/attendance',     attendanceRoutes);
-app.use('/hr/leaves',         leaveRoutes);
-app.use('/hr/calendar',       calendarEventRoutes);
-app.use('/hr/tasks',          taskRoutes);
-app.use('/hr/assignments',    workAssignmentRoutes);
-app.use('/hr/projects',       projectRoutes);
-app.use('/hr/performance',    performanceRoutes);
-app.use('/hr/goals',          goalRoutes);
-app.use('/hr/recognition',    recognitionRoutes);
-app.use('/hr/salary',         salaryRoutes);
-app.use('/hr/payroll',        payrollRoutes);
-app.use('/hr/onboarding',     onboardingRoutes);
-app.use('/hr/documents',      hrDocumentRoutes);
-app.use('/hr/recruitment',    recruitmentPipelineRoutes);
-app.use('/hr/chat',           chatRoutes);
-app.use('/hr/wiki',           wikiRoutes);
-app.use('/hr/self-service',   selfServiceRoutes);
-app.use('/hr/ai',             aiRoutes);
-app.use('/hr/worklog',        dailyWorkLogRoutes);
-app.use('/hr/meetings',      meetingRoutes);
-app.use('/messages',          directMessageRoutes);
+app.use('/wishlist', wishlistRoutes);
+app.use('/hr/employees', employeeRoutes);
+app.use('/hr/notifications', notificationRoutes);
+app.use('/hr/audit', auditLogRoutes);
+app.use('/hr/attendance', attendanceRoutes);
+app.use('/hr/leaves', leaveRoutes);
+app.use('/hr/calendar', calendarEventRoutes);
+app.use('/hr/tasks', taskRoutes);
+app.use('/hr/assignments', workAssignmentRoutes);
+app.use('/hr/projects', projectRoutes);
+app.use('/hr/performance', performanceRoutes);
+app.use('/hr/goals', goalRoutes);
+app.use('/hr/recognition', recognitionRoutes);
+app.use('/hr/salary', salaryRoutes);
+app.use('/hr/payroll', payrollRoutes);
+app.use('/hr/onboarding', onboardingRoutes);
+app.use('/hr/documents', hrDocumentRoutes);
+app.use('/hr/recruitment', recruitmentPipelineRoutes);
+app.use('/hr/chat', chatRoutes);
+app.use('/hr/wiki', wikiRoutes);
+app.use('/hr/self-service', selfServiceRoutes);
+app.use('/hr/ai', aiRoutes);
+app.use('/hr/worklog', dailyWorkLogRoutes);
+app.use('/hr/meetings', meetingRoutes);
+app.use('/messages', directMessageRoutes);
 
 // Shop routes
-app.use('/shop/products',        productRoutes);
-app.use('/shop/categories',      categoryRoutes);
-app.use('/shop/inventory',       inventoryRoutes);
-app.use('/shop/orders',          orderRoutes);
+app.use('/shop/products', productRoutes);
+app.use('/shop/categories', categoryRoutes);
+app.use('/shop/inventory', inventoryRoutes);
+app.use('/shop/orders', orderRoutes);
 app.use('/shop/company-profile', companyProfileRoutes);
-
-// Ads Inquiry routes
-app.use('/api/ads-inquiry',      adsInquiryRoutes);
+app.use('/shop/marketing', marketingRoutes);
 
 app.get('/', (req, res) => {
   res.send('Backend is up and running!');
@@ -191,44 +189,44 @@ export const upload = multer({
 });
 
 const setupandstartserver = async () => {
-    app.listen(config.PORT, async () => {
-        console.log(`Server started at ${config.PORT}`);
-        await connect();
-        console.log("mongodb connected");
+  app.listen(config.PORT, async () => {
+    console.log(`Server started at ${config.PORT}`);
+    await connect();
+    console.log("mongodb connected");
 
-        // ── One-time migration: fix admins with empty roles array ──────
-        // Admins created before roles-array support have roles:[] but role:"something"
-        // Copy role → roles so getRoles() works correctly without re-login
-        try {
-            const mongoose = (await import('mongoose')).default;
-            const adminCol = mongoose.connection.collection('admins');
-            const result = await adminCol.updateMany(
-                { role: { $exists: true, $ne: null }, $expr: { $eq: [{ $size: { $ifNull: ["$roles", []] } }, 0] } },
-                [{ $set: { roles: ["$role"] } }]
-            );
-            if (result.modifiedCount > 0) {
-                console.log(`✅ Fixed roles array for ${result.modifiedCount} admin(s)`);
-            }
-        } catch (e) {
-            console.warn('Admin roles migration warning:', e.message);
-        }
-        // This index was created in an earlier schema version. It causes E11000
-        // duplicate key errors because employeeId is null for admin-linked logs.
-        try {
-            const mongoose = (await import('mongoose')).default;
-            const col = mongoose.connection.collection('dailyworklogs');
-            const indexes = await col.indexes();
-            const stale = indexes.find(idx => idx.name === 'employeeId_1_date_1');
-            if (stale) {
-                await col.dropIndex('employeeId_1_date_1');
-                console.log('✅ Dropped stale index: employeeId_1_date_1');
-            }
-        } catch (e) {
-            console.warn('Index migration warning:', e.message);
-        }
+    // ── One-time migration: fix admins with empty roles array ──────
+    // Admins created before roles-array support have roles:[] but role:"something"
+    // Copy role → roles so getRoles() works correctly without re-login
+    try {
+      const mongoose = (await import('mongoose')).default;
+      const adminCol = mongoose.connection.collection('admins');
+      const result = await adminCol.updateMany(
+        { role: { $exists: true, $ne: null }, $expr: { $eq: [{ $size: { $ifNull: ["$roles", []] } }, 0] } },
+        [{ $set: { roles: ["$role"] } }]
+      );
+      if (result.modifiedCount > 0) {
+        console.log(`✅ Fixed roles array for ${result.modifiedCount} admin(s)`);
+      }
+    } catch (e) {
+      console.warn('Admin roles migration warning:', e.message);
+    }
+    // This index was created in an earlier schema version. It causes E11000
+    // duplicate key errors because employeeId is null for admin-linked logs.
+    try {
+      const mongoose = (await import('mongoose')).default;
+      const col = mongoose.connection.collection('dailyworklogs');
+      const indexes = await col.indexes();
+      const stale = indexes.find(idx => idx.name === 'employeeId_1_date_1');
+      if (stale) {
+        await col.dropIndex('employeeId_1_date_1');
+        console.log('✅ Dropped stale index: employeeId_1_date_1');
+      }
+    } catch (e) {
+      console.warn('Index migration warning:', e.message);
+    }
 
-        startCronJobs(); // Start midnight auto-leave cron
-    })
+    startCronJobs(); // Start midnight auto-leave cron
+  })
 }
 
 setupandstartserver();

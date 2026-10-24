@@ -102,7 +102,7 @@ const ShopMain = () => {
 
   // Sync banners across tabs & Admin BroadcastChannel
   useEffect(() => {
-    const reloadBanners = () => {
+    const reloadBanners = async () => {
       try {
         const raw = localStorage.getItem("infinito_shop_banners");
         if (raw) {
@@ -111,18 +111,48 @@ const ShopMain = () => {
             const enabled = parsed.promoBanners.filter((b) => b && b.isActive !== false);
             if (enabled.length > 0) {
               setPromoBannersList(enabled);
-              return;
             }
           }
         }
       } catch { }
+
+      // Fetch from backend API to ensure live sync across tabs and devices
+      try {
+        const base = "https://infinitocomics-68cr.onrender.com";
+        let res;
+        try {
+          res = await fetch(`${base}/shop/marketing/banners`).then((r) => r.json());
+        } catch {
+          res = await fetch(`http://localhost:5000/shop/marketing/banners`).then((r) => r.json());
+        }
+        if (res?.success && res.data?.promoBanners?.length > 0) {
+          const enabled = res.data.promoBanners.filter((b) => b && b.isActive !== false);
+          if (enabled.length > 0) {
+            setPromoBannersList(enabled);
+            try {
+              localStorage.setItem("infinito_shop_banners", JSON.stringify(res.data));
+            } catch {}
+          }
+        }
+      } catch {}
     };
+
+    reloadBanners();
 
     window.addEventListener("storage", reloadBanners);
     let bc;
     try {
       bc = new BroadcastChannel("infinito_banners_channel");
-      bc.onmessage = () => reloadBanners();
+      bc.onmessage = (e) => {
+        if (e.data?.type === "banners_updated") {
+          if (Array.isArray(e.data.data?.promoBanners) && e.data.data.promoBanners.length > 0) {
+            const enabled = e.data.data.promoBanners.filter((b) => b && b.isActive !== false);
+            if (enabled.length > 0) setPromoBannersList(enabled);
+          } else {
+            reloadBanners();
+          }
+        }
+      };
     } catch { }
 
     return () => {
@@ -159,9 +189,14 @@ const ShopMain = () => {
                 <ChevronLeft size={18} />
               </button>
 
-              {/* Exact Responsive Promo Banner - image fills container completely */}
+              {/* Exact Responsive Promo Banner - image fills container cleanly */}
               {(() => {
-                const bannerImg = currentPromo?.bgImageUrl || promoBanner;
+                // If photo is set to empty (No Photo option), do not force fallback svg
+                const hasExplicitBg = currentPromo?.bgImageUrl !== undefined;
+                const hasExplicitImg = currentPromo?.imageUrl !== undefined;
+                const bannerImg = hasExplicitBg
+                  ? currentPromo.bgImageUrl
+                  : (hasExplicitImg ? currentPromo.imageUrl : promoBanner);
                 const isRight = currentPromo?.alignment === "right";
                 const isCenter = currentPromo?.alignment === "center";
 
@@ -172,12 +207,17 @@ const ShopMain = () => {
                       backgroundColor: currentPromo?.bgColor || "#800000",
                     }}
                   >
-                    {/* The image fills the size of the banner container */}
-                    {bannerImg && (
+                    {/* The image fills the size of the banner container if provided */}
+                    {bannerImg ? (
                       <img
                         src={bannerImg}
                         alt={currentPromo?.headline || "Promotional Banner"}
                         className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none transition-all duration-300 scale-[1.08] min-w-full min-h-full"
+                      />
+                    ) : (
+                      <div
+                        className="absolute inset-0"
+                        style={{ backgroundColor: currentPromo?.bgColor || "#800000" }}
                       />
                     )}
 
