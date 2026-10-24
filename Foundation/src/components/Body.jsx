@@ -1,19 +1,17 @@
 import React from 'react'
 import Home from '../pages/Home'
 import Navbar from './Navbar'
-import Footer from './Footer'
-import FoundationJoinUltimate from '../pages/Foundation/FoundationJoinUltimate'
+import JoinUltimate from '../../../frontend/src/pages/Home/JoinUltimate.jsx'
 import FoundationNewsletter from '../pages/Foundation/FoundationNewsletter'
+import Footer from './Footer'
 
 const Body = () => {
   return (
     <>
       <Navbar />
       <Home />
-      <section className="w-full">
-        <FoundationJoinUltimate />
-        <FoundationNewsletter />
-      </section>
+      <JoinUltimate />
+      <FoundationNewsletter />
       <Footer />
     </>
   )
