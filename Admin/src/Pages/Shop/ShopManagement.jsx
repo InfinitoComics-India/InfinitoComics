@@ -20,7 +20,7 @@ const ShopManagement = () => {
   const [employees, setEmployees] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('ALL');
-  const [accessFilter, setAccessFilter] = useState('ALL');
+  const [accessFilter, setAccessFilter] = useState('GRANTED');
   const [togglingId, setTogglingId] = useState(null);
 
   // Load all employees on mount
@@ -95,7 +95,7 @@ const ShopManagement = () => {
       if (checked) {
         message.success(`Granted Shop section access to ${emp.name}`);
       } else {
-        message.info(`Revoked Shop section access from ${emp.name}`);
+        message.info(`Restricted Shop section access for ${emp.name}`);
       }
     } catch (err) {
       console.error('Toggle error:', err);
@@ -164,29 +164,39 @@ const ShopManagement = () => {
 
   // Filtered employees list
   const filteredEmployees = useMemo(() => {
+    const q = searchTerm.toLowerCase().trim();
     return employees.filter((emp) => {
-      const q = searchTerm.toLowerCase().trim();
-      const matchSearch =
-        !q ||
-        emp.name?.toLowerCase().includes(q) ||
-        emp.email?.toLowerCase().includes(q) ||
-        emp.employeeId?.toLowerCase().includes(q) ||
-        emp.designation?.toLowerCase().includes(q);
-
       const matchDept = departmentFilter === 'ALL' || emp.department === departmentFilter;
+      if (!matchDept) return false;
 
-      const matchAccess =
-        accessFilter === 'ALL' ||
-        (accessFilter === 'GRANTED' && emp.shopAccess === true) ||
-        (accessFilter === 'RESTRICTED' && !emp.shopAccess);
+      const hasAccess = Boolean(emp.shopAccess);
 
-      return matchSearch && matchDept && matchAccess;
+      // When searching: search across all employees so any unassigned employee can be found and given access
+      if (q) {
+        const matchSearch =
+          emp.name?.toLowerCase().includes(q) ||
+          emp.email?.toLowerCase().includes(q) ||
+          emp.employeeId?.toLowerCase().includes(q) ||
+          emp.designation?.toLowerCase().includes(q);
+
+        if (!matchSearch) return false;
+
+        // If the admin specifically chose a restricted/granted filter while searching
+        if (accessFilter === 'RESTRICTED') return !hasAccess;
+        if (accessFilter === 'GRANTED' && !q) return hasAccess;
+        return true;
+      }
+
+      // Default (no search query): ONLY show employees who currently have access granted
+      if (accessFilter === 'ALL') return true;
+      if (accessFilter === 'RESTRICTED') return !hasAccess;
+      return hasAccess;
     });
   }, [employees, searchTerm, departmentFilter, accessFilter]);
 
   // Stats calculation
   const totalEmployees = employees.length;
-  const grantedCount = employees.filter((e) => e.shopAccess === true).length;
+  const grantedCount = employees.filter((e) => Boolean(e.shopAccess)).length;
   const restrictedCount = totalEmployees - grantedCount;
 
   // Table columns definition
@@ -341,40 +351,79 @@ const ShopManagement = () => {
         </div>
       </div>
 
-      {/* ── Overview Stat Cards ── */}
+      {/* ── Overview Stat Cards (Interactive filters) ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => setAccessFilter('ALL')}
+          className={`text-left p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+            accessFilter === 'ALL'
+              ? 'bg-blue-50/50 border-blue-500 ring-2 ring-blue-500/20 shadow-sm'
+              : 'bg-white border-gray-200 hover:border-gray-300 shadow-xs'
+          }`}
+        >
           <div>
-            <p className="text-xs uppercase tracking-wider text-gray-500 font-bold">Total Company Staff</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-xs uppercase tracking-wider text-gray-500 font-bold">Total Company Staff</p>
+              {accessFilter === 'ALL' && (
+                <span className="text-[10px] font-bold px-1.5 py-0.2 bg-blue-100 text-blue-700 rounded-full">Active</span>
+              )}
+            </div>
             <h3 className="text-2xl font-black text-gray-900 mt-0.5">{totalEmployees}</h3>
-            <p className="text-[11px] text-gray-400">All registered employees</p>
+            <p className="text-[11px] text-gray-400">Click to show all employees</p>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center shrink-0">
             <Users size={22} />
           </div>
-        </div>
+        </button>
 
-        <div className="bg-white p-4 rounded-xl border border-emerald-200 shadow-xs flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => setAccessFilter('GRANTED')}
+          className={`text-left p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+            accessFilter === 'GRANTED'
+              ? 'bg-emerald-50/60 border-emerald-500 ring-2 ring-emerald-500/20 shadow-sm'
+              : 'bg-white border-emerald-200 hover:border-emerald-300 shadow-xs'
+          }`}
+        >
           <div>
-            <p className="text-xs uppercase tracking-wider text-emerald-700 font-bold">Shop Access Granted</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-xs uppercase tracking-wider text-emerald-700 font-bold">Shop Access Granted</p>
+              {accessFilter === 'GRANTED' && (
+                <span className="text-[10px] font-bold px-1.5 py-0.2 bg-emerald-100 text-emerald-800 rounded-full">Active</span>
+              )}
+            </div>
             <h3 className="text-2xl font-black text-emerald-800 mt-0.5">{grantedCount}</h3>
-            <p className="text-[11px] text-emerald-600">Active shop managers</p>
+            <p className="text-[11px] text-emerald-600">Click to filter granted only</p>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
             <ShieldCheck size={24} />
           </div>
-        </div>
+        </button>
 
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => setAccessFilter('RESTRICTED')}
+          className={`text-left p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+            accessFilter === 'RESTRICTED'
+              ? 'bg-rose-50/60 border-[#DD1215] ring-2 ring-red-500/20 shadow-sm'
+              : 'bg-white border-gray-200 hover:border-gray-300 shadow-xs'
+          }`}
+        >
           <div>
-            <p className="text-xs uppercase tracking-wider text-gray-500 font-bold">Access Restricted</p>
-            <h3 className="text-2xl font-black text-gray-700 mt-0.5">{restrictedCount}</h3>
-            <p className="text-[11px] text-gray-400">Shop section hidden on portal</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-xs uppercase tracking-wider text-gray-600 font-bold">Access Restricted</p>
+              {accessFilter === 'RESTRICTED' && (
+                <span className="text-[10px] font-bold px-1.5 py-0.2 bg-rose-100 text-rose-700 rounded-full">Active</span>
+              )}
+            </div>
+            <h3 className="text-2xl font-black text-gray-800 mt-0.5">{restrictedCount}</h3>
+            <p className="text-[11px] text-gray-500">Click to filter restricted only</p>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-gray-50 text-gray-500 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-xl bg-gray-50 text-gray-500 flex items-center justify-center shrink-0">
             <ShieldAlert size={22} />
           </div>
-        </div>
+        </button>
       </div>
 
       {/* ── Filters & Search Bar ── */}
@@ -411,12 +460,12 @@ const ShopManagement = () => {
             <Select
               value={accessFilter}
               onChange={setAccessFilter}
-              style={{ width: 160 }}
+              style={{ width: 185 }}
               className="rounded-lg"
             >
-              <Option value="ALL">All Permissions</Option>
-              <Option value="GRANTED">Access Granted</Option>
-              <Option value="RESTRICTED">Restricted</Option>
+              <Option value="GRANTED">Access Granted Only (Default)</Option>
+              <Option value="ALL">All Company Staff</Option>
+              <Option value="RESTRICTED">Restricted Only</Option>
             </Select>
 
             {/* Quick Batch Actions */}
@@ -453,6 +502,41 @@ const ShopManagement = () => {
         </div>
       </div>
 
+      {/* ── Context Notice Banner ── */}
+      <div className="flex items-center justify-between bg-blue-50/70 border border-blue-200/80 rounded-lg px-4 py-2 text-xs text-blue-900 shadow-xs">
+        <div className="flex items-center gap-2">
+          <ShieldCheck size={16} className="text-blue-600 shrink-0" />
+          <span>
+            {searchTerm ? (
+              <span>
+                Searching all staff for <strong className="font-semibold">"{searchTerm}"</strong>. Toggle the switch next to any employee to grant or revoke Shop access.
+              </span>
+            ) : accessFilter === 'GRANTED' ? (
+              <span>
+                Showing only staff with <strong className="font-semibold">Shop Access Granted ({grantedCount})</strong>. To grant access to any other employee, search by their name or email above.
+              </span>
+            ) : accessFilter === 'RESTRICTED' ? (
+              <span>
+                Showing only staff with <strong className="font-semibold">Access Restricted ({restrictedCount})</strong>. Toggle any employee to grant them Shop access.
+              </span>
+            ) : (
+              <span>
+                Showing <strong className="font-semibold">All Company Staff ({totalEmployees})</strong>.
+              </span>
+            )}
+          </span>
+        </div>
+        {searchTerm && (
+          <button
+            type="button"
+            onClick={() => setSearchTerm('')}
+            className="text-blue-700 hover:text-blue-900 font-bold underline ml-2 cursor-pointer shrink-0"
+          >
+            Clear Search
+          </button>
+        )}
+      </div>
+
       {/* ── Employees Table ── */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
         <Table
@@ -470,7 +554,19 @@ const ShopManagement = () => {
             emptyText: (
               <div className="py-12 text-center text-gray-400">
                 <Users size={36} className="mx-auto mb-2 opacity-40" />
-                <p className="text-sm font-semibold">No employees found matching the filters.</p>
+                {searchTerm ? (
+                  <>
+                    <p className="text-sm font-semibold text-gray-700">No staff found matching "{searchTerm}"</p>
+                    <p className="text-xs text-gray-400 mt-1">Try searching with another name, email, or designation.</p>
+                  </>
+                ) : accessFilter === 'GRANTED' ? (
+                  <>
+                    <p className="text-sm font-semibold text-gray-700">No employees currently have Shop access granted.</p>
+                    <p className="text-xs text-gray-400 mt-1">Search by name or email above to find any company employee and grant access.</p>
+                  </>
+                ) : (
+                  <p className="text-sm font-semibold">No employees found matching the filters.</p>
+                )}
               </div>
             ),
           }}

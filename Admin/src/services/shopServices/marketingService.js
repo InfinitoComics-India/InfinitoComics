@@ -1,4 +1,7 @@
 // Service for managing Discount Codes, Banners & Hero Slider promotions
+import axios from 'axios';
+import { BACKEND_URL } from '../../Utils/constant';
+
 const DISCOUNTS_KEY = 'infinito_discount_codes';
 const BANNERS_KEY = 'infinito_shop_banners';
 
@@ -255,15 +258,79 @@ export const toggleDiscountCodeStatus = async (id) => {
 
 // ── BANNERS & PROMOTIONS API ───────────────────────────────────
 
+const saveToBackend = async (data) => {
+  const url = BACKEND_URL || 'https://infinitocomics-68cr.onrender.com';
+  try {
+    await axios.put(`${url}/shop/marketing/banners`, data, { timeout: 4000 });
+  } catch (e) {
+    try {
+      await axios.put(`http://localhost:5000/shop/marketing/banners`, data, { timeout: 2000 });
+    } catch {}
+  }
+};
+
 const broadcastBanners = (data) => {
   try {
     const channel = new BroadcastChannel('infinito_banners_channel');
     channel.postMessage({ type: 'banners_updated', data });
     channel.close();
   } catch {}
+  try {
+    window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new CustomEvent('infinito_banners_updated', { detail: data }));
+  } catch {}
 };
 
 export const getMarketingBanners = async () => {
+  // First attempt to load from backend API for multi-device/multi-origin sync
+  try {
+    const url = BACKEND_URL || 'https://infinitocomics-68cr.onrender.com';
+    let res;
+    try {
+      res = await axios.get(`${url}/shop/marketing/banners`, { timeout: 3000 });
+    } catch {
+      res = await axios.get(`http://localhost:5000/shop/marketing/banners`, { timeout: 2000 });
+    }
+    if (res?.data?.success && res.data.data) {
+      const dbData = res.data.data;
+      const merged = {
+        ...DEFAULT_BANNERS_CONFIG,
+        ...dbData,
+        heroSlider: Array.isArray(dbData.heroSlider) && dbData.heroSlider.length > 0
+          ? dbData.heroSlider.map((s, idx) => ({
+              ...s,
+              id: s.id || `slide-${idx + 1}`,
+              imageUrl: s.imageUrl || s.image || '',
+              image: s.imageUrl || s.image || '',
+              displayMode: s.displayMode || 'custom_overlay',
+              alignment: s.alignment || 'left',
+              isActive: s.isActive !== false,
+            }))
+          : DEFAULT_BANNERS_CONFIG.heroSlider,
+        promoBanners: Array.isArray(dbData.promoBanners) && dbData.promoBanners.length > 0
+          ? dbData.promoBanners.map((b, idx) => ({
+              ...b,
+              id: b.id || `promo-${idx + 1}`,
+              bgImageUrl: b.bgImageUrl || b.imageUrl || b.image || '',
+              imageUrl: b.bgImageUrl || b.imageUrl || b.image || '',
+              alignment: b.alignment || 'left',
+              displayMode: b.displayMode || 'custom_overlay',
+              isActive: b.isActive !== false,
+            }))
+          : DEFAULT_BANNERS_CONFIG.promoBanners,
+        promoBars: Array.isArray(dbData.promoBars) && dbData.promoBars.length > 0
+          ? dbData.promoBars
+          : DEFAULT_BANNERS_CONFIG.promoBars,
+      };
+      try {
+        localStorage.setItem(BANNERS_KEY, JSON.stringify(merged));
+      } catch {}
+      return merged;
+    }
+  } catch (err) {
+    // Backend offline or unreachable, fallback to localStorage
+  }
+
   try {
     const raw = localStorage.getItem(BANNERS_KEY);
     if (raw) {
@@ -288,6 +355,7 @@ export const getMarketingBanners = async () => {
               ...b,
               id: b.id || `promo-${idx + 1}`,
               bgImageUrl: b.bgImageUrl || b.imageUrl || b.image || '',
+              imageUrl: b.bgImageUrl || b.imageUrl || b.image || '',
               alignment: b.alignment || 'left',
               displayMode: b.displayMode || 'custom_overlay',
               isActive: b.isActive !== false,
@@ -301,6 +369,7 @@ export const getMarketingBanners = async () => {
     }
     localStorage.setItem(BANNERS_KEY, JSON.stringify(DEFAULT_BANNERS_CONFIG));
     broadcastBanners(DEFAULT_BANNERS_CONFIG);
+    saveToBackend(DEFAULT_BANNERS_CONFIG);
     return DEFAULT_BANNERS_CONFIG;
   } catch (e) {
     console.error('Failed to get banners config:', e);
@@ -351,6 +420,7 @@ export const updateHeroSlider = async (slides) => {
     }
   }
   broadcastBanners(updated);
+  saveToBackend(updated);
   return updated;
 };
 
@@ -360,6 +430,7 @@ export const updatePromoBanners = async (banners) => {
     ...b,
     id: b.id || `promo-${idx + 1}`,
     bgImageUrl: b.bgImageUrl || b.imageUrl || b.image || '',
+    imageUrl: b.bgImageUrl || b.imageUrl || b.image || '',
     alignment: b.alignment || 'left',
     displayMode: b.displayMode || 'custom_overlay',
     isActive: b.isActive !== false,
@@ -375,6 +446,7 @@ export const updatePromoBanners = async (banners) => {
     console.warn("Storage write failed", err);
   }
   broadcastBanners(updated);
+  saveToBackend(updated);
   return updated;
 };
 
@@ -391,6 +463,7 @@ export const updatePromoBars = async (bars) => {
     console.warn("Storage write failed", err);
   }
   broadcastBanners(updated);
+  saveToBackend(updated);
   return updated;
 };
 

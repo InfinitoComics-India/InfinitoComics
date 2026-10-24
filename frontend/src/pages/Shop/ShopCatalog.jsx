@@ -78,7 +78,7 @@ const ShopCatalog = () => {
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const loadMarketingBanners = () => {
+  const loadMarketingBanners = async () => {
     try {
       const stored = localStorage.getItem("infinito_shop_banners");
       if (stored) {
@@ -101,6 +101,30 @@ const ShopCatalog = () => {
     } catch (e) {
       console.warn("Failed to parse infinito_shop_banners in ShopCatalog", e);
     }
+
+    // Live sync with backend
+    try {
+      const base = "https://infinitocomics-68cr.onrender.com";
+      let res;
+      try {
+        res = await fetch(`${base}/shop/marketing/banners`).then((r) => r.json());
+      } catch {
+        res = await fetch(`http://localhost:5000/shop/marketing/banners`).then((r) => r.json());
+      }
+      if (res?.success && res.data) {
+        if (Array.isArray(res.data.heroSlider) && res.data.heroSlider.length > 0) {
+          const activeSlides = res.data.heroSlider.filter((s) => s.isActive !== false);
+          if (activeSlides.length > 0) setHeroSlides(activeSlides);
+        }
+        if (Array.isArray(res.data.promoBanners) && res.data.promoBanners.length > 0) {
+          const activePromos = res.data.promoBanners.filter((b) => b.isActive !== false);
+          if (activePromos.length > 0) setPromoBanners(activePromos);
+        }
+        try {
+          localStorage.setItem("infinito_shop_banners", JSON.stringify(res.data));
+        } catch {}
+      }
+    } catch {}
   };
 
   const renderHighlightedText = (headline, highlight) => {
@@ -241,12 +265,12 @@ const ShopCatalog = () => {
       {/* 1. HERO SLIDER CAROUSEL SECTION */}
       <section className="relative w-full bg-[#0a0a0a] text-white overflow-hidden select-none">
         {/* Full Artwork / Visual Slide */}
-        <div className="relative w-full min-h-[380px] sm:min-h-[460px] md:min-h-[540px] flex items-center justify-center">
+        <div className="relative w-full min-h-[500px] sm:min-h-[580px] md:min-h-[640px] lg:min-h-[700px] flex items-center justify-center">
           {currentSlide?.imageUrl ? (
             <img
               src={currentSlide.imageUrl}
               alt={currentSlide.title || "Infinito Hero Slide"}
-              className="absolute inset-0 w-full h-full object-cover object-center transition-all duration-700 scale-[1.08] min-w-full min-h-full"
+              className="absolute inset-0 w-full h-full object-cover object-center transition-all duration-700 scale-[1.05] min-w-full min-h-full"
             />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-r from-black via-[#1c0205] to-black" />
@@ -262,7 +286,7 @@ const ShopCatalog = () => {
           />
 
           {/* Text & button overlay matching Live Carousel Preview exactly */}
-          <div className="relative z-10 max-w-[1200px] w-full mx-auto px-6 sm:px-8 md:px-12 py-10 md:py-16 flex items-center">
+          <div className="relative z-10 max-w-[1280px] w-full mx-auto px-6 sm:px-10 md:px-16 py-16 sm:py-20 md:py-28 flex items-center">
             <div
               className={`w-full md:w-3/5 space-y-2 md:space-y-3 ${
                 currentSlide?.alignment === "right" ? "ml-auto text-right" : "mr-auto text-left"
@@ -364,12 +388,17 @@ const ShopCatalog = () => {
                   backgroundColor: currentPromo?.bgColor || "#800000",
                 }}
               >
-                {/* The image fills the size of the banner cleanly */}
-                {currentPromo?.bgImageUrl && (
+                {/* The image fills the size of the banner cleanly if provided */}
+                {(currentPromo?.bgImageUrl || currentPromo?.imageUrl) ? (
                   <img
-                    src={currentPromo.bgImageUrl}
+                    src={currentPromo.bgImageUrl || currentPromo.imageUrl}
                     alt={currentPromo?.headline || "Promotional Banner"}
                     className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none transition-all duration-300 scale-[1.08] min-w-full min-h-full"
+                  />
+                ) : (
+                  <div
+                    className="absolute inset-0"
+                    style={{ backgroundColor: currentPromo?.bgColor || "#800000" }}
                   />
                 )}
 

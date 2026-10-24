@@ -30,28 +30,37 @@ const defaultSlides = [
   },
 ];
 
+const normalizeSlideList = (rawList) => {
+  if (!Array.isArray(rawList) || rawList.length === 0) return defaultSlides;
+  const enabled = rawList.filter((s) => s.isActive !== false);
+  if (enabled.length === 0) return defaultSlides;
+
+  return enabled.map((s, idx) => {
+    // Preserve empty string if photo was removed (No Photo option)
+    const imgVal = s.imageUrl !== undefined ? s.imageUrl : (s.image !== undefined ? s.image : (idx === 0 ? "/banners/hero_monthly_drop.png" : "/banners/hero_become_infinito.png"));
+    return {
+      id: s.id || `slide-${idx + 1}`,
+      title: s.title,
+      image: imgVal,
+      heading: s.headline || s.title || (idx === 0 ? "MONTHLY DROP INCOMING" : "BECOME ONE OF US BECOME INFINITO"),
+      highlightText: s.highlightText || (idx === 0 ? "MONTHLY DROP" : "ONE OF US"),
+      subtext: s.subheading || s.subtext || "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
+      cta: s.buttonText || s.cta || "Shop Now",
+      ctaLink: s.buttonLink || s.ctaLink || "https://shop.infinitohq.com/",
+      hideText: false,
+      variant: s.variant || (idx === 0 ? "light" : "dark"),
+      align: s.alignment || s.align || "left",
+    };
+  });
+};
+
 const loadSlidesFromStorage = () => {
   try {
     const raw = localStorage.getItem("infinito_shop_banners");
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed.heroSlider) && parsed.heroSlider.length > 0) {
-        const enabled = parsed.heroSlider.filter((s) => s.isActive !== false);
-        if (enabled.length > 0) {
-          return enabled.map((s, idx) => ({
-            id: s.id || `slide-${idx + 1}`,
-            title: s.title,
-            image: s.imageUrl || s.image || (idx === 0 ? "/banners/hero_monthly_drop.png" : "/banners/hero_become_infinito.png"),
-            heading: s.headline || s.title || (idx === 0 ? "MONTHLY DROP INCOMING" : "BECOME ONE OF US BECOME INFINITO"),
-            highlightText: s.highlightText || (idx === 0 ? "MONTHLY DROP" : "ONE OF US"),
-            subtext: s.subheading || s.subtext || "Only 500 pieces. Book the exclusive INFINITO merchandise right now.",
-            cta: s.buttonText || s.cta || "Shop Now",
-            ctaLink: s.buttonLink || s.ctaLink || "https://shop.infinitohq.com/",
-            hideText: false,
-            variant: s.variant || (idx === 0 ? "light" : "dark"),
-            align: s.alignment || s.align || "left",
-          }));
-        }
+        return normalizeSlideList(parsed.heroSlider);
       }
     }
   } catch {}
@@ -84,16 +93,47 @@ const HeroSlider = () => {
     return () => clearInterval(timer);
   }, [slides.length]);
 
-  // Live synchronization across Admin tab and Shop tab
+  // Live synchronization across Admin tab and Shop tab (via BroadcastChannel, storage event, and backend API)
   useEffect(() => {
-    const reload = () => setSlides(loadSlidesFromStorage());
+    const reload = async () => {
+      // Check local storage first for fastest local update
+      setSlides(loadSlidesFromStorage());
+
+      // Fetch from backend API to ensure cross-device and remote synchronization
+      try {
+        const base = "https://infinitocomics-68cr.onrender.com";
+        let res;
+        try {
+          res = await fetch(`${base}/shop/marketing/banners`).then((r) => r.json());
+        } catch {
+          res = await fetch(`http://localhost:5000/shop/marketing/banners`).then((r) => r.json());
+        }
+        if (res?.success && res.data?.heroSlider?.length > 0) {
+          const freshSlides = normalizeSlideList(res.data.heroSlider);
+          setSlides(freshSlides);
+          try {
+            localStorage.setItem("infinito_shop_banners", JSON.stringify(res.data));
+          } catch {}
+        }
+      } catch {}
+    };
+
+    reload();
+
     let bc;
     try {
       bc = new BroadcastChannel("infinito_banners_channel");
       bc.onmessage = (e) => {
-        if (e.data?.type === "banners_updated") reload();
+        if (e.data?.type === "banners_updated") {
+          if (e.data.data?.heroSlider) {
+            setSlides(normalizeSlideList(e.data.data.heroSlider));
+          } else {
+            reload();
+          }
+        }
       };
     } catch {}
+
     window.addEventListener("storage", reload);
     return () => {
       if (bc) bc.close();
@@ -151,13 +191,15 @@ const Slide = ({ slide }) => {
   const isRight = slide.align === "right";
 
   return (
-    <div className="w-full flex-shrink-0 text-white relative bg-black">
-      {slide.image && (
+    <div className="w-full flex-shrink-0 text-white relative bg-black overflow-hidden">
+      {slide.image ? (
         <img
           src={slide.image}
           alt={slide.title || "Hero Slide"}
-          className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none scale-[1.08] min-w-full min-h-full"
+          className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none scale-[1.05] min-w-full min-h-full transition-all duration-700"
         />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-r from-black via-[#1c0205] to-black" />
       )}
 
       {/* Contrast gradient scrim ensuring text and button pop and masking background */}
@@ -169,10 +211,10 @@ const Slide = ({ slide }) => {
         }`}
       />
 
-      {/* Content overlaid on banner matching Live Carousel Preview aesthetic exactly */}
-      <div className="relative max-w-[1200px] mx-auto px-6 sm:px-8 md:px-12 w-full aspect-[1024/380] min-h-[340px] sm:min-h-[420px] md:min-h-[500px] flex items-center">
+      {/* Content overlaid on banner with increased height matching other pages */}
+      <div className="relative max-w-[1280px] mx-auto px-6 sm:px-10 md:px-16 w-full min-h-[500px] sm:min-h-[580px] md:min-h-[640px] lg:min-h-[700px] flex items-center">
         <div
-          className={`w-full md:w-3/5 py-10 md:py-16 space-y-2 md:space-y-3 ${
+          className={`w-full md:w-3/5 py-16 sm:py-20 md:py-28 space-y-3 md:space-y-4 ${
             isRight ? "md:ml-auto md:text-right" : "md:mr-auto md:text-left"
           }`}
         >
