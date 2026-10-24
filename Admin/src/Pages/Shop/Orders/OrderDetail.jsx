@@ -46,13 +46,6 @@ const OrderDetail = () => {
   const [webhookAwb, setWebhookAwb] = useState('');
   const [webhookSimulating, setWebhookSimulating] = useState(false);
 
-  // Webhook Simulation Modal state
-  const [webhookModalOpen, setWebhookModalOpen] = useState(false);
-  const [webhookStatus, setWebhookStatus] = useState('Dispatched');
-  const [webhookCourier, setWebhookCourier] = useState('BlueDart Express');
-  const [webhookAwb, setWebhookAwb] = useState('');
-  const [webhookSimulating, setWebhookSimulating] = useState(false);
-
   const [fulfillModalOpen, setFulfillModalOpen] = useState(false);
   const [fulfillCarrier, setFulfillCarrier] = useState('BlueDart');
   const [fulfillTracking, setFulfillTracking] = useState('');
