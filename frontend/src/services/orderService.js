@@ -578,8 +578,21 @@ export const formatOrderDate = (baseDate = new Date(), daysToAdd = 0) => {
   return `${day} ${month}, ${year}`;
 };
 
+export const generateOrderCode = () => {
+  const now = new Date();
+  const yy = String(now.getFullYear()).slice(-2);
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+  let rand = "";
+  for (let i = 0; i < 4; i++) {
+    rand += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `INF-${yy}${mm}${dd}-${rand}`;
+};
+
 export const createOrder = ({ items = [], address = null, paymentMethod = "UPI", coupon = null, discount = 0 }) => {
-  const orderNumber = Math.floor(1000 + Math.random() * 9000);
+  const orderNumber = generateOrderCode();
   const orderId = `#${orderNumber}`;
   const now = new Date();
 
@@ -711,9 +724,25 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI",
     },
     cancellationFee,
     refundAmount,
-    status: "Order Placed",
+    status: isCOD ? "Order Placed" : "Processing",
+    fulfillment: {
+      status: isCOD ? "Unfulfilled" : "Processing",
+      qikink: {
+        sent: !isCOD,
+        sentAt: !isCOD ? now.toISOString() : null,
+        qikinkOrderId: !isCOD ? `QIK-${orderNumber.replace(/[^a-zA-Z0-9]/g, '').slice(0, 15)}` : null,
+        status: !isCOD ? "In Production" : "Pending Dispatch",
+      },
+      tracking: {
+        carrier: "BlueDart Express",
+        trackingNumber: "",
+        trackingUrl: "",
+        estimatedDelivery: deliveredDate,
+      },
+    },
     timeline: {
       placedDate,
+      sentToQikink: isCOD ? null : placedDate,
       dispatchedDate,
       outForDeliveryDate,
       deliveredDate,

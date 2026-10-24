@@ -4,18 +4,20 @@ import {
   ArrowLeft, Printer, Send, CheckCircle2, AlertCircle, Clock,
   Package, Truck, RotateCcw, XCircle, Mail, MapPin, CreditCard,
   User, Phone, Copy, Check, ExternalLink, Edit3, ShieldAlert,
-  Calendar, Layers, Hash, FileText
+  Calendar, Layers, Hash, FileText, RefreshCw
 } from 'lucide-react';
 import { message, Modal, Spin, Tag, Input, Radio, InputNumber } from 'antd';
 import {
   getOrderById,
   sendOrderToQikink,
+  syncOrderWithQikink,
   markOrderAsFulfilled,
   cancelOrder,
   refundOrder,
   resendOrderEmail,
   printPackingSlip,
   testQikinkConnection,
+  triggerQikinkWebhookSimulation,
   formatOrderDate,
   formatDateTime,
   resolveCustomerDisplayName,
@@ -32,9 +34,17 @@ const OrderDetail = () => {
   // Modals & Action loading states
   const [qikinkModalOpen, setQikinkModalOpen] = useState(false);
   const [qikinkLoading, setQikinkLoading] = useState(false);
-  const [qikinkAllowSimulation, setQikinkAllowSimulation] = useState(true);
+  const [qikinkAllowSimulation, setQikinkAllowSimulation] = useState(false);
   const [testingQikink, setTestingQikink] = useState(false);
   const [qikinkTestResult, setQikinkTestResult] = useState(null);
+  const [syncingQikink, setSyncingQikink] = useState(false);
+
+  // Webhook Simulation Modal state
+  const [webhookModalOpen, setWebhookModalOpen] = useState(false);
+  const [webhookStatus, setWebhookStatus] = useState('Dispatched');
+  const [webhookCourier, setWebhookCourier] = useState('BlueDart Express');
+  const [webhookAwb, setWebhookAwb] = useState('');
+  const [webhookSimulating, setWebhookSimulating] = useState(false);
 
   const [fulfillModalOpen, setFulfillModalOpen] = useState(false);
   const [fulfillCarrier, setFulfillCarrier] = useState('BlueDart');
@@ -119,6 +129,22 @@ const OrderDetail = () => {
     }
   };
 
+  const handleSyncQikink = async () => {
+    try {
+      setSyncingQikink(true);
+      const updated = await syncOrderWithQikink(order.orderId);
+      setOrder(updated);
+      const qStatus = updated?.fulfillment?.qikink?.status || 'Synced';
+      const awb = updated?.fulfillment?.tracking?.trackingNumber;
+      message.success(`Qikink Sync Complete: Status "${qStatus}"${awb ? ` | AWB: ${awb}` : ''}`);
+    } catch (err) {
+      console.error(err);
+      message.error(err.message || 'Failed to sync live status with Qikink');
+    } finally {
+      setSyncingQikink(false);
+    }
+  };
+
   const handleTestQikink = async () => {
     try {
       setTestingQikink(true);
@@ -133,6 +159,32 @@ const OrderDetail = () => {
       message.error('Failed to ping Qikink API');
     } finally {
       setTestingQikink(false);
+    }
+  };
+
+  const handleSimulateWebhook = async () => {
+    try {
+      setWebhookSimulating(true);
+      const awb = webhookAwb || `BD-${Math.floor(10000000 + Math.random() * 90000000)}`;
+      const payload = {
+        order_number: order.orderId,
+        order_id: order.fulfillment?.qikink?.qikinkOrderId || `QIK-${order.id}`,
+        status: webhookStatus,
+        courier_name: webhookCourier,
+        awb_number: awb,
+        tracking_url: `https://${webhookCourier.toLowerCase().replace(/\s+/g, '')}.com/track/${awb}`,
+        estimated_delivery: formatOrderDate(new Date(), 3),
+      };
+
+      const updated = await triggerQikinkWebhookSimulation(payload);
+      setOrder(updated);
+      setWebhookModalOpen(false);
+      message.success(`Webhook received: Order updated to ${webhookStatus} with AWB ${awb}!`);
+    } catch (err) {
+      console.error(err);
+      message.error(err.message || 'Webhook simulation failed');
+    } finally {
+      setWebhookSimulating(false);
     }
   };
 
@@ -409,20 +461,33 @@ const OrderDetail = () => {
               <div className="mt-0.5">{getFulfillmentStatusTag(order.fulfillment?.status)}</div>
             </div>
 
-            {/* Send to Qikink Button */}
+            {/* Send to Qikink Button / Sync Live */}
             {!isCancelled && (
-              <button
-                onClick={() => setQikinkModalOpen(true)}
-                disabled={isQikinkSent}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm cursor-pointer ${
-                  isQikinkSent
-                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                    : 'bg-[#DD1215] text-white hover:bg-red-700'
-                }`}
-              >
-                <Send size={14} />
-                <span>{isQikinkSent ? 'Sent to Qikink ✓' : 'Send to Qikink'}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setQikinkModalOpen(true)}
+                  disabled={isQikinkSent}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm cursor-pointer ${
+                    isQikinkSent
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : 'bg-[#DD1215] text-white hover:bg-red-700'
+                  }`}
+                >
+                  <Send size={14} />
+                  <span>{isQikinkSent ? 'Dispatched to Qikink ✓' : 'Push to Qikink'}</span>
+                </button>
+                {isQikinkSent && (
+                  <button
+                    onClick={handleSyncQikink}
+                    disabled={syncingQikink}
+                    title="Fetch live tracking and delivery dates from Qikink API"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-sm cursor-pointer"
+                  >
+                    <RefreshCw size={13} className={syncingQikink ? 'animate-spin' : ''} />
+                    <span>{syncingQikink ? 'Syncing...' : 'Sync Qikink'}</span>
+                  </button>
+                )}
+              </div>
             )}
 
             {/* Mark as Fulfilled button (manual override) */}
@@ -449,7 +514,7 @@ const OrderDetail = () => {
               </span>
             </div>
             {isQikinkSent ? (
-              <div className="space-y-1 text-gray-600">
+              <div className="space-y-1.5 text-gray-600">
                 <div className="flex justify-between">
                   <span>Qikink Order ID:</span>
                   <span className="font-mono font-bold text-gray-900">{order.fulfillment?.qikink?.qikinkOrderId}</span>
@@ -458,9 +523,50 @@ const OrderDetail = () => {
                   <span>Transmitted At:</span>
                   <span className="text-gray-700">{formatDateTime(order.fulfillment?.qikink?.sentAt)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span>Qikink Status:</span>
-                  <span className="font-semibold text-emerald-700">{order.fulfillment?.qikink?.status || 'In Production'}</span>
+                  <span className="font-bold px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[11px]">
+                    {order.fulfillment?.qikink?.status || 'In Production'}
+                  </span>
+                </div>
+                {order.fulfillment?.tracking?.carrier && (
+                  <div className="flex justify-between">
+                    <span>Delivery Partner:</span>
+                    <span className="font-bold text-gray-900">{order.fulfillment?.tracking?.carrier}</span>
+                  </div>
+                )}
+                {order.fulfillment?.tracking?.trackingNumber && (
+                  <div className="flex justify-between items-center">
+                    <span>AWB Number:</span>
+                    <span className="font-mono font-bold text-blue-600 flex items-center gap-1">
+                      {order.fulfillment?.tracking?.trackingNumber}
+                      <button
+                        onClick={() => copyToClipboard(order.fulfillment?.tracking?.trackingNumber, 'AWB')}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <Copy size={11} />
+                      </button>
+                    </span>
+                  </div>
+                )}
+                <div className="pt-2 border-t border-gray-200 space-y-1.5">
+                  <button
+                    onClick={handleSyncQikink}
+                    disabled={syncingQikink}
+                    className="w-full py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-bold flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer"
+                  >
+                    <RefreshCw size={12} className={syncingQikink ? 'animate-spin' : ''} />
+                    <span>{syncingQikink ? 'Syncing with Qikink...' : 'Sync Live Status from Qikink API'}</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setWebhookAwb(order.fulfillment?.tracking?.trackingNumber || `BD-${Math.floor(10000000 + Math.random() * 90000000)}`);
+                      setWebhookModalOpen(true);
+                    }}
+                    className="w-full py-1.5 px-2 bg-white border border-gray-300 hover:bg-gray-100 rounded text-[11px] font-bold text-gray-700 flex items-center justify-center gap-1 transition shadow-xs cursor-pointer"
+                  >
+                    <span>⚡ Simulate Qikink Webhook</span>
+                  </button>
                 </div>
               </div>
             ) : (
@@ -502,6 +608,17 @@ const OrderDetail = () => {
                 <div className="flex justify-between">
                   <span>Est. Delivery:</span>
                   <span className="font-semibold text-gray-800">{order.fulfillment?.tracking?.estimatedDelivery || 'N/A'}</span>
+                </div>
+                <div className="pt-2 border-t border-gray-200">
+                  <a
+                    href={order.fulfillment?.tracking?.trackingUrl || `https://courierupdates.com/?awb=${order.fulfillment?.tracking?.trackingNumber}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full py-1.5 px-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded text-[11px] font-bold flex items-center justify-center gap-1.5 transition text-center"
+                  >
+                    <span>Track with Courier</span>
+                    <ExternalLink size={12} />
+                  </a>
                 </div>
               </div>
             ) : (
@@ -895,8 +1012,22 @@ const OrderDetail = () => {
               <span className="font-semibold text-gray-800">{order.shippingAddress?.name || order.customer?.name}</span>
             </div>
             <div className="flex justify-between">
+              <span className="text-gray-500">Phone:</span>
+              <span className="font-semibold text-gray-800">{order.shippingAddress?.phone || order.customer?.phone || 'N/A'}</span>
+            </div>
+            <div className="flex justify-between">
               <span className="text-gray-500">Destination:</span>
               <span className="text-gray-800">{order.shippingAddress?.city}, {order.shippingAddress?.state} ({order.shippingAddress?.pincode})</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Gateway:</span>
+              <span className={`font-bold ${isCODOrder ? 'text-amber-700' : 'text-emerald-700'}`}>
+                {isCODOrder ? 'COD (Collect on Delivery)' : 'Prepaid'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Total Value:</span>
+              <span className="font-bold text-gray-900">₹{Number(order.pricing?.grandTotal || order.total || 0).toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Print Items:</span>
@@ -1076,6 +1207,73 @@ const OrderDetail = () => {
               onChange={(e) => setCancelReason(e.target.value)}
               placeholder="e.g. Customer requested order cancellation..."
             />
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── MODAL: Simulate Qikink Webhook ── */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2 text-base font-bold text-gray-900">
+            <Send className="text-[#DD1215]" size={20} />
+            <span>Simulate Qikink Webhook Callback</span>
+          </div>
+        }
+        open={webhookModalOpen}
+        onOk={handleSimulateWebhook}
+        confirmLoading={webhookSimulating}
+        okText="Send Webhook Event"
+        okButtonProps={{ className: 'bg-[#DD1215] hover:bg-red-700' }}
+        onCancel={() => setWebhookModalOpen(false)}
+        width={520}
+      >
+        <div className="space-y-4 py-2 text-sm">
+          <p className="text-gray-600 text-xs">
+            This tests the live webhook listener (<code>/shop/orders/qikink-webhook</code>) by posting a real tracking event as if dispatched by Qikink's automated print & courier system.
+          </p>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Shipment Milestone Status</label>
+            <Radio.Group
+              value={webhookStatus}
+              onChange={(e) => setWebhookStatus(e.target.value)}
+              className="flex flex-col gap-2"
+            >
+              <Radio value="In Production">
+                <span className="font-semibold text-gray-800">In Production / Printing</span> — Order is being printed & packed
+              </Radio>
+              <Radio value="Dispatched">
+                <span className="font-semibold text-gray-800">Dispatched / Shipped</span> — Courier has picked up parcel & assigned AWB
+              </Radio>
+              <Radio value="Out for Delivery">
+                <span className="font-semibold text-gray-800">Out for Delivery</span> — Courier is delivering to customer today
+              </Radio>
+              <Radio value="Delivered">
+                <span className="font-semibold text-gray-800">Delivered</span> — Customer received the parcel (Fulfillment Complete)
+              </Radio>
+            </Radio.Group>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Courier Carrier</label>
+            <Input
+              value={webhookCourier}
+              onChange={(e) => setWebhookCourier(e.target.value)}
+              placeholder="e.g. BlueDart Express, Delhivery, DTDC"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">AWB Tracking Number</label>
+            <Input
+              value={webhookAwb}
+              onChange={(e) => setWebhookAwb(e.target.value)}
+              placeholder="e.g. BD-89240182"
+            />
+          </div>
+
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs text-emerald-800">
+            ✓ Sending this event will update the database, sync tracking across Admin & Customer storefronts, and mark milestones.
           </div>
         </div>
       </Modal>

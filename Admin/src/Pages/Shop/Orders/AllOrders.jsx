@@ -10,6 +10,7 @@ import * as XLSX from 'xlsx';
 import {
   getAllOrders,
   sendOrderToQikink,
+  syncOrderWithQikink,
   printPackingSlip,
   formatOrderDate,
   formatDateTime,
@@ -26,11 +27,28 @@ const AllOrders = () => {
   const [qikinkModalVisible, setQikinkModalVisible] = useState(false);
   const [selectedOrderForQikink, setSelectedOrderForQikink] = useState(null);
   const [sendingToQikink, setSendingToQikink] = useState(false);
+  const [syncingOrderId, setSyncingOrderId] = useState(null);
 
   useEffect(() => {
     fetchOrders();
 
-    const handleUpdate = () => {
+    const handleUpdate = (e) => {
+      if (e?.detail && !Array.isArray(e.detail) && e.detail.orderId) {
+        const u = e.detail;
+        setOrders((prev) => {
+          const idx = prev.findIndex((o) => {
+            const m1 = String(o.orderId || '').replace(/^#/, '');
+            const m2 = String(u.orderId || '').replace(/^#/, '');
+            return m1 === m2 || o.id === u.id;
+          });
+          if (idx !== -1) {
+            const copy = [...prev];
+            copy[idx] = { ...copy[idx], ...u };
+            return copy;
+          }
+          return [u, ...prev];
+        });
+      }
       fetchOrders(true);
     };
 
@@ -38,14 +56,27 @@ const AllOrders = () => {
     window.addEventListener('infinito_order_placed', handleUpdate);
     window.addEventListener('infinito_orders_updated', handleUpdate);
 
+    let bus = null;
+    try {
+      if (typeof window !== 'undefined' && window.BroadcastChannel) {
+        bus = new BroadcastChannel('infinito_orders_bus');
+        bus.onmessage = (evt) => {
+          if (evt.data?.type === 'infinito_orders_sync') {
+            fetchOrders(true);
+          }
+        };
+      }
+    } catch {}
+
     const interval = setInterval(() => {
       fetchOrders(true);
-    }, 15000);
+    }, 10000);
 
     return () => {
       window.removeEventListener('storage', handleUpdate);
       window.removeEventListener('infinito_order_placed', handleUpdate);
       window.removeEventListener('infinito_orders_updated', handleUpdate);
+      if (bus) bus.close();
       clearInterval(interval);
     };
   }, []);
@@ -199,15 +230,46 @@ const AllOrders = () => {
     if (!selectedOrderForQikink) return;
     try {
       setSendingToQikink(true);
-      await sendOrderToQikink(selectedOrderForQikink.orderId);
+      const updated = await sendOrderToQikink(selectedOrderForQikink.orderId);
       message.success(`Order ${selectedOrderForQikink.orderId} successfully dispatched to Qikink API!`);
       setQikinkModalVisible(false);
-      fetchOrders();
+      if (updated) {
+        setOrders((prev) =>
+          prev.map((o) => {
+            const m1 = String(o.orderId || '').replace(/^#/, '');
+            const m2 = String(updated.orderId || '').replace(/^#/, '');
+            return (m1 === m2 || o.id === updated.id) ? { ...o, ...updated } : o;
+          })
+        );
+      }
+      fetchOrders(true);
     } catch (err) {
       console.error(err);
-      message.error('Failed to send order to Qikink');
+      message.error(err.message || 'Failed to send order to Qikink');
     } finally {
       setSendingToQikink(false);
+    }
+  };
+
+  const handleSyncQikink = async (order, e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    try {
+      setSyncingOrderId(order.orderId);
+      const updated = await syncOrderWithQikink(order.orderId);
+      const qStatus = updated?.fulfillment?.qikink?.status || 'Synced';
+      const awb = updated?.fulfillment?.tracking?.trackingNumber;
+      const carrier = updated?.fulfillment?.tracking?.carrier;
+      if (awb) {
+        message.success(`Synced Qikink! Status: ${qStatus} · Carrier: ${carrier || 'Assigned'} · AWB: ${awb}`);
+      } else {
+        message.success(`Synced Qikink! Status: ${qStatus}`);
+      }
+      fetchOrders(true);
+    } catch (err) {
+      console.error(err);
+      message.error(err.message || 'Failed to sync with Qikink');
+    } finally {
+      setSyncingOrderId(null);
     }
   };
 
@@ -604,22 +666,59 @@ const AllOrders = () => {
 
                       {/* Fulfillment Status */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        {getFulfillmentStatusTag(order.fulfillment?.status)}
+                        <div>
+                          {getFulfillmentStatusTag(order.fulfillment?.status)}
+                          {order.fulfillment?.qikink?.qikinkOrderId && (
+                            <div className="mt-1 flex flex-col gap-0.5">
+                              <span className="text-[10px] font-bold text-gray-500">
+                                Qikink: <span className="text-gray-800 font-semibold">{order.fulfillment?.qikink?.status || 'In Production'}</span>
+                              </span>
+                              {order.fulfillment?.tracking?.trackingNumber && (
+                                <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 inline-block w-fit">
+                                  {order.fulfillment?.tracking?.carrier || 'BlueDart'}: {order.fulfillment?.tracking?.trackingNumber}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </td>
 
                       {/* Actions */}
                       <td className="py-3.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1.5">
-                          {/* Send to Qikink quick button if unfulfilled */}
-                          {isUnfulfilled && !isQikinkSent && (
+                          {/* Push to Qikink quick button if unfulfilled and not sent */}
+                          {(!order.fulfillment?.qikink?.qikinkOrderId && !isQikinkSent) ? (
                             <button
                               onClick={(e) => handleOpenQikinkModal(order, e)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#DD1215] hover:bg-red-700 text-white rounded text-xs font-bold transition shadow-xs"
-                              title="Send to Qikink API"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#DD1215] hover:bg-red-700 text-white rounded text-xs font-bold transition shadow-xs cursor-pointer"
+                              title="Push Order to Qikink API"
                             >
                               <Send size={12} />
-                              <span className="hidden lg:inline">Send to Qikink</span>
+                              <span className="hidden lg:inline">Push to Qikink</span>
                             </button>
+                          ) : (
+                            <button
+                              onClick={(e) => handleSyncQikink(order, e)}
+                              disabled={syncingOrderId === order.orderId}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded text-xs font-bold transition border border-gray-300 cursor-pointer disabled:opacity-50"
+                              title="Sync real-time status and delivery partner tracking from Qikink"
+                            >
+                              <RefreshCw size={12} className={syncingOrderId === order.orderId ? 'animate-spin text-[#DD1215]' : ''} />
+                              <span className="hidden lg:inline">Sync Qikink</span>
+                            </button>
+                          )}
+
+                          {/* Tracking Link quick button if AWB is present */}
+                          {order.fulfillment?.tracking?.trackingUrl && (
+                            <a
+                              href={order.fulfillment.tracking.trackingUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 rounded transition"
+                              title={`Track on ${order.fulfillment.tracking.carrier || 'Courier'}`}
+                            >
+                              <ExternalLink size={16} />
+                            </a>
                           )}
 
                           {/* Print Invoice/Packing slip */}
