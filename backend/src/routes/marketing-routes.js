@@ -84,15 +84,80 @@ router.post("/promo-bars", updatePromoBarsHandler);
 router.put("/banners/promo-bars", updatePromoBarsHandler);
 router.post("/banners/promo-bars", updatePromoBarsHandler);
 
+// GET /shop/marketing/ultimate-kit - Get Ultimate Kit card data
+router.get("/ultimate-kit", async (req, res) => {
+  try {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    const banners = await MarketingBanner.findOne().sort({ updatedAt: -1 });
+    const kit = banners?.ultimateKit || {
+      sectionTitle: "ULTIMATE KIT",
+      badgeText: "INFINITO",
+      title: "ULTIMATE KIT",
+      originalPrice: "₹2199",
+      salePrice: "₹1999",
+      image: "",
+      features: [
+        "Comic of your choice",
+        "Surprise Superhero Toy",
+        "Digital Wall Paintings",
+        "Superhero Stickers",
+        "Infinito T-shirt",
+      ],
+      buttonText: "Get Now",
+      buttonLink: "/checkout",
+      sku: "INF-ULTIMATE-KIT",
+      isActive: true,
+    };
+    return res.status(200).json({
+      success: true,
+      data: kit,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch ultimate kit",
+      error: error.message,
+    });
+  }
+});
+
+// PUT /shop/marketing/ultimate-kit - Update Ultimate Kit card
+const updateUltimateKitHandler = async (req, res) => {
+  try {
+    const ultimateKit = req.body.ultimateKit || req.body;
+    const updated = await MarketingBanner.findOneAndUpdate(
+      {},
+      { $set: { ultimateKit, updatedAt: new Date() } },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    );
+    return res.status(200).json({
+      success: true,
+      message: "Ultimate Kit updated successfully",
+      data: updated.ultimateKit,
+    });
+  } catch (error) {
+    console.error("Error saving ultimate kit:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to save ultimate kit",
+      error: error.message,
+    });
+  }
+};
+
+router.put("/ultimate-kit", updateUltimateKitHandler);
+router.post("/ultimate-kit", updateUltimateKitHandler);
+
 // PUT /shop/marketing/banners - Update or create marketing banners
 const updateAllBannersHandler = async (req, res) => {
   try {
-    const { heroSlider, promoBanners, promoBars, updatedBy } = req.body;
+    const { heroSlider, promoBanners, promoBars, ultimateKit, updatedBy } = req.body;
 
     const payload = {};
     if (Array.isArray(heroSlider)) payload.heroSlider = heroSlider;
     if (Array.isArray(promoBanners)) payload.promoBanners = promoBanners;
     if (Array.isArray(promoBars)) payload.promoBars = promoBars;
+    if (ultimateKit && typeof ultimateKit === "object") payload.ultimateKit = ultimateKit;
     if (updatedBy) payload.updatedBy = updatedBy;
     payload.updatedAt = new Date();
 

@@ -505,3 +505,70 @@ export const updatePromoBar = async (barData) => {
   list[0] = { ...list[0], ...barData };
   return updatePromoBars(list);
 };
+
+export const DEFAULT_ULTIMATE_KIT = {
+  sectionTitle: "ULTIMATE KIT",
+  badgeText: "INFINITO",
+  title: "ULTIMATE KIT",
+  originalPrice: "₹2199",
+  salePrice: "₹1999",
+  image: "",
+  features: [
+    "Comic of your choice",
+    "Surprise Superhero Toy",
+    "Digital Wall Paintings",
+    "Superhero Stickers",
+    "Infinito T-shirt",
+  ],
+  buttonText: "Get Now",
+  buttonLink: "/checkout",
+  sku: "INF-ULTIMATE-KIT",
+  isActive: true,
+};
+
+export const getUltimateKit = async () => {
+  const url = BACKEND_URL || 'https://infinitocomics-68cr.onrender.com';
+  const targets = [
+    url,
+    'http://localhost:5000',
+    'https://infinitocomics-68cr.onrender.com',
+  ].filter(Boolean);
+  const uniqueTargets = [...new Set(targets)];
+
+  for (const base of uniqueTargets) {
+    try {
+      const clean = base.replace(/\/$/, '');
+      const res = await axios.get(`${clean}/shop/marketing/ultimate-kit?_t=${Date.now()}`, { timeout: 4000 });
+      if (res?.data?.success && res.data.data) {
+        return { ...DEFAULT_ULTIMATE_KIT, ...res.data.data };
+      }
+    } catch {}
+  }
+
+  // fallback to full banners or localStorage
+  try {
+    const current = await getMarketingBanners();
+    if (current?.ultimateKit) {
+      return { ...DEFAULT_ULTIMATE_KIT, ...current.ultimateKit };
+    }
+  } catch {}
+  return DEFAULT_ULTIMATE_KIT;
+};
+
+export const updateUltimateKit = async (kitData) => {
+  const payload = { ...DEFAULT_ULTIMATE_KIT, ...kitData };
+  try {
+    const current = await getMarketingBanners();
+    const updated = { ...current, ultimateKit: payload };
+    localStorage.setItem(BANNERS_KEY, JSON.stringify(updated));
+    broadcastBanners(updated);
+  } catch {}
+
+  // 1. Try dedicated endpoint first
+  let saved = await saveToBackend({ ultimateKit: payload }, '/shop/marketing/ultimate-kit');
+  if (!saved) {
+    // 2. Fallback to general banners endpoint
+    await saveToBackend({ ultimateKit: payload }, '/shop/marketing/banners');
+  }
+  return payload;
+};
