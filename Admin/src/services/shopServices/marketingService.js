@@ -258,15 +258,34 @@ export const toggleDiscountCodeStatus = async (id) => {
 
 // ── BANNERS & PROMOTIONS API ───────────────────────────────────
 
-const saveToBackend = async (data) => {
+const saveToBackend = async (data, customPath = '/shop/marketing/banners') => {
   const url = BACKEND_URL || 'https://infinitocomics-68cr.onrender.com';
-  try {
-    await axios.put(`${url}/shop/marketing/banners`, data, { timeout: 4000 });
-  } catch (e) {
+  const targets = [
+    url,
+    'http://localhost:5000',
+    'https://infinitocomics-68cr.onrender.com',
+  ].filter(Boolean);
+  const uniqueTargets = [...new Set(targets)];
+
+  for (const base of uniqueTargets) {
     try {
-      await axios.put(`http://localhost:5000/shop/marketing/banners`, data, { timeout: 2000 });
-    } catch {}
+      const cleanBase = base.replace(/\/$/, '');
+      const res = await axios.put(`${cleanBase}${customPath}`, data, { timeout: 6000 });
+      if (res.status === 200 || res.data?.success) {
+        return true;
+      }
+    } catch (e) {
+      // try fallback endpoint
+      try {
+        const cleanBase = base.replace(/\/$/, '');
+        const res = await axios.post(`${cleanBase}${customPath}`, data, { timeout: 6000 });
+        if (res.status === 200 || res.data?.success) {
+          return true;
+        }
+      } catch (innerErr) {}
+    }
   }
+  return false;
 };
 
 const broadcastBanners = (data) => {
@@ -420,7 +439,7 @@ export const updateHeroSlider = async (slides) => {
     }
   }
   broadcastBanners(updated);
-  saveToBackend(updated);
+  await saveToBackend(updated);
   return updated;
 };
 
@@ -446,7 +465,7 @@ export const updatePromoBanners = async (banners) => {
     console.warn("Storage write failed", err);
   }
   broadcastBanners(updated);
-  saveToBackend(updated);
+  await saveToBackend(updated);
   return updated;
 };
 
@@ -463,7 +482,13 @@ export const updatePromoBars = async (bars) => {
     console.warn("Storage write failed", err);
   }
   broadcastBanners(updated);
-  saveToBackend(updated);
+
+  // 1. Try dedicated lightweight promo-bars endpoint first
+  let saved = await saveToBackend({ promoBars: bars }, '/shop/marketing/promo-bars');
+  if (!saved) {
+    // 2. Fallback to general banners endpoint
+    saved = await saveToBackend(updated, '/shop/marketing/banners');
+  }
   return updated;
 };
 

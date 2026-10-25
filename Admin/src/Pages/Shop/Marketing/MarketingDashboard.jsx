@@ -277,7 +277,7 @@ const MarketingDashboard = () => {
     try {
       setSavingBanners(true);
       await updatePromoBars(promoBars);
-      message.success('Announcement Bars saved and live on Shop frontend!');
+      message.success('Announcement Bars saved and synced live to the main website!');
     } catch (err) {
       message.error('Failed to save promo bars');
     } finally {
@@ -1265,43 +1265,21 @@ const MarketingDashboard = () => {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                {/* Direct "Create Banner from Photo" button */}
-                <label className="px-3 py-1.5 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 shadow-xs">
-                  <ImageIcon size={14} className="text-[#DD1215]" />
-                  <span>Create Banner from Photo</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleCreatePromoBannerFromFile(file);
-                    }}
-                  />
-                </label>
-
                 <button
                   type="button"
                   onClick={() => handleAddPromoBanner()}
-                  className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 border border-gray-300"
+                  className="px-3 py-1.5 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 shadow-xs"
                 >
                   <Plus size={14} /> Add Promo Banner
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleAddPromoBanner('')}
-                  className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 border border-gray-300"
-                  title="Create promo banner with solid theme color (No image)"
-                >
-                  <Sparkles size={14} className="text-[#DD1215]" /> Add Banner (No Photo)
-                </button>
-                <button
-                  type="button"
                   onClick={handleSavePromoBanners}
                   disabled={savingBanners}
-                  className="px-4 py-1.5 bg-[#DD1215] hover:bg-red-700 text-white text-xs font-bold rounded-lg transition shadow-xs cursor-pointer"
+                  className="px-4 py-1.5 bg-[#DD1215] hover:bg-red-700 text-white text-xs font-bold rounded-lg transition shadow-xs cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
                 >
-                  Save Promo Banners ({promoBanners.length} Total)
+                  {savingBanners && <Spin size="small" />}
+                  {savingBanners ? 'Saving & Syncing...' : `Save Promo Banners (${promoBanners.length} Total)`}
                 </button>
               </div>
             </div>
@@ -1747,9 +1725,10 @@ const MarketingDashboard = () => {
                   type="button"
                   onClick={handleSavePromoBars}
                   disabled={savingBanners}
-                  className="px-4 py-1.5 bg-[#DD1215] text-white text-xs font-bold rounded-lg hover:bg-red-700 transition cursor-pointer"
+                  className="px-4 py-1.5 bg-[#DD1215] text-white text-xs font-bold rounded-lg hover:bg-red-700 transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
                 >
-                  Save Announcement Bars ({promoBars.length} Total)
+                  {savingBanners && <Spin size="small" />}
+                  {savingBanners ? 'Saving & Syncing...' : `Save Announcement Bars (${promoBars.length} Total)`}
                 </button>
               </div>
             </div>

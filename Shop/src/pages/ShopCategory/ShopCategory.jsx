@@ -9,7 +9,7 @@ import {
 // Sidebar filter definitions. Sort options and generic filter categories are
 // kept static because they don't depend on backend data — the actual product
 // list, category name, and filter results all come from the API.
-const filterSections = [
+const defaultFilterSections = [
   { key: "shopFor", label: "Shop For", options: ["Men", "Women", "Unisex"] },
   { key: "price", label: "Price", options: ["Under ₹500", "₹500 - ₹1000", "₹1000 - ₹2000", "Above ₹2000"] },
   { key: "discounts", label: "Discounts", options: ["10% and above", "25% and above", "50% and above"] },
@@ -46,10 +46,12 @@ const ShopCategory = () => {
   const { categoryName } = useParams();
 
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [categoryLabel, setCategoryLabel] = useState("");
   const [loading, setLoading] = useState(true);
 
   const [openSections, setOpenSections] = useState({
+    category: true,
     shopFor: false,
     price: false,
     discounts: false,
@@ -74,6 +76,8 @@ const ShopCategory = () => {
         ]);
         if (cancelled) return;
 
+        setCategories(Array.isArray(cats) ? cats : []);
+
         const isAll = !categoryName || categoryName.toLowerCase() === "all";
         const cleanName = String(categoryName || "").toLowerCase().trim();
         const normalize = (s) => String(s || "").toLowerCase().replace(/[-\s_]/g, "");
@@ -96,6 +100,7 @@ const ShopCategory = () => {
 
         setCategoryLabel(isAll ? "All Products" : (match?.name || categoryName));
         setProducts(Array.isArray(prods) ? prods : []);
+        setCategories(Array.isArray(cats) ? cats : []);
       } catch (err) {
         console.error("Failed to load products for category:", err);
         if (!cancelled) setProducts([]);
@@ -107,6 +112,25 @@ const ShopCategory = () => {
       cancelled = true;
     };
   }, [categoryName]);
+
+  // Dynamic filter sections with real Category options
+  const filterSections = useMemo(() => {
+    const fromApi = (categories || []).map((c) => c.name?.trim()).filter(Boolean);
+    const fromProds = (products || [])
+      .map((p) => (p.category?.name || p.categoryName || (typeof p.category === "string" ? p.category : "") || "")?.trim())
+      .filter(Boolean);
+    const combined = Array.from(new Set([...fromApi, ...fromProds]));
+    const fallback = ["T-Shirts", "Hoodies", "Comics", "Graphic Novels", "Accessories", "Bags", "Caps"];
+    const finalOptions = combined.length > 0 ? combined : fallback;
+
+    const categorySection = {
+      key: "category",
+      label: "Category",
+      options: finalOptions,
+    };
+
+    return [categorySection, ...defaultFilterSections];
+  }, [categories, products]);
 
   const toggleSection = (key) =>
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -122,10 +146,69 @@ const ShopCategory = () => {
     setPage(1);
   };
 
-  // Apply price-range filter client-side, plus any sort choice.
+  // Apply filters client-side (Category, Sizes, Price, Discounts, Shop For), plus sort choice.
   const visibleProducts = useMemo(() => {
     let list = [...products];
 
+    // Filter by Category
+    const selectedCats = selected.category || [];
+    if (selectedCats.length > 0) {
+      list = list.filter((p) => {
+        const catStr = String(
+          p.categoryName || p.categorySlug || p.category?.name || p.category || ""
+        ).toLowerCase();
+        return selectedCats.some((c) => catStr.includes(c.toLowerCase()));
+      });
+    }
+
+    // Filter by Sizes
+    const selectedSizes = selected.sizes || [];
+    if (selectedSizes.length > 0) {
+      list = list.filter((p) => {
+        const directSizes = (p.sizes || []).map((s) => String(s).toUpperCase());
+        const variantSizes = (p.variants || []).map((v) =>
+          String(v.size || v.value || v.name || "").toUpperCase()
+        );
+        const combinedSizes = [...directSizes, ...variantSizes];
+        return selectedSizes.some((s) => combinedSizes.includes(s.toUpperCase()));
+      });
+    }
+
+    // Filter by Shop For
+    const selectedShopFor = selected.shopFor || [];
+    if (selectedShopFor.length > 0) {
+      list = list.filter((p) => {
+        const text = `${p.title || ""} ${p.name || ""} ${p.description || ""} ${
+          p.categoryName || ""
+        }`.toLowerCase();
+        return selectedShopFor.some((sf) => {
+          const target = sf.toLowerCase();
+          if (target === "unisex") return text.includes("unisex");
+          if (target === "women")
+            return text.includes("women") || text.includes("female") || text.includes("girl");
+          if (target === "men") return text.includes("men") && !text.includes("women");
+          return true;
+        });
+      });
+    }
+
+    // Filter by Discounts
+    const selectedDiscounts = selected.discounts || [];
+    if (selectedDiscounts.length > 0) {
+      list = list.filter((p) => {
+        const price = Number(p.price) || 0;
+        const mrp = Number(p.mrp) || price;
+        const disc = mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
+        return selectedDiscounts.some((d) => {
+          if (d.includes("50%")) return disc >= 50;
+          if (d.includes("25%")) return disc >= 25;
+          if (d.includes("10%")) return disc >= 10;
+          return true;
+        });
+      });
+    }
+
+    // Filter by Price range
     const priceRanges = selected.price || [];
     if (priceRanges.length > 0) {
       list = list.filter((p) => {
