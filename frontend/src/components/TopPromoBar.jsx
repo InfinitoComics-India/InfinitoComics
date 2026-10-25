@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, X, Sparkles } from 'lucide-react';
+import { BASE_URL } from '../utils/constants';
 
 const DEFAULT_PROMO_BARS = [
   {
@@ -25,7 +26,7 @@ const TopPromoBar = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isDismissed, setIsDismissed] = useState(false);
 
-  const loadBars = () => {
+  const loadBarsFromStorage = () => {
     try {
       const stored = localStorage.getItem('infinito_shop_banners');
       if (stored) {
@@ -34,7 +35,7 @@ const TopPromoBar = () => {
           const activeOnes = parsed.promoBars.filter((b) => b && b.isActive !== false);
           if (activeOnes.length > 0) {
             setBars(activeOnes);
-            return;
+            return true;
           }
         } else if (parsed.promoBar && parsed.promoBar.isActive !== false && parsed.promoBar.text) {
           setBars([
@@ -47,22 +48,80 @@ const TopPromoBar = () => {
               isActive: true,
             },
           ]);
-          return;
+          return true;
         }
       }
     } catch (e) {
       console.warn('Failed to parse infinito_shop_banners for TopPromoBar', e);
     }
-    setBars(DEFAULT_PROMO_BARS);
+    return false;
+  };
+
+  const fetchBarsFromBackend = async () => {
+    try {
+      const endpoints = [
+        BASE_URL,
+        'http://localhost:5000',
+        'https://infinitocomics-68cr.onrender.com',
+      ].filter(Boolean);
+      const uniqueBases = [...new Set(endpoints)];
+
+      for (const base of uniqueBases) {
+        try {
+          const clean = base.replace(/\/$/, '');
+          const res = await fetch(`${clean}/shop/marketing/banners?_t=${Date.now()}`, {
+            headers: { 'Cache-Control': 'no-cache' },
+          }).then((r) => (r.ok ? r.json() : null));
+
+          if (res?.success && res.data) {
+            const rawBars = res.data.promoBars || (res.data.promoBar ? [res.data.promoBar] : null);
+            if (Array.isArray(rawBars) && rawBars.length > 0) {
+              const activeOnes = rawBars.filter((b) => b && b.isActive !== false);
+              if (activeOnes.length > 0) {
+                setBars(activeOnes);
+                try {
+                  localStorage.setItem('infinito_shop_banners', JSON.stringify(res.data));
+                } catch {}
+                return;
+              }
+            }
+          }
+        } catch (inner) {
+          // try next endpoint
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch banners from backend', err);
+    }
   };
 
   useEffect(() => {
-    loadBars();
+    // 1. Load immediately from localStorage for instant render
+    const loaded = loadBarsFromStorage();
+    if (!loaded) {
+      setBars(DEFAULT_PROMO_BARS);
+    }
 
-    // Listen for storage changes across tabs & BroadcastChannel for instant updates from Admin
+    // 2. Fetch fresh data from backend immediately
+    fetchBarsFromBackend();
+
+    // 3. Re-fetch whenever user switches back to this tab/window
+    const handleFocus = () => {
+      loadBarsFromStorage();
+      fetchBarsFromBackend();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    // 4. Background polling every 10 seconds for real-time synchronization
+    const pollInterval = setInterval(() => {
+      fetchBarsFromBackend();
+    }, 10000);
+
+    // 5. Listen for storage changes across tabs & BroadcastChannel for instant updates from Admin
     const handleStorage = (e) => {
       if (e.key === 'infinito_shop_banners') {
-        loadBars();
+        loadBarsFromStorage();
+        fetchBarsFromBackend();
       }
     };
     window.addEventListener('storage', handleStorage);
@@ -72,17 +131,18 @@ const TopPromoBar = () => {
       try {
         channel = new BroadcastChannel('infinito_banners_channel');
         channel.onmessage = (msg) => {
-          if (msg.data?.type === 'BANNERS_UPDATED' || msg.data?.type === 'PROMO_BARS_UPDATED') {
-            loadBars();
+          if (msg.data?.type === 'banners_updated' || msg.data?.type === 'BANNERS_UPDATED' || msg.data?.type === 'PROMO_BARS_UPDATED') {
+            loadBarsFromStorage();
+            fetchBarsFromBackend();
           }
         };
-      } catch (err) {
-        // BroadcastChannel fallback
-      }
+      } catch (err) {}
     }
 
     return () => {
+      window.removeEventListener('focus', handleFocus);
       window.removeEventListener('storage', handleStorage);
+      clearInterval(pollInterval);
       if (channel) channel.close();
     };
   }, []);
