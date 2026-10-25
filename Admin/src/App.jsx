@@ -59,6 +59,7 @@ import AnalyticsDashboard from './Pages/Shop/Analytics/AnalyticsDashboard.jsx';
 import MarketingDashboard from './Pages/Shop/Marketing/MarketingDashboard.jsx';
 import ShopManagement from './Pages/Shop/ShopManagement.jsx';
 import CompanyProfile from './Pages/Shop/CompanyProfile.jsx';
+import UltimateKitManager from './Pages/Shop/UltimateKit/UltimateKitManager.jsx';
 
 // Role constants
 const SUPER = ["superadmin"];
@@ -167,6 +168,9 @@ function App() {
           } />
 
           {/* ── HR System ──────────────────────────────────── */}
+
+          {/* HR Dashboard / landing */}
+          <Route path="/hr" element={<Navigate to="/hr/employees" replace />} />
 
           {/* Employee Management */}
           <Route path="/hr/employees" element={
@@ -336,6 +340,11 @@ function App() {
           {/* Company Profile (Legal, GST, Bank Details, etc.) */}
           <Route path="/shop/company-profile" element={
             <ProtectedRoute allowedRoles={SHOP}><CompanyProfile /></ProtectedRoute>
+          } />
+
+          {/* Section: Ultimate Kit Manager */}
+          <Route path="/shop/ultimate-kit" element={
+            <ProtectedRoute allowedRoles={SHOP}><UltimateKitManager /></ProtectedRoute>
           } />
 
           {/* Catch-all: redirect any unknown route to home */}

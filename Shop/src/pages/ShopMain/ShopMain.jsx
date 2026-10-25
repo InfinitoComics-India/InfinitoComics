@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, ArrowRight } from "lucide-react";
 import {
   fetchCategories,
   fetchFeaturedProducts,
@@ -61,6 +61,52 @@ const ShopMain = () => {
     ];
   });
 
+  const [ultimateKit, setUltimateKit] = useState(() => {
+    try {
+      const raw = localStorage.getItem("infinito_shop_banners");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.ultimateKit) {
+          return {
+            sectionTitle: "ULTIMATE KIT",
+            badgeText: "INFINITO",
+            cardTitle: "ULTIMATE KIT",
+            originalPrice: 2199,
+            salePrice: 1999,
+            buttonText: "Get Now",
+            imageUrl: ultimateKitBanner,
+            features: [
+              "Comic of your choice",
+              "Surprise Superhero Toy",
+              "Digital Wall Paintings",
+              "Superhero Stickers",
+              "Infinito T-shirt",
+            ],
+            isActive: true,
+            ...parsed.ultimateKit,
+          };
+        }
+      }
+    } catch {}
+    return {
+      sectionTitle: "ULTIMATE KIT",
+      badgeText: "INFINITO",
+      cardTitle: "ULTIMATE KIT",
+      originalPrice: 2199,
+      salePrice: 1999,
+      buttonText: "Get Now",
+      imageUrl: ultimateKitBanner,
+      features: [
+        "Comic of your choice",
+        "Surprise Superhero Toy",
+        "Digital Wall Paintings",
+        "Superhero Stickers",
+        "Infinito T-shirt",
+      ],
+      isActive: true,
+    };
+  });
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -113,6 +159,9 @@ const ShopMain = () => {
               setPromoBannersList(enabled);
             }
           }
+          if (parsed.ultimateKit) {
+            setUltimateKit(prev => ({ ...prev, ...parsed.ultimateKit }));
+          }
         }
       } catch { }
 
@@ -121,18 +170,23 @@ const ShopMain = () => {
         const base = "https://infinitocomics-68cr.onrender.com";
         let res;
         try {
-          res = await fetch(`${base}/shop/marketing/banners`).then((r) => r.json());
+          res = await fetch(`${base}/shop/marketing/banners?_t=${Date.now()}`).then((r) => r.json());
         } catch {
-          res = await fetch(`http://localhost:5000/shop/marketing/banners`).then((r) => r.json());
+          res = await fetch(`http://localhost:5000/shop/marketing/banners?_t=${Date.now()}`).then((r) => r.json());
         }
-        if (res?.success && res.data?.promoBanners?.length > 0) {
-          const enabled = res.data.promoBanners.filter((b) => b && b.isActive !== false);
-          if (enabled.length > 0) {
-            setPromoBannersList(enabled);
-            try {
-              localStorage.setItem("infinito_shop_banners", JSON.stringify(res.data));
-            } catch {}
+        if (res?.success && res.data) {
+          if (Array.isArray(res.data.promoBanners) && res.data.promoBanners.length > 0) {
+            const enabled = res.data.promoBanners.filter((b) => b && b.isActive !== false);
+            if (enabled.length > 0) {
+              setPromoBannersList(enabled);
+            }
           }
+          if (res.data.ultimateKit) {
+            setUltimateKit(prev => ({ ...prev, ...res.data.ultimateKit }));
+          }
+          try {
+            localStorage.setItem("infinito_shop_banners", JSON.stringify(res.data));
+          } catch {}
         }
       } catch {}
     };
@@ -140,11 +194,15 @@ const ShopMain = () => {
     reloadBanners();
 
     window.addEventListener("storage", reloadBanners);
+    window.addEventListener("focus", reloadBanners);
     let bc;
     try {
       bc = new BroadcastChannel("infinito_banners_channel");
       bc.onmessage = (e) => {
         if (e.data?.type === "banners_updated") {
+          if (e.data.data?.ultimateKit) {
+            setUltimateKit(prev => ({ ...prev, ...e.data.data.ultimateKit }));
+          }
           if (Array.isArray(e.data.data?.promoBanners) && e.data.data.promoBanners.length > 0) {
             const enabled = e.data.data.promoBanners.filter((b) => b && b.isActive !== false);
             if (enabled.length > 0) setPromoBannersList(enabled);
@@ -157,6 +215,7 @@ const ShopMain = () => {
 
     return () => {
       window.removeEventListener("storage", reloadBanners);
+      window.removeEventListener("focus", reloadBanners);
       if (bc) bc.close();
     };
   }, []);
@@ -354,28 +413,110 @@ const ShopMain = () => {
       </section>
 
       {/* ─── ULTIMATE KIT BANNER ─────────────────────────────── */}
-      <section className="max-w-[1200px] mx-auto px-4 md:px-12 py-12">
-        <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 font-dmsans uppercase tracking-wider">
-          Ultimate Kit
-        </h2>
+      {ultimateKit.isActive !== false && (
+        <section className="max-w-[1240px] mx-auto px-4 sm:px-6 md:px-10 py-12">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-center mb-8 font-dmsans uppercase tracking-widest text-black">
+            {ultimateKit.sectionTitle || "ULTIMATE KIT"}
+          </h2>
 
-        <a
-          href="#"
-          className="relative block w-full group"
-          aria-label="Get the Infinito Ultimate Kit"
-        >
-          <img
-            src={ultimateKitBanner}
-            alt="Infinito Ultimate Kit — First 10,000 customers get exclusive gift! ₹1999"
-            className="block w-full h-auto max-w-full object-contain"
-          />
-          <span
-            className="absolute right-[4%] bottom-[15%] w-[16%] h-[38%] rounded-md
-                       hover:bg-white/10 transition-colors"
-            aria-hidden="true"
-          />
-        </a>
-      </section>
+          <div className="bg-white rounded-3xl border-2 border-gray-300 shadow-md p-4 sm:p-6 transition hover:shadow-xl">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+              {/* Left Image Area */}
+              <div className="lg:col-span-7 bg-linear-to-b from-gray-50 via-white to-gray-100 rounded-2xl border border-gray-200 overflow-hidden flex items-center justify-center p-3 sm:p-4 min-h-[260px] md:min-h-[340px]">
+                <img
+                  src={ultimateKit.imageUrl || ultimateKitBanner}
+                  alt={ultimateKit.cardTitle || "Ultimate Kit"}
+                  className="w-full h-full max-h-[380px] object-contain transition-transform duration-300 hover:scale-[1.02]"
+                />
+              </div>
+
+              {/* Right Info & Checkout Area */}
+              <div className="lg:col-span-5 flex flex-col justify-between py-1">
+                <div>
+                  {/* Header: Badge + Card Title, Prices */}
+                  <div className="flex items-start justify-between gap-4 pb-4 border-b border-gray-200">
+                    <div>
+                      <div className="inline-block bg-[#DD1215] text-white font-black text-xs md:text-sm px-2.5 py-0.5 rounded tracking-wider uppercase mb-1">
+                        {ultimateKit.badgeText || "INFINITO"}
+                      </div>
+                      <h3 className="text-xl md:text-2xl font-black text-black uppercase tracking-tight">
+                        {ultimateKit.cardTitle || "ULTIMATE KIT"}
+                      </h3>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      {ultimateKit.originalPrice && (
+                        <span className="text-gray-400 font-bold line-through text-base md:text-lg mr-2">
+                          ₹{ultimateKit.originalPrice}
+                        </span>
+                      )}
+                      <span className="text-2xl md:text-3xl font-black text-black">
+                        ₹{ultimateKit.salePrice || 1999}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Checklist features */}
+                  <ul className="py-5 space-y-3">
+                    {(ultimateKit.features && ultimateKit.features.length > 0
+                      ? ultimateKit.features
+                      : [
+                          "Comic of your choice",
+                          "Surprise Superhero Toy",
+                          "Digital Wall Paintings",
+                          "Superhero Stickers",
+                          "Infinito T-shirt",
+                        ]
+                    ).map((feature, idx) => (
+                      <li
+                        key={idx}
+                        className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-gray-900"
+                      >
+                        <span className="w-4 h-4 rounded-full border-2 border-[#DD1215] text-[#DD1215] flex items-center justify-center shrink-0">
+                          <Check className="w-2.5 h-2.5 stroke-[3.5]" />
+                        </span>
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Buy Now / Get Now button */}
+                <div className="pt-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const kitItem = {
+                        productId: "ultimate-kit",
+                        size: "Standard",
+                        quantity: 1,
+                        unitPrice: Number(ultimateKit.salePrice) || 1999,
+                        product: {
+                          _id: "ultimate-kit",
+                          title: ultimateKit.cardTitle || "INFINITO Ultimate Kit",
+                          price: Number(ultimateKit.salePrice) || 1999,
+                          images: [ultimateKit.imageUrl || ultimateKitBanner],
+                          description: (ultimateKit.features || []).join(", "),
+                        },
+                      };
+                      try {
+                        localStorage.setItem("checkout_items", JSON.stringify([kitItem]));
+                        localStorage.setItem("checkout_mode", "single");
+                      } catch (e) {
+                        console.error(e);
+                      }
+                      navigate("/checkout?mode=single&productId=ultimate-kit");
+                    }}
+                    className="w-full py-3.5 px-6 rounded-lg bg-[#DD1215] hover:bg-red-700 active:scale-[0.99] text-white font-black text-sm md:text-base tracking-wider transition-all duration-150 shadow-md hover:shadow-lg cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <span>{ultimateKit.buttonText || "Get Now"}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 };

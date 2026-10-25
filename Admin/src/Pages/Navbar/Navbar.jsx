@@ -1,7 +1,7 @@
 import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import URLs from '../../Utils/utils.js';
-import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, ChevronDown, Mail, UserCog, Bell, ScrollText, CalendarDays, CalendarOff, Kanban, UserCheck, FolderKanban, TrendingUp, Target, Award as AwardIcon, Building2, IndianRupee, UserPlus, FileArchive, UserSearch, MessagesSquare, BookMarked, LifeBuoy, Sparkles, ShoppingBag, Package, FolderOpen, BarChart3, ClipboardList, Plus } from "lucide-react";
+import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, ChevronDown, Mail, UserCog, Bell, ScrollText, CalendarDays, CalendarOff, Kanban, UserCheck, FolderKanban, TrendingUp, Target, Award as AwardIcon, Building2, IndianRupee, UserPlus, FileArchive, UserSearch, MessagesSquare, BookMarked, LifeBuoy, Sparkles, ShoppingBag, Package, FolderOpen, BarChart3, ClipboardList, Plus, Gift } from "lucide-react";
 import { message, Popconfirm } from "antd";
 import { getRoles, getAdmin } from '../../Utils/auth.js';
 import { isEmployeeShopAllowed, fetchMyCurrentShopAccess } from '../../services/shopServices/shopAccessService.js';
@@ -75,6 +75,7 @@ const SHOP_ITEMS = [
   { label: "Orders", to: "/shop/orders", icon: ClipboardList, roles: SHOP_ALL },
   { label: "Analytics & Reports", to: "/shop/analytics", icon: TrendingUp, roles: SHOP_ALL },
   { label: "Marketing & Promotions", to: "/shop/marketing", icon: Sparkles, roles: SHOP_ALL },
+  { label: "Ultimate Kit", to: "/shop/ultimate-kit", icon: Gift, roles: SHOP_ALL },
   { label: "Company Profile", to: "/shop/company-profile", icon: Building2, roles: SHOP_ALL },
   { label: "Management", to: "/shop/management", icon: Users, roles: ["superadmin"] },
 ];
@@ -149,10 +150,12 @@ const Navbar = () => {
     return canViewShop && (isShopActive || roles.includes('shop_admin') || (roles.includes('employee') && empShopAllowed));
   });
 
-  // Automatically keep shop accordion open if shop becomes newly allowed
+  // Automatically keep shop accordion open if shop becomes newly allowed, close if revoked
   useEffect(() => {
     if (canViewShop && (isShopActive || roles.includes('shop_admin') || (roles.includes('employee') && empShopAllowed))) {
       setShopOpen(true);
+    } else if (!canViewShop) {
+      setShopOpen(false);
     }
   }, [canViewShop, isShopActive, empShopAllowed]);
 
