@@ -60,8 +60,17 @@ jobs:
           echo "VITE_FRONTEND_BASE_URL=https://infinitohq.com" >> .env
           npm install
           NODE_OPTIONS=--max-old-space-size=4096 npm run build
+        # Step 7: Install dependencies and Build Foundation
+      - name: Install and Build Foundation
+        run: |
+          cd Foundation
+          echo "VITE_FRONTEND_BASE_URL=https://infinitohq.com" > .env
+          echo "VITE_FOUNDATION_BASE_URL=https://foundation.infinitohq.com" >> .env
+          echo "VITE_RESEARCH_BASE_URL=https://research.infinitohq.com" >> .env
+          npm install
+          NODE_OPTIONS=--max-old-space-size=4096 npm run build
 
-      # Step 7: Deploy Frontend via FTP
+      # Step 8: Deploy Frontend via FTP
       - name: Deploy Frontend via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
@@ -74,7 +83,7 @@ jobs:
           protocol: ftp
           security: loose
 
-      # Step 8: Deploy Research dist to /public_html/research/
+      # Step 9: Deploy Research dist to /public_html/research/
       - name: Deploy Research via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
@@ -87,7 +96,7 @@ jobs:
           protocol: ftp
           security: loose
 
-      # Step 9: Deploy Admin dist to /public_html/admin/
+      # Step 10: Deploy Admin dist to /public_html/admin/
       - name: Deploy Admin via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
@@ -100,7 +109,7 @@ jobs:
           protocol: ftp
           security: loose
 
-      # Step 10: Deploy SupportUs dist to /public_html/supportus/
+      # Step 11: Deploy SupportUs dist to /public_html/supportus/
       - name: Deploy SupportUs via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
@@ -113,7 +122,7 @@ jobs:
           protocol: ftp
           security: loose
 
-      # Step 11: Deploy Shop dist to /public_html/shop/
+      # Step 12: Deploy Shop dist to /public_html/shop/
       - name: Deploy Shop via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
@@ -122,6 +131,19 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./Shop/dist/
           server-dir: /public_html/shop/
+          port: 21
+          protocol: ftp
+          security: loose
+
+      # Step 13: Deploy Foundation dist to /public_html/foundation/
+      - name: Deploy Foundation via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./Foundation/dist/
+          server-dir: /public_html/foundation/
           port: 21
           protocol: ftp
           security: loose
