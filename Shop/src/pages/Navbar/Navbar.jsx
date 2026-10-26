@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { FiSearch, FiMenu, FiX } from "react-icons/fi";
 import logo from "../../assets/Logo.png";
 import UserIcon from "../../assets/Images/UserIcon.png";
-import { Heart, ShoppingBag } from "lucide-react";
+import { Heart, ShoppingBag, Package } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
@@ -90,6 +90,8 @@ const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const user = useSelector((store) => store.user);
+  const cartItems = useSelector((store) => store.cart?.items || []);
+  const cartCount = cartItems.reduce((acc, item) => acc + (Number(item.quantity) || 1), 0);
 
   useEffect(() => {
     const handler = (e) => {
@@ -185,7 +187,7 @@ const Header = () => {
             />
           </a>
 
-          {/* Right: Infinito Ultimate + Search */}
+          {/* Right: Infinito Ultimate + Search + Cart */}
           <div className="flex items-center gap-3">
             <a
               href={`${FRONTEND_BASE_URL}/ultimate`}
@@ -200,6 +202,19 @@ const Header = () => {
             >
               <FiSearch size={20} />
             </button>
+            <Link
+              to="/cart"
+              className="relative border border-white p-2 hover:bg-white hover:text-black transition flex items-center justify-center text-white"
+              title="Shopping Cart"
+              aria-label="Shopping Cart"
+            >
+              <ShoppingBag size={20} />
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-[#DD1215] text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#202020] animate-pulse">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
           </div>
         </div>
       </div>
@@ -264,6 +279,14 @@ const Header = () => {
                 <ShoppingBag size={16} /> SHOP
               </Link>
             </li>
+            <li>
+              <Link
+                to="/orders"
+                className="uppercase tracking-wider font-semibold hover:text-white cursor-pointer border-l border-gray-600 px-3"
+              >
+                MY ORDERS
+              </Link>
+            </li>
           </ul>
         </div>
       </div>
@@ -312,6 +335,12 @@ const Header = () => {
             className="block font-bold text-white flex items-center gap-2"
           >
             <ShoppingBag size={14} /> SHOP
+          </Link>
+          <Link
+            to="/orders"
+            className="block font-bold text-[#DD1215] flex items-center gap-2"
+          >
+            <Package size={14} /> MY ORDERS
           </Link>
 
           <a

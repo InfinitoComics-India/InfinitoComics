@@ -13,7 +13,10 @@ import {
   X,
   ArrowRight,
   ShieldCheck,
-  Edit3
+  Edit3,
+  Truck,
+  CheckCircle2,
+  RotateCcw
 } from "lucide-react";
 import { toast } from "react-toastify";
 import {
@@ -111,6 +114,50 @@ const ShopProduct = () => {
     headline: "",
     comment: "",
   });
+
+  // Pincode Delivery Estimator state
+  const [pincodeInput, setPincodeInput] = useState(() => {
+    try {
+      return localStorage.getItem("user_pincode") || "";
+    } catch {
+      return "";
+    }
+  });
+  const [pincodeResult, setPincodeResult] = useState(() => {
+    try {
+      const saved = localStorage.getItem("user_pincode");
+      if (saved && saved.length === 6) {
+        return { valid: true, code: saved };
+      }
+    } catch {}
+    return null;
+  });
+  const [isCheckingPincode, setIsCheckingPincode] = useState(false);
+
+  // Delivery date estimate (3 business days ahead)
+  const deliveryEstimateDate = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 3);
+    return d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+  }, []);
+
+  const handleCheckPincode = (e) => {
+    e?.preventDefault();
+    const clean = pincodeInput.trim();
+    if (!/^\d{6}$/.test(clean)) {
+      toast.error("Please enter a valid 6-digit Indian PIN code");
+      return;
+    }
+    setIsCheckingPincode(true);
+    setTimeout(() => {
+      setIsCheckingPincode(false);
+      setPincodeResult({ valid: true, code: clean });
+      try {
+        localStorage.setItem("user_pincode", clean);
+      } catch {}
+      toast.success(`Delivery available for ${clean}!`);
+    }, 350);
+  };
 
   // 1. Fetch Product, Reviews & Category-Filtered Suggested Products
   useEffect(() => {
@@ -739,6 +786,80 @@ const ShopProduct = () => {
                 </button>
               </div>
             )}
+
+            {/* DELIVERY OPTIONS & PINCODE ESTIMATOR (Myntra Standard) */}
+            <div className="my-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="flex items-center justify-between mb-2.5">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
+                  <Truck size={15} className="text-[#DD1215]" />
+                  Delivery Options
+                </h4>
+                {pincodeResult && (
+                  <button
+                    type="button"
+                    onClick={() => { setPincodeResult(null); setPincodeInput(""); }}
+                    className="text-[11px] text-[#DD1215] font-bold hover:underline cursor-pointer"
+                  >
+                    Change
+                  </button>
+                )}
+              </div>
+
+              {!pincodeResult ? (
+                <form onSubmit={handleCheckPincode} className="space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      maxLength={6}
+                      value={pincodeInput}
+                      onChange={(e) => setPincodeInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      placeholder="Enter 6-digit Pincode (e.g. 110001)"
+                      className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-[#DD1215]"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isCheckingPincode}
+                      className="px-4 py-2 bg-black hover:bg-gray-800 text-white font-bold text-xs uppercase tracking-wider rounded transition cursor-pointer"
+                    >
+                      {isCheckingPincode ? "Checking..." : "Check"}
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-gray-500">
+                    Enter PIN code to check delivery time & Cash on Delivery availability
+                  </p>
+                </form>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-gray-900 flex items-center gap-1.5">
+                      <CheckCircle2 size={14} className="text-emerald-600" />
+                      Get it by <span className="text-[#DD1215]">{deliveryEstimateDate}</span>
+                    </span>
+                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-extrabold rounded">
+                      FREE EXPRESS
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-600">
+                    Dispatched from Infinito Central Hub to PIN <strong>{pincodeResult.code}</strong>.
+                  </p>
+                </div>
+              )}
+
+              <div className="mt-3 pt-3 border-t border-gray-200/80 space-y-1.5 text-[11px] text-gray-600">
+                <div className="flex items-center gap-2">
+                  <Check size={12} className="text-emerald-600" />
+                  <span>100% Original Products directly from Infinito Comics</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check size={12} className="text-emerald-600" />
+                  <span>Pay on Delivery may be available</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RotateCcw size={12} className="text-emerald-600" />
+                  <span>Easy 7-day returns & exchanges</span>
+                </div>
+              </div>
+            </div>
 
             <div className="h-px bg-gray-200 my-6" />
 

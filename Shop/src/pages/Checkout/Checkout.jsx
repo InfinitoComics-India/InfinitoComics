@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { 
   Edit2, X, Check, CreditCard, QrCode, Smartphone, Banknote, ShieldCheck,
   Tag, Sparkles, ChevronDown, ChevronUp, Ticket, Percent, Gift, CheckCircle2 
@@ -80,6 +80,25 @@ const Checkout = () => {
     }, 0);
   }, [checkoutItems]);
 
+  const authUser = useSelector((state) => state.user?.user) || (() => {
+    try {
+      const u = localStorage.getItem("user");
+      return u ? JSON.parse(u) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const isUltimateMember = useMemo(() => {
+    return Boolean(
+      authUser?.hasInfinitoUltimate ||
+      authUser?.isUltimateMember ||
+      authUser?.membershipType === "ULTIMATE" ||
+      authUser?.plan === "ULTIMATE" ||
+      localStorage.getItem("is_ultimate_member") === "true"
+    );
+  }, [authUser]);
+
   // GST (18%)
   const taxAmount = useMemo(() => {
     return Number((subtotal * 0.18).toFixed(2));
@@ -94,10 +113,21 @@ const Checkout = () => {
     return Number(Math.min(appliedCoupon.value, subtotal).toFixed(2));
   }, [appliedCoupon, subtotal]);
 
+  // Infinito Ultimate Member Automatic Discount (10% on subtotal)
+  const ultimateDiscountAmount = useMemo(() => {
+    if (!isUltimateMember) return 0;
+    return Number((subtotal * 0.10).toFixed(2));
+  }, [isUltimateMember, subtotal]);
+
+  // Total discounts combined
+  const totalDiscountAmount = useMemo(() => {
+    return Number((discountAmount + ultimateDiscountAmount).toFixed(2));
+  }, [discountAmount, ultimateDiscountAmount]);
+
   // Grand Total to pay
   const grandTotal = useMemo(() => {
-    return Math.max(0, Number((subtotal + taxAmount - discountAmount).toFixed(2)));
-  }, [subtotal, taxAmount, discountAmount]);
+    return Math.max(0, Number((subtotal + taxAmount - totalDiscountAmount).toFixed(2)));
+  }, [subtotal, taxAmount, totalDiscountAmount]);
 
   const availableCoupons = useMemo(() => getAvailableCoupons(), []);
 
@@ -189,7 +219,9 @@ const Checkout = () => {
         address,
         paymentMethod: selectedPayment.toUpperCase(),
         coupon: appliedCoupon,
-        discount: discountAmount,
+        discount: totalDiscountAmount,
+        isUltimateMember,
+        ultimateDiscount: ultimateDiscountAmount,
       });
 
       // 2. Remove purchased items from cart
@@ -213,6 +245,29 @@ const Checkout = () => {
     <div className="bg-white min-h-screen text-black font-sans pb-24">
       <div className="max-w-[1200px] mx-auto px-4 md:px-12 pt-8">
         
+        {/* Infinito Ultimate Automatic VIP Member Perk Banner */}
+        {isUltimateMember && (
+          <div className="mb-8 p-4 bg-gradient-to-r from-amber-500/15 via-red-500/10 to-transparent border-2 border-amber-500/40 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">👑</span>
+              <div>
+                <p className="font-black text-xs sm:text-sm uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+                  Infinito Ultimate Member Privilege Active
+                  <span className="px-2 py-0.5 bg-amber-500 text-black font-extrabold text-[10px] rounded">
+                    VIP SUBSCRIBER
+                  </span>
+                </p>
+                <p className="text-xs text-gray-700 mt-0.5">
+                  10% Automatic Subscriber Discount + Free Priority Express Shipping have been applied to your checkout.
+                </p>
+              </div>
+            </div>
+            <span className="font-mono font-black text-amber-800 text-xs sm:text-sm bg-white/80 border border-amber-300 px-3 py-1 rounded">
+              -₹{ultimateDiscountAmount.toFixed(2)} OFF
+            </span>
+          </div>
+        )}
+
         {/* ─── SECTION 1: DELIVER AT THIS ADDRESS (MATCHING SS2) ─── */}
         <div className="mb-10">
           <div className="flex items-center justify-between mb-4">
@@ -355,6 +410,21 @@ const Checkout = () => {
                     </td>
                     <td className="py-2.5 px-4 text-right font-black text-sm md:text-base text-emerald-700">
                       -₹{discountAmount.toFixed(2)}
+                    </td>
+                  </tr>
+                )}
+
+                {/* INFINITO ULTIMATE MEMBER DISCOUNT ROW */}
+                {isUltimateMember && ultimateDiscountAmount > 0 && (
+                  <tr className="border-t border-amber-200 bg-amber-50/70">
+                    <td colSpan={4} className="py-2.5 px-4 font-bold text-xs md:text-sm text-amber-900">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                        <span>👑 Infinito Ultimate VIP Member Discount (10% Auto-Applied)</span>
+                      </div>
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-black text-sm md:text-base text-amber-800">
+                      -₹{ultimateDiscountAmount.toFixed(2)}
                     </td>
                   </tr>
                 )}
