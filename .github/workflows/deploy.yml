@@ -60,7 +60,8 @@ jobs:
           echo "VITE_FRONTEND_BASE_URL=https://infinitohq.com" >> .env
           npm install
           NODE_OPTIONS=--max-old-space-size=4096 npm run build
-        # Step 7: Install dependencies and Build Foundation
+
+      # Step 7: Install dependencies and Build Foundation
       - name: Install and Build Foundation
         run: |
           cd Foundation
