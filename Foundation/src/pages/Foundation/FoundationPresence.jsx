@@ -1,7 +1,7 @@
 import React from "react";
 import mpChhattisgarh from "../../assets/images1/mp.png";
 import biharJharkhand from "../../assets/images1/bihar.png";
-import northeast from "../../assets/images1/NE.png";
+import northeast from "../../assets/images1/ne.png";
 import himachal from "../../assets/images1/himachal.png";
 import tamilNadu from "../../assets/images1/tamil nadu.png";
 
