@@ -62,6 +62,7 @@ import AnalyticsDashboard from './Pages/Shop/Analytics/AnalyticsDashboard.jsx';
 import MarketingDashboard from './Pages/Shop/Marketing/MarketingDashboard.jsx';
 import ShopManagement from './Pages/Shop/ShopManagement.jsx';
 import CompanyProfile from './Pages/Shop/CompanyProfile.jsx';
+import UltimateKitManager from './Pages/Shop/UltimateKit/UltimateKitManager.jsx';
 
 // Role constants
 const SUPER = ["superadmin"];
@@ -171,10 +172,8 @@ function App() {
 
           {/* ── HR System ──────────────────────────────────── */}
 
-          {/* HR Dashboard */}
-          <Route path="/hr" element={
-            <ProtectedRoute allowedRoles={HR_VIEW}><HRDashboard /></ProtectedRoute>
-          } />
+          {/* HR Dashboard / landing */}
+          <Route path="/hr" element={<Navigate to="/hr/employees" replace />} />
 
           {/* Employee Management */}
           <Route path="/hr/employees" element={
@@ -282,9 +281,6 @@ function App() {
           <Route path="/hr/worklog" element={
             <ProtectedRoute allowedRoles={HR_VIEW}><DailyWorkLog /></ProtectedRoute>
           } />
-          <Route path="/hr/export" element={
-            <ProtectedRoute allowedRoles={["superadmin","hr_manager"]}><EmployeeDataExport /></ProtectedRoute>
-          } />
           <Route path="/messages" element={
             <ProtectedRoute allowedRoles={[...HR_VIEW, "employee"]}><DirectMessages /></ProtectedRoute>
           } />
@@ -350,6 +346,11 @@ function App() {
           {/* Company Profile (Legal, GST, Bank Details, etc.) */}
           <Route path="/shop/company-profile" element={
             <ProtectedRoute allowedRoles={SHOP}><CompanyProfile /></ProtectedRoute>
+          } />
+
+          {/* Section: Ultimate Kit Manager */}
+          <Route path="/shop/ultimate-kit" element={
+            <ProtectedRoute allowedRoles={SHOP}><UltimateKitManager /></ProtectedRoute>
           } />
 
           {/* Catch-all: redirect any unknown route to home */}

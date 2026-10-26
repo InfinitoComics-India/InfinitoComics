@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Plus, Search, Filter, Grid3x3, List, Edit, Trash2, Eye,
-  Download, FileSpreadsheet, FileText, FileCode, ChevronDown
+  Download, FileSpreadsheet, FileText, FileCode, ChevronDown,
+  Sliders, Star, Upload, Image as ImageIcon, X, FileType
 } from 'lucide-react';
-import { message, Popconfirm, Spin, Tag, Dropdown } from 'antd';
+import { message, Popconfirm, Spin, Tag, Dropdown, Modal } from 'antd';
 import * as XLSX from 'xlsx';
-import { getAllProducts, deleteProduct } from '../../services/shopServices/productService';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { getAllProducts, deleteProduct, updateProduct, uploadProductImages } from '../../services/shopServices/productService';
 import { getAllCategories } from '../../services/shopServices/categoryService';
 import { BACKEND_URL } from '../../Utils/constant';
 
@@ -45,6 +48,15 @@ const AllProducts = () => {
     status: 'all',
     priceRange: 'all',
   });
+
+  // Quick Edit Category & Images Modal state
+  const [quickEditModalOpen, setQuickEditModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [productImages, setProductImages] = useState([]);
+  const [newImageUrl, setNewImageUrl] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [savingProduct, setSavingProduct] = useState(false);
 
   useEffect(() => {
     fetchAll();
@@ -129,6 +141,101 @@ const AllProducts = () => {
     } catch (error) {
       message.error('Failed to delete product');
       console.error(error);
+    }
+  };
+
+  // ── Quick Edit: Category & Display Images Handlers ──
+  const handleOpenQuickEdit = (product) => {
+    setEditingProduct(product);
+    setSelectedCategory(product.category?._id || product.category || (categories[0]?._id || ''));
+    if (Array.isArray(product.images) && product.images.length > 0) {
+      setProductImages(product.images.map((img, idx) => ({
+        url: typeof img === 'string' ? img : (img.url || ''),
+        alt: img.alt || productName(product),
+        isPrimary: img.isPrimary === true || idx === 0,
+      })));
+    } else {
+      setProductImages([]);
+    }
+    setQuickEditModalOpen(true);
+  };
+
+  const handleSetPrimaryProductImage = (index) => {
+    setProductImages(prev => prev.map((img, idx) => ({
+      ...img,
+      isPrimary: idx === index,
+    })));
+  };
+
+  const handleRemoveProductImage = (index) => {
+    setProductImages(prev => {
+      const next = prev.filter((_, idx) => idx !== index);
+      if (next.length > 0 && !next.some(img => img.isPrimary)) {
+        next[0].isPrimary = true;
+      }
+      return next;
+    });
+  };
+
+  const handleAddProductImageUrl = () => {
+    if (!newImageUrl.trim()) return;
+    const isFirst = productImages.length === 0;
+    setProductImages(prev => [
+      ...prev,
+      { url: newImageUrl.trim(), alt: editingProduct?.name || 'Product Image', isPrimary: isFirst }
+    ]);
+    setNewImageUrl('');
+  };
+
+  const handleUploadProductImageFiles = async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    try {
+      setUploadingImage(true);
+      const res = await uploadProductImages(Array.from(files));
+      const uploaded = res.data?.data || res.data || [];
+      const newImgs = (Array.isArray(uploaded) ? uploaded : [uploaded]).map((u, i) => ({
+        url: u.url || u,
+        alt: u.alt || 'Uploaded Product Image',
+        isPrimary: productImages.length === 0 && i === 0,
+      }));
+      setProductImages(prev => [...prev, ...newImgs]);
+      message.success('Image(s) uploaded successfully');
+    } catch (err) {
+      Array.from(files).forEach((f) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          setProductImages(prev => [
+            ...prev,
+            { url: reader.result, alt: f.name, isPrimary: prev.length === 0 }
+          ]);
+        };
+        reader.readAsDataURL(f);
+      });
+      message.success('Image added');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleSaveQuickEdit = async () => {
+    if (!editingProduct) return;
+    try {
+      setSavingProduct(true);
+      const res = await updateProduct(editingProduct._id, {
+        category: selectedCategory,
+        images: productImages,
+      });
+      const updated = res.data?.data || res.data || { ...editingProduct, category: selectedCategory, images: productImages };
+      setProducts(prev => prev.map(p => p._id === editingProduct._id ? { ...p, ...updated } : p));
+      message.success('Product category and website display images updated successfully!');
+      setQuickEditModalOpen(false);
+      fetchAll();
+    } catch (err) {
+      console.error(err);
+      message.error(err.response?.data?.message || err.message || 'Failed to update product');
+    } finally {
+      setSavingProduct(false);
     }
   };
 
@@ -232,7 +339,89 @@ const AllProducts = () => {
     message.success('Products exported as JSON (.json)');
   };
 
+  const exportToPDF = () => {
+    const list = filteredProducts.length > 0 ? filteredProducts : products;
+    if (list.length === 0) {
+      message.warning('No products to export');
+      return;
+    }
+
+    try {
+      const doc = new jsPDF('landscape', 'pt', 'a4');
+
+      // Title & Header Branding
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(221, 18, 21); // #DD1215
+      doc.text('INFINITO COMICS — SHOP PRODUCTS REPORT', 40, 40);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      const subtitle = `Generated on: ${new Date().toLocaleString('en-IN')} | Total Products: ${list.length}`;
+      doc.text(subtitle, 40, 58);
+
+      const tableRows = list.map((p, index) => [
+        index + 1,
+        productName(p),
+        p.sku || 'N/A',
+        productCategoryName(p) || 'Uncategorized',
+        p.basePrice ? `Rs. ${p.basePrice}` : '0',
+        p.salePrice ? `Rs. ${p.salePrice}` : (p.basePrice ? `Rs. ${p.basePrice}` : '0'),
+        p.stock !== null && p.stock !== undefined ? String(p.stock) : 'N/A',
+        (p.status || 'draft').toUpperCase(),
+      ]);
+
+      autoTable(doc, {
+        startY: 72,
+        head: [['#', 'Product Name', 'SKU', 'Category', 'Base Price', 'Sale Price', 'Stock', 'Status']],
+        body: tableRows,
+        theme: 'striped',
+        headStyles: {
+          fillColor: [221, 18, 21], // #DD1215
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 9,
+        },
+        bodyStyles: {
+          fontSize: 8.5,
+          textColor: [40, 40, 40],
+        },
+        alternateRowStyles: {
+          fillColor: [250, 250, 250],
+        },
+        styles: {
+          cellPadding: 6,
+          overflow: 'linebreak',
+        },
+        columnStyles: {
+          0: { cellWidth: 28, halign: 'center' },
+          1: { cellWidth: 180 },
+          2: { cellWidth: 100 },
+          3: { cellWidth: 100 },
+          4: { cellWidth: 70, halign: 'right' },
+          5: { cellWidth: 70, halign: 'right' },
+          6: { cellWidth: 50, halign: 'center' },
+          7: { cellWidth: 65, halign: 'center' },
+        },
+        margin: { left: 40, right: 40 },
+      });
+
+      doc.save(`infinito_products_${Date.now()}.pdf`);
+      message.success('Products exported as PDF (.pdf)');
+    } catch (err) {
+      console.error('Failed to generate PDF:', err);
+      message.error('Failed to export PDF');
+    }
+  };
+
   const exportMenuItems = [
+    {
+      key: 'pdf',
+      label: 'Download PDF (.pdf)',
+      icon: <FileType className="w-4 h-4 text-red-600" />,
+      onClick: exportToPDF,
+    },
     {
       key: 'excel',
       label: 'Download Excel (.xlsx)',
@@ -473,9 +662,9 @@ const AllProducts = () => {
                 <div className="flex items-center gap-2 mt-4">
                   <Link
                     to={`/shop/products/${product._id}`}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                    className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 transition"
                   >
-                    <Edit size={14} />
+                    <Edit size={13} />
                     Edit
                   </Link>
                   <Popconfirm
@@ -496,6 +685,171 @@ const AllProducts = () => {
           ))}
         </div>
       )}
+      {/* ── Modal: Quick Edit Category & Website Display Images ── */}
+      <Modal
+        open={quickEditModalOpen}
+        onCancel={() => setQuickEditModalOpen(false)}
+        title={
+          <div className="flex items-center gap-2 text-gray-900 font-bold text-lg">
+            <Sliders size={20} className="text-purple-600" />
+            Edit Category & Website Display Images
+          </div>
+        }
+        footer={null}
+        width={750}
+        destroyOnClose
+      >
+        {editingProduct && (
+          <div className="space-y-5 pt-2">
+            <div className="p-3 bg-gray-50 rounded-lg border flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-900">{productName(editingProduct)}</p>
+                <p className="text-xs text-gray-500">ID: {editingProduct._id} | SKU: {editingProduct.sku || 'N/A'}</p>
+              </div>
+              <Tag color={getStatusColor(editingProduct.status)} className="capitalize">
+                {editingProduct.status}
+              </Tag>
+            </div>
+
+            {/* Category Selector */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Category (shown on website navigation & filters) *
+              </label>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                {categories.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.name} {c.slug ? `(/${c.slug})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Website Display Images */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-semibold text-gray-700">
+                  Website Display Images
+                </label>
+                <span className="text-xs text-purple-700 bg-purple-50 px-2 py-0.5 rounded font-medium">
+                  ⭐ Star marks the PRIMARY image shown on product cards
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mb-3">
+                Select which image appears as the main display cover on the website catalog and detail views.
+              </p>
+
+              {/* Images Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
+                {productImages.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className={`relative group border-2 rounded-lg overflow-hidden bg-gray-50 p-1.5 transition ${
+                      img.isPrimary ? 'border-amber-500 shadow-md ring-2 ring-amber-200' : 'border-gray-200 hover:border-gray-400'
+                    }`}
+                  >
+                    <div className="aspect-square w-full rounded overflow-hidden bg-gray-100 flex items-center justify-center">
+                      <img
+                        src={resolveImageUrl(img.url)}
+                        alt={img.alt || `Product Image ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    </div>
+
+                    <div className="mt-1.5 flex items-center justify-between text-xs">
+                      {img.isPrimary ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
+                          <Star size={11} className="fill-amber-500 text-amber-500" />
+                          Primary
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleSetPrimaryProductImage(idx)}
+                          className="text-[11px] text-gray-600 hover:text-purple-600 font-medium"
+                        >
+                          Make Primary
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveProductImage(idx)}
+                        className="text-gray-400 hover:text-red-600 p-0.5"
+                        title="Remove image"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add / Upload Options */}
+              <div className="space-y-2 border-t pt-3">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newImageUrl}
+                    onChange={(e) => setNewImageUrl(e.target.value)}
+                    placeholder="Enter image URL to add (https://...)"
+                    className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddProductImageUrl}
+                    className="px-3 py-1.5 bg-gray-800 text-white rounded-lg text-xs font-medium hover:bg-black"
+                  >
+                    Add URL
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <label className="inline-flex items-center gap-2 px-3 py-1.5 border border-purple-300 bg-purple-50 text-purple-700 rounded-lg text-xs font-semibold hover:bg-purple-100 cursor-pointer transition">
+                    <Upload size={14} />
+                    {uploadingImage ? 'Uploading...' : 'Upload Image File'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleUploadProductImageFiles}
+                      className="hidden"
+                      disabled={uploadingImage}
+                    />
+                  </label>
+                  <span className="text-[11px] text-gray-500">Supports PNG, JPG, WEBP.</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t">
+              <button
+                type="button"
+                onClick={() => setQuickEditModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={savingProduct}
+                onClick={handleSaveQuickEdit}
+                className="inline-flex items-center gap-2 px-5 py-2 bg-[#DD1215] text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50"
+              >
+                {savingProduct && <Spin size="small" />}
+                Save Changes
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

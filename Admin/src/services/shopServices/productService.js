@@ -77,3 +77,15 @@ export const uploadProductImages = async (files) => {
     },
   });
 };
+
+// Push product from Qikink to store catalog
+export const pushQikinkProductToStore = async (productData) => {
+  try {
+    return await axios.post(`${BACKEND_URL}/shop/products/qikink/push-to-store`, productData, getConfig());
+  } catch (err) {
+    try {
+      return await axios.post(`http://localhost:5000/shop/products/qikink/push-to-store`, productData, getConfig());
+    } catch {}
+    throw err;
+  }
+};

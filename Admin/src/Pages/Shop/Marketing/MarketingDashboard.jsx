@@ -5,7 +5,7 @@ import {
   Sparkles, Sliders, Image as ImageIcon, ExternalLink, RefreshCw,
   Eye, CheckCircle2, Clock, XCircle, AlertCircle, Percent,
   DollarSign, Truck, Gift, Palette, ArrowRight, ArrowUp, ArrowDown,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, X
 } from 'lucide-react';
 import { message, Modal, Spin, Tag, Switch, Radio, Input, InputNumber, Select, Tooltip } from 'antd';
 import {
@@ -277,7 +277,7 @@ const MarketingDashboard = () => {
     try {
       setSavingBanners(true);
       await updatePromoBars(promoBars);
-      message.success('Announcement Bars saved and live on Shop frontend!');
+      message.success('Announcement Bars saved and synced live to the main website!');
     } catch (err) {
       message.error('Failed to save promo bars');
     } finally {
@@ -417,6 +417,7 @@ const MarketingDashboard = () => {
 
   // ── Promo Banner Actions (Multiple!) ───────────────────────────
   const handleAddPromoBanner = (customImage = null) => {
+    const chosenImg = customImage === '' ? '' : (customImage || '/products/crimson_tshirt.jpg');
     const newBanner = {
       id: `promo-${Date.now()}`,
       headline: '35% off',
@@ -425,8 +426,8 @@ const MarketingDashboard = () => {
       discountCode: 'CRIMSON35',
       buttonText: 'Buy Now',
       buttonLink: 'https://shop.infinitohq.com/',
-      bgImageUrl: customImage || '/products/crimson_tshirt.jpg',
-      imageUrl: customImage || '/products/crimson_tshirt.jpg',
+      bgImageUrl: chosenImg,
+      imageUrl: chosenImg,
       bgColor: '#800000',
       textColor: '#ffffff',
       alignment: 'left',
@@ -436,7 +437,11 @@ const MarketingDashboard = () => {
     const updated = [...promoBanners, newBanner];
     setPromoBanners(updated);
     setPreviewPromoIdx(updated.length - 1);
-    message.success('New promo banner created! Preview updated with photo, text, and button.');
+    if (!chosenImg) {
+      message.success('New solid theme promo banner created (No photo)!');
+    } else {
+      message.success('New promo banner created! Preview updated with photo, text, and button.');
+    }
   };
 
   // Create banner directly from chosen image file
@@ -891,7 +896,7 @@ const MarketingDashboard = () => {
 
                   return (
                     <div
-                      className="relative w-full rounded-xl overflow-hidden border border-gray-300 shadow-md bg-gray-950 aspect-[1024/380] min-h-[340px] sm:min-h-[400px] md:min-h-[460px] flex items-center p-6 md:p-12 text-white transition-all group"
+                      className="relative w-full rounded-xl overflow-hidden border border-gray-300 shadow-md bg-gray-950 min-h-[400px] sm:min-h-[480px] md:min-h-[540px] flex items-center p-6 md:p-14 text-white transition-all group"
                     >
                       {/* Image cleanly fills the entire size of the banner container */}
                       {bg ? (
@@ -1201,6 +1206,26 @@ const MarketingDashboard = () => {
                             }}
                           />
                         </label>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = [...heroSlides];
+                            updated[idx].imageUrl = '';
+                            updated[idx].image = '';
+                            setHeroSlides(updated);
+                            message.info('Photo removed from slide. Slide will use theme background.');
+                          }}
+                          className={`px-3 py-1.5 border rounded text-xs font-bold transition flex items-center gap-1 cursor-pointer whitespace-nowrap ${
+                            !slide.imageUrl && !slide.image
+                              ? 'bg-red-50 text-[#DD1215] border-red-200'
+                              : 'bg-white hover:bg-gray-100 text-gray-700 border-gray-300'
+                          }`}
+                          title="Remove photo from this slide"
+                        >
+                          <X size={13} />
+                          <span>No Photo</span>
+                        </button>
                       </div>
 
                       {(slide.imageUrl || slide.image) && (
@@ -1240,25 +1265,10 @@ const MarketingDashboard = () => {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                {/* Direct "Create Banner from Photo" button */}
-                <label className="px-3 py-1.5 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 shadow-xs">
-                  <ImageIcon size={14} className="text-[#DD1215]" />
-                  <span>Create Banner from Photo</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleCreatePromoBannerFromFile(file);
-                    }}
-                  />
-                </label>
-
                 <button
                   type="button"
                   onClick={() => handleAddPromoBanner()}
-                  className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 border border-gray-300"
+                  className="px-3 py-1.5 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 shadow-xs"
                 >
                   <Plus size={14} /> Add Promo Banner
                 </button>
@@ -1266,9 +1276,10 @@ const MarketingDashboard = () => {
                   type="button"
                   onClick={handleSavePromoBanners}
                   disabled={savingBanners}
-                  className="px-4 py-1.5 bg-[#DD1215] hover:bg-red-700 text-white text-xs font-bold rounded-lg transition shadow-xs cursor-pointer"
+                  className="px-4 py-1.5 bg-[#DD1215] hover:bg-red-700 text-white text-xs font-bold rounded-lg transition shadow-xs cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
                 >
-                  Save Promo Banners ({promoBanners.length} Total)
+                  {savingBanners && <Spin size="small" />}
+                  {savingBanners ? 'Saving & Syncing...' : `Save Promo Banners (${promoBanners.length} Total)`}
                 </button>
               </div>
             </div>
@@ -1302,7 +1313,10 @@ const MarketingDashboard = () => {
                   const isPromoArtwork = currentPromo?.displayMode === 'banner_image';
 
                   return (
-                    <div className="relative w-full rounded-xl overflow-hidden border border-gray-300 shadow-md bg-gray-950 aspect-[16/6] md:aspect-[21/7] min-h-[220px] sm:min-h-[260px] md:min-h-[290px] flex items-center p-6 md:p-12 text-white transition-all group">
+                    <div
+                      className="relative w-full max-w-[840px] mx-auto rounded-xl overflow-hidden shadow-md flex items-center min-h-[170px] sm:min-h-[190px] md:min-h-[210px] p-6 sm:p-8 md:p-10 text-white transition-all group"
+                      style={{ backgroundColor: currentPromo?.bgColor || '#800000' }}
+                    >
                       {/* Banner Photo cleanly fills the entire size of the banner container */}
                       {promoBg ? (
                         <img
@@ -1641,6 +1655,26 @@ const MarketingDashboard = () => {
                             }}
                           />
                         </label>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = [...promoBanners];
+                            updated[idx].bgImageUrl = '';
+                            updated[idx].imageUrl = '';
+                            setPromoBanners(updated);
+                            message.info('Photo removed from promo banner. Banner will use solid/gradient theme color.');
+                          }}
+                          className={`px-3 py-1.5 border rounded text-xs font-bold transition flex items-center gap-1 cursor-pointer whitespace-nowrap ${
+                            !promo.bgImageUrl && !promo.imageUrl
+                              ? 'bg-red-50 text-[#DD1215] border-red-200'
+                              : 'bg-white hover:bg-gray-100 text-gray-700 border-gray-300'
+                          }`}
+                          title="Remove photo and use theme color"
+                        >
+                          <X size={13} />
+                          <span>No Photo</span>
+                        </button>
                       </div>
 
                       {(promo.bgImageUrl || promo.imageUrl) && (
@@ -1691,9 +1725,10 @@ const MarketingDashboard = () => {
                   type="button"
                   onClick={handleSavePromoBars}
                   disabled={savingBanners}
-                  className="px-4 py-1.5 bg-[#DD1215] text-white text-xs font-bold rounded-lg hover:bg-red-700 transition cursor-pointer"
+                  className="px-4 py-1.5 bg-[#DD1215] text-white text-xs font-bold rounded-lg hover:bg-red-700 transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
                 >
-                  Save Announcement Bars ({promoBars.length} Total)
+                  {savingBanners && <Spin size="small" />}
+                  {savingBanners ? 'Saving & Syncing...' : `Save Announcement Bars (${promoBars.length} Total)`}
                 </button>
               </div>
             </div>

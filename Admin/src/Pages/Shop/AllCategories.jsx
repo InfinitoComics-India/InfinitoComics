@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Plus, Search, Edit, Trash2, FolderOpen, 
   Eye, EyeOff, Image as ImageIcon, Package, Grid, List,
-  Download, FileSpreadsheet, FileText, FileCode, ChevronDown
+  Download, FileSpreadsheet, FileText, FileCode, ChevronDown, FileType
 } from 'lucide-react';
 import { 
   getAllCategories, 
@@ -13,6 +13,8 @@ import {
 import { BACKEND_URL } from '../../Utils/constant';
 import Swal from 'sweetalert2';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // Build the full URL for images. Uploaded images come back as "/uploads/shop/xxx.png"
 // and need the backend host prepended. External URLs and data URIs are returned as-is.
@@ -230,6 +232,83 @@ const AllCategories = () => {
     });
   };
 
+  const exportToPDF = () => {
+    const list = filteredCategories.length > 0 ? filteredCategories : categories;
+    if (list.length === 0) {
+      Swal.fire('Warning', 'No categories to export', 'warning');
+      return;
+    }
+
+    try {
+      const doc = new jsPDF('portrait', 'pt', 'a4');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(221, 18, 21); // #DD1215
+      doc.text('INFINITO COMICS — SHOP CATEGORIES REPORT', 40, 40);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      const subtitle = `Generated on: ${new Date().toLocaleString('en-IN')} | Total Categories: ${list.length}`;
+      doc.text(subtitle, 40, 58);
+
+      const tableRows = list.map((c, index) => [
+        index + 1,
+        c.name || 'Unnamed',
+        `/${c.slug || ''}`,
+        c.productCount || 0,
+        (c.status || 'active').toUpperCase(),
+        c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-IN') : 'N/A',
+      ]);
+
+      autoTable(doc, {
+        startY: 72,
+        head: [['#', 'Category Name', 'Slug', 'Products', 'Status', 'Created Date']],
+        body: tableRows,
+        theme: 'striped',
+        headStyles: {
+          fillColor: [221, 18, 21],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 9,
+        },
+        bodyStyles: {
+          fontSize: 8.5,
+          textColor: [40, 40, 40],
+        },
+        alternateRowStyles: {
+          fillColor: [250, 250, 250],
+        },
+        styles: {
+          cellPadding: 6,
+          overflow: 'linebreak',
+        },
+        columnStyles: {
+          0: { cellWidth: 26, halign: 'center' },
+          1: { cellWidth: 160 },
+          2: { cellWidth: 120 },
+          3: { cellWidth: 60, halign: 'center' },
+          4: { cellWidth: 65, halign: 'center' },
+          5: { cellWidth: 80, halign: 'center' },
+        },
+        margin: { left: 40, right: 40 },
+      });
+
+      doc.save(`infinito_categories_${Date.now()}.pdf`);
+      Swal.fire({
+        icon: 'success',
+        title: 'Exported!',
+        text: 'Categories exported as PDF (.pdf)',
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      console.error('Failed to export categories PDF:', err);
+      Swal.fire('Error', 'Failed to generate PDF', 'error');
+    }
+  };
+
   const [showExportMenu, setShowExportMenu] = useState(false);
 
   if (loading) {
@@ -272,6 +351,17 @@ const AllCategories = () => {
                 className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1"
                 onMouseLeave={() => setShowExportMenu(false)}
               >
+                <button
+                  type="button"
+                  onClick={() => {
+                    exportToPDF();
+                    setShowExportMenu(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                >
+                  <FileType className="w-4 h-4 text-red-600" />
+                  PDF (.pdf)
+                </button>
                 <button
                   type="button"
                   onClick={() => {

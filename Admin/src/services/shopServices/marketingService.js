@@ -1,4 +1,7 @@
 // Service for managing Discount Codes, Banners & Hero Slider promotions
+import axios from 'axios';
+import { BACKEND_URL } from '../../Utils/constant';
+
 const DISCOUNTS_KEY = 'infinito_discount_codes';
 const BANNERS_KEY = 'infinito_shop_banners';
 
@@ -255,15 +258,98 @@ export const toggleDiscountCodeStatus = async (id) => {
 
 // ── BANNERS & PROMOTIONS API ───────────────────────────────────
 
+const saveToBackend = async (data, customPath = '/shop/marketing/banners') => {
+  const url = BACKEND_URL || 'https://infinitocomics-68cr.onrender.com';
+  const targets = [
+    url,
+    'http://localhost:5000',
+    'https://infinitocomics-68cr.onrender.com',
+  ].filter(Boolean);
+  const uniqueTargets = [...new Set(targets)];
+
+  for (const base of uniqueTargets) {
+    try {
+      const cleanBase = base.replace(/\/$/, '');
+      const res = await axios.put(`${cleanBase}${customPath}`, data, { timeout: 6000 });
+      if (res.status === 200 || res.data?.success) {
+        return true;
+      }
+    } catch (e) {
+      // try fallback endpoint
+      try {
+        const cleanBase = base.replace(/\/$/, '');
+        const res = await axios.post(`${cleanBase}${customPath}`, data, { timeout: 6000 });
+        if (res.status === 200 || res.data?.success) {
+          return true;
+        }
+      } catch (innerErr) {}
+    }
+  }
+  return false;
+};
+
 const broadcastBanners = (data) => {
   try {
     const channel = new BroadcastChannel('infinito_banners_channel');
     channel.postMessage({ type: 'banners_updated', data });
     channel.close();
   } catch {}
+  try {
+    window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new CustomEvent('infinito_banners_updated', { detail: data }));
+  } catch {}
 };
 
 export const getMarketingBanners = async () => {
+  // First attempt to load from backend API for multi-device/multi-origin sync
+  try {
+    const url = BACKEND_URL || 'https://infinitocomics-68cr.onrender.com';
+    let res;
+    try {
+      res = await axios.get(`${url}/shop/marketing/banners`, { timeout: 3000 });
+    } catch {
+      res = await axios.get(`http://localhost:5000/shop/marketing/banners`, { timeout: 2000 });
+    }
+    if (res?.data?.success && res.data.data) {
+      const dbData = res.data.data;
+      const merged = {
+        ...DEFAULT_BANNERS_CONFIG,
+        ...dbData,
+        heroSlider: Array.isArray(dbData.heroSlider) && dbData.heroSlider.length > 0
+          ? dbData.heroSlider.map((s, idx) => ({
+              ...s,
+              id: s.id || `slide-${idx + 1}`,
+              imageUrl: s.imageUrl || s.image || '',
+              image: s.imageUrl || s.image || '',
+              displayMode: s.displayMode || 'custom_overlay',
+              alignment: s.alignment || 'left',
+              isActive: s.isActive !== false,
+            }))
+          : DEFAULT_BANNERS_CONFIG.heroSlider,
+        promoBanners: Array.isArray(dbData.promoBanners) && dbData.promoBanners.length > 0
+          ? dbData.promoBanners.map((b, idx) => ({
+              ...b,
+              id: b.id || `promo-${idx + 1}`,
+              bgImageUrl: b.bgImageUrl || b.imageUrl || b.image || '',
+              imageUrl: b.bgImageUrl || b.imageUrl || b.image || '',
+              alignment: b.alignment || 'left',
+              displayMode: b.displayMode || 'custom_overlay',
+              isActive: b.isActive !== false,
+            }))
+          : DEFAULT_BANNERS_CONFIG.promoBanners,
+        promoBars: Array.isArray(dbData.promoBars) && dbData.promoBars.length > 0
+          ? dbData.promoBars
+          : DEFAULT_BANNERS_CONFIG.promoBars,
+      };
+      try {
+        localStorage.setItem(BANNERS_KEY, JSON.stringify(merged));
+      } catch {}
+      return merged;
+    }
+  } catch (err) {
+    // Backend offline or unreachable, fallback to localStorage
+  }
+
   try {
     const raw = localStorage.getItem(BANNERS_KEY);
     if (raw) {
@@ -288,6 +374,7 @@ export const getMarketingBanners = async () => {
               ...b,
               id: b.id || `promo-${idx + 1}`,
               bgImageUrl: b.bgImageUrl || b.imageUrl || b.image || '',
+              imageUrl: b.bgImageUrl || b.imageUrl || b.image || '',
               alignment: b.alignment || 'left',
               displayMode: b.displayMode || 'custom_overlay',
               isActive: b.isActive !== false,
@@ -301,6 +388,7 @@ export const getMarketingBanners = async () => {
     }
     localStorage.setItem(BANNERS_KEY, JSON.stringify(DEFAULT_BANNERS_CONFIG));
     broadcastBanners(DEFAULT_BANNERS_CONFIG);
+    saveToBackend(DEFAULT_BANNERS_CONFIG);
     return DEFAULT_BANNERS_CONFIG;
   } catch (e) {
     console.error('Failed to get banners config:', e);
@@ -351,6 +439,7 @@ export const updateHeroSlider = async (slides) => {
     }
   }
   broadcastBanners(updated);
+  await saveToBackend(updated);
   return updated;
 };
 
@@ -360,6 +449,7 @@ export const updatePromoBanners = async (banners) => {
     ...b,
     id: b.id || `promo-${idx + 1}`,
     bgImageUrl: b.bgImageUrl || b.imageUrl || b.image || '',
+    imageUrl: b.bgImageUrl || b.imageUrl || b.image || '',
     alignment: b.alignment || 'left',
     displayMode: b.displayMode || 'custom_overlay',
     isActive: b.isActive !== false,
@@ -375,6 +465,7 @@ export const updatePromoBanners = async (banners) => {
     console.warn("Storage write failed", err);
   }
   broadcastBanners(updated);
+  await saveToBackend(updated);
   return updated;
 };
 
@@ -391,6 +482,13 @@ export const updatePromoBars = async (bars) => {
     console.warn("Storage write failed", err);
   }
   broadcastBanners(updated);
+
+  // 1. Try dedicated lightweight promo-bars endpoint first
+  let saved = await saveToBackend({ promoBars: bars }, '/shop/marketing/promo-bars');
+  if (!saved) {
+    // 2. Fallback to general banners endpoint
+    saved = await saveToBackend(updated, '/shop/marketing/banners');
+  }
   return updated;
 };
 
@@ -407,3 +505,85 @@ export const updatePromoBar = async (barData) => {
   list[0] = { ...list[0], ...barData };
   return updatePromoBars(list);
 };
+
+export const DEFAULT_ULTIMATE_KIT = {
+  sectionTitle: "ULTIMATE KIT",
+  badgeText: "INFINITO",
+  title: "ULTIMATE KIT",
+  originalPrice: "₹2199",
+  salePrice: "₹1999",
+  image: "",
+  noPhoto: false,
+  includedProducts: [],
+  features: [
+    "Comic of your choice",
+    "Surprise Superhero Toy",
+    "Digital Wall Paintings",
+    "Superhero Stickers",
+    "Infinito T-shirt",
+  ],
+  buttonText: "Get Now",
+  buttonLink: "/checkout",
+  sku: "INF-ULTIMATE-KIT",
+  isActive: true,
+};
+
+export const getUltimateKit = async () => {
+  const url = BACKEND_URL || 'https://infinitocomics-68cr.onrender.com';
+  const targets = [
+    url,
+    'http://localhost:5000',
+    'https://infinitocomics-68cr.onrender.com',
+  ].filter(Boolean);
+  const uniqueTargets = [...new Set(targets)];
+
+  for (const base of uniqueTargets) {
+    try {
+      const clean = base.replace(/\/$/, '');
+      const res = await axios.get(`${clean}/shop/marketing/ultimate-kit?_t=${Date.now()}`, { timeout: 4000 });
+      if (res?.data?.success && res.data.data) {
+        return { ...DEFAULT_ULTIMATE_KIT, ...res.data.data };
+      }
+    } catch {}
+  }
+
+  // fallback to full banners or localStorage
+  try {
+    const current = await getMarketingBanners();
+    if (current?.ultimateKit) {
+      return { ...DEFAULT_ULTIMATE_KIT, ...current.ultimateKit };
+    }
+  } catch {}
+  return DEFAULT_ULTIMATE_KIT;
+};
+
+export const updateUltimateKit = async (kitData) => {
+  const img = kitData.image || kitData.imageUrl || "";
+  const title = kitData.title || kitData.cardTitle || "ULTIMATE KIT";
+  const payload = {
+    ...DEFAULT_ULTIMATE_KIT,
+    ...kitData,
+    image: img,
+    imageUrl: img,
+    noPhoto: Boolean(kitData.noPhoto || img === 'no_photo'),
+    includedProducts: Array.isArray(kitData.includedProducts) ? kitData.includedProducts : [],
+    title,
+    cardTitle: title,
+  };
+  try {
+    const current = await getMarketingBanners();
+    const updated = { ...current, ultimateKit: payload };
+    localStorage.setItem(BANNERS_KEY, JSON.stringify(updated));
+    localStorage.setItem("infinito_shop_banners", JSON.stringify(updated));
+    broadcastBanners(updated);
+  } catch {}
+
+  // 1. Try dedicated endpoint first
+  let saved = await saveToBackend({ ultimateKit: payload }, '/shop/marketing/ultimate-kit');
+  if (!saved) {
+    // 2. Fallback to general banners endpoint
+    await saveToBackend({ ultimateKit: payload }, '/shop/marketing/banners');
+  }
+  return payload;
+};
+

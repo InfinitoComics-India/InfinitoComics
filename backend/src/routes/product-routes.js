@@ -49,11 +49,18 @@ router.patch(
   productController.bulkUpdateProducts
 );
 
+// Qikink "Push to Store" Webhook & API endpoints (creates or syncs product directly in All Products)
+router.post("/qikink/push-to-store", productController.pushQikinkProductToStore);
+router.post("/qikink-webhook", productController.pushQikinkProductToStore);
+router.post("/qikink-push", productController.pushQikinkProductToStore);
+
 // Public routes (for frontend shop)
 router.get("/public/all", productController.getAllProducts);
 router.get("/public/featured", productController.getFeaturedProducts);
 router.get("/public/slug/:slug", productController.getProductBySlug);
 router.get("/public/category/:categorySlug", productController.getProductsByCategory);
+router.get("/public/slug/:slug/reviews", productController.getProductReviews);
+router.post("/public/slug/:slug/reviews", productController.addProductReview);
 
 // Cloudinary health check / diagnostic route
 router.get("/cloudinary-status", async (req, res) => {
