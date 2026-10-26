@@ -44,7 +44,15 @@ const UltimateKitManager = () => {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await updateUltimateKit(kit);
+      const activeImg = kit.image || kit.imageUrl || '';
+      const payload = {
+        ...kit,
+        image: activeImg,
+        imageUrl: activeImg,
+        title: kit.title || kit.cardTitle || 'ULTIMATE KIT',
+        cardTitle: kit.cardTitle || kit.title || 'ULTIMATE KIT',
+      };
+      await updateUltimateKit(payload);
       message.success('Ultimate Kit configuration saved and synced live to the website!');
     } catch (err) {
       console.error('Failed to save ultimate kit:', err);

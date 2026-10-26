@@ -4,10 +4,12 @@ import {
   Search, Filter, ShoppingBag, Eye, Send, Printer, RefreshCw,
   TrendingUp, AlertCircle, CheckCircle2, XCircle, Clock, RotateCcw,
   Download, FileSpreadsheet, FileText, FileCode, ChevronDown, ExternalLink,
-  Edit, Star, Trash2, Plus, Upload, Image as ImageIcon, Sliders
+  Edit, Star, Trash2, Plus, Upload, Image as ImageIcon, Sliders, FileType
 } from 'lucide-react';
 import { message, Spin, Tag, Dropdown, Modal } from 'antd';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import {
   getAllOrders,
   sendOrderToQikink,
@@ -515,7 +517,99 @@ const AllOrders = () => {
     message.success('Orders exported as JSON (.json)');
   };
 
+  const exportToPDF = () => {
+    const data = filteredOrders.length > 0 ? filteredOrders : orders;
+    if (data.length === 0) return message.warning('No orders to export');
+
+    try {
+      const doc = new jsPDF('landscape', 'pt', 'a4');
+
+      // Title & Header Branding
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(221, 18, 21); // #DD1215
+      doc.text('INFINITO COMICS — SHOP ORDERS REPORT', 40, 40);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      const subtitle = `Generated on: ${new Date().toLocaleString('en-IN')} | Total Orders: ${data.length}`;
+      doc.text(subtitle, 40, 58);
+
+      const tableRows = data.map((o, index) => {
+        const orderNum = o.orderNumber || o.orderId || o._id?.toString()?.slice(-8)?.toUpperCase() || 'N/A';
+        const customerName = resolveCustomerDisplayName(o);
+        const dateStr = o.createdAt ? new Date(o.createdAt).toLocaleDateString('en-IN') : 'N/A';
+        const total = (o.pricing?.grandTotal ?? o.total ?? 0);
+        const paymentMethod = (o.payment?.method || 'Prepaid').toUpperCase();
+        const paymentStatus = (o.payment?.status || 'Pending').toUpperCase();
+        const fulfillmentStatus = (o.fulfillment?.status || 'Unfulfilled').toUpperCase();
+        const itemsCount = Array.isArray(o.items) ? o.items.length : 0;
+
+        return [
+          index + 1,
+          orderNum,
+          customerName,
+          dateStr,
+          itemsCount,
+          `Rs. ${Number(total).toFixed(2)}`,
+          paymentMethod,
+          paymentStatus,
+          fulfillmentStatus,
+        ];
+      });
+
+      autoTable(doc, {
+        startY: 72,
+        head: [['#', 'Order #', 'Customer Name', 'Date', 'Items', 'Total Amount', 'Method', 'Payment', 'Fulfillment']],
+        body: tableRows,
+        theme: 'striped',
+        headStyles: {
+          fillColor: [221, 18, 21], // #DD1215
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 9,
+        },
+        bodyStyles: {
+          fontSize: 8.5,
+          textColor: [40, 40, 40],
+        },
+        alternateRowStyles: {
+          fillColor: [250, 250, 250],
+        },
+        styles: {
+          cellPadding: 6,
+          overflow: 'linebreak',
+        },
+        columnStyles: {
+          0: { cellWidth: 26, halign: 'center' },
+          1: { cellWidth: 90 },
+          2: { cellWidth: 140 },
+          3: { cellWidth: 75, halign: 'center' },
+          4: { cellWidth: 40, halign: 'center' },
+          5: { cellWidth: 80, halign: 'right' },
+          6: { cellWidth: 65, halign: 'center' },
+          7: { cellWidth: 70, halign: 'center' },
+          8: { cellWidth: 85, halign: 'center' },
+        },
+        margin: { left: 40, right: 40 },
+      });
+
+      doc.save(`infinito_orders_${Date.now()}.pdf`);
+      message.success('Orders exported as PDF (.pdf)');
+    } catch (err) {
+      console.error('Failed to generate PDF:', err);
+      message.error('Failed to export PDF');
+    }
+  };
+
   const exportMenuItems = [
+    {
+      key: 'pdf',
+      label: 'Download PDF (.pdf)',
+      icon: <FileType className="w-4 h-4 text-red-600" />,
+      onClick: exportToPDF,
+    },
     {
       key: 'excel',
       label: 'Download Excel (.xlsx)',

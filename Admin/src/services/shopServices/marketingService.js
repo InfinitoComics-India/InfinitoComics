@@ -556,11 +556,21 @@ export const getUltimateKit = async () => {
 };
 
 export const updateUltimateKit = async (kitData) => {
-  const payload = { ...DEFAULT_ULTIMATE_KIT, ...kitData };
+  const img = kitData.image || kitData.imageUrl || "";
+  const title = kitData.title || kitData.cardTitle || "ULTIMATE KIT";
+  const payload = {
+    ...DEFAULT_ULTIMATE_KIT,
+    ...kitData,
+    image: img,
+    imageUrl: img,
+    title,
+    cardTitle: title,
+  };
   try {
     const current = await getMarketingBanners();
     const updated = { ...current, ultimateKit: payload };
     localStorage.setItem(BANNERS_KEY, JSON.stringify(updated));
+    localStorage.setItem("infinito_shop_banners", JSON.stringify(updated));
     broadcastBanners(updated);
   } catch {}
 
@@ -572,3 +582,4 @@ export const updateUltimateKit = async (kitData) => {
   }
   return payload;
 };
+
