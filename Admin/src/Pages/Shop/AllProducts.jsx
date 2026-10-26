@@ -607,14 +607,6 @@ const AllProducts = () => {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenQuickEdit(product)}
-                        className="p-2 text-purple-600 hover:text-purple-800 hover:bg-purple-50 rounded transition"
-                        title="Edit Category & Website Display Images"
-                      >
-                        <Sliders size={16} />
-                      </button>
                       <Link
                         to={`/shop/products/${product._id}`}
                         className="p-2 text-gray-600 hover:text-[#DD1215] hover:bg-gray-100 rounded transition"
@@ -668,15 +660,6 @@ const AllProducts = () => {
                 </div>
 
                 <div className="flex items-center gap-2 mt-4">
-                  <button
-                    type="button"
-                    onClick={() => handleOpenQuickEdit(product)}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 border border-purple-200 bg-purple-50 text-purple-700 rounded-lg text-xs font-semibold hover:bg-purple-100 transition"
-                    title="Edit Category & Website Display Images"
-                  >
-                    <Sliders size={13} />
-                    Category & Imgs
-                  </button>
                   <Link
                     to={`/shop/products/${product._id}`}
                     className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 transition"
