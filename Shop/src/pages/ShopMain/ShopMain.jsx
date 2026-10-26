@@ -176,50 +176,66 @@ const ShopMain = () => {
 
       // Fetch from backend API to ensure live sync across tabs and devices
       try {
-        const base = "https://infinitocomics-68cr.onrender.com";
-        let res;
-        try {
-          res = await fetch(`${base}/shop/marketing/banners?_t=${Date.now()}`).then((r) => r.json());
-        } catch {
-          res = await fetch(`http://localhost:5000/shop/marketing/banners?_t=${Date.now()}`).then((r) => r.json());
-        }
-        if (res?.success && res.data) {
-          if (Array.isArray(res.data.promoBanners) && res.data.promoBanners.length > 0) {
-            const enabled = res.data.promoBanners.filter((b) => b && b.isActive !== false);
-            if (enabled.length > 0) {
-              setPromoBannersList(enabled);
-            }
-          }
-          if (res.data.ultimateKit) {
-            const norm = normalizeKitData(res.data.ultimateKit);
-            if (norm) setUltimateKit(norm);
-          }
+        const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+        const bases = isLocal
+          ? ['http://localhost:5000', 'https://infinitocomics-68cr.onrender.com']
+          : ['https://infinitocomics-68cr.onrender.com', 'http://localhost:5000'];
+
+        for (const base of bases) {
           try {
-            localStorage.setItem("infinito_shop_banners", JSON.stringify(res.data));
+            const res = await fetch(`${base}/shop/marketing/banners?_t=${Date.now()}`, {
+              headers: { 'Cache-Control': 'no-cache' },
+              cache: 'no-store',
+            }).then((r) => (r.ok ? r.json() : null));
+
+            if (res?.success && res.data) {
+              if (Array.isArray(res.data.promoBanners) && res.data.promoBanners.length > 0) {
+                const enabled = res.data.promoBanners.filter((b) => b && b.isActive !== false);
+                if (enabled.length > 0) {
+                  setPromoBannersList(enabled);
+                }
+              }
+              if (res.data.ultimateKit) {
+                const norm = normalizeKitData(res.data.ultimateKit);
+                if (norm) setUltimateKit(norm);
+              }
+              try {
+                localStorage.setItem("infinito_shop_banners", JSON.stringify(res.data));
+              } catch {}
+              break;
+            }
           } catch {}
         }
       } catch {}
 
       // Dedicated Ultimate Kit endpoint fetch to ensure freshest sync
       try {
-        const base = "https://infinitocomics-68cr.onrender.com";
-        let kitRes;
-        try {
-          kitRes = await fetch(`${base}/shop/marketing/ultimate-kit?_t=${Date.now()}`).then((r) => r.json());
-        } catch {
-          kitRes = await fetch(`http://localhost:5000/shop/marketing/ultimate-kit?_t=${Date.now()}`).then((r) => r.json());
-        }
-        if (kitRes?.success && kitRes.data) {
-          const norm = normalizeKitData(kitRes.data);
-          if (norm) {
-            setUltimateKit(norm);
-            try {
-              const currentRaw = localStorage.getItem("infinito_shop_banners");
-              const currentObj = currentRaw ? JSON.parse(currentRaw) : {};
-              currentObj.ultimateKit = kitRes.data;
-              localStorage.setItem("infinito_shop_banners", JSON.stringify(currentObj));
-            } catch {}
-          }
+        const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+        const bases = isLocal
+          ? ['http://localhost:5000', 'https://infinitocomics-68cr.onrender.com']
+          : ['https://infinitocomics-68cr.onrender.com', 'http://localhost:5000'];
+
+        for (const base of bases) {
+          try {
+            const kitRes = await fetch(`${base}/shop/marketing/ultimate-kit?_t=${Date.now()}`, {
+              headers: { 'Cache-Control': 'no-cache' },
+              cache: 'no-store',
+            }).then((r) => (r.ok ? r.json() : null));
+
+            if (kitRes?.success && kitRes.data) {
+              const norm = normalizeKitData(kitRes.data);
+              if (norm) {
+                setUltimateKit(norm);
+                try {
+                  const currentRaw = localStorage.getItem("infinito_shop_banners");
+                  const currentObj = currentRaw ? JSON.parse(currentRaw) : {};
+                  currentObj.ultimateKit = kitRes.data;
+                  localStorage.setItem("infinito_shop_banners", JSON.stringify(currentObj));
+                } catch {}
+              }
+              break;
+            }
+          } catch {}
         }
       } catch {}
     };
@@ -228,6 +244,14 @@ const ShopMain = () => {
 
     window.addEventListener("storage", reloadBanners);
     window.addEventListener("focus", reloadBanners);
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") reloadBanners();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    // 3.5s background polling for live instant updates from Admin without reload
+    const pollInterval = setInterval(reloadBanners, 3500);
+
     let bc;
     try {
       bc = new BroadcastChannel("infinito_banners_channel");
@@ -250,6 +274,8 @@ const ShopMain = () => {
     return () => {
       window.removeEventListener("storage", reloadBanners);
       window.removeEventListener("focus", reloadBanners);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      clearInterval(pollInterval);
       if (bc) bc.close();
     };
   }, []);

@@ -20,6 +20,7 @@ import {
   updatePromoBar,
   updatePromoBanners,
   updatePromoBars,
+  saveAllMarketing,
 } from '../../../services/shopServices/marketingService';
 
 const MarketingDashboard = () => {
@@ -285,6 +286,23 @@ const MarketingDashboard = () => {
     }
   };
 
+  const handleSaveAllMarketing = async () => {
+    try {
+      setSavingBanners(true);
+      await saveAllMarketing({
+        heroSlider: heroSlides,
+        promoBanners,
+        promoBars,
+      });
+      message.success('All promotions and banners saved and published live to website storefront!');
+    } catch (err) {
+      console.error('Failed to save all marketing:', err);
+      message.error('Failed to save all marketing');
+    } finally {
+      setSavingBanners(false);
+    }
+  };
+
   // ── Image File Compression Helper (avoids LocalStorage quota limits) ────
   const compressImageFile = (file, maxWidth = 1200, maxHeight = 600, quality = 0.70) => {
     return new Promise((resolve, reject) => {
@@ -534,21 +552,13 @@ const MarketingDashboard = () => {
           </p>
         </div>
 
-        {activeTab === 'discounts' ? (
+        {activeTab === 'discounts' && (
           <button
             onClick={handleOpenCreateModal}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#DD1215] hover:bg-red-700 text-white rounded-lg transition font-bold text-xs shadow-sm cursor-pointer self-start md:self-auto"
           >
             <Plus size={16} />
             <span>Create Discount Code</span>
-          </button>
-        ) : (
-          <button
-            onClick={loadAllData}
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium text-xs shadow-sm cursor-pointer self-start md:self-auto"
-          >
-            <RefreshCw size={14} />
-            <span>Sync Content</span>
           </button>
         )}
       </div>

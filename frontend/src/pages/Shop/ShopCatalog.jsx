@@ -104,24 +104,32 @@ const ShopCatalog = () => {
 
     // Live sync with backend
     try {
-      const base = "https://infinitocomics-68cr.onrender.com";
-      let res;
-      try {
-        res = await fetch(`${base}/shop/marketing/banners`).then((r) => r.json());
-      } catch {
-        res = await fetch(`http://localhost:5000/shop/marketing/banners`).then((r) => r.json());
-      }
-      if (res?.success && res.data) {
-        if (Array.isArray(res.data.heroSlider) && res.data.heroSlider.length > 0) {
-          const activeSlides = res.data.heroSlider.filter((s) => s.isActive !== false);
-          if (activeSlides.length > 0) setHeroSlides(activeSlides);
-        }
-        if (Array.isArray(res.data.promoBanners) && res.data.promoBanners.length > 0) {
-          const activePromos = res.data.promoBanners.filter((b) => b.isActive !== false);
-          if (activePromos.length > 0) setPromoBanners(activePromos);
-        }
+      const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+      const bases = isLocal
+        ? ['http://localhost:5000', 'https://infinitocomics-68cr.onrender.com']
+        : ['https://infinitocomics-68cr.onrender.com', 'http://localhost:5000'];
+
+      for (const base of bases) {
         try {
-          localStorage.setItem("infinito_shop_banners", JSON.stringify(res.data));
+          const res = await fetch(`${base}/shop/marketing/banners?_t=${Date.now()}`, {
+            headers: { 'Cache-Control': 'no-cache' },
+            cache: 'no-store',
+          }).then((r) => (r.ok ? r.json() : null));
+
+          if (res?.success && res.data) {
+            if (Array.isArray(res.data.heroSlider) && res.data.heroSlider.length > 0) {
+              const activeSlides = res.data.heroSlider.filter((s) => s.isActive !== false);
+              if (activeSlides.length > 0) setHeroSlides(activeSlides);
+            }
+            if (Array.isArray(res.data.promoBanners) && res.data.promoBanners.length > 0) {
+              const activePromos = res.data.promoBanners.filter((b) => b.isActive !== false);
+              if (activePromos.length > 0) setPromoBanners(activePromos);
+            }
+            try {
+              localStorage.setItem("infinito_shop_banners", JSON.stringify(res.data));
+            } catch {}
+            break;
+          }
         } catch {}
       }
     } catch {}
@@ -149,6 +157,14 @@ const ShopCatalog = () => {
       if (e.key === "infinito_shop_banners") loadMarketingBanners();
     };
     window.addEventListener("storage", handleStorage);
+    window.addEventListener("focus", loadMarketingBanners);
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") loadMarketingBanners();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    // Fast 3.5s background polling so updates from Admin appear immediately
+    const pollInterval = setInterval(loadMarketingBanners, 3500);
 
     let channel;
     if (typeof BroadcastChannel !== "undefined") {
@@ -160,6 +176,9 @@ const ShopCatalog = () => {
 
     return () => {
       window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("focus", loadMarketingBanners);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      clearInterval(pollInterval);
       if (channel) channel.close();
     };
   }, []);

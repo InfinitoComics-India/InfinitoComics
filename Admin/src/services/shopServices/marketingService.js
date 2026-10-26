@@ -260,25 +260,25 @@ export const toggleDiscountCodeStatus = async (id) => {
 
 const saveToBackend = async (data, customPath = '/shop/marketing/banners') => {
   const url = BACKEND_URL || 'https://infinitocomics-68cr.onrender.com';
-  const targets = [
-    url,
-    'http://localhost:5000',
-    'https://infinitocomics-68cr.onrender.com',
-  ].filter(Boolean);
+  const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const targets = isLocal
+    ? ['http://localhost:5000', url, 'https://infinitocomics-68cr.onrender.com'].filter(Boolean)
+    : [url, 'https://infinitocomics-68cr.onrender.com', 'http://localhost:5000'].filter(Boolean);
   const uniqueTargets = [...new Set(targets)];
 
   for (const base of uniqueTargets) {
     try {
       const cleanBase = base.replace(/\/$/, '');
-      const res = await axios.put(`${cleanBase}${customPath}`, data, { timeout: 6000 });
+      const timeoutMs = base.includes('localhost') ? 2500 : 7000;
+      const res = await axios.put(`${cleanBase}${customPath}`, data, { timeout: timeoutMs });
       if (res.status === 200 || res.data?.success) {
         return true;
       }
     } catch (e) {
-      // try fallback endpoint
       try {
         const cleanBase = base.replace(/\/$/, '');
-        const res = await axios.post(`${cleanBase}${customPath}`, data, { timeout: 6000 });
+        const timeoutMs = base.includes('localhost') ? 2500 : 7000;
+        const res = await axios.post(`${cleanBase}${customPath}`, data, { timeout: timeoutMs });
         if (res.status === 200 || res.data?.success) {
           return true;
         }
@@ -292,7 +292,9 @@ const broadcastBanners = (data) => {
   try {
     const channel = new BroadcastChannel('infinito_banners_channel');
     channel.postMessage({ type: 'banners_updated', data });
-    channel.close();
+    setTimeout(() => {
+      try { channel.close(); } catch {}
+    }, 2000);
   } catch {}
   try {
     window.dispatchEvent(new Event('storage'));
@@ -504,6 +506,63 @@ export const updatePromoBar = async (barData) => {
   const list = Array.isArray(current.promoBars) && current.promoBars.length > 0 ? [...current.promoBars] : [{ ...DEFAULT_BANNERS_CONFIG.promoBars[0] }];
   list[0] = { ...list[0], ...barData };
   return updatePromoBars(list);
+};
+
+export const saveAllMarketing = async ({ heroSlider, promoBanners, promoBars, ultimateKit } = {}) => {
+  const current = await getMarketingBanners();
+  const updated = { ...current };
+
+  if (heroSlider !== undefined) {
+    const safeSlides = Array.isArray(heroSlider) ? heroSlider : [];
+    updated.heroSlider = safeSlides.map((s, idx) => ({
+      ...s,
+      id: s.id || `slide-${idx + 1}`,
+      imageUrl: s.imageUrl || s.image || '',
+      image: s.imageUrl || s.image || '',
+      headline: s.headline || s.title || '',
+      highlightText: s.highlightText || '',
+      subheading: s.subheading || s.subtext || '',
+      buttonText: s.buttonText || s.cta || 'Shop Now',
+      buttonLink: s.buttonLink || s.ctaLink || 'https://shop.infinitohq.com/',
+      displayMode: 'custom_overlay',
+      alignment: s.alignment || s.align || 'left',
+      isActive: s.isActive !== false,
+    }));
+  }
+
+  if (promoBanners !== undefined) {
+    const safeBanners = Array.isArray(promoBanners) ? promoBanners : [];
+    const normalizedBanners = safeBanners.map((b, idx) => ({
+      ...b,
+      id: b.id || `promo-${idx + 1}`,
+      bgImageUrl: b.bgImageUrl || b.imageUrl || b.image || '',
+      imageUrl: b.bgImageUrl || b.imageUrl || b.image || '',
+      alignment: b.alignment || 'left',
+      displayMode: b.displayMode || 'custom_overlay',
+      isActive: b.isActive !== false,
+    }));
+    updated.promoBanners = normalizedBanners;
+    updated.promoBanner = normalizedBanners[0] || current.promoBanner;
+  }
+
+  if (promoBars !== undefined) {
+    const safeBars = Array.isArray(promoBars) ? promoBars : [];
+    updated.promoBars = safeBars;
+    updated.promoBar = safeBars[0] || current.promoBar;
+  }
+
+  if (ultimateKit !== undefined) {
+    updated.ultimateKit = ultimateKit;
+  }
+
+  try {
+    localStorage.setItem(BANNERS_KEY, JSON.stringify(updated));
+  } catch (err) {
+    console.warn("Storage write failed", err);
+  }
+  broadcastBanners(updated);
+  await saveToBackend(updated);
+  return updated;
 };
 
 export const DEFAULT_ULTIMATE_KIT = {
