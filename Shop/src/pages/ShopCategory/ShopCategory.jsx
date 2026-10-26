@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Heart } from "lucide-react";
+import { toast } from "react-toastify";
 import {
   fetchCategories,
   fetchProductsByCategory,
 } from "../../services/productService";
+import { isInWishlist, toggleWishlist } from "../../services/wishlistService";
 
 // Sidebar filter definitions. Sort options and generic filter categories are
 // kept static because they don't depend on backend data — the actual product
@@ -38,6 +40,68 @@ const ProductImage = ({ src, alt, className }) => {
       className={className}
       onError={() => setFailed(true)}
     />
+  );
+};
+
+const CategoryProductCard = ({ product, navigate }) => {
+  const pid = product.slug || product._id || product.id;
+  const [inWish, setInWish] = useState(() => isInWishlist(product._id || product.id));
+
+  useEffect(() => {
+    const handleUpdate = () => setInWish(isInWishlist(product._id || product.id));
+    window.addEventListener("wishlist_updated", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+    return () => {
+      window.removeEventListener("wishlist_updated", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
+  }, [product._id, product.id]);
+
+  const handleWishlistToggle = (e) => {
+    e.stopPropagation();
+    const added = toggleWishlist(product);
+    setInWish(added);
+    if (added) {
+      toast.success("Added to Wishlist!");
+    } else {
+      toast.info("Removed from Wishlist");
+    }
+  };
+
+  return (
+    <div
+      onClick={() => navigate(`/product/${pid}`)}
+      className="cursor-pointer group border border-gray-200 rounded-md overflow-hidden hover:shadow-lg transition-shadow bg-white relative flex flex-col justify-between"
+    >
+      <div className="relative w-full h-[280px] bg-gray-100 flex items-center justify-center overflow-hidden">
+        <ProductImage
+          src={product.image}
+          alt={product.title}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
+        {/* Floating Wishlist Button */}
+        <button
+          type="button"
+          onClick={handleWishlistToggle}
+          className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition shadow-md cursor-pointer ${
+            inWish
+              ? "bg-[#DD1215] text-white scale-110"
+              : "bg-white/85 hover:bg-white text-gray-700 hover:text-[#DD1215]"
+          }`}
+          title={inWish ? "Remove from Wishlist" : "Save to Wishlist"}
+          aria-label={inWish ? "Remove from Wishlist" : "Save to Wishlist"}
+        >
+          <Heart className={`w-4 h-4 ${inWish ? "fill-white text-white" : ""}`} />
+        </button>
+      </div>
+      <div className="p-4">
+        <p className="text-xs uppercase tracking-widest text-[#DD1215] font-bold">
+          {product.name}
+        </p>
+        <p className="text-sm text-gray-800 mt-1 line-clamp-1">{product.title}</p>
+        <p className="text-lg font-bold mt-2">Rs.{product.price}/-</p>
+      </div>
+    </div>
   );
 };
 
@@ -352,26 +416,11 @@ const ShopCategory = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {pagedProducts.map((p) => (
-                  <div
+                  <CategoryProductCard
                     key={p._id || p.id}
-                    onClick={() => navigate(`/product/${p.slug || p._id || p.id}`)}
-                    className="cursor-pointer group border border-gray-200 rounded-md overflow-hidden hover:shadow-lg transition-shadow bg-white"
-                  >
-                    <div className="w-full h-[280px] bg-gray-100 flex items-center justify-center overflow-hidden">
-                      <ProductImage
-                        src={p.image}
-                        alt={p.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    </div>
-                    <div className="p-4">
-                      <p className="text-xs uppercase tracking-widest text-[#DD1215] font-bold">
-                        {p.name}
-                      </p>
-                      <p className="text-sm text-gray-800 mt-1 line-clamp-1">{p.title}</p>
-                      <p className="text-lg font-bold mt-2">Rs.{p.price}/-</p>
-                    </div>
-                  </div>
+                    product={p}
+                    navigate={navigate}
+                  />
                 ))}
               </div>
             )}

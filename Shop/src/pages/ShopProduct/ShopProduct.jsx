@@ -28,6 +28,7 @@ import {
   submitProductReview
 } from "../../services/productService";
 import { addToCart } from "../../redux/cartSlice";
+import { isInWishlist, toggleWishlist } from "../../services/wishlistService";
 
 // Safe image component with graceful fallback
 const SafeImage = ({ src, alt, className, fallback }) => {
@@ -49,44 +50,6 @@ const SafeImage = ({ src, alt, className, fallback }) => {
   );
 };
 
-const WISHLIST_KEY = "shop_wishlist";
-
-const getLocalWishlist = () => {
-  try {
-    const raw = localStorage.getItem(WISHLIST_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-};
-
-const toggleLocalWishlist = (product) => {
-  try {
-    const list = getLocalWishlist();
-    const id = product.id || product._id;
-    const exists = list.some((item) => (item.id || item._id) === id);
-    let next;
-    if (exists) {
-      next = list.filter((item) => (item.id || item._id) !== id);
-    } else {
-      next = [...list, {
-        id,
-        _id: id,
-        title: product.title || product.name,
-        price: product.price,
-        image: product.image,
-        category: product.category,
-        slug: product.slug,
-      }];
-    }
-    localStorage.setItem(WISHLIST_KEY, JSON.stringify(next));
-    window.dispatchEvent(new CustomEvent("wishlist_updated", { detail: next }));
-    return !exists;
-  } catch {
-    return false;
-  }
-};
-
 const ShopProduct = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -99,10 +62,22 @@ const ShopProduct = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wishlistVersion, setWishlistVersion] = useState(0);
   const [showSizeChart, setShowSizeChart] = useState(false);
   const [showMoreSpecs, setShowMoreSpecs] = useState(false);
   const [addedAnim, setAddedAnim] = useState(false);
+
+  useEffect(() => {
+    const handleWishSync = () => setWishlistVersion((v) => v + 1);
+    window.addEventListener("wishlist_updated", handleWishSync);
+    window.addEventListener("storage", handleWishSync);
+    return () => {
+      window.removeEventListener("wishlist_updated", handleWishSync);
+      window.removeEventListener("storage", handleWishSync);
+    };
+  }, []);
+
+  const isWishlisted = Boolean(product && isInWishlist(product.id || product._id));
 
   // Reviews state
   const [reviewsData, setReviewsData] = useState({ reviews: [], averageRating: 0, totalRatingsCount: 0 });
@@ -176,11 +151,6 @@ const ShopProduct = () => {
         setProduct(p);
 
         if (p) {
-          // Initialize wishlist status
-          const wishlist = getLocalWishlist();
-          const inWish = wishlist.some((w) => (w.id || w._id) === (p.id || p._id));
-          setIsWishlisted(inWish);
-
           // Initialize reviews
           const revs = await fetchProductReviews(p.slug || slug);
           if (!cancelled) {
@@ -433,8 +403,8 @@ const ShopProduct = () => {
 
   const handleToggleWishlist = () => {
     if (!product) return;
-    const added = toggleLocalWishlist(product);
-    setIsWishlisted(added);
+    const added = toggleWishlist(product);
+    setWishlistVersion((v) => v + 1);
     if (added) {
       toast.success("Added to Wishlist!");
     } else {
@@ -1091,8 +1061,32 @@ const ShopProduct = () => {
                         src={itemImg}
                         alt={item.title || item.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        fallback={fallbackImg}
+                        fallback={fallbackCategoryImages["tshirts"]}
                       />
+
+                      {/* Floating Wishlist Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const added = toggleWishlist(item);
+                          setWishlistVersion((v) => v + 1);
+                          if (added) {
+                            toast.success("Added to Wishlist!");
+                          } else {
+                            toast.info("Removed from Wishlist");
+                          }
+                        }}
+                        className={`absolute top-2.5 right-2.5 w-7 h-7 rounded-full flex items-center justify-center transition shadow-md cursor-pointer ${
+                          isInWishlist(item._id || item.id)
+                            ? "bg-[#DD1215] text-white scale-110"
+                            : "bg-white/85 hover:bg-white text-gray-700 hover:text-[#DD1215]"
+                        }`}
+                        title={isInWishlist(item._id || item.id) ? "Remove from Wishlist" : "Save to Wishlist"}
+                        aria-label={isInWishlist(item._id || item.id) ? "Remove from Wishlist" : "Save to Wishlist"}
+                      >
+                        <Heart className={`w-3.5 h-3.5 ${isInWishlist(item._id || item.id) ? "fill-white text-white" : ""}`} />
+                      </button>
 
                       {/* Myntra-style Rating pill floating on image */}
                       <div className="absolute bottom-2.5 left-2.5 px-2 py-0.5 bg-white/90 backdrop-blur-sm rounded text-[11px] font-bold text-gray-900 flex items-center gap-1 shadow-sm">

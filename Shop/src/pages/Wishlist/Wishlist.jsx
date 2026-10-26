@@ -1,10 +1,124 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { Heart, ShoppingBag, Trash2, ArrowLeft, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
+import { Heart, ShoppingBag, Trash2, ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 import { addToCart } from "../../redux/cartSlice.js";
-import { getWishlist, removeFromWishlist } from "../../services/wishlistService.js";
+import { getWishlist, removeFromWishlist, clearWishlist } from "../../services/wishlistService.js";
 import { toast } from "react-toastify";
+
+const WishlistCard = ({ prod, onRemove, onMoveToBag, navigate }) => {
+  const pid = prod.id || prod._id;
+  const availableSizes = Array.isArray(prod.sizes) && prod.sizes.length > 0
+    ? prod.sizes
+    : ["S", "M", "L", "XL"];
+  const [selectedSize, setSelectedSize] = useState(prod.size || availableSizes[0] || "M");
+
+  const img =
+    prod.image ||
+    prod.thumbnail ||
+    (Array.isArray(prod.images) && prod.images[0]?.url) ||
+    (Array.isArray(prod.images) && typeof prod.images[0] === "string" ? prod.images[0] : null) ||
+    "/products/crimson_tshirt.jpg";
+  const price = Number(prod.salePrice || prod.price || 0);
+  const mrp = Number(prod.originalPrice || prod.mrp || 0);
+  const discount = mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col group">
+      {/* Image container */}
+      <div
+        className="relative aspect-square bg-gray-100 overflow-hidden cursor-pointer"
+        onClick={() => navigate(`/product/${prod.slug || pid}`)}
+      >
+        <img
+          src={img}
+          alt={prod.name || prod.title || "Product"}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = "/products/crimson_tshirt.jpg";
+          }}
+        />
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(pid);
+          }}
+          className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-500 hover:text-red-600 shadow flex items-center justify-center transition cursor-pointer"
+          title="Remove from Wishlist"
+        >
+          <Trash2 size={15} />
+        </button>
+        {discount > 0 && (
+          <span className="absolute bottom-2.5 left-2.5 bg-[#DD1215] text-white text-[10px] font-black uppercase px-2 py-0.5 rounded shadow-sm">
+            {discount}% OFF
+          </span>
+        )}
+      </div>
+
+      {/* Details */}
+      <div className="p-4 flex flex-col flex-1">
+        <p className="text-[10px] uppercase font-mono tracking-widest text-[#DD1215] font-bold">
+          {prod.category?.name || prod.category || "Official Merch"}
+        </p>
+        <h3
+          className="text-sm font-bold text-gray-900 mt-1 line-clamp-1 cursor-pointer hover:text-[#DD1215] transition"
+          onClick={() => navigate(`/product/${prod.slug || pid}`)}
+        >
+          {prod.name || prod.title || "Infinito Merchandise"}
+        </h3>
+
+        {/* Price row */}
+        <div className="flex items-baseline gap-2 mt-2">
+          <span className="text-base font-black text-gray-900">
+            ₹{price.toLocaleString("en-IN")}
+          </span>
+          {mrp > price && (
+            <span className="text-xs text-gray-400 line-through">
+              ₹{mrp.toLocaleString("en-IN")}
+            </span>
+          )}
+        </div>
+
+        {/* Size Selector */}
+        {availableSizes.length > 0 && (
+          <div className="mt-3 pt-2 border-t border-gray-100">
+            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider block mb-1">
+              Select Size:
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {availableSizes.map((sz) => (
+                <button
+                  key={sz}
+                  type="button"
+                  onClick={() => setSelectedSize(sz)}
+                  className={`px-2 py-0.5 text-[11px] font-bold rounded transition cursor-pointer ${
+                    selectedSize === sz
+                      ? "bg-black text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  {sz}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-auto pt-4 flex gap-2">
+          <button
+            type="button"
+            onClick={() => onMoveToBag({ ...prod, size: selectedSize })}
+            className="flex-1 bg-black hover:bg-[#DD1215] text-white font-bold text-xs uppercase tracking-wider py-2.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer shadow-sm"
+          >
+            <ShoppingBag size={14} /> Move to Bag ({selectedSize})
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Wishlist = () => {
   const navigate = useNavigate();
@@ -27,18 +141,27 @@ const Wishlist = () => {
     toast.info("Removed from Wishlist");
   };
 
+  const handleClearAll = () => {
+    if (window.confirm("Are you sure you want to clear your entire wishlist?")) {
+      clearWishlist();
+      setItems([]);
+      toast.info("Wishlist cleared");
+    }
+  };
+
   const handleMoveToBag = (product) => {
     const pid = product.id || product._id;
+    const size = product.size || (product.sizes && product.sizes[0]) || "M";
     dispatch(
       addToCart({
         productId: pid,
-        size: product.size || (product.sizes && product.sizes[0]) || "M",
+        size,
         quantity: 1,
         product,
       })
     );
     removeFromWishlist(pid);
-    toast.success(`${product.name || product.title || "Product"} added to cart!`);
+    toast.success(`Added ${product.name || product.title || "Product"} (${size}) to bag!`);
   };
 
   return (
@@ -67,12 +190,21 @@ const Wishlist = () => {
             </h1>
           </div>
           {items.length > 0 && (
-            <Link
-              to="/"
-              className="text-xs font-bold uppercase tracking-wider text-gray-600 hover:text-black flex items-center gap-1"
-            >
-              Continue Shopping <ArrowRight size={14} />
-            </Link>
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={handleClearAll}
+                className="text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-red-600 transition cursor-pointer"
+              >
+                Clear Wishlist
+              </button>
+              <Link
+                to="/"
+                className="text-xs font-bold uppercase tracking-wider text-gray-600 hover:text-black flex items-center gap-1"
+              >
+                Continue Shopping <ArrowRight size={14} />
+              </Link>
+            </div>
           )}
         </div>
 
@@ -98,88 +230,15 @@ const Wishlist = () => {
         ) : (
           /* Wishlist Grid */
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {items.map((prod) => {
-              const pid = prod.id || prod._id;
-              const img =
-                prod.image ||
-                prod.thumbnail ||
-                (Array.isArray(prod.images) && prod.images[0]?.url) ||
-                (Array.isArray(prod.images) && typeof prod.images[0] === "string" ? prod.images[0] : null) ||
-                "/products/crimson_tshirt.jpg";
-              const price = Number(prod.salePrice || prod.price || 0);
-              const mrp = Number(prod.originalPrice || prod.mrp || 0);
-              const discount = mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
-
-              return (
-                <div
-                  key={pid}
-                  className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col group"
-                >
-                  {/* Image container */}
-                  <div className="relative aspect-square bg-gray-100 overflow-hidden cursor-pointer" onClick={() => navigate(`/product/${prod.slug || pid}`)}>
-                    <img
-                      src={img}
-                      alt={prod.name || prod.title || "Product"}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = "/products/crimson_tshirt.jpg";
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemove(pid);
-                      }}
-                      className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-500 hover:text-red-600 shadow flex items-center justify-center transition"
-                      title="Remove from Wishlist"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                    {discount > 0 && (
-                      <span className="absolute bottom-2.5 left-2.5 bg-[#DD1215] text-white text-[10px] font-black uppercase px-2 py-0.5 rounded">
-                        {discount}% OFF
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Details */}
-                  <div className="p-4 flex flex-col flex-1">
-                    <p className="text-[10px] uppercase font-mono tracking-widest text-[#DD1215] font-bold">
-                      {prod.category?.name || prod.category || "Official Merch"}
-                    </p>
-                    <h3
-                      className="text-sm font-bold text-gray-900 mt-1 line-clamp-1 cursor-pointer hover:text-[#DD1215] transition"
-                      onClick={() => navigate(`/product/${prod.slug || pid}`)}
-                    >
-                      {prod.name || prod.title || "Infinito Merchandise"}
-                    </h3>
-
-                    {/* Price row */}
-                    <div className="flex items-baseline gap-2 mt-2">
-                      <span className="text-base font-black text-gray-900">
-                        ₹{price.toLocaleString("en-IN")}
-                      </span>
-                      {mrp > price && (
-                        <span className="text-xs text-gray-400 line-through">
-                          ₹{mrp.toLocaleString("en-IN")}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="mt-auto pt-4 flex gap-2">
-                      <button
-                        onClick={() => handleMoveToBag(prod)}
-                        className="flex-1 bg-black hover:bg-gray-800 text-white font-bold text-xs uppercase tracking-wider py-2.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition"
-                      >
-                        <ShoppingBag size={14} /> Move to Bag
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {items.map((prod) => (
+              <WishlistCard
+                key={prod.id || prod._id}
+                prod={prod}
+                onRemove={handleRemove}
+                onMoveToBag={handleMoveToBag}
+                navigate={navigate}
+              />
+            ))}
           </div>
         )}
       </div>

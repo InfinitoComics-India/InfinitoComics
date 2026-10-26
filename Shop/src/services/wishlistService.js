@@ -1,6 +1,45 @@
 // Service for managing Customer Wishlist across Frontend and Shop
 export const WISHLIST_KEY = "shop_wishlist";
 
+export const normalizeWishlistItem = (product) => {
+  if (!product) return null;
+  const id = String(product._id || product.id || product.productId || "");
+  if (!id) return null;
+
+  const title = product.title || product.name || product.cardTitle || "Official Merchandise";
+  const image =
+    product.image ||
+    product.imageUrl ||
+    product.thumbnail ||
+    (Array.isArray(product.images) && (product.images[0]?.url || (typeof product.images[0] === "string" ? product.images[0] : null))) ||
+    "";
+  const price = Number(product.price || product.salePrice || product.unitPrice || 0);
+  const mrp = Number(product.mrp || product.originalPrice || Math.round(price * 1.35)) || price;
+  const slug = product.slug || id;
+  const sizes = Array.isArray(product.sizes) && product.sizes.length > 0
+    ? product.sizes
+    : (product.size ? [product.size] : ["S", "M", "L", "XL"]);
+  const category =
+    product.categoryName ||
+    (typeof product.category === "object" ? product.category?.name : product.category) ||
+    "Apparel";
+
+  return {
+    ...product,
+    id,
+    _id: id,
+    title,
+    name: title,
+    image,
+    price,
+    mrp,
+    slug,
+    sizes,
+    category,
+    inStock: product.inStock !== false,
+  };
+};
+
 export const getWishlist = () => {
   try {
     const raw = localStorage.getItem(WISHLIST_KEY);
@@ -13,6 +52,10 @@ export const getWishlist = () => {
   }
 };
 
+export const getWishlistCount = () => {
+  return getWishlist().length;
+};
+
 export const isInWishlist = (productId) => {
   if (!productId) return false;
   const list = getWishlist();
@@ -22,10 +65,13 @@ export const isInWishlist = (productId) => {
 
 export const addToWishlist = (product) => {
   if (!product) return getWishlist();
+  const normalized = normalizeWishlistItem(product);
+  if (!normalized || !normalized.id) return getWishlist();
+
   const list = getWishlist();
-  const pid = String(product.id || product._id);
+  const pid = String(normalized.id);
   if (!list.some((item) => String(item.id || item._id) === pid)) {
-    const updated = [product, ...list];
+    const updated = [normalized, ...list];
     try {
       localStorage.setItem(WISHLIST_KEY, JSON.stringify(updated));
       window.dispatchEvent(new CustomEvent("wishlist_updated", { detail: updated }));
@@ -49,7 +95,7 @@ export const removeFromWishlist = (productId) => {
 
 export const toggleWishlist = (product) => {
   if (!product) return false;
-  const pid = String(product.id || product._id);
+  const pid = String(product.id || product._id || product.productId || "");
   const exists = isInWishlist(pid);
   if (exists) {
     removeFromWishlist(pid);
@@ -58,4 +104,12 @@ export const toggleWishlist = (product) => {
     addToWishlist(product);
     return true;
   }
+};
+
+export const clearWishlist = () => {
+  try {
+    localStorage.removeItem(WISHLIST_KEY);
+    window.dispatchEvent(new CustomEvent("wishlist_updated", { detail: [] }));
+  } catch {}
+  return [];
 };

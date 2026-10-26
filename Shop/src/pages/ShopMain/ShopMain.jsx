@@ -1,12 +1,14 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Check, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, ArrowRight, Heart } from "lucide-react";
+import { toast } from "react-toastify";
 import {
   fetchCategories,
   fetchFeaturedProducts,
   fetchProducts,
   fallbackCategoryImages,
 } from "../../services/productService";
+import { isInWishlist, toggleWishlist } from "../../services/wishlistService";
 import HeroSlider from "./HeroSlider";
 import ultimateKitBanner from "../../assets/ultimateKit.svg";
 import promoBanner from "../../assets/hero/slide4.svg";
@@ -787,18 +789,42 @@ const CategoryItem = ({ cat, onClick }) => {
 
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
-  const target = product.slug || product._id || product.id;
+  const pid = product.slug || product._id || product.id;
   const fallback =
     fallbackCategoryImages[product.category?.toLowerCase()] ||
     fallbackCategoryImages['tshirts'];
   const [imgSrc, setImgSrc] = useState(product.image || fallback);
+  const [inWish, setInWish] = useState(() => isInWishlist(product._id || product.id));
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setInWish(isInWishlist(product._id || product.id));
+    };
+    window.addEventListener("wishlist_updated", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+    return () => {
+      window.removeEventListener("wishlist_updated", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
+  }, [product._id, product.id]);
+
+  const handleWishlistToggle = (e) => {
+    e.stopPropagation();
+    const added = toggleWishlist(product);
+    setInWish(added);
+    if (added) {
+      toast.success("Added to Wishlist!");
+    } else {
+      toast.info("Removed from Wishlist");
+    }
+  };
 
   return (
     <div
-      onClick={() => navigate(`/product/${target}`)}
-      className="flex-shrink-0 w-[300px] cursor-pointer group border border-gray-200 rounded-md overflow-hidden hover:shadow-lg transition-shadow bg-white"
+      onClick={() => navigate(`/product/${pid}`)}
+      className="flex-shrink-0 w-[300px] cursor-pointer group border border-gray-200 rounded-md overflow-hidden hover:shadow-lg transition-shadow bg-white relative"
     >
-      <div className="w-full h-[260px] bg-gray-100 flex items-center justify-center overflow-hidden p-2">
+      <div className="relative w-full h-[260px] bg-gray-100 flex items-center justify-center overflow-hidden p-2">
         <img
           src={imgSrc}
           alt={product.title}
@@ -809,6 +835,20 @@ const ProductCard = ({ product }) => {
             }
           }}
         />
+        {/* Floating Wishlist Button */}
+        <button
+          type="button"
+          onClick={handleWishlistToggle}
+          className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition shadow-md cursor-pointer ${
+            inWish
+              ? "bg-[#DD1215] text-white scale-110"
+              : "bg-white/85 hover:bg-white text-gray-700 hover:text-[#DD1215]"
+          }`}
+          title={inWish ? "Remove from Wishlist" : "Save to Wishlist"}
+          aria-label={inWish ? "Remove from Wishlist" : "Save to Wishlist"}
+        >
+          <Heart className={`w-4 h-4 ${inWish ? "fill-white text-white" : ""}`} />
+        </button>
       </div>
       <div className="p-4">
         <p className="text-xs uppercase tracking-widest text-[#DD1215] font-bold">
