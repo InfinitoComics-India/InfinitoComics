@@ -59,28 +59,42 @@ const TopPromoBar = () => {
 
   const fetchBarsFromBackend = async () => {
     try {
-      const endpoints = [
-        BASE_URL,
-        'http://localhost:5000',
-        'https://infinitocomics-68cr.onrender.com',
-      ].filter(Boolean);
+      const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+      const endpoints = isLocal
+        ? ['http://localhost:5000', BASE_URL, 'https://infinitocomics-68cr.onrender.com'].filter(Boolean)
+        : [BASE_URL, 'https://infinitocomics-68cr.onrender.com', 'http://localhost:5000'].filter(Boolean);
       const uniqueBases = [...new Set(endpoints)];
 
       for (const base of uniqueBases) {
         try {
           const clean = base.replace(/\/$/, '');
-          const res = await fetch(`${clean}/shop/marketing/banners?_t=${Date.now()}`, {
+          // Try dedicated promo-bars first
+          let res = await fetch(`${clean}/shop/marketing/promo-bars?_t=${Date.now()}`, {
             headers: { 'Cache-Control': 'no-cache' },
+            cache: 'no-store',
           }).then((r) => (r.ok ? r.json() : null));
 
+          if (!res?.success || !res?.data) {
+            res = await fetch(`${clean}/shop/marketing/banners?_t=${Date.now()}`, {
+              headers: { 'Cache-Control': 'no-cache' },
+              cache: 'no-store',
+            }).then((r) => (r.ok ? r.json() : null));
+          }
+
           if (res?.success && res.data) {
-            const rawBars = res.data.promoBars || (res.data.promoBar ? [res.data.promoBar] : null);
+            const rawBars = Array.isArray(res.data)
+              ? res.data
+              : res.data.promoBars || (res.data.promoBar ? [res.data.promoBar] : null);
+
             if (Array.isArray(rawBars) && rawBars.length > 0) {
               const activeOnes = rawBars.filter((b) => b && b.isActive !== false);
               if (activeOnes.length > 0) {
                 setBars(activeOnes);
                 try {
-                  localStorage.setItem('infinito_shop_banners', JSON.stringify(res.data));
+                  const stored = localStorage.getItem('infinito_shop_banners');
+                  const parsed = stored ? JSON.parse(stored) : {};
+                  parsed.promoBars = activeOnes;
+                  localStorage.setItem('infinito_shop_banners', JSON.stringify(parsed));
                 } catch {}
                 return;
               }
@@ -112,10 +126,18 @@ const TopPromoBar = () => {
     };
     window.addEventListener('focus', handleFocus);
 
-    // 4. Background polling every 10 seconds for real-time synchronization
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        loadBarsFromStorage();
+        fetchBarsFromBackend();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    // 4. Background polling every 3.5 seconds for instant real-time synchronization
     const pollInterval = setInterval(() => {
       fetchBarsFromBackend();
-    }, 10000);
+    }, 3500);
 
     // 5. Listen for storage changes across tabs & BroadcastChannel for instant updates from Admin
     const handleStorage = (e) => {
@@ -141,6 +163,7 @@ const TopPromoBar = () => {
 
     return () => {
       window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('storage', handleStorage);
       clearInterval(pollInterval);
       if (channel) channel.close();

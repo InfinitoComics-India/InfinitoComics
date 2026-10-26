@@ -93,7 +93,7 @@ const HeroSlider = () => {
     return () => clearInterval(timer);
   }, [slides.length]);
 
-  // Live synchronization across Admin tab and Shop tab (via BroadcastChannel, storage event, and backend API)
+  // Live synchronization across Admin tab and Shop tab (via BroadcastChannel, storage event, focus, visibilitychange, and background polling)
   useEffect(() => {
     const reload = async () => {
       // Check local storage first for fastest local update
@@ -101,18 +101,26 @@ const HeroSlider = () => {
 
       // Fetch from backend API to ensure cross-device and remote synchronization
       try {
-        const base = "https://infinitocomics-68cr.onrender.com";
-        let res;
-        try {
-          res = await fetch(`${base}/shop/marketing/banners`).then((r) => r.json());
-        } catch {
-          res = await fetch(`http://localhost:5000/shop/marketing/banners`).then((r) => r.json());
-        }
-        if (res?.success && res.data?.heroSlider?.length > 0) {
-          const freshSlides = normalizeSlideList(res.data.heroSlider);
-          setSlides(freshSlides);
+        const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+        const bases = isLocal
+          ? ['http://localhost:5000', 'https://infinitocomics-68cr.onrender.com']
+          : ['https://infinitocomics-68cr.onrender.com', 'http://localhost:5000'];
+
+        for (const base of bases) {
           try {
-            localStorage.setItem("infinito_shop_banners", JSON.stringify(res.data));
+            const res = await fetch(`${base}/shop/marketing/banners?_t=${Date.now()}`, {
+              headers: { 'Cache-Control': 'no-cache' },
+              cache: 'no-store',
+            }).then((r) => (r.ok ? r.json() : null));
+
+            if (res?.success && res.data?.heroSlider?.length > 0) {
+              const freshSlides = normalizeSlideList(res.data.heroSlider);
+              setSlides(freshSlides);
+              try {
+                localStorage.setItem("infinito_shop_banners", JSON.stringify(res.data));
+              } catch {}
+              break;
+            }
           } catch {}
         }
       } catch {}
@@ -135,9 +143,21 @@ const HeroSlider = () => {
     } catch {}
 
     window.addEventListener("storage", reload);
+    window.addEventListener("focus", reload);
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") reload();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    // Fast 3.5s background polling so updates in Admin appear immediately without page refresh
+    const pollTimer = setInterval(reload, 3500);
+
     return () => {
       if (bc) bc.close();
       window.removeEventListener("storage", reload);
+      window.removeEventListener("focus", reload);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      clearInterval(pollTimer);
     };
   }, []);
 

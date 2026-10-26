@@ -1,12 +1,14 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Check, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, ArrowRight, Heart } from "lucide-react";
+import { toast } from "react-toastify";
 import {
   fetchCategories,
   fetchFeaturedProducts,
   fetchProducts,
   fallbackCategoryImages,
 } from "../../services/productService";
+import { isInWishlist, toggleWishlist } from "../../services/wishlistService";
 import HeroSlider from "./HeroSlider";
 import ultimateKitBanner from "../../assets/ultimateKit.svg";
 import promoBanner from "../../assets/hero/slide4.svg";
@@ -174,50 +176,66 @@ const ShopMain = () => {
 
       // Fetch from backend API to ensure live sync across tabs and devices
       try {
-        const base = "https://infinitocomics-68cr.onrender.com";
-        let res;
-        try {
-          res = await fetch(`${base}/shop/marketing/banners?_t=${Date.now()}`).then((r) => r.json());
-        } catch {
-          res = await fetch(`http://localhost:5000/shop/marketing/banners?_t=${Date.now()}`).then((r) => r.json());
-        }
-        if (res?.success && res.data) {
-          if (Array.isArray(res.data.promoBanners) && res.data.promoBanners.length > 0) {
-            const enabled = res.data.promoBanners.filter((b) => b && b.isActive !== false);
-            if (enabled.length > 0) {
-              setPromoBannersList(enabled);
-            }
-          }
-          if (res.data.ultimateKit) {
-            const norm = normalizeKitData(res.data.ultimateKit);
-            if (norm) setUltimateKit(norm);
-          }
+        const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+        const bases = isLocal
+          ? ['http://localhost:5000', 'https://infinitocomics-68cr.onrender.com']
+          : ['https://infinitocomics-68cr.onrender.com', 'http://localhost:5000'];
+
+        for (const base of bases) {
           try {
-            localStorage.setItem("infinito_shop_banners", JSON.stringify(res.data));
+            const res = await fetch(`${base}/shop/marketing/banners?_t=${Date.now()}`, {
+              headers: { 'Cache-Control': 'no-cache' },
+              cache: 'no-store',
+            }).then((r) => (r.ok ? r.json() : null));
+
+            if (res?.success && res.data) {
+              if (Array.isArray(res.data.promoBanners) && res.data.promoBanners.length > 0) {
+                const enabled = res.data.promoBanners.filter((b) => b && b.isActive !== false);
+                if (enabled.length > 0) {
+                  setPromoBannersList(enabled);
+                }
+              }
+              if (res.data.ultimateKit) {
+                const norm = normalizeKitData(res.data.ultimateKit);
+                if (norm) setUltimateKit(norm);
+              }
+              try {
+                localStorage.setItem("infinito_shop_banners", JSON.stringify(res.data));
+              } catch {}
+              break;
+            }
           } catch {}
         }
       } catch {}
 
       // Dedicated Ultimate Kit endpoint fetch to ensure freshest sync
       try {
-        const base = "https://infinitocomics-68cr.onrender.com";
-        let kitRes;
-        try {
-          kitRes = await fetch(`${base}/shop/marketing/ultimate-kit?_t=${Date.now()}`).then((r) => r.json());
-        } catch {
-          kitRes = await fetch(`http://localhost:5000/shop/marketing/ultimate-kit?_t=${Date.now()}`).then((r) => r.json());
-        }
-        if (kitRes?.success && kitRes.data) {
-          const norm = normalizeKitData(kitRes.data);
-          if (norm) {
-            setUltimateKit(norm);
-            try {
-              const currentRaw = localStorage.getItem("infinito_shop_banners");
-              const currentObj = currentRaw ? JSON.parse(currentRaw) : {};
-              currentObj.ultimateKit = kitRes.data;
-              localStorage.setItem("infinito_shop_banners", JSON.stringify(currentObj));
-            } catch {}
-          }
+        const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+        const bases = isLocal
+          ? ['http://localhost:5000', 'https://infinitocomics-68cr.onrender.com']
+          : ['https://infinitocomics-68cr.onrender.com', 'http://localhost:5000'];
+
+        for (const base of bases) {
+          try {
+            const kitRes = await fetch(`${base}/shop/marketing/ultimate-kit?_t=${Date.now()}`, {
+              headers: { 'Cache-Control': 'no-cache' },
+              cache: 'no-store',
+            }).then((r) => (r.ok ? r.json() : null));
+
+            if (kitRes?.success && kitRes.data) {
+              const norm = normalizeKitData(kitRes.data);
+              if (norm) {
+                setUltimateKit(norm);
+                try {
+                  const currentRaw = localStorage.getItem("infinito_shop_banners");
+                  const currentObj = currentRaw ? JSON.parse(currentRaw) : {};
+                  currentObj.ultimateKit = kitRes.data;
+                  localStorage.setItem("infinito_shop_banners", JSON.stringify(currentObj));
+                } catch {}
+              }
+              break;
+            }
+          } catch {}
         }
       } catch {}
     };
@@ -226,6 +244,14 @@ const ShopMain = () => {
 
     window.addEventListener("storage", reloadBanners);
     window.addEventListener("focus", reloadBanners);
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") reloadBanners();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    // 3.5s background polling for live instant updates from Admin without reload
+    const pollInterval = setInterval(reloadBanners, 3500);
+
     let bc;
     try {
       bc = new BroadcastChannel("infinito_banners_channel");
@@ -248,6 +274,8 @@ const ShopMain = () => {
     return () => {
       window.removeEventListener("storage", reloadBanners);
       window.removeEventListener("focus", reloadBanners);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      clearInterval(pollInterval);
       if (bc) bc.close();
     };
   }, []);
@@ -787,18 +815,42 @@ const CategoryItem = ({ cat, onClick }) => {
 
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
-  const target = product.slug || product._id || product.id;
+  const pid = product.slug || product._id || product.id;
   const fallback =
     fallbackCategoryImages[product.category?.toLowerCase()] ||
     fallbackCategoryImages['tshirts'];
   const [imgSrc, setImgSrc] = useState(product.image || fallback);
+  const [inWish, setInWish] = useState(() => isInWishlist(product._id || product.id));
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setInWish(isInWishlist(product._id || product.id));
+    };
+    window.addEventListener("wishlist_updated", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+    return () => {
+      window.removeEventListener("wishlist_updated", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
+  }, [product._id, product.id]);
+
+  const handleWishlistToggle = (e) => {
+    e.stopPropagation();
+    const added = toggleWishlist(product);
+    setInWish(added);
+    if (added) {
+      toast.success("Added to Wishlist!");
+    } else {
+      toast.info("Removed from Wishlist");
+    }
+  };
 
   return (
     <div
-      onClick={() => navigate(`/product/${target}`)}
-      className="flex-shrink-0 w-[300px] cursor-pointer group border border-gray-200 rounded-md overflow-hidden hover:shadow-lg transition-shadow bg-white"
+      onClick={() => navigate(`/product/${pid}`)}
+      className="flex-shrink-0 w-[300px] cursor-pointer group border border-gray-200 rounded-md overflow-hidden hover:shadow-lg transition-shadow bg-white relative"
     >
-      <div className="w-full h-[260px] bg-gray-100 flex items-center justify-center overflow-hidden p-2">
+      <div className="relative w-full h-[260px] bg-gray-100 flex items-center justify-center overflow-hidden p-2">
         <img
           src={imgSrc}
           alt={product.title}
@@ -809,6 +861,20 @@ const ProductCard = ({ product }) => {
             }
           }}
         />
+        {/* Floating Wishlist Button */}
+        <button
+          type="button"
+          onClick={handleWishlistToggle}
+          className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition shadow-md cursor-pointer ${
+            inWish
+              ? "bg-[#DD1215] text-white scale-110"
+              : "bg-white/85 hover:bg-white text-gray-700 hover:text-[#DD1215]"
+          }`}
+          title={inWish ? "Remove from Wishlist" : "Save to Wishlist"}
+          aria-label={inWish ? "Remove from Wishlist" : "Save to Wishlist"}
+        >
+          <Heart className={`w-4 h-4 ${inWish ? "fill-white text-white" : ""}`} />
+        </button>
       </div>
       <div className="p-4">
         <p className="text-xs uppercase tracking-widest text-[#DD1215] font-bold">
