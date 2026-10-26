@@ -513,6 +513,8 @@ export const DEFAULT_ULTIMATE_KIT = {
   originalPrice: "₹2199",
   salePrice: "₹1999",
   image: "",
+  noPhoto: false,
+  includedProducts: [],
   features: [
     "Comic of your choice",
     "Surprise Superhero Toy",
@@ -563,6 +565,8 @@ export const updateUltimateKit = async (kitData) => {
     ...kitData,
     image: img,
     imageUrl: img,
+    noPhoto: Boolean(kitData.noPhoto || img === 'no_photo'),
+    includedProducts: Array.isArray(kitData.includedProducts) ? kitData.includedProducts : [],
     title,
     cardTitle: title,
   };

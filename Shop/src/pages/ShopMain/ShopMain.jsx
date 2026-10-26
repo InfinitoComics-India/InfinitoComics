@@ -459,13 +459,53 @@ const ShopMain = () => {
 
             <div className="bg-white rounded-3xl border-2 border-gray-300 shadow-md p-4 sm:p-6 transition hover:shadow-xl">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-                {/* Left Image Area */}
+                {/* Left Image / No-Photo Area */}
                 <div className="lg:col-span-7 bg-linear-to-b from-gray-50 via-white to-gray-100 rounded-2xl border border-gray-200 overflow-hidden flex items-center justify-center p-3 sm:p-4 min-h-[260px] md:min-h-[340px]">
-                  <img
-                    src={kitImg}
-                    alt={kitTitle}
-                    className="w-full h-full max-h-[380px] object-contain transition-transform duration-300 hover:scale-[1.02]"
-                  />
+                  {ultimateKit.noPhoto || ultimateKit.image === "no_photo" ? (
+                    <div className="w-full h-full min-h-[260px] rounded-xl bg-gradient-to-tr from-gray-900 via-gray-800 to-red-950 p-6 sm:p-8 flex flex-col items-center justify-center text-center text-white space-y-4">
+                      <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 text-[#DD1215] shadow-lg">
+                        <Gift className="w-8 h-8 text-red-400" />
+                      </div>
+                      <div>
+                        <span className="inline-block px-3 py-0.5 bg-[#DD1215] text-white text-[10px] sm:text-xs font-black tracking-widest rounded-full uppercase mb-1.5">
+                          EXCLUSIVE COLLECTOR PACK
+                        </span>
+                        <h4 className="text-xl sm:text-2xl font-black tracking-tight text-white uppercase">
+                          {kitTitle}
+                        </h4>
+                        <p className="text-xs text-gray-300 max-w-sm mt-1">
+                          {Array.isArray(ultimateKit.includedProducts) && ultimateKit.includedProducts.length > 0
+                            ? `Complete collector box featuring ${ultimateKit.includedProducts.length} official merchandise items.`
+                            : "Special collector merchandise & comic package bundled together."}
+                        </p>
+                      </div>
+
+                      {Array.isArray(ultimateKit.includedProducts) && ultimateKit.includedProducts.length > 0 && (
+                        <div className="flex items-center justify-center gap-2 pt-2 flex-wrap">
+                          {ultimateKit.includedProducts.slice(0, 4).map((p, i) => (
+                            <div key={i} className="w-11 h-11 rounded-lg bg-white/10 border border-white/20 p-1 flex items-center justify-center overflow-hidden" title={p.title}>
+                              {p.image ? (
+                                <img src={p.image} alt={p.title} className="w-full h-full object-contain" />
+                              ) : (
+                                <Package className="w-5 h-5 text-gray-400" />
+                              )}
+                            </div>
+                          ))}
+                          {ultimateKit.includedProducts.length > 4 && (
+                            <div className="w-11 h-11 rounded-lg bg-[#DD1215] text-white font-bold text-xs flex items-center justify-center border border-red-400">
+                              +{ultimateKit.includedProducts.length - 4}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <img
+                      src={kitImg}
+                      alt={kitTitle}
+                      className="w-full h-full max-h-[380px] object-contain transition-transform duration-300 hover:scale-[1.02]"
+                    />
+                  )}
                 </div>
 
                 {/* Right Info & Checkout Area */}
@@ -517,6 +557,23 @@ const ShopMain = () => {
                         </li>
                       ))}
                     </ul>
+
+                    {/* Included Bundled Products pills */}
+                    {Array.isArray(ultimateKit.includedProducts) && ultimateKit.includedProducts.length > 0 && (
+                      <div className="pt-2 pb-4 border-t border-gray-100">
+                        <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-2 flex items-center gap-1.5">
+                          <Package className="w-3.5 h-3.5 text-[#DD1215]" />
+                          <span>Includes {ultimateKit.includedProducts.length} Store Items:</span>
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {ultimateKit.includedProducts.map((p, i) => (
+                            <span key={i} className="text-xs px-2.5 py-1 bg-gray-100 text-gray-800 rounded-md font-medium border border-gray-200 truncate max-w-[200px]">
+                              {p.title} {p.quantity > 1 ? `(${p.quantity}x)` : ""}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Buy Now / Get Now button */}
@@ -535,6 +592,7 @@ const ShopMain = () => {
                             price: Number(kitSalePrice) || 1999,
                             images: [kitImg],
                             description: (ultimateKit.features || []).join(", "),
+                            includedProducts: ultimateKit.includedProducts || [],
                           },
                         };
                         try {
