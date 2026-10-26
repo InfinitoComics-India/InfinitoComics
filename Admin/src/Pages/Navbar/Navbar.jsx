@@ -144,28 +144,25 @@ const Navbar = () => {
 
   const canViewShop = isSuperOrShopAdmin || empShopAllowed;
 
-  // If on a shop route or user has shop access, shop opens by default
+  // If user has shop access, shop section is open and visible by default
   const isShopActive = location.pathname.startsWith('/admin/shop') || location.pathname.startsWith('/shop');
   const [shopOpen, setShopOpen] = useState(() => {
-    return canViewShop && (isShopActive || roles.includes('shop_admin') || (roles.includes('employee') && empShopAllowed));
+    return Boolean(canViewShop);
   });
 
-  // Automatically keep shop accordion open if shop becomes newly allowed, close if revoked
+  // Automatically keep shop section open when user has shop access
   useEffect(() => {
-    if (canViewShop && (isShopActive || roles.includes('shop_admin') || (roles.includes('employee') && empShopAllowed))) {
+    if (canViewShop) {
       setShopOpen(true);
-    } else if (!canViewShop) {
+    } else {
       setShopOpen(false);
     }
-  }, [canViewShop, isShopActive, empShopAllowed]);
+  }, [canViewShop]);
 
   const visibleNav = NAV_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
   const visibleHR = HR_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
   const visibleShop = SHOP_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
-  const baseEmp = EMP_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
-  const visibleEmp = canViewShop
-    ? [...baseEmp, { label: "Shop Section", to: "/employee-portal?tab=shop", icon: ShoppingBag, roles: EMP_ALL }]
-    : baseEmp;
+  const visibleEmp = EMP_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
   const isEmpOnly = roles.length > 0 && roles.every(r => r === "employee");
   const showHRSection = visibleHR.length > 0 && !isEmpOnly;
   const showShopSection = visibleShop.length > 0 && canViewShop;
