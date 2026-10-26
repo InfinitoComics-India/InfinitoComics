@@ -59,6 +59,8 @@ router.get("/public/all", productController.getAllProducts);
 router.get("/public/featured", productController.getFeaturedProducts);
 router.get("/public/slug/:slug", productController.getProductBySlug);
 router.get("/public/category/:categorySlug", productController.getProductsByCategory);
+router.get("/public/slug/:slug/reviews", productController.getProductReviews);
+router.post("/public/slug/:slug/reviews", productController.addProductReview);
 
 // Cloudinary health check / diagnostic route
 router.get("/cloudinary-status", async (req, res) => {

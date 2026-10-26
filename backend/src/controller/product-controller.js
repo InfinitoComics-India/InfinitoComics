@@ -387,6 +387,97 @@ const pushQikinkProductToStore = async (req, res) => {
   }
 };
 
+// Add a customer review for a product (public)
+const addProductReview = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const { rating, userName, headline, comment } = req.body;
+
+    const parsedRating = Number(rating);
+    if (!parsedRating || parsedRating < 1 || parsedRating > 5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rating must be an integer between 1 and 5.',
+      });
+    }
+
+    const product = await Product.findOne({ slug });
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found.',
+      });
+    }
+
+    if (!Array.isArray(product.reviews)) {
+      product.reviews = [];
+    }
+
+    const review = {
+      userName: String(userName || 'Verified Buyer').trim().slice(0, 60),
+      rating: parsedRating,
+      headline: String(headline || '').trim().slice(0, 120),
+      comment: String(comment || '').trim().slice(0, 1000),
+      verified: true,
+      likes: 0,
+      createdAt: new Date(),
+    };
+
+    product.reviews.unshift(review);
+
+    const totalStars = product.reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0);
+    product.averageRating = Number((totalStars / product.reviews.length).toFixed(1));
+    product.totalRatingsCount = product.reviews.length;
+
+    await product.save();
+
+    return res.status(201).json({
+      success: true,
+      message: 'Review submitted successfully!',
+      data: {
+        review,
+        reviews: product.reviews,
+        averageRating: product.averageRating,
+        totalRatingsCount: product.totalRatingsCount,
+      },
+    });
+  } catch (error) {
+    console.error('Error adding product review:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to submit review',
+    });
+  }
+};
+
+// Get reviews for a product (public)
+const getProductReviews = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const product = await Product.findOne({ slug }).select('reviews averageRating totalRatingsCount');
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found.',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        reviews: product.reviews || [],
+        averageRating: product.averageRating || 0,
+        totalRatingsCount: product.totalRatingsCount || (product.reviews?.length || 0),
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch reviews',
+    });
+  }
+};
+
 export {
   createProduct,
   getAllProducts,
@@ -397,5 +488,7 @@ export {
   bulkUpdateProducts,
   getProductsByCategory,
   getFeaturedProducts,
-  pushQikinkProductToStore
+  pushQikinkProductToStore,
+  addProductReview,
+  getProductReviews,
 };
