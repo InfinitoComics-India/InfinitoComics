@@ -39,7 +39,7 @@ export const getLoggedInUserName = () => {
       if (u.fullName && u.fullName.trim() && u.fullName.toLowerCase() !== 'aarav sharma') return u.fullName.trim();
       if (u.email) return deriveNameFromEmail(u.email);
     }
-  } catch {}
+  } catch { }
   return "Customer";
 };
 
@@ -64,7 +64,7 @@ export const getDeliveryAddress = () => {
       }
       return parsed;
     }
-  } catch {}
+  } catch { }
   return { ...DEFAULT_ADDRESS, name: getLoggedInUserName() };
 };
 
@@ -111,7 +111,7 @@ export const getSavedAddresses = () => {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
-  } catch {}
+  } catch { }
 
   const currentDefault = getDeliveryAddress();
   const initial = [
@@ -130,7 +130,7 @@ export const getSavedAddresses = () => {
   ];
   try {
     localStorage.setItem(ADDRESSES_LIST_KEY, JSON.stringify(initial));
-  } catch {}
+  } catch { }
   return initial;
 };
 
@@ -142,11 +142,11 @@ export const saveNewAddress = (addr) => {
     const cleanPhone = sanitizePhoneNumber(addr.phone) || '9876543210';
     const cleanPin = sanitizePinCode(addr.pincode) || '160018';
     const formatted = `${cleanName} (${cleanPhone})\n${addr.line1 || ''}\n${addr.city || ''}, ${addr.state || ''}\n${cleanPin}, ${addr.country || 'India'}`.trim();
-    
+
     if (addr.isDefault || list.length === 0) {
       list.forEach((a) => (a.isDefault = false));
     }
-    
+
     const entry = {
       ...addr,
       id: newId,
@@ -157,10 +157,10 @@ export const saveNewAddress = (addr) => {
       formatted,
       isDefault: Boolean(addr.isDefault || list.length === 0),
     };
-    
+
     list.unshift(entry);
     localStorage.setItem(ADDRESSES_LIST_KEY, JSON.stringify(list));
-    
+
     if (entry.isDefault) {
       saveDeliveryAddress(entry);
     }
@@ -557,7 +557,7 @@ export const getAllOrders = () => {
     // Self-heal storage if amounts were 0 or unnormalized
     try {
       localStorage.setItem(ORDERS_KEY, JSON.stringify(normalized));
-    } catch {}
+    } catch { }
     return normalized;
   } catch (e) {
     console.error("Failed to fetch all orders:", e);
@@ -665,7 +665,7 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI",
         phone: sanitizePhoneNumber(u.phone) || customerInfo.phone,
       };
     }
-  } catch {}
+  } catch { }
 
   const activeAddr = address || getDeliveryAddress();
   if (activeAddr.name && activeAddr.name.trim() && activeAddr.name.toLowerCase() !== 'valued customer' && activeAddr.name.toLowerCase() !== 'aarav sharma') {
@@ -764,16 +764,16 @@ export const createOrder = ({ items = [], address = null, paymentMethod = "UPI",
         const bus = new BroadcastChannel("infinito_orders_bus");
         bus.postMessage({ type: "infinito_orders_sync", orders: list });
       }
-    } catch {}
+    } catch { }
   } catch (e) {
     console.error("Failed to store order:", e);
   }
 
   // Persist to backend (Render + local port 5000)
   try {
-    axios.post(`${BASE_URL}/shop/orders`, newOrder).catch(() => {});
-    axios.post("http://localhost:5000/shop/orders", newOrder).catch(() => {});
-  } catch {}
+    axios.post(`${BASE_URL}/shop/orders`, newOrder).catch(() => { });
+    axios.post("http://localhost:5000/shop/orders", newOrder).catch(() => { });
+  } catch { }
 
   return newOrder;
 };
@@ -797,10 +797,10 @@ export const fetchOrderByIdFromApi = async (idOrHash) => {
           list.unshift(norm);
         }
         localStorage.setItem(ORDERS_KEY, JSON.stringify(list));
-      } catch {}
+      } catch { }
       return norm;
     }
-  } catch {}
+  } catch { }
   return getOrderById(idOrHash);
 };
 
@@ -809,7 +809,7 @@ export const getOrderById = (idOrHash) => {
     try {
       const cur = localStorage.getItem(CURRENT_ORDER_KEY);
       if (cur) return normalizeOrder(JSON.parse(cur));
-    } catch {}
+    } catch { }
   }
 
   const clean = String(idOrHash || "").replace(/^#/, "").trim();
@@ -823,7 +823,7 @@ export const getOrderById = (idOrHash) => {
 
     const cur = localStorage.getItem(CURRENT_ORDER_KEY);
     if (cur) return normalizeOrder(JSON.parse(cur));
-  } catch {}
+  } catch { }
 
   // Fallback demo order matching SS2-SS4 if none exists
   return normalizeOrder({
@@ -1026,6 +1026,8 @@ export const downloadInvoicePdf = (order) => {
   printWindow.document.write(html);
   printWindow.document.close();
 };
+
+export const printOrderInvoice = downloadInvoicePdf;
 
 // Fetch customer orders with live Qikink tracking information
 export const fetchCustomerOrders = async (email, userId) => {
