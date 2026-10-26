@@ -17,6 +17,7 @@ import OrderSuccess from './pages/OrderFlow/OrderSuccess';
 import OrderDetails from './pages/OrderFlow/OrderDetails';
 import OrderCancel from './pages/OrderFlow/OrderCancel';
 import OrderCancelled from './pages/OrderFlow/OrderCancelled';
+import MyOrders from './pages/Orders/MyOrders';
 
 function App() {
   const dispatch = useDispatch();
@@ -101,6 +102,8 @@ function App() {
             <Route path="order-cancel" element={<OrderCancel />} />
             <Route path="order-cancelled/:orderId" element={<OrderCancelled />} />
             <Route path="order-cancelled" element={<OrderCancelled />} />
+            <Route path="orders" element={<MyOrders />} />
+            <Route path="my-orders" element={<MyOrders />} />
           </Route>
         </Routes>
       </BrowserRouter>

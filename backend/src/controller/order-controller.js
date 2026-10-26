@@ -779,3 +779,42 @@ export const syncQikinkStatus = async (req, res) => {
   }
 };
 
+// Customer "My Orders" History & Live Tracking
+export const getCustomerOrderHistory = async (req, res) => {
+  try {
+    const email = String(req.query.email || req.user?.email || '').trim().toLowerCase();
+    const userId = req.query.userId || req.user?.id || req.user?._id;
+
+    if (!email && !userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Customer email or userId is required to fetch order history.',
+      });
+    }
+
+    const query = [];
+    if (email) {
+      query.push({ 'customer.email': email });
+      query.push({ 'shippingAddress.email': email });
+    }
+    if (userId) {
+      query.push({ 'customer.userId': userId });
+    }
+
+    const orders = await ShopOrder.find({ $or: query }).sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      count: orders.length,
+      data: orders,
+    });
+  } catch (error) {
+    console.error('Error fetching customer order history:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch customer order history',
+    });
+  }
+};
+
+

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { Share2, ShoppingCart, Trash2, ArrowRight, ShoppingBag } from "lucide-react";
+import { Share2, ShoppingCart, Trash2, ArrowRight, ShoppingBag, Truck, CheckCircle2 } from "lucide-react";
 import { toast } from "react-toastify";
 import {
   addToCart,
@@ -214,6 +214,10 @@ const Cart = () => {
 
   const isEmpty = cartItems.length === 0;
 
+  const FREE_SHIPPING_THRESHOLD = 999;
+  const shippingAmountNeeded = Math.max(0, FREE_SHIPPING_THRESHOLD - grandTotal);
+  const shippingProgressPct = Math.min(100, Math.round((grandTotal / FREE_SHIPPING_THRESHOLD) * 100));
+
   return (
     <div className="bg-white min-h-screen text-black font-sans pb-20">
       <div className="max-w-[1240px] mx-auto px-4 md:px-8 pt-8">
@@ -233,6 +237,47 @@ const Cart = () => {
             <Share2 className="w-4 h-4" />
           </button>
         </div>
+
+        {/* ─── FREE SHIPPING PROGRESS BAR (High ROI Basket Booster) ─── */}
+        {!isEmpty && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-red-50 via-orange-50 to-amber-50 border border-red-200 rounded-lg shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2.5">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${shippingProgressPct >= 100 ? 'bg-emerald-600' : 'bg-[#DD1215]'}`}>
+                  <Truck size={16} />
+                </div>
+                <div>
+                  {shippingAmountNeeded > 0 ? (
+                    <p className="text-xs sm:text-sm font-bold text-gray-900">
+                      Add <span className="text-[#DD1215] font-extrabold text-sm sm:text-base">₹{shippingAmountNeeded.toFixed(0)}</span> more to unlock <span className="text-emerald-700 font-extrabold">FREE SHIPPING!</span>
+                    </p>
+                  ) : (
+                    <p className="text-xs sm:text-sm font-bold text-emerald-800 flex items-center gap-1.5">
+                      <CheckCircle2 size={16} className="text-emerald-600" />
+                      🎉 You unlocked <strong>FREE STANDARD EXPRESS SHIPPING!</strong>
+                    </p>
+                  )}
+                  <p className="text-[11px] text-gray-500 mt-0.5">
+                    Orders above ₹999 qualify for 100% Free Shipping across India.
+                  </p>
+                </div>
+              </div>
+              <span className={`text-xs font-black font-mono px-2.5 py-1 rounded ${shippingProgressPct >= 100 ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
+                {shippingProgressPct}%
+              </span>
+            </div>
+
+            {/* Progress Bar Container */}
+            <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+              <div
+                className={`h-full transition-all duration-500 rounded-full ${
+                  shippingProgressPct >= 100 ? 'bg-emerald-600' : 'bg-gradient-to-r from-[#DD1215] to-orange-500'
+                }`}
+                style={{ width: `${shippingProgressPct}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* ─── CART ITEMS SECTION ─── */}
         {isEmpty ? (
