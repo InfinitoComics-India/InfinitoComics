@@ -9,7 +9,7 @@ import {
   FolderOpen, BarChart3, Sparkles, Building2, ExternalLink, ArrowRight,
   ShieldCheck, RefreshCw, Check
 } from "lucide-react";
-import { isEmployeeShopAllowed } from "../../services/shopServices/shopAccessService";
+import { isEmployeeShopAllowed, fetchMyCurrentShopAccess } from "../../services/shopServices/shopAccessService";
 import { getAllProducts } from "../../services/shopServices/productService";
 import { getAllCategories } from "../../services/shopServices/categoryService";
 import { getAllOrders } from "../../services/shopServices/orderService";
@@ -120,26 +120,46 @@ const EmployeePortal = () => {
   };
 
   useEffect(() => {
+    let isMounted = true;
+
     const checkLiveAccess = () => {
       const curAdmin = JSON.parse(localStorage.getItem("Admin") || "{}");
       const allowed = isEmployeeShopAllowed(curAdmin?.email || myEmail, curAdmin);
-      setEmpHasShopAccess(allowed);
+      if (isMounted) setEmpHasShopAccess(allowed);
     };
 
+    const syncLiveAccessWithServer = async () => {
+      try {
+        const allowed = await fetchMyCurrentShopAccess();
+        if (isMounted) setEmpHasShopAccess(allowed);
+      } catch {
+        checkLiveAccess();
+      }
+    };
+
+    checkLiveAccess();
+    syncLiveAccessWithServer();
+
     window.addEventListener("storage", checkLiveAccess);
-    window.addEventListener("focus", checkLiveAccess);
+    window.addEventListener("focus", syncLiveAccessWithServer);
+
+    // Periodic live sync every 5 seconds so any Superadmin restriction or grant reflects immediately
+    const pollInterval = setInterval(syncLiveAccessWithServer, 5000);
 
     let bc;
     try {
       bc = new BroadcastChannel("infinito_shop_access_channel");
       bc.onmessage = () => {
         checkLiveAccess();
+        syncLiveAccessWithServer();
       };
     } catch {}
 
     return () => {
+      isMounted = false;
+      clearInterval(pollInterval);
       window.removeEventListener("storage", checkLiveAccess);
-      window.removeEventListener("focus", checkLiveAccess);
+      window.removeEventListener("focus", syncLiveAccessWithServer);
       if (bc) bc.close();
     };
   }, [myEmail]);
@@ -147,6 +167,8 @@ const EmployeePortal = () => {
   useEffect(() => {
     if (empHasShopAccess && (tab === "shop" || !shopMetrics.loaded)) {
       loadShopMetrics();
+    } else if (!empHasShopAccess && tab === "shop") {
+      setTab("attendance");
     }
   }, [empHasShopAccess, tab]);
 
@@ -635,7 +657,7 @@ const EmployeePortal = () => {
                 ))}
                 {buildGrid().map(({day,date,rec})=>{
                   const isToday = date.toDateString()===new Date().toDateString();
-                  const isWeekend = date.getDay()===0; // Only Sunday is weekend
+                  const isWeekend = date.getDay()===0||date.getDay()===6;
                   const sc = rec ? STATUS_COLORS[rec.status] : isWeekend ? "bg-gray-100 text-gray-400" : null;
                   return (
                     <div key={day} className={`border-b border-r min-h-[52px] p-1.5 ${isToday?"bg-red-50":""}`}>
