@@ -47,11 +47,11 @@ const MembershipKitCard = () => {
   return (
     <div className='flex justify-center mt-28 px-4'>
 
-      {/* Desktop View */}
-      <div className="hidden md:flex flex-row w-[90%] max-w-[80.625rem] justify-between items-center h-[39rem] gap-6 bg-white px-10 py-12 shadow-md border">
+      {/* Desktop View - Exact 50/50 Halves */}
+      <div className="hidden md:flex flex-row w-[90%] max-w-[80.625rem] justify-between items-center h-[39rem] gap-8 bg-white px-8 py-10 shadow-md border rounded-2xl">
         
-        {/* Left Image / Branded Canvas */}
-        <div className="md:w-[67%] h-[35rem] flex items-center justify-center overflow-hidden rounded">
+        {/* Left Image / Branded Canvas - Exact 50% Half */}
+        <div className="w-1/2 h-[35rem] flex items-center justify-center overflow-hidden rounded-xl border border-gray-200">
           {isNoPhoto ? (
             <div className="w-full h-full bg-gradient-to-br from-neutral-900 via-[#3a080c] to-[#120204] text-white p-8 rounded-lg border border-red-900/40 flex flex-col justify-between shadow-inner">
               <div className="flex items-center justify-between">
@@ -98,13 +98,13 @@ const MembershipKitCard = () => {
             <img
               src={displayImage}
               alt="Membership Kit"
-              className="w-full h-full object-contain"
+              className="w-full h-full object-cover rounded-xl"
             />
           )}
         </div>
 
-        {/* Right: InfinitoUltimateKit Card */}
-        <div className="md:w-[40%] h-[35rem] flex items-center justify-center">
+        {/* Right: InfinitoUltimateKit Card - Exact 50% Half */}
+        <div className="w-1/2 h-[35rem] flex items-center justify-center">
           <InfinitoUltimateKit kit={kit} />
         </div>
 

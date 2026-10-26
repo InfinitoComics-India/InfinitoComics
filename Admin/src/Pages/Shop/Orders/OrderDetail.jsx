@@ -568,6 +568,17 @@ const OrderDetail = () => {
                     <span>⚡ Simulate Qikink Webhook</span>
                   </button>
                 </div>
+                <div className="pt-2 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      setWebhookAwb(order.fulfillment?.tracking?.trackingNumber || `BD-${Math.floor(10000000 + Math.random() * 90000000)}`);
+                      setWebhookModalOpen(true);
+                    }}
+                    className="w-full py-1.5 px-2 bg-white border border-gray-300 hover:bg-gray-100 rounded text-[11px] font-bold text-gray-700 flex items-center justify-center gap-1 transition shadow-xs cursor-pointer"
+                  >
+                    <span>⚡ Simulate Qikink Webhook</span>
+                  </button>
+                </div>
               </div>
             ) : (
               <p className="text-gray-500">
@@ -744,6 +755,11 @@ const OrderDetail = () => {
                           />
                           <div>
                             <p className="font-bold text-gray-900 text-sm leading-snug">{item.name}</p>
+                            {(item.selectedCharacter || item.product?.selectedCharacter || item.character) && (
+                              <p className="text-xs font-bold text-[#DD1215] mt-0.5">
+                                ★ Comic Choice: {item.selectedCharacter || item.product?.selectedCharacter || item.character}
+                              </p>
+                            )}
                             <p className="text-xs text-gray-400 font-mono mt-0.5">SKU: {item.sku || 'INF-SKU'}</p>
                           </div>
                         </div>

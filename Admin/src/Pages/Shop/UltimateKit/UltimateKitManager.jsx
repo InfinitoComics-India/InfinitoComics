@@ -24,6 +24,15 @@ const UltimateKitManager = () => {
   const [productSearch, setProductSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
 
+  // Characters for Comic of Choice dropdown
+  const [characters, setCharacters] = useState([
+    { id: '1', name: 'Dead Shot' },
+    { id: '2', name: 'Mystery Man' },
+    { id: '3', name: 'The Wild Shot' },
+    { id: '4', name: 'White women' },
+  ]);
+  const [previewSelectedCharacter, setPreviewSelectedCharacter] = useState('Dead Shot');
+
   const [kit, setKit] = useState({
     ...DEFAULT_ULTIMATE_KIT,
     includedProducts: [],
@@ -62,6 +71,29 @@ const UltimateKitManager = () => {
           : (Array.isArray(val?.data) ? val.data : []);
         setAllProducts(prods);
       }
+
+      // Fetch store characters for Comic of Choice selection
+      try {
+        const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+        const bases = isLocal
+          ? ['http://localhost:5000', BACKEND_URL, 'https://infinitocomics-68cr.onrender.com'].filter(Boolean)
+          : [BACKEND_URL, 'https://infinitocomics-68cr.onrender.com', 'http://localhost:5000'].filter(Boolean);
+        for (const b of bases) {
+          try {
+            const clean = b.replace(/\/$/, '');
+            const charRes = await fetch(`${clean}/character/list`).then(r => r.ok ? r.json() : null);
+            if (charRes?.success && Array.isArray(charRes.data) && charRes.data.length > 0) {
+              const parsedChars = charRes.data.map(c => ({
+                id: c.characterId || c._id || c.id,
+                name: c.characterName || c.knownAs || c.originalName || 'Hero',
+              }));
+              setCharacters(parsedChars);
+              if (parsedChars[0]?.name) setPreviewSelectedCharacter(parsedChars[0].name);
+              break;
+            }
+          } catch {}
+        }
+      } catch {}
     } catch (err) {
       console.error('Failed to load ultimate kit config:', err);
       message.error('Failed to load ultimate kit data');
@@ -159,24 +191,31 @@ const UltimateKitManager = () => {
     const prodId = String(prod._id || prod.id || '');
     if (!prodId) return;
 
+    const prodTitle = prod.name || prod.title || 'Store Product';
+    const prodPrice = Number(prod.salePrice || prod.basePrice || prod.price || (prod.variants?.[0]?.options?.[0]?.price) || 0);
+    const prodImg = (typeof prod.images?.[0] === 'object' ? prod.images?.[0]?.url : prod.images?.[0]) || prod.thumbnail || prod.image || '';
+    const prodSku = prod.sku || (prod.variants?.[0]?.options?.[0]?.sku) || '';
+    const prodCategory = prod.category?.name || prod.categorySlug || prod.category || 'General';
+
     const alreadyIn = (kit.includedProducts || []).some(
       p => String(p._id || p.id || p.productId) === prodId
     );
 
     if (alreadyIn) {
-      return message.warning(`${prod.title || 'Product'} is already in this kit.`);
+      return message.warning(`${prodTitle} is already in this kit.`);
     }
 
     const item = {
       id: prodId,
       _id: prodId,
       productId: prodId,
-      title: prod.title || 'Store Product',
-      price: Number(prod.price) || 0,
-      originalPrice: Number(prod.originalPrice) || Number(prod.price) || 0,
-      image: prod.images?.[0] || prod.thumbnail || prod.image || '',
-      sku: prod.sku || '',
-      category: prod.category?.name || prod.category || 'General',
+      title: prodTitle,
+      name: prodTitle,
+      price: prodPrice,
+      originalPrice: Number(prod.basePrice || prod.originalPrice || prodPrice) || prodPrice,
+      image: prodImg,
+      sku: prodSku,
+      category: prodCategory,
       quantity: 1,
     };
 
@@ -185,7 +224,7 @@ const UltimateKitManager = () => {
       includedProducts: [...(prev.includedProducts || []), item],
     }));
 
-    message.success(`Added ${prod.title || 'Product'} to Ultimate Kit`);
+    message.success(`Added ${prodTitle} to Ultimate Kit`);
   };
 
   const handleRemoveProductFromKit = (prodId) => {
@@ -232,7 +271,7 @@ const UltimateKitManager = () => {
   const categoriesList = useMemo(() => {
     const set = new Set();
     allProducts.forEach(p => {
-      const c = p.category?.name || p.category;
+      const c = p.category?.name || p.categorySlug || p.category;
       if (c && typeof c === 'string') set.add(c);
     });
     return Array.from(set);
@@ -240,9 +279,10 @@ const UltimateKitManager = () => {
 
   const filteredCatalogProducts = useMemo(() => {
     return allProducts.filter(p => {
-      const titleMatch = (p.title || '').toLowerCase().includes(productSearch.toLowerCase()) ||
-                         (p.sku || '').toLowerCase().includes(productSearch.toLowerCase());
-      const catName = (p.category?.name || p.category || '').toLowerCase();
+      const pTitle = (p.name || p.title || '').toLowerCase();
+      const pSku = (p.sku || (p.variants?.[0]?.options?.[0]?.sku) || '').toLowerCase();
+      const titleMatch = pTitle.includes(productSearch.toLowerCase()) || pSku.includes(productSearch.toLowerCase());
+      const catName = (p.category?.name || p.categorySlug || p.category || '').toLowerCase();
       const catMatch = categoryFilter === 'ALL' || catName === categoryFilter.toLowerCase();
       return titleMatch && catMatch;
     });
@@ -325,12 +365,12 @@ const UltimateKitManager = () => {
         </h2>
 
         {/* The Card Component */}
-        <div className="max-w-[880px] mx-auto border-2 border-gray-200 rounded-2xl bg-white shadow-md overflow-hidden grid grid-cols-1 md:grid-cols-12 transition-all hover:shadow-lg">
-          {/* Left Column: Kit Image / No-Photo Showcase */}
-          <div className="md:col-span-7 bg-gradient-to-br from-red-50/40 via-white to-gray-50 p-6 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-200 relative">
+        <div className="max-w-[920px] mx-auto border-2 border-gray-200 rounded-2xl bg-white shadow-md overflow-hidden grid grid-cols-1 md:grid-cols-2 transition-all hover:shadow-lg items-stretch">
+          {/* Left Column: Kit Image / No-Photo Showcase - Exact 50% Half */}
+          <div className="bg-gradient-to-br from-red-50/40 via-white to-gray-50 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-200 relative overflow-hidden min-h-[360px] md:min-h-[440px]">
             {isNoPhoto ? (
               /* No-Photo Branded Canvas */
-              <div className="w-full h-full min-h-[260px] rounded-xl bg-gradient-to-tr from-gray-900 via-gray-800 to-red-950 p-6 flex flex-col items-center justify-center text-center text-white space-y-4 border border-gray-800 shadow-inner">
+              <div className="w-full h-full min-h-[360px] md:min-h-[440px] bg-gradient-to-tr from-gray-900 via-gray-800 to-red-950 p-6 flex flex-col items-center justify-center text-center text-white space-y-4 border border-gray-800 shadow-inner">
                 <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 text-[#DD1215] shadow-lg">
                   <GiftIcon size={34} className="text-red-400" />
                 </div>
@@ -369,12 +409,12 @@ const UltimateKitManager = () => {
                 )}
               </div>
             ) : (
-              /* Custom Photo */
-              <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden flex items-center justify-center">
+              /* Custom Photo fitting exact half */
+              <div className="relative w-full h-full min-h-[360px] md:min-h-[440px] overflow-hidden flex items-center justify-center">
                 <img
                   src={previewImage}
                   alt={kit.title || 'Infinito Ultimate Kit'}
-                  className="w-full h-full object-contain drop-shadow-md transition-transform duration-300 hover:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                   onError={(e) => {
                     e.target.src = DEFAULT_MOCKUP_IMAGE;
                   }}
@@ -383,8 +423,8 @@ const UltimateKitManager = () => {
             )}
           </div>
 
-          {/* Right Column: Information, Checklist, Price & Action */}
-          <div className="md:col-span-5 p-6 flex flex-col justify-between space-y-4">
+          {/* Right Column: Information, Character Selection, Checklist, Price & Action */}
+          <div className="p-6 md:p-7 flex flex-col justify-between space-y-4">
             <div>
               {/* Badge & Title */}
               <div className="flex items-start justify-between gap-3">
@@ -410,16 +450,48 @@ const UltimateKitManager = () => {
 
               <div className="w-full h-px bg-gray-200 my-3" />
 
+              {/* Character Selection Dropdown for Comic of Choice (Filled by Customer) */}
+              <div className="bg-red-50/70 border border-red-200 rounded-xl p-3 mb-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-black text-gray-900 uppercase tracking-wide flex items-center gap-1.5">
+                    <SparklesIcon size={14} className="text-[#DD1215]" />
+                    Choose Comic Character:
+                  </span>
+                  <span className="text-[10px] bg-red-100 text-[#DD1215] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    Customer Dropdown
+                  </span>
+                </div>
+                <select
+                  value={previewSelectedCharacter}
+                  onChange={(e) => setPreviewSelectedCharacter(e.target.value)}
+                  className="w-full px-3 py-2 text-xs sm:text-sm font-bold bg-white text-gray-900 border border-red-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#DD1215] cursor-pointer shadow-xs"
+                >
+                  {characters.map((c) => (
+                    <option key={c.id || c.name} value={c.name}>
+                      {c.name} (Comic Edition)
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-gray-500 mt-1 font-medium">
+                  ✨ The customer will select their preferred character from this dropdown when ordering.
+                </p>
+              </div>
+
               {/* Checklist Features */}
               <div className="space-y-2 py-1">
-                {(kit.features || []).map((feat, idx) => (
-                  <div key={idx} className="flex items-center gap-2.5 text-xs text-gray-800 font-medium">
-                    <div className="w-4 h-4 rounded-full border-2 border-[#DD1215] flex items-center justify-center shrink-0">
-                      <CheckIcon size={10} className="text-[#DD1215] stroke-[3]" />
+                {(kit.features || []).map((feat, idx) => {
+                  const isComicChoice = feat.toLowerCase().includes('comic of');
+                  return (
+                    <div key={idx} className="flex items-center gap-2.5 text-xs text-gray-800 font-medium">
+                      <div className="w-4 h-4 rounded-full border-2 border-[#DD1215] flex items-center justify-center shrink-0">
+                        <CheckIcon size={10} className="text-[#DD1215] stroke-[3]" />
+                      </div>
+                      <span className="truncate">
+                        {feat} {isComicChoice && <strong className="text-[#DD1215]">({previewSelectedCharacter})</strong>}
+                      </span>
                     </div>
-                    <span className="truncate">{feat}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Bundled Products mini pill badges */}
@@ -533,31 +605,17 @@ const UltimateKitManager = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 pt-2">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                Button Text
-              </label>
-              <input
-                type="text"
-                value={kit.buttonText}
-                onChange={(e) => setKit({ ...kit, buttonText: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#DD1215]"
-                placeholder="e.g. Get Now"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                Kit Product SKU
-              </label>
-              <input
-                type="text"
-                value={kit.sku}
-                onChange={(e) => setKit({ ...kit, sku: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#DD1215]"
-                placeholder="INF-ULTIMATE-KIT"
-              />
-            </div>
+          <div className="pt-2">
+            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+              Button Text
+            </label>
+            <input
+              type="text"
+              value={kit.buttonText}
+              onChange={(e) => setKit({ ...kit, buttonText: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#DD1215]"
+              placeholder="e.g. Get Now"
+            />
           </div>
         </div>
 
@@ -937,27 +995,39 @@ const UltimateKitManager = () => {
                 const isAdded = (kit.includedProducts || []).some(
                   x => String(x._id || x.id || x.productId) === prodId
                 );
-                const img = p.images?.[0] || p.thumbnail || p.image || '';
+                const img = (typeof p.images?.[0] === 'object' ? p.images?.[0]?.url : p.images?.[0]) || p.thumbnail || p.image || '';
+                const prodTitle = p.name || p.title || 'Store Product';
+                const prodPrice = Number(p.salePrice || p.basePrice || p.price || (p.variants?.[0]?.options?.[0]?.price) || 0);
+                const prodSku = p.sku || (p.variants?.[0]?.options?.[0]?.sku) || '';
+                const prodCategory = p.category?.name || p.categorySlug || p.category || 'General';
 
                 return (
                   <div key={prodId} className="p-3 flex items-center justify-between gap-3 hover:bg-gray-50 transition">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
                         {img ? (
-                          <img src={img} alt={p.title} className="w-full h-full object-contain" />
+                          <img
+                            src={img}
+                            alt={prodTitle}
+                            className="w-full h-full object-contain"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.style.display = 'none';
+                            }}
+                          />
                         ) : (
                           <Package size={18} className="text-gray-400" />
                         )}
                       </div>
                       <div className="min-w-0">
                         <span className="font-bold text-gray-900 text-xs block truncate">
-                          {p.title}
+                          {prodTitle}
                         </span>
                         <div className="flex items-center gap-2 text-[11px] text-gray-500 mt-0.5">
-                          <span className="text-[#DD1215] font-bold">₹{p.price || 0}</span>
+                          <span className="text-[#DD1215] font-bold">₹{prodPrice}</span>
                           <span>•</span>
-                          <span>{p.category?.name || p.category || 'General'}</span>
-                          {p.sku && <span>• SKU: {p.sku}</span>}
+                          <span>{prodCategory}</span>
+                          {prodSku && <span>• SKU: {prodSku}</span>}
                         </div>
                       </div>
                     </div>

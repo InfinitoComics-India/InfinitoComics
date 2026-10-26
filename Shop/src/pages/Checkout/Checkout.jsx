@@ -351,7 +351,12 @@ const Checkout = () => {
                         className="border-b border-gray-200 hover:bg-gray-50/50"
                       >
                         <td className="py-3.5 px-4 font-bold text-black">
-                          {itemName} {item.size ? `(${item.size})` : ""}
+                          <div>{itemName} {item.size ? `(${item.size})` : ""}</div>
+                          {(item.selectedCharacter || item.product?.selectedCharacter) && (
+                            <div className="text-[11px] font-bold text-[#DD1215] mt-0.5">
+                              ★ Comic Choice: {item.selectedCharacter || item.product?.selectedCharacter}
+                            </div>
+                          )}
                         </td>
                         <td className="py-3.5 px-4 text-center font-medium text-gray-800">
                           {qty}
