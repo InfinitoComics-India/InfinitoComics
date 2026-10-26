@@ -4,7 +4,7 @@ import URLs from '../../Utils/utils.js';
 import { LogOut, Home, BookOpen, Users, User, FlaskConical, FileText, HelpCircle, Clock, Briefcase, ShieldCheck, Menu, X, ChevronRight, ChevronDown, Mail, UserCog, Bell, ScrollText, CalendarDays, CalendarOff, Kanban, UserCheck, FolderKanban, TrendingUp, Target, Award as AwardIcon, Building2, IndianRupee, UserPlus, FileArchive, UserSearch, MessagesSquare, BookMarked, LifeBuoy, Sparkles, ShoppingBag, Package, FolderOpen, BarChart3, ClipboardList, Plus, Gift, Megaphone, FileSpreadsheet, Video } from "lucide-react";
 import { message, Popconfirm } from "antd";
 import { getRoles, getAdmin } from '../../Utils/auth.js';
-import { isEmployeeShopAllowed } from '../../services/shopServices/shopAccessService.js';
+import { isEmployeeShopAllowed, fetchMyCurrentShopAccess } from '../../services/shopServices/shopAccessService.js';
 
 const HR_ALL = ["superadmin", "hr_manager", "manager", "team_lead", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin", "shop_admin"];
 const HR_AUDIT = ["superadmin", "hr_manager"];
@@ -20,6 +20,7 @@ const EMP_ITEMS = [
   { label: "Self Service", to: "/employee-portal?tab=requests", icon: LifeBuoy, roles: EMP_ALL },
   { label: "Work Log", to: "/employee-portal?tab=worklog", icon: ClipboardList, roles: EMP_ALL },
   { label: "Chat", to: "/hr/chat", icon: MessagesSquare, roles: EMP_ALL },
+  { label: "Messages", to: "/employee-portal?tab=messages", icon: MessagesSquare, roles: ["employee"] },
   { label: "My Profile", to: "/employee-portal?tab=profile", icon: User, roles: ["employee"] },
 ];
 
@@ -36,54 +37,33 @@ const NAV_ITEMS = [
   { label: "Users", to: "/users", icon: Users, roles: ["superadmin"] },
   { label: "Admin Mgmt", to: "/admin-management", icon: ShieldCheck, roles: ["superadmin"] },
   { label: "Contact Queries", to: "/contact-queries", icon: Mail, roles: ["superadmin"] },
-  { label: "Ads Inquiries", to: "/ads", icon: Megaphone, roles: ["superadmin", "ads_admin"] },
-  { label: "Wiki", to: "/hr/wiki", icon: BookMarked, roles: ["superadmin", "hr_manager", "manager", "team_lead", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin", "shop_admin"] },
-  { label: "Infinito AI", to: "/hr/ai", icon: Sparkles, roles: ["superadmin", "hr_manager", "manager", "team_lead", "comics_admin", "character_admin", "research_admin", "blog_admin", "career_admin", "shop_admin"] },
+  { label: "Messages", to: "/messages", icon: MessagesSquare, roles: HR_ALL },
+  { label: "Employee Portal", to: "/employee-portal", icon: UserCheck, roles: ["employee"] },
 ];
 
-// ── HR sub-items — ordered by employee lifecycle flow ────────
+// ── HR sub-items (shown inside collapsible accordion) ────────
 const HR_ITEMS = [
-  // ── Overview ──────────────────────────────────────────────
-  { label: "HR Overview", to: "/hr", icon: Building2, roles: HR_ALL },
-
-  // ── People ────────────────────────────────────────────────
-  { section: "People" },
   { label: "Employees", to: "/hr/employees", icon: UserCog, roles: HR_ALL },
-  { label: "Recruitment", to: "/hr/recruitment", icon: UserSearch, roles: HR_ALL },
-  { label: "Onboarding", to: "/hr/onboarding", icon: UserPlus, roles: HR_ALL },
-
-  // ── Time & Attendance ─────────────────────────────────────
-  { section: "Time & Work" },
+  { label: "Notifications", to: "/hr/notifications", icon: Bell, roles: HR_ALL },
+  { label: "Audit Log", to: "/hr/audit", icon: ScrollText, roles: HR_AUDIT },
   { label: "Attendance", to: "/hr/attendance", icon: Clock, roles: HR_ALL },
   { label: "Leaves", to: "/hr/leaves", icon: CalendarOff, roles: HR_ALL },
   { label: "Calendar", to: "/hr/calendar", icon: CalendarDays, roles: HR_ALL },
-  { label: "Meetings", to: "/hr/meetings", icon: Video, roles: HR_ALL },
   { label: "Work Log", to: "/hr/worklog", icon: ClipboardList, roles: HR_ALL },
-
-  // ── Tasks & Projects ──────────────────────────────────────
-  { section: "Tasks & Projects" },
-  { label: "Work Assignment", to: "/hr/assignments", icon: UserCheck, roles: HR_ALL },
   { label: "Task Board", to: "/hr/tasks", icon: Kanban, roles: HR_ALL },
+  { label: "Work Assignment", to: "/hr/assignments", icon: UserCheck, roles: HR_ALL },
   { label: "Projects", to: "/hr/projects", icon: FolderKanban, roles: HR_ALL },
-
-  // ── Performance ───────────────────────────────────────────
-  { section: "Performance" },
   { label: "Performance", to: "/hr/performance", icon: TrendingUp, roles: HR_ALL },
   { label: "Goals", to: "/hr/goals", icon: Target, roles: HR_ALL },
   { label: "Recognition", to: "/hr/recognition", icon: AwardIcon, roles: HR_ALL },
-
-  // ── Finance ───────────────────────────────────────────────
-  { section: "Finance" },
   { label: "Payroll", to: "/hr/payroll", icon: IndianRupee, roles: HR_ALL },
-
-  // ── Admin ─────────────────────────────────────────────────
-  { section: "Admin" },
+  { label: "Onboarding", to: "/hr/onboarding", icon: UserPlus, roles: HR_ALL },
   { label: "Documents", to: "/hr/documents", icon: FileArchive, roles: HR_ALL },
-  { label: "Self Service", to: "/hr/self-service", icon: LifeBuoy, roles: HR_ALL },
+  { label: "Recruitment", to: "/hr/recruitment", icon: UserSearch, roles: HR_ALL },
   { label: "Chat", to: "/hr/chat", icon: MessagesSquare, roles: HR_ALL },
-  { label: "Notifications", to: "/hr/notifications", icon: Bell, roles: HR_ALL },
-  { label: "Audit Log", to: "/hr/audit", icon: ScrollText, roles: HR_AUDIT },
-  { label: "Data Export", to: "/hr/export", icon: FileSpreadsheet, roles: ["superadmin", "hr_manager"] },
+  { label: "Wiki", to: "/hr/wiki", icon: BookMarked, roles: HR_ALL },
+  { label: "Self Service", to: "/hr/self-service", icon: LifeBuoy, roles: HR_ALL },
+  { label: "Infinito AI", to: "/hr/ai", icon: Sparkles, roles: HR_ALL },
 ];
 
 // ── Shop sub-items (shown inside collapsible accordion) ────────
@@ -115,12 +95,28 @@ const Navbar = () => {
     return isEmployeeShopAllowed(admin?.email, admin);
   });
 
-  // Listen for shop access changes in real-time across tabs / storage events
+  // Listen for shop access changes in real-time across tabs / storage events and server status
   useEffect(() => {
+    let isMounted = true;
+
     const checkAccess = () => {
       const curAdmin = getAdmin();
-      setEmpShopAllowed(isEmployeeShopAllowed(curAdmin?.email, curAdmin));
+      const allowed = isEmployeeShopAllowed(curAdmin?.email, curAdmin);
+      if (isMounted) setEmpShopAllowed(allowed);
     };
+
+    // Immediately fetch fresh status from backend server
+    const syncWithServer = async () => {
+      try {
+        const allowed = await fetchMyCurrentShopAccess();
+        if (isMounted) {
+          setEmpShopAllowed(allowed);
+        }
+      } catch {}
+    };
+
+    checkAccess();
+    syncWithServer();
 
     window.addEventListener('storage', checkAccess);
     window.addEventListener('focus', syncWithServer);
@@ -131,11 +127,17 @@ const Navbar = () => {
     let bc;
     try {
       bc = new BroadcastChannel('infinito_shop_access_channel');
-      bc.onmessage = checkAccess;
+      bc.onmessage = (e) => {
+        checkAccess();
+        syncWithServer();
+      };
     } catch { }
 
     return () => {
+      isMounted = false;
+      clearInterval(interval);
       window.removeEventListener('storage', checkAccess);
+      window.removeEventListener('focus', syncWithServer);
       if (bc) bc.close();
     };
   }, []);
@@ -145,7 +147,7 @@ const Navbar = () => {
   // If on a shop route or user has shop access, shop opens by default
   const isShopActive = location.pathname.startsWith('/admin/shop') || location.pathname.startsWith('/shop');
   const [shopOpen, setShopOpen] = useState(() => {
-    return canViewShop && (isShopActive || roles.includes('shop_admin') || roles.includes('employee'));
+    return canViewShop && (isShopActive || roles.includes('shop_admin') || (roles.includes('employee') && empShopAllowed));
   });
 
   // Automatically keep shop accordion open if shop becomes newly allowed, close if revoked
@@ -158,16 +160,18 @@ const Navbar = () => {
   }, [canViewShop, isShopActive, empShopAllowed]);
 
   const visibleNav = NAV_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
-  const visibleHR = HR_ITEMS.filter(item => item.section || roles.some(r => item.roles?.includes(r)));
+  const visibleHR = HR_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
   const visibleShop = SHOP_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
-  const visibleEmp = EMP_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
+  const baseEmp = EMP_ITEMS.filter(item => roles.some(r => item.roles.includes(r)));
+  const visibleEmp = canViewShop
+    ? [...baseEmp, { label: "Shop Section", to: "/employee-portal?tab=shop", icon: ShoppingBag, roles: EMP_ALL }]
+    : baseEmp;
   const isEmpOnly = roles.length > 0 && roles.every(r => r === "employee");
-  const visibleHRLinks = visibleHR.filter(i => !i.section);
-  const showHRSection = visibleHRLinks.length > 0 && !isEmpOnly;
+  const showHRSection = visibleHR.length > 0 && !isEmpOnly;
   const showShopSection = visibleShop.length > 0 && canViewShop;
 
   // If any HR route is currently active, keep accordion open
-  const isHRActive = visibleHRLinks.some(item => location.pathname.startsWith(`/admin${item.to}`) || location.pathname.startsWith(item.to));
+  const isHRActive = visibleHR.some(item => location.pathname.startsWith(`/admin${item.to}`) || location.pathname.startsWith(item.to));
 
   // Track and persist scroll position of the sidebar navigation
   const handleNavScroll = (e) => {
@@ -376,35 +380,26 @@ const Navbar = () => {
             {/* HR Sub-items — animated dropdown */}
             {(hrOpen || isHRActive) && (
               <div className={`mt-1 space-y-0.5 overflow-hidden ${!collapsed ? "pl-2" : ""}`}>
-                {visibleHR.map((item, idx) => {
-                  if (item.section) {
-                    if (collapsed) return null;
-                    return (
-                      <div key={`sec-${idx}`} className="px-3 pt-3 pb-1">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-500 border-t border-gray-700 pt-2">{item.section}</p>
-                      </div>
-                    );
-                  }
-                  const { label, to, icon: Icon } = item;
-                  return (
-                    <Link
-                      key={to}
-                      to={to}
-                      onClick={onNavClick}
-                      title={collapsed ? label : ""}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150
-                        ${isActive(to)
-                          ? "bg-[#DD1215] text-white font-bold"
-                          : "text-gray-400 hover:bg-gray-700 hover:text-white font-medium"
-                        }
-                        ${collapsed ? "justify-center" : ""}
-                      `}
-                    >
-                      <Icon size={17} className="shrink-0" />
-                      {!collapsed && <span className="text-xs">{label}</span>}
-                    </Link>
-                  );
-                })}
+                {visibleHR.map(({ label, to, icon: Icon }) => (
+                  <Link
+                    key={to}
+                    to={to}
+                    onClick={onNavClick}
+                    title={collapsed ? label : ""}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150
+                      ${isActive(to)
+                        ? "bg-[#DD1215] text-white font-bold"
+                        : "text-gray-400 hover:bg-gray-700 hover:text-white font-medium"
+                      }
+                      ${collapsed ? "justify-center" : ""}
+                    `}
+                  >
+                    <Icon size={17} className="shrink-0" />
+                    {!collapsed && (
+                      <span className="text-xs">{label}</span>
+                    )}
+                  </Link>
+                ))}
               </div>
             )}
           </div>

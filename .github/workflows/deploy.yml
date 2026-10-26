@@ -52,7 +52,6 @@ jobs:
 
       # Step 6: Install dependencies and Build Shop
       - name: Install and Build Shop
-        continue-on-error: true
         run: |
           cd Shop
           echo "VITE_BASE_URL=https://infinitocomics-68cr.onrender.com" > .env
