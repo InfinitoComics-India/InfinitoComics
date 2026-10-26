@@ -18,6 +18,7 @@ import OrderDetails from './pages/OrderFlow/OrderDetails';
 import OrderCancel from './pages/OrderFlow/OrderCancel';
 import OrderCancelled from './pages/OrderFlow/OrderCancelled';
 import MyOrders from './pages/Orders/MyOrders';
+import Wishlist from './pages/Wishlist/Wishlist';
 
 function App() {
   const dispatch = useDispatch();
@@ -104,6 +105,7 @@ function App() {
             <Route path="order-cancelled" element={<OrderCancelled />} />
             <Route path="orders" element={<MyOrders />} />
             <Route path="my-orders" element={<MyOrders />} />
+            <Route path="wishlist" element={<Wishlist />} />
           </Route>
         </Routes>
       </BrowserRouter>

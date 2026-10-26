@@ -12,6 +12,7 @@ import {
   FOUNDATION_BASE_URL,
   FRONTEND_BASE_URL,
 } from "../../utils/constants.js";
+import { getWishlist } from "../../services/wishlistService.js";
 
 // ── Search Modal ──────────────────────────────────────────────────
 // The shop lives on its own subdomain, so we don't wire the search API here
@@ -89,9 +90,20 @@ const SearchModal = ({ onClose }) => {
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [wishlistCount, setWishlistCount] = useState(() => getWishlist().length);
   const user = useSelector((store) => store.user);
   const cartItems = useSelector((store) => store.cart?.items || []);
   const cartCount = cartItems.reduce((acc, item) => acc + (Number(item.quantity) || 1), 0);
+
+  useEffect(() => {
+    const syncWishlist = () => setWishlistCount(getWishlist().length);
+    window.addEventListener("wishlist_updated", syncWishlist);
+    window.addEventListener("storage", syncWishlist);
+    return () => {
+      window.removeEventListener("wishlist_updated", syncWishlist);
+      window.removeEventListener("storage", syncWishlist);
+    };
+  }, []);
 
   useEffect(() => {
     const handler = (e) => {
@@ -203,6 +215,19 @@ const Header = () => {
               <FiSearch size={20} />
             </button>
             <Link
+              to="/wishlist"
+              className="relative border border-white p-2 hover:bg-white hover:text-black transition flex items-center justify-center text-white"
+              title="My Wishlist"
+              aria-label="My Wishlist"
+            >
+              <Heart size={20} className={wishlistCount > 0 ? "text-pink-500 fill-pink-500" : ""} />
+              {wishlistCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-pink-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#202020]">
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
+            <Link
               to="/cart"
               className="relative border border-white p-2 hover:bg-white hover:text-black transition flex items-center justify-center text-white"
               title="Shopping Cart"
@@ -279,14 +304,6 @@ const Header = () => {
                 <ShoppingBag size={16} /> SHOP
               </Link>
             </li>
-            <li>
-              <Link
-                to="/orders"
-                className="uppercase tracking-wider font-semibold hover:text-white cursor-pointer border-l border-gray-600 px-3"
-              >
-                MY ORDERS
-              </Link>
-            </li>
           </ul>
         </div>
       </div>
@@ -337,10 +354,10 @@ const Header = () => {
             <ShoppingBag size={14} /> SHOP
           </Link>
           <Link
-            to="/orders"
-            className="block font-bold text-[#DD1215] flex items-center gap-2"
+            to="/wishlist"
+            className="block font-bold text-pink-400 flex items-center gap-2"
           >
-            <Package size={14} /> MY ORDERS
+            <Heart size={14} /> WISHLIST ({wishlistCount})
           </Link>
 
           <a

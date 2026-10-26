@@ -3,30 +3,34 @@ import axios from "axios";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { removeUser, addUser } from "../../redux/userSlice.js";
-import { updateQuantity, removeFromCart, clearCart } from "../../redux/cartSlice.js";
+import { updateQuantity, removeFromCart, clearCart, addToCart } from "../../redux/cartSlice.js";
 import { FaLeaf, FaArrowRight } from "react-icons/fa";
 import { BASE_URL } from "../../utils/constants.js";
 import {
   X, ShieldAlert, Check, Pencil, ShoppingBag, Package, MapPin,
   CreditCard, Clock, Truck, ChevronRight, Download, Eye, RotateCcw,
   Plus, Trash2, Home, Building2, Search, ExternalLink, Sparkles,
-  AlertCircle, CheckCircle2, ArrowLeft, Shuffle, ShoppingCart, Minus
+  AlertCircle, CheckCircle2, ArrowLeft, Shuffle, ShoppingCart, Minus,
+  Heart
 } from "lucide-react";
 import { updateUser } from "../../services/userServices.js";
 import toast, { Toaster } from "react-hot-toast";
 import {
   getAllOrders,
+  fetchCustomerOrders,
   getSavedAddresses,
   saveNewAddress,
   updateSavedAddress,
   deleteSavedAddress,
   setDefaultSavedAddress,
   downloadInvoicePdf,
+  printOrderInvoice,
   getOrderItemPrice,
   getOrderTotal,
   getOrderItemName,
   getOrderItemImage,
 } from "../../services/orderService.js";
+import { getWishlist, removeFromWishlist } from "../../services/wishlistService.js";
 
 // ── Character preview (uses saved colors or defaults) ──────────────
 const CharacterPreview = ({ colors }) => {
@@ -232,9 +236,22 @@ const MyAccountPage = () => {
     isDefault: false,
   });
 
+  // Wishlist State
+  const [wishlist, setWishlist] = useState(() => getWishlist());
+
+  useEffect(() => {
+    const handleWishlistChange = () => setWishlist(getWishlist());
+    window.addEventListener("wishlist_updated", handleWishlistChange);
+    window.addEventListener("storage", handleWishlistChange);
+    return () => {
+      window.removeEventListener("wishlist_updated", handleWishlistChange);
+      window.removeEventListener("storage", handleWishlistChange);
+    };
+  }, []);
+
   useEffect(() => {
     const tab = searchParams.get("tab");
-    if (tab && ["overview", "orders", "addresses", "subscription", "cart"].includes(tab)) {
+    if (tab && ["overview", "orders", "addresses", "subscription", "cart", "wishlist"].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -246,8 +263,9 @@ const MyAccountPage = () => {
 
   useEffect(() => {
     // 1. Load User data
+    let user = null;
     try {
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      user = JSON.parse(localStorage.getItem("user") || "{}");
       if (user) {
         setUserData({
           username: user.username || user.name || "",
@@ -259,9 +277,24 @@ const MyAccountPage = () => {
       }
     } catch {}
 
-    // 2. Load Orders
-    const allOrders = getAllOrders();
-    setOrders(allOrders);
+    // 2. Load Orders (local + live backend history synced)
+    const loadLiveOrders = async () => {
+      const email = user?.email || "";
+      const userId = user?._id || "";
+      if (email || userId) {
+        try {
+          const liveList = await fetchCustomerOrders(email, userId);
+          if (liveList && liveList.length > 0) {
+            setOrders(liveList);
+            return;
+          }
+        } catch (err) {
+          console.warn("Live orders fetch error in Dashboard:", err);
+        }
+      }
+      setOrders(getAllOrders());
+    };
+    loadLiveOrders();
 
     // 3. Load Saved Addresses
     const saved = getSavedAddresses();
@@ -488,6 +521,19 @@ const MyAccountPage = () => {
                 <p className="text-sm font-bold text-white">{cartTotalCount} {cartTotalCount === 1 ? "Item" : "Items"}</p>
               </div>
             </button>
+
+            <button
+              onClick={() => handleTabChange("wishlist")}
+              className="bg-[#1e1e1e] border border-gray-800 hover:border-gray-700 px-4 py-2.5 rounded-lg flex items-center gap-3 transition text-left cursor-pointer"
+            >
+              <div className="w-8 h-8 rounded-full bg-pink-950/60 border border-pink-800/40 flex items-center justify-center text-pink-400">
+                <Heart size={16} className={wishlist.length > 0 ? "fill-pink-400" : ""} />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase font-mono tracking-widest text-gray-400">Wishlist</p>
+                <p className="text-sm font-bold text-white">{wishlist.length} {wishlist.length === 1 ? "Item" : "Items"}</p>
+              </div>
+            </button>
           </div>
         </div>
 
@@ -499,6 +545,7 @@ const MyAccountPage = () => {
             { id: "addresses", label: `Saved Addresses (${addresses.length})`, icon: MapPin },
             { id: "subscription", label: "Membership & Perks", icon: Sparkles },
             { id: "cart", label: `My Cart (${cartTotalCount})`, icon: ShoppingCart },
+            { id: "wishlist", label: `Wishlist (${wishlist.length})`, icon: Heart },
           ].map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -916,6 +963,38 @@ const MyAccountPage = () => {
                                 </div>
                               );
                             })}
+
+                            {/* Live Qikink Tracking Banner */}
+                            {Boolean(ord.fulfillment?.trackingNumber || ord.trackingNumber || ord.fulfillment?.trackingUrl) && (
+                              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex flex-wrap items-center justify-between gap-3 text-xs">
+                                <div>
+                                  <p className="font-bold text-emerald-950 flex items-center gap-1.5">
+                                    <Truck size={14} className="text-emerald-600 shrink-0" />
+                                    Courier: {ord.fulfillment?.carrier || ord.carrier || "Qikink Express"}
+                                  </p>
+                                  <p className="text-[11px] text-emerald-800 font-mono mt-0.5">
+                                    AWB / Tracking No: <strong>{ord.fulfillment?.trackingNumber || ord.trackingNumber}</strong>
+                                  </p>
+                                </div>
+                                {(ord.fulfillment?.trackingUrl || ord.trackingUrl) ? (
+                                  <a
+                                    href={ord.fulfillment?.trackingUrl || ord.trackingUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded text-xs transition shadow-sm"
+                                  >
+                                    Track Live Courier <ExternalLink size={12} />
+                                  </a>
+                                ) : (
+                                  <button
+                                    onClick={() => setTrackingModalOrder(ord)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded text-xs transition shadow-sm"
+                                  >
+                                    Track Live Parcel <ExternalLink size={12} />
+                                  </button>
+                                )}
+                              </div>
+                            )}
                           </div>
 
                           {/* Actions Column (1/3) */}
@@ -1381,6 +1460,143 @@ const MyAccountPage = () => {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════
+            TAB 6: WISHLIST (FAVORITES)
+        ═══════════════════════════════════════════════════════════ */}
+        {activeTab === "wishlist" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-200 gap-4">
+              <div>
+                <h2 className="text-xl font-black uppercase tracking-wider text-gray-900 flex items-center gap-2">
+                  <Heart size={20} className="text-pink-600 fill-pink-600" />
+                  My Wishlist ({wishlist.length})
+                </h2>
+                <p className="text-xs text-gray-500 mt-1">
+                  Products and merchandise you have saved for later.
+                </p>
+              </div>
+              <a
+                href="https://shop.infinitohq.com/"
+                className="text-xs font-bold uppercase tracking-wider text-[#DD1215] hover:underline flex items-center gap-1 self-start sm:self-auto"
+              >
+                Browse Store <ArrowRight size={13} />
+              </a>
+            </div>
+
+            {wishlist.length === 0 ? (
+              <div className="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center flex flex-col items-center justify-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-pink-50 border border-pink-100 flex items-center justify-center text-pink-400">
+                  <Heart size={32} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-800">Your Wishlist is Empty</h3>
+                  <p className="text-xs text-gray-500 max-w-sm mt-1">
+                    Explore our collection of comics, t-shirts, and apparel to save your favorites.
+                  </p>
+                </div>
+                <a
+                  href="https://shop.infinitohq.com/"
+                  className="bg-[#DD1215] text-white px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-red-700 transition"
+                >
+                  Explore Store
+                </a>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {wishlist.map((prod) => {
+                  const pid = prod.id || prod._id;
+                  const img =
+                    prod.image ||
+                    prod.thumbnail ||
+                    (Array.isArray(prod.images) && prod.images[0]?.url) ||
+                    (Array.isArray(prod.images) && typeof prod.images[0] === "string" ? prod.images[0] : null) ||
+                    "/products/crimson_tshirt.jpg";
+                  const price = Number(prod.salePrice || prod.price || 0);
+                  const mrp = Number(prod.originalPrice || prod.mrp || 0);
+                  const discount = mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
+
+                  return (
+                    <div
+                      key={pid}
+                      className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col group"
+                    >
+                      <div className="relative aspect-square bg-gray-100 overflow-hidden">
+                        <img
+                          src={img}
+                          alt={prod.name || prod.title || "Product"}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = "/products/crimson_tshirt.jpg";
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = removeFromWishlist(pid);
+                            setWishlist(updated);
+                            toast.success("Removed from wishlist");
+                          }}
+                          className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-500 hover:text-red-600 shadow flex items-center justify-center transition"
+                          title="Remove from Wishlist"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                        {discount > 0 && (
+                          <span className="absolute bottom-2.5 left-2.5 bg-[#DD1215] text-white text-[10px] font-black uppercase px-2 py-0.5 rounded">
+                            {discount}% OFF
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="p-4 flex flex-col flex-1">
+                        <p className="text-[10px] uppercase font-mono tracking-widest text-[#DD1215] font-bold">
+                          {prod.category?.name || prod.category || "Official Merch"}
+                        </p>
+                        <h3 className="text-sm font-bold text-gray-900 mt-1 line-clamp-1">
+                          {prod.name || prod.title || "Infinito Merchandise"}
+                        </h3>
+
+                        <div className="flex items-baseline gap-2 mt-2">
+                          <span className="text-base font-black text-gray-900">
+                            ₹{price.toLocaleString("en-IN")}
+                          </span>
+                          {mrp > price && (
+                            <span className="text-xs text-gray-400 line-through">
+                              ₹{mrp.toLocaleString("en-IN")}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="mt-auto pt-4 flex gap-2">
+                          <button
+                            onClick={() => {
+                              dispatch(
+                                addToCart({
+                                  productId: pid,
+                                  size: prod.size || (prod.sizes && prod.sizes[0]) || "M",
+                                  quantity: 1,
+                                  product: prod,
+                                })
+                              );
+                              const updated = removeFromWishlist(pid);
+                              setWishlist(updated);
+                              toast.success(`${prod.name || prod.title || "Item"} moved to cart!`);
+                            }}
+                            className="flex-1 bg-black hover:bg-gray-800 text-white font-bold text-xs uppercase tracking-wider py-2.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition"
+                          >
+                            <ShoppingCart size={14} /> Move to Cart
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

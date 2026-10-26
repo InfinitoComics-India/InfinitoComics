@@ -1026,3 +1026,38 @@ export const downloadInvoicePdf = (order) => {
   printWindow.document.write(html);
   printWindow.document.close();
 };
+
+export const printOrderInvoice = downloadInvoicePdf;
+
+// Fetch customer orders with live Qikink tracking information
+export const fetchCustomerOrders = async (email, userId) => {
+  let orders = [];
+  const base = BASE_URL || 'https://infinitocomics-68cr.onrender.com';
+
+  if (email || userId) {
+    try {
+      const params = new URLSearchParams();
+      if (email) params.append('email', email);
+      if (userId) params.append('userId', userId);
+      const res = await axios.get(`${base}/shop/orders/customer/history?${params.toString()}`, { timeout: 8000 });
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        orders = res.data.data;
+      }
+    } catch (err) {
+      console.warn('Could not fetch orders from remote backend:', err?.message);
+    }
+  }
+
+  // Merge with locally saved orders
+  const local = getAllOrders();
+  const merged = [...orders];
+  local.forEach((lo) => {
+    const loId = lo.orderId || lo.id || lo._id;
+    if (!merged.some((mo) => (mo.orderId || mo.id || mo._id) === loId)) {
+      merged.push(lo);
+    }
+  });
+
+  return merged.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+};
+
