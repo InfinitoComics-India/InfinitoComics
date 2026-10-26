@@ -6,11 +6,11 @@ import { BACKEND_URL } from "../utils/constants";
 // fallback when the admin hasn't uploaded a custom image. If a category
 // doesn't match, we render a red name-only card in the UI — never one of
 // the static preset categories.
-import tshirtsImg from "../assets/categories/tshirts.svg";
+import tshirtsImg   from "../assets/categories/tshirts.svg";
 import accessoryImg from "../assets/categories/accessory.svg";
-import hoodiesImg from "../assets/categories/hoodies.svg";
-import totebagsImg from "../assets/categories/totebags.svg";
-import capsImg from "../assets/categories/caps.png.svg";
+import hoodiesImg   from "../assets/categories/hoodies.svg";
+import totebagsImg  from "../assets/categories/totebags.svg";
+import capsImg      from "../assets/categories/caps.png.svg";
 
 export const fallbackCategoryImages = {
   tshirts: tshirtsImg,
@@ -75,8 +75,61 @@ export const fetchCategories = async () => {
 // ─── PRODUCTS ─────────────────────────────────────────────────────────────
 // Normalize a backend product to the shape the UI already understands.
 const mapBackendProduct = (p) => {
-  const sizeVariant = p.variants?.find((v) => v.name?.toLowerCase().includes("size"));
-  const parsedSizes = sizeVariant?.options?.map((o) => o.value?.toUpperCase()).filter(Boolean) || [];
+  // Extract all real variants and sizes defined by admin
+  const parsedVariants = [];
+  if (Array.isArray(p.variants) && p.variants.length > 0) {
+    for (const v of p.variants) {
+      if (Array.isArray(v.options) && v.options.length > 0) {
+        for (const opt of v.options) {
+          const val = String(opt.value || opt.name || opt.size || "").trim();
+          if (val) {
+            parsedVariants.push({
+              size: val.toUpperCase(),
+              value: val,
+              sku: String(opt.sku || "").trim(),
+              price: Number(opt.price) || 0,
+              stock: Number(opt.stock) || 0,
+              name: String(v.name || "").trim(),
+            });
+          }
+        }
+      } else {
+        const val = String(v.size || v.value || v.name || "").trim();
+        if (val) {
+          parsedVariants.push({
+            size: val.toUpperCase(),
+            value: val,
+            sku: String(v.sku || "").trim(),
+            price: Number(v.price) || 0,
+            stock: Number(v.stock) || 0,
+            name: String(v.name || "").trim(),
+          });
+        }
+      }
+    }
+  }
+
+  // Real sizes only from the admin-created variants
+  const parsedSizes = Array.from(new Set(parsedVariants.map((v) => v.size).filter(Boolean)));
+
+  // Real colors from variants if present
+  const detectedColors = [];
+  if (Array.isArray(p.variants)) {
+    for (const v of p.variants) {
+      const vName = String(v.name || "").trim().toLowerCase();
+      if (vName.includes("color") || vName.includes("colour") || vName.includes("shade")) {
+        if (Array.isArray(v.options)) {
+          v.options.forEach((opt) => {
+            const val = String(opt.value || opt.name || "").trim();
+            if (val && !detectedColors.includes(val)) detectedColors.push(val);
+          });
+        } else if (v.value || v.name) {
+          const val = String(v.value || v.name).trim();
+          if (val && !detectedColors.includes(val)) detectedColors.push(val);
+        }
+      }
+    }
+  }
 
   const rawImages = Array.isArray(p.images)
     ? p.images.map((img) => resolveImageUrl(img?.url || img)).filter(Boolean)
@@ -89,6 +142,10 @@ const mapBackendProduct = (p) => {
     fallbackCategoryImages[p.category?.slug?.toLowerCase()] ||
     tshirtsImg;
 
+  // Real gallery with only unique valid URLs and NO artificial padding
+  const uniqueGallery = Array.from(new Set(rawImages.filter(Boolean)));
+  const gallery = uniqueGallery.length > 0 ? uniqueGallery : [primaryImage];
+
   const currentPrice = Number(p.salePrice || p.basePrice || 0);
   const currentMrp = p.basePrice && p.salePrice && Number(p.basePrice) > Number(p.salePrice)
     ? Number(p.basePrice)
@@ -96,6 +153,13 @@ const mapBackendProduct = (p) => {
 
   const catSlug = p.category?.slug || p.categorySlug || (typeof p.category === "string" ? p.category : "") || "";
   const catName = p.category?.name || p.categorySlug || "";
+
+  // Dynamic reviews data
+  const backendReviews = Array.isArray(p.reviews) ? p.reviews : [];
+  const avgRating = Number(p.averageRating || 0) || (backendReviews.length > 0
+    ? Number((backendReviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / backendReviews.length).toFixed(1))
+    : 0);
+  const totalCount = Number(p.totalRatingsCount || backendReviews.length || 0);
 
   return {
     id: p._id,
@@ -105,26 +169,30 @@ const mapBackendProduct = (p) => {
     description:
       p.description ||
       p.shortDescription ||
-      "The Special Edition Crimson Red T-Shirt is designed to capture the energy, passion, and spirit of INFINITO. Featuring a deep crimson red color with a clean, statement-driven design, this piece is made to stand out while keeping things effortlessly wearable.",
+      "Upgrade your everyday style with our premium collection, designed for a perfect blend of comfort, fashion, and versatility. Crafted from breathable cotton and tailored for an effortless modern streetwear fit.",
     price: currentPrice,
     mrp: currentMrp,
     category: catSlug,
     categoryName: catName,
     slug: p.slug,
     image: primaryImage,
-    gallery: rawImages.length > 0 ? rawImages : [primaryImage],
-    sizes: parsedSizes.length > 0 ? parsedSizes : ["XS", "S", "M", "L", "XL", "XXL"],
-    variants: p.variants || [],
-    rating: 4.5,
-    reviewsCount: 35,
-    ratingBreakdown: { 5: 35, 4: 35, 3: 35, 2: 35, 1: 35 },
+    gallery,
+    sizes: parsedSizes,
+    colors: detectedColors.length > 0 ? detectedColors : ["Black", "Crimson Red", "White", "Navy"],
+    variants: parsedVariants.length > 0 ? parsedVariants : (p.variants || []),
+    sku: p.sku || (parsedVariants[0]?.sku || `INF-${(p._id || '').slice(-6).toUpperCase()}`),
+    rating: avgRating,
+    reviewsCount: totalCount,
+    reviews: backendReviews,
     specs: p.specifications || p.specs || {
       "Sleeve Length": "Half Sleeve",
       "Fit": "Regular Fit",
       "Length": "Regular",
       "Transparency": "Opaque",
       "Material": "100% Cotton",
-      "Wash Care": "Machine Wash",
+      "Wash Care": "Machine Wash Cold",
+      "Country of Origin": "India",
+      "Occasion": "Casual Streetwear",
     },
     featured: p.featured,
     stock: p.stock,
@@ -244,3 +312,84 @@ export const fetchProductsByCategory = async (categorySlug) => {
 // fetchers above when you're ready.
 export const getProductById = () => null;
 export const getProductsByCategory = () => [];
+
+// ─── REVIEWS SERVICE ──────────────────────────────────────────────────────
+const REVIEWS_STORAGE_PREFIX = "product_reviews_";
+
+export const fetchProductReviews = async (slug) => {
+  if (!slug) return { reviews: [], averageRating: 0, totalRatingsCount: 0 };
+  let remoteData = null;
+  try {
+    const res = await axios.get(`${BACKEND_URL}/shop/products/public/slug/${slug}/reviews`);
+    if (res.data?.success && res.data?.data) {
+      remoteData = res.data.data;
+    }
+  } catch (err) {
+    // silently continue to check localStorage cache
+  }
+
+  // Load locally saved reviews
+  let localReviews = [];
+  try {
+    const raw = localStorage.getItem(`${REVIEWS_STORAGE_PREFIX}${slug}`);
+    if (raw) localReviews = JSON.parse(raw);
+  } catch {}
+
+  const mergedReviews = [...(remoteData?.reviews || [])];
+  localReviews.forEach((lr) => {
+    if (!mergedReviews.some((mr) => mr.createdAt === lr.createdAt && mr.userName === lr.userName)) {
+      mergedReviews.unshift(lr);
+    }
+  });
+
+  const total = mergedReviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0);
+  const avg = mergedReviews.length > 0 ? Number((total / mergedReviews.length).toFixed(1)) : 0;
+
+  return {
+    reviews: mergedReviews,
+    averageRating: avg,
+    totalRatingsCount: mergedReviews.length,
+  };
+};
+
+export const submitProductReview = async (slug, reviewData) => {
+  if (!slug) throw new Error("Product slug is required");
+
+  // Save to localStorage immediately for instant UI reaction and offline durability
+  const newReview = {
+    userName: reviewData.userName || "Verified Buyer",
+    rating: Number(reviewData.rating) || 5,
+    headline: reviewData.headline || "",
+    comment: reviewData.comment || "",
+    verified: true,
+    likes: 0,
+    createdAt: new Date().toISOString(),
+  };
+
+  try {
+    const raw = localStorage.getItem(`${REVIEWS_STORAGE_PREFIX}${slug}`);
+    const existing = raw ? JSON.parse(raw) : [];
+    existing.unshift(newReview);
+    localStorage.setItem(`${REVIEWS_STORAGE_PREFIX}${slug}`, JSON.stringify(existing));
+  } catch {}
+
+  // Attempt backend POST
+  try {
+    const res = await axios.post(`${BACKEND_URL}/shop/products/public/slug/${slug}/reviews`, {
+      rating: newReview.rating,
+      userName: newReview.userName,
+      headline: newReview.headline,
+      comment: newReview.comment,
+    });
+    if (res.data?.success && res.data?.data) {
+      return res.data.data;
+    }
+  } catch (err) {
+    console.warn("Backend review endpoint unreachable, review saved locally:", err?.message);
+  }
+
+  return {
+    review: newReview,
+    success: true,
+  };
+};

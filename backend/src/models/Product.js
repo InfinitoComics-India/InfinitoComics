@@ -130,6 +130,24 @@ const productSchema = new mongoose.Schema({
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin'
+  },
+  reviews: [{
+    userName: { type: String, default: 'Customer' },
+    userAvatar: { type: String, default: '' },
+    rating: { type: Number, required: true, min: 1, max: 5 },
+    headline: { type: String, default: '' },
+    comment: { type: String, default: '' },
+    verified: { type: Boolean, default: true },
+    likes: { type: Number, default: 0 },
+    createdAt: { type: Date, default: Date.now }
+  }],
+  averageRating: {
+    type: Number,
+    default: 0
+  },
+  totalRatingsCount: {
+    type: Number,
+    default: 0
   }
 }, {
   timestamps: true
