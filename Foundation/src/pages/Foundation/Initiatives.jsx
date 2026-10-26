@@ -1,8 +1,8 @@
 import React from "react";
-import khushiLogo from "../../assets/images/foundation/Khushi_Foundation_logo.png";
+import khushiLogo from "../../assets/images/foundation/khushi.png";
 import graduationCap from "../../assets/images/foundation/graduation_cap.png";
-import sportsLogo from "../../assets/images/foundation/Infinito_Sports_logo.png";
-import researchLogo from "../../assets/images/foundation/Infinito_Research.png";
+import sportsLogo from "../../assets/images/foundation/Sports.png";
+import researchLogo from "../../assets/images/foundation/Research.png";
 
 const impactItems = [
   { overline: "Initiatives", title: "Focused on", accent: "Education" },

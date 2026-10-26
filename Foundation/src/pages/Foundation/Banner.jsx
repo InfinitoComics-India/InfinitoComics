@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import banner from '../../assets/images/foundation/banner.png'
+import banner from '../../assets/images/foundation/bannern.png'
 import belowBanner from '../../assets/images/foundation/below_banner.png'
 import foundationLogo from '../../../../frontend/assets/Images/Foundation Logo.png'
 
