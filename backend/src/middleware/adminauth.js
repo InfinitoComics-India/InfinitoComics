@@ -18,6 +18,13 @@ export const adminauthenticate = async (req, res, next) => {
     if (!user) {
       user = await Account.findById(decoded.id);
     }
+    if (!user) {
+      const Employee = (await import('../models/Employee.js')).default;
+      user = await Employee.findById(decoded.id);
+      if (user && !user.role) {
+        user.role = user.hrRole || 'employee';
+      }
+    }
     if (!user) return res.status(401).json({ message: "User not found" });
     req.user = user;
     next();

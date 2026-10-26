@@ -123,6 +123,10 @@ const Navbar = () => {
     };
 
     window.addEventListener('storage', checkAccess);
+    window.addEventListener('focus', syncWithServer);
+
+    // Periodic sync every 5 seconds so employee sees shop toggle in real-time
+    const interval = setInterval(syncWithServer, 5000);
 
     let bc;
     try {

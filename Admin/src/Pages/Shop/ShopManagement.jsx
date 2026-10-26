@@ -82,10 +82,14 @@ const ShopManagement = () => {
     setTogglingId(identifier);
     try {
       // Precise optimistic update targeting this specific record
+      const empName = String(emp.name || '').toLowerCase().trim();
       setEmployees((prev) =>
         prev.map((e) => {
-          const isTarget = (empId && (e.id === empId || e._id === empId)) ||
-                          (email && String(e.email || '').toLowerCase().trim() === email);
+          const eEmail = String(e.email || '').toLowerCase().trim();
+          const eName = String(e.name || '').toLowerCase().trim();
+          const isTarget = (empId && (e.id === empId || e._id === empId || e.employeeId === empId)) ||
+                          (email && eEmail === email) ||
+                          (empName && eName === empName);
           return isTarget ? { ...e, shopAccess: checked } : e;
         })
       );

@@ -46,7 +46,8 @@ export const isEmployeeShopAllowed = (email, adminObj = null) => {
     return true;
   }
 
-  // Check direct shopAccess property if present on user object
+  // Authoritative check on direct shopAccess boolean property
+  if (adminObj?.shopAccess === false) return false;
   if (adminObj?.shopAccess === true) return true;
 
   const targetEmail = String(email || adminObj?.email || '').toLowerCase().trim();
@@ -70,34 +71,52 @@ export const fetchMyCurrentShopAccess = async () => {
 
     const access = Boolean(res?.data?.data?.shopAccess);
     const email = String(res?.data?.data?.email || '').toLowerCase().trim();
+    const empEmail = String(res?.data?.data?.employeeEmail || '').toLowerCase().trim();
 
     // Update stored Admin object with latest shopAccess
     const adminRaw = localStorage.getItem('Admin');
+    let curAdminEmail = '';
     if (adminRaw) {
       try {
         const parsedAdmin = JSON.parse(adminRaw);
         parsedAdmin.shopAccess = access;
+        curAdminEmail = String(parsedAdmin.email || '').toLowerCase().trim();
         localStorage.setItem('Admin', JSON.stringify(parsedAdmin));
       } catch {}
     }
 
     // Update local allowed employee cache
-    if (email) {
-      const current = getShopAllowedEmployees();
-      let next;
-      if (access) {
-        next = Array.from(new Set([...current, email]));
-      } else {
-        next = current.filter((e) => e !== email);
-      }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    }
+    const current = getShopAllowedEmployees();
+    let next;
+    const targets = [email, empEmail, curAdminEmail].filter(Boolean);
 
-    notifyAccessChange({ type: 'shop_access_updated', email, shopAccess: access });
+    // Also match any email containing common username (e.g. arshiya)
+    const keywords = targets.map((t) => t.split('@')[0].replace(/[0-9._-]/g, '')).filter((k) => k.length >= 3);
+
+    if (access) {
+      next = Array.from(new Set([...current, ...targets]));
+    } else {
+      next = current.filter((e) => {
+        if (targets.includes(e)) return false;
+        const ePrefix = e.split('@')[0].replace(/[0-9._-]/g, '');
+        if (keywords.some((kw) => ePrefix.includes(kw) || kw.includes(ePrefix))) return false;
+        return true;
+      });
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+
+    notifyAccessChange({ 
+      type: 'shop_access_updated', 
+      email, 
+      employeeEmail: empEmail, 
+      shopAccess: access, 
+      allowedEmails: next 
+    });
     return access;
   } catch (err) {
     console.warn('Live shop access check warning:', err.message);
     const curAdmin = JSON.parse(localStorage.getItem('Admin') || '{}');
+    if (curAdmin?.shopAccess === false) return false;
     return isEmployeeShopAllowed(curAdmin?.email, curAdmin);
   }
 };
@@ -118,34 +137,72 @@ export const notifyAccessChange = (payload) => {
  */
 export const toggleEmployeeShopAccess = async (employee, grant) => {
   const email = String(employee.email || '').toLowerCase().trim();
-  const empId = employee._id || employee.id;
+  const adminEmail = String(employee.adminEmail || '').toLowerCase().trim();
+  const empId = employee._id || employee.id || employee.employeeId;
+  const name = employee.name || `${employee.firstName || ''} ${employee.lastName || ''}`.trim();
   const token = localStorage.getItem('authToken');
 
-  // 1. Update local storage list immediately
+  // 1. Collect all target identifiers and email variations
+  const targets = [email, adminEmail].filter(Boolean);
+  const cleanName = String(name || '').toLowerCase().trim();
+  const nameParts = cleanName.split(/\s+/).filter((p) => p.length >= 3);
+  const emailPrefixes = targets.map((t) => t.split('@')[0].replace(/[0-9._-]/g, '')).filter((p) => p.length >= 3);
+  const allKeywords = Array.from(new Set([...nameParts, ...emailPrefixes]));
+
+  // Update local storage list immediately
   const current = getShopAllowedEmployees();
   let next = [];
   if (grant) {
-    next = Array.from(new Set([...current, email]));
+    next = Array.from(new Set([...current, ...targets]));
   } else {
-    next = current.filter((e) => e !== email);
+    next = current.filter((e) => {
+      if (targets.includes(e)) return false;
+      const ePrefix = e.split('@')[0].replace(/[0-9._-]/g, '');
+      if (allKeywords.some((kw) => ePrefix.includes(kw) || kw.includes(ePrefix))) return false;
+      return true;
+    });
   }
   setShopAllowedEmployees(next);
 
-  // 2. Call dedicated backend endpoint to persist across Admin & Employee collections
+  // 2. Call dedicated backend endpoint to persist across Admin, Employee, and Account collections
+  let patchSuccess = false;
   try {
-    await axios.patch(
+    const res = await axios.patch(
       `${BACKEND_URL}/admin/shop-access/toggle`,
       {
         email,
+        adminEmail,
         shopAccess: Boolean(grant),
         employeeId: empId,
+        name,
       },
       {
         headers: { Authorization: `Bearer ${token}` },
       }
     );
+    if (res?.data?.success) patchSuccess = true;
   } catch (err) {
-    console.warn('Backend admin shop-access toggle warning:', err.message);
+    console.warn('Backend admin shop-access patch toggle warning:', err.message);
+  }
+
+  if (!patchSuccess) {
+    try {
+      await axios.put(
+        `${BACKEND_URL}/admin/shop-access/toggle`,
+        {
+          email,
+          adminEmail,
+          shopAccess: Boolean(grant),
+          employeeId: empId,
+          name,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+    } catch (err) {
+      console.warn('Backend admin shop-access put fallback warning:', err.message);
+    }
   }
 
   // 3. Also update Employee HR document if empId exists
@@ -157,14 +214,27 @@ export const toggleEmployeeShopAccess = async (employee, grant) => {
     }
   }
 
-  // 4. If current admin is the one toggled, update local Admin object
+  // 4. If current admin in localStorage matches by email, adminEmail, or name, update local Admin object
   const curAdmin = JSON.parse(localStorage.getItem('Admin') || '{}');
-  if (String(curAdmin?.email || '').toLowerCase().trim() === email) {
+  const curAdminEmail = String(curAdmin?.email || '').toLowerCase().trim();
+  const curAdminName = String(curAdmin?.name || '').toLowerCase().trim();
+  const isMe = (email && curAdminEmail === email) ||
+               (adminEmail && curAdminEmail === adminEmail) ||
+               (cleanName && curAdminName === cleanName) ||
+               (nameParts.some((p) => curAdminName.includes(p) || curAdminEmail.includes(p)));
+  if (isMe) {
     curAdmin.shopAccess = Boolean(grant);
     localStorage.setItem('Admin', JSON.stringify(curAdmin));
   }
 
-  notifyAccessChange({ type: 'shop_access_updated', email, shopAccess: Boolean(grant), allowedEmails: next });
+  notifyAccessChange({ 
+    type: 'shop_access_updated', 
+    email, 
+    adminEmail, 
+    name, 
+    shopAccess: Boolean(grant), 
+    allowedEmails: next 
+  });
   return next;
 };
 
@@ -182,8 +252,15 @@ export const fetchAllEmployeesWithShopStatus = async () => {
     if (Array.isArray(hrData)) {
       employeeList = hrData.map((emp, idx) => {
         const em = emp.email ? String(emp.email).toLowerCase().trim() : '';
-        const hasAccess = emp.shopAccess === true || (em ? allowedEmails.has(em) : false);
-        if (emp.shopAccess === true && em) allowedEmails.add(em);
+        let hasAccess = false;
+        if (typeof emp.shopAccess === 'boolean') {
+          hasAccess = emp.shopAccess;
+          if (hasAccess && em) allowedEmails.add(em);
+          else if (!hasAccess && em) allowedEmails.delete(em);
+        } else {
+          hasAccess = em ? allowedEmails.has(em) : false;
+        }
+
         const uniqueId = String(emp._id || emp.id || `hr_${emp.employeeId || idx}`);
         return {
           id: uniqueId,
@@ -217,15 +294,60 @@ export const fetchAllEmployeesWithShopStatus = async () => {
     if (Array.isArray(admins)) {
       admins.forEach((adm, idx) => {
         const em = adm.email ? String(adm.email).toLowerCase().trim() : '';
-        const existingIdx = em ? employeeList.findIndex((e) => e.email === em) : -1;
+        const admName = String(adm.name || '').toLowerCase().trim();
+        const existingIdx = employeeList.findIndex((e) => {
+          if (em && e.email === em) return true;
+          if (admName && e.name && e.name.toLowerCase().trim() === admName) return true;
+          // Match by first name if first name is >= 3 chars
+          if (admName && e.firstName && admName === e.firstName.toLowerCase().trim()) return true;
+          if (admName && e.name && (e.name.toLowerCase().includes(admName) || admName.includes(e.name.toLowerCase()))) return true;
+          // Match by email username prefix
+          const emPrefix = em.split('@')[0].replace(/[0-9._-]/g, '');
+          const ePrefix = String(e.email || '').split('@')[0].replace(/[0-9._-]/g, '');
+          if (emPrefix.length >= 3 && ePrefix.length >= 3 && (emPrefix === ePrefix || emPrefix.includes(ePrefix) || ePrefix.includes(emPrefix))) {
+            return true;
+          }
+          return false;
+        });
         const roles = adm.roles || (adm.role ? [adm.role] : []);
-        const hasAccess = adm.shopAccess === true || roles.includes('shop_admin') || (em ? allowedEmails.has(em) : false);
+        const isShopAdminOrSuper = roles.includes('superadmin') || roles.includes('shop_admin');
+
+        let hasAccess = false;
+        if (isShopAdminOrSuper) {
+          hasAccess = true;
+          if (em) allowedEmails.add(em);
+        } else if (typeof adm.shopAccess === 'boolean') {
+          hasAccess = adm.shopAccess;
+          if (hasAccess && em) allowedEmails.add(em);
+          else if (!hasAccess && em) allowedEmails.delete(em);
+        } else {
+          hasAccess = em ? allowedEmails.has(em) : false;
+        }
 
         if (existingIdx >= 0) {
-          // Merge admin roles into existing employee
-          employeeList[existingIdx].shopAccess = employeeList[existingIdx].shopAccess || hasAccess;
+          // If superadmin or shop_admin, full access is guaranteed.
+          // Otherwise, if either source is explicitly restricted (false), it MUST be restricted.
+          const hrAccess = employeeList[existingIdx].shopAccess;
+          let finalAccess = false;
+          if (isShopAdminOrSuper) {
+            finalAccess = true;
+          } else if (hrAccess === false || adm.shopAccess === false) {
+            finalAccess = false;
+          } else {
+            finalAccess = hrAccess === true || adm.shopAccess === true;
+          }
+
+          employeeList[existingIdx].shopAccess = finalAccess;
           employeeList[existingIdx].roles = roles;
           employeeList[existingIdx].adminId = adm._id || adm.id;
+          employeeList[existingIdx].adminEmail = em;
+          if (finalAccess) {
+            if (em) allowedEmails.add(em);
+            if (employeeList[existingIdx].email) allowedEmails.add(employeeList[existingIdx].email);
+          } else {
+            if (em) allowedEmails.delete(em);
+            if (employeeList[existingIdx].email) allowedEmails.delete(employeeList[existingIdx].email);
+          }
         } else {
           // Add as distinct employee entry with unique id
           const uniqueId = String(adm._id || adm.id || `adm_${idx}`);
@@ -253,16 +375,15 @@ export const fetchAllEmployeesWithShopStatus = async () => {
     console.warn('Could not fetch Admin accounts:', err.message);
   }
 
-  // Sync back any newly discovered true accesses to localStorage
+  // Sync back clean allowed set to localStorage
   const finalAllowed = Array.from(allowedEmails);
-  if (finalAllowed.length > 0) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(finalAllowed));
-    } catch {}
-  }
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(finalAllowed));
+  } catch {}
 
   return employeeList;
 };
+
 
 /**
  * Check Cloudinary status from backend
