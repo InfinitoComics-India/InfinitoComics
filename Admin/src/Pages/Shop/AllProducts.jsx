@@ -3,10 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { 
   Plus, Search, Filter, Grid3x3, List, Edit, Trash2, Eye,
   Download, FileSpreadsheet, FileText, FileCode, ChevronDown,
-  Send, Sliders, Star, Upload, Image as ImageIcon, X
+  Send, Sliders, Star, Upload, Image as ImageIcon, X, FileType
 } from 'lucide-react';
 import { message, Popconfirm, Spin, Tag, Dropdown, Modal } from 'antd';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { getAllProducts, deleteProduct, updateProduct, pushQikinkProductToStore, uploadProductImages } from '../../services/shopServices/productService';
 import { getAllCategories } from '../../services/shopServices/categoryService';
 import { BACKEND_URL } from '../../Utils/constant';
@@ -376,7 +378,89 @@ const AllProducts = () => {
     message.success('Products exported as JSON (.json)');
   };
 
+  const exportToPDF = () => {
+    const list = filteredProducts.length > 0 ? filteredProducts : products;
+    if (list.length === 0) {
+      message.warning('No products to export');
+      return;
+    }
+
+    try {
+      const doc = new jsPDF('landscape', 'pt', 'a4');
+
+      // Title & Header Branding
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(221, 18, 21); // #DD1215
+      doc.text('INFINITO COMICS — SHOP PRODUCTS REPORT', 40, 40);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      const subtitle = `Generated on: ${new Date().toLocaleString('en-IN')} | Total Products: ${list.length}`;
+      doc.text(subtitle, 40, 58);
+
+      const tableRows = list.map((p, index) => [
+        index + 1,
+        productName(p),
+        p.sku || 'N/A',
+        productCategoryName(p) || 'Uncategorized',
+        p.basePrice ? `Rs. ${p.basePrice}` : '0',
+        p.salePrice ? `Rs. ${p.salePrice}` : (p.basePrice ? `Rs. ${p.basePrice}` : '0'),
+        p.stock !== null && p.stock !== undefined ? String(p.stock) : 'N/A',
+        (p.status || 'draft').toUpperCase(),
+      ]);
+
+      autoTable(doc, {
+        startY: 72,
+        head: [['#', 'Product Name', 'SKU', 'Category', 'Base Price', 'Sale Price', 'Stock', 'Status']],
+        body: tableRows,
+        theme: 'striped',
+        headStyles: {
+          fillColor: [221, 18, 21], // #DD1215
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 9,
+        },
+        bodyStyles: {
+          fontSize: 8.5,
+          textColor: [40, 40, 40],
+        },
+        alternateRowStyles: {
+          fillColor: [250, 250, 250],
+        },
+        styles: {
+          cellPadding: 6,
+          overflow: 'linebreak',
+        },
+        columnStyles: {
+          0: { cellWidth: 28, halign: 'center' },
+          1: { cellWidth: 180 },
+          2: { cellWidth: 100 },
+          3: { cellWidth: 100 },
+          4: { cellWidth: 70, halign: 'right' },
+          5: { cellWidth: 70, halign: 'right' },
+          6: { cellWidth: 50, halign: 'center' },
+          7: { cellWidth: 65, halign: 'center' },
+        },
+        margin: { left: 40, right: 40 },
+      });
+
+      doc.save(`infinito_products_${Date.now()}.pdf`);
+      message.success('Products exported as PDF (.pdf)');
+    } catch (err) {
+      console.error('Failed to generate PDF:', err);
+      message.error('Failed to export PDF');
+    }
+  };
+
   const exportMenuItems = [
+    {
+      key: 'pdf',
+      label: 'Download PDF (.pdf)',
+      icon: <FileType className="w-4 h-4 text-red-600" />,
+      onClick: exportToPDF,
+    },
     {
       key: 'excel',
       label: 'Download Excel (.xlsx)',
