@@ -136,7 +136,7 @@ jobs:
           protocol: ftp
           security: loose
 
-      # Step 13: Deploy Foundation dist to /public_html/foundation/
+      # Step 13: Deploy Foundation page dist to /public_html/foundation/
       - name: Deploy Foundation via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
