@@ -3,13 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { 
   Plus, Search, Filter, Grid3x3, List, Edit, Trash2, Eye,
   Download, FileSpreadsheet, FileText, FileCode, ChevronDown,
-  Send, Sliders, Star, Upload, Image as ImageIcon, X, FileType
+  Sliders, Star, Upload, Image as ImageIcon, X, FileType
 } from 'lucide-react';
 import { message, Popconfirm, Spin, Tag, Dropdown, Modal } from 'antd';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { getAllProducts, deleteProduct, updateProduct, pushQikinkProductToStore, uploadProductImages } from '../../services/shopServices/productService';
+import { getAllProducts, deleteProduct, updateProduct, uploadProductImages } from '../../services/shopServices/productService';
 import { getAllCategories } from '../../services/shopServices/categoryService';
 import { BACKEND_URL } from '../../Utils/constant';
 
@@ -47,19 +47,6 @@ const AllProducts = () => {
     category: 'all',
     status: 'all',
     priceRange: 'all',
-  });
-
-  // Qikink Push to Store Modal state
-  const [qikinkPushModalOpen, setQikinkPushModalOpen] = useState(false);
-  const [pushingToStore, setPushingToStore] = useState(false);
-  const [qikinkForm, setQikinkForm] = useState({
-    name: 'INFINITO Cyber Hero Graphic T-Shirt',
-    sku: `INF-TEE-CYBER-${Date.now().toString().slice(-4)}`,
-    basePrice: 999,
-    salePrice: 849,
-    category: '',
-    image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
-    description: 'Custom print-on-demand high density apparel pushed from Qikink fulfillment.',
   });
 
   // Quick Edit Category & Images Modal state
@@ -154,32 +141,6 @@ const AllProducts = () => {
     } catch (error) {
       message.error('Failed to delete product');
       console.error(error);
-    }
-  };
-
-  // ── Qikink Push to Store Handler ──
-  const handlePushQikinkToStore = async () => {
-    try {
-      setPushingToStore(true);
-      const res = await pushQikinkProductToStore(qikinkForm);
-      const newProd = res.data?.data || res.data;
-      if (newProd) {
-        setProducts(prev => {
-          const exists = prev.some(p => p._id === newProd._id || p.sku === newProd.sku);
-          if (exists) {
-            return prev.map(p => (p._id === newProd._id || p.sku === newProd.sku) ? newProd : p);
-          }
-          return [newProd, ...prev];
-        });
-      }
-      message.success('Product successfully pushed from Qikink and reflected in All Products!');
-      setQikinkPushModalOpen(false);
-      fetchAll();
-    } catch (err) {
-      console.error(err);
-      message.error(err.response?.data?.message || err.message || 'Failed to push product from Qikink');
-    } finally {
-      setPushingToStore(false);
     }
   };
 
@@ -511,16 +472,6 @@ const AllProducts = () => {
             </button>
           </Dropdown>
 
-          <button
-            type="button"
-            onClick={() => setQikinkPushModalOpen(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-medium text-sm shadow-sm cursor-pointer"
-            title="Simulate or manually push a product from Qikink POD catalog"
-          >
-            <Send size={16} />
-            Push from Qikink
-          </button>
-
           <Link
             to="/shop/products/new"
             className="inline-flex items-center gap-2 px-4 py-2 bg-[#DD1215] text-white rounded-lg hover:bg-red-700 transition font-medium text-sm shadow-sm"
@@ -751,132 +702,7 @@ const AllProducts = () => {
           ))}
         </div>
       )}
-      {/* ── Modal 1: Push Product from Qikink to Store ── */}
-      <Modal
-        open={qikinkPushModalOpen}
-        onCancel={() => setQikinkPushModalOpen(false)}
-        title={
-          <div className="flex items-center gap-2 text-purple-700 font-bold text-lg">
-            <Send size={20} className="text-purple-600" />
-            Push Product from Qikink to Store
-          </div>
-        }
-        footer={null}
-        width={650}
-        destroyOnClose
-      >
-        <div className="space-y-4 pt-2">
-          <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg text-xs text-purple-800">
-            <strong>Print-on-Demand Instant Sync:</strong> When you push this product from Qikink, it immediately creates/updates the catalog item in the database and renders live across the store and admin panel.
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">Product Title / Name *</label>
-            <input
-              type="text"
-              value={qikinkForm.name}
-              onChange={(e) => setQikinkForm({ ...qikinkForm, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="e.g. Infinito Cyber Hero Graphic T-Shirt"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Qikink SKU / Code</label>
-              <input
-                type="text"
-                value={qikinkForm.sku}
-                onChange={(e) => setQikinkForm({ ...qikinkForm, sku: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="INF-TEE-001"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Target Category</label>
-              <select
-                value={qikinkForm.category}
-                onChange={(e) => setQikinkForm({ ...qikinkForm, category: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="">Auto-Assign / Default</option>
-                {categories.map((c) => (
-                  <option key={c._id} value={c._id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Base / MRP Price (₹) *</label>
-              <input
-                type="number"
-                value={qikinkForm.basePrice}
-                onChange={(e) => setQikinkForm({ ...qikinkForm, basePrice: Number(e.target.value) })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Website Sale Price (₹) *</label>
-              <input
-                type="number"
-                value={qikinkForm.salePrice}
-                onChange={(e) => setQikinkForm({ ...qikinkForm, salePrice: Number(e.target.value) })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">Qikink Mockup / Image URL</label>
-            <input
-              type="text"
-              value={qikinkForm.image}
-              onChange={(e) => setQikinkForm({ ...qikinkForm, image: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="https://..."
-            />
-            {qikinkForm.image && (
-              <div className="mt-2 flex items-center gap-3 p-2 bg-gray-50 border rounded-lg">
-                <img src={qikinkForm.image} alt="Mockup" className="w-12 h-12 object-cover rounded border" />
-                <span className="text-xs text-gray-500 truncate">{qikinkForm.image}</span>
-              </div>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">Description</label>
-            <textarea
-              rows={2}
-              value={qikinkForm.description}
-              onChange={(e) => setQikinkForm({ ...qikinkForm, description: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-3 border-t">
-            <button
-              type="button"
-              onClick={() => setQikinkPushModalOpen(false)}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              disabled={pushingToStore}
-              onClick={handlePushQikinkToStore}
-              className="inline-flex items-center gap-2 px-5 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 disabled:opacity-50"
-            >
-              {pushingToStore ? <Spin size="small" /> : <Send size={15} />}
-              Push to Store
-            </button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* ── Modal 2: Quick Edit Category & Website Display Images ── */}
+      {/* ── Modal: Quick Edit Category & Website Display Images ── */}
       <Modal
         open={quickEditModalOpen}
         onCancel={() => setQuickEditModalOpen(false)}
