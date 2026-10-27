@@ -8,7 +8,7 @@ import tamilNadu from "../../assets/images1/tamil nadu.png";
 const presenceItems = [
   { image: mpChhattisgarh, label: "MP & Chhattisgarh" },
   { image: biharJharkhand, label: "Bihar & Jharkhand" },
-  { image: northeast, label: "Northeast India" },
+  { image: ne, label: "Northeast India" },
   { image: himachal, label: "Himachal Pradesh" },
   { image: tamilNadu, label: "Tamil Nadu" },
 ];
