@@ -335,20 +335,40 @@ export const fetchProductReviews = async (slug) => {
     if (raw) localReviews = JSON.parse(raw);
   } catch {}
 
-  const mergedReviews = [...(remoteData?.reviews || [])];
-  localReviews.forEach((lr) => {
-    if (!mergedReviews.some((mr) => mr.createdAt === lr.createdAt && mr.userName === lr.userName)) {
-      mergedReviews.unshift(lr);
-    }
-  });
+  // Deduplicate reviews across remote and local by ID or user+comment+rating fingerprint
+  const seenIds = new Set();
+  const seenFingerprints = new Set();
+  const uniqueReviews = [];
 
-  const total = mergedReviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0);
-  const avg = mergedReviews.length > 0 ? Number((total / mergedReviews.length).toFixed(1)) : 0;
+  const addReviewIfUnique = (rev) => {
+    if (!rev) return;
+    const id = rev._id || rev.id;
+    if (id && seenIds.has(String(id))) return;
+
+    const normUser = String(rev.userName || "").trim().toLowerCase();
+    const normComment = String(rev.comment || "").trim().toLowerCase();
+    const normRating = Number(rev.rating) || 0;
+    const fingerprint = `${normUser}::${normComment}::${normRating}`;
+
+    if (seenFingerprints.has(fingerprint)) return;
+
+    if (id) seenIds.add(String(id));
+    seenFingerprints.add(fingerprint);
+    uniqueReviews.push(rev);
+  };
+
+  // Remote reviews first
+  (remoteData?.reviews || []).forEach(addReviewIfUnique);
+  // Then local reviews (only added if not already present from remote)
+  localReviews.forEach(addReviewIfUnique);
+
+  const total = uniqueReviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0);
+  const avg = uniqueReviews.length > 0 ? Number((total / uniqueReviews.length).toFixed(1)) : 0;
 
   return {
-    reviews: mergedReviews,
+    reviews: uniqueReviews,
     averageRating: avg,
-    totalRatingsCount: mergedReviews.length,
+    totalRatingsCount: uniqueReviews.length,
   };
 };
 

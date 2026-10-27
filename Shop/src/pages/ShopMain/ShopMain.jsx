@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Check, ArrowRight, Heart } from "lucide-react";
+import { useDispatch } from "react-redux";
+import { ChevronLeft, ChevronRight, Check, ArrowRight, Heart, ShoppingCart } from "lucide-react";
 import { toast } from "react-toastify";
 import {
   fetchCategories,
@@ -9,6 +10,7 @@ import {
   fallbackCategoryImages,
 } from "../../services/productService";
 import { isInWishlist, toggleWishlist } from "../../services/wishlistService";
+import { addToCart } from "../../redux/cartSlice";
 import HeroSlider from "./HeroSlider";
 import ultimateKitBanner from "../../assets/ultimateKit.svg";
 import promoBanner from "../../assets/hero/slide4.svg";
@@ -882,6 +884,7 @@ const CategoryItem = ({ cat, onClick }) => {
 
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const pid = product.slug || product._id || product.id;
   const fallback =
     fallbackCategoryImages[product.category?.toLowerCase()] ||
@@ -912,6 +915,40 @@ const ProductCard = ({ product }) => {
     }
   };
 
+  const handleAddToCart = (e) => {
+    e.stopPropagation();
+    const cleanPrice = Number(product.price || product.salePrice || product.basePrice || 1299);
+    const cleanMrp = Number(product.mrp || Math.round(cleanPrice * 1.6));
+    const effectiveSize = (Array.isArray(product.sizes) && product.sizes[0]) || "Standard";
+    const itemSku = String(product.sku || "").trim();
+    const itemImage = product.image || "";
+
+    dispatch(
+      addToCart({
+        productId: product._id || product.id,
+        size: effectiveSize,
+        sku: itemSku,
+        quantity: 1,
+        variant: {
+          size: effectiveSize,
+          price: cleanPrice,
+        },
+        product: {
+          id: product._id || product.id,
+          name: product.name || "INFINITO",
+          title: product.title || product.name || "INFINITO",
+          price: cleanPrice,
+          mrp: cleanMrp,
+          sku: itemSku,
+          image: itemImage,
+          description: product.description || "Special Edition INFINITO merchandise.",
+          rating: product.rating || 4.5,
+        },
+      })
+    );
+    toast.success(`Added ${product.title || product.name || "item"} to cart!`);
+  };
+
   return (
     <div
       onClick={() => navigate(`/product/${pid}`)}
@@ -928,20 +965,31 @@ const ProductCard = ({ product }) => {
             }
           }}
         />
-        {/* Floating Wishlist Button */}
-        <button
-          type="button"
-          onClick={handleWishlistToggle}
-          className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition shadow-md cursor-pointer ${
-            inWish
-              ? "bg-[#DD1215] text-white scale-110"
-              : "bg-white/85 hover:bg-white text-gray-700 hover:text-[#DD1215]"
-          }`}
-          title={inWish ? "Remove from Wishlist" : "Save to Wishlist"}
-          aria-label={inWish ? "Remove from Wishlist" : "Save to Wishlist"}
-        >
-          <Heart className={`w-4 h-4 ${inWish ? "fill-white text-white" : ""}`} />
-        </button>
+        {/* Floating Action Buttons: Cart & Wishlist */}
+        <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className="w-8 h-8 rounded-full bg-white/85 hover:bg-white text-gray-700 hover:text-[#DD1215] flex items-center justify-center transition shadow-md cursor-pointer"
+            title="Add to Cart"
+            aria-label="Add to Cart"
+          >
+            <ShoppingCart className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={handleWishlistToggle}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition shadow-md cursor-pointer ${
+              inWish
+                ? "bg-[#DD1215] text-white scale-110"
+                : "bg-white/85 hover:bg-white text-gray-700 hover:text-[#DD1215]"
+            }`}
+            title={inWish ? "Remove from Wishlist" : "Save to Wishlist"}
+            aria-label={inWish ? "Remove from Wishlist" : "Save to Wishlist"}
+          >
+            <Heart className={`w-4 h-4 ${inWish ? "fill-white text-white" : ""}`} />
+          </button>
+        </div>
       </div>
       <div className="p-4">
         <p className="text-xs uppercase tracking-widest text-[#DD1215] font-bold">

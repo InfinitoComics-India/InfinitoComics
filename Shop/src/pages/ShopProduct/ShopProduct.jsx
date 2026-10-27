@@ -5,6 +5,7 @@ import {
   Heart, 
   Share2, 
   ShoppingBag, 
+  ShoppingCart,
   Star, 
   ChevronRight, 
   Check, 
@@ -28,6 +29,7 @@ import {
   submitProductReview
 } from "../../services/productService";
 import { addToCart } from "../../redux/cartSlice";
+import { isInWishlist, toggleWishlist } from "../../services/wishlistService";
 
 // Safe image component with graceful fallback
 const SafeImage = ({ src, alt, className, fallback }) => {
@@ -49,44 +51,6 @@ const SafeImage = ({ src, alt, className, fallback }) => {
   );
 };
 
-const WISHLIST_KEY = "shop_wishlist";
-
-const getLocalWishlist = () => {
-  try {
-    const raw = localStorage.getItem(WISHLIST_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-};
-
-const toggleLocalWishlist = (product) => {
-  try {
-    const list = getLocalWishlist();
-    const id = product.id || product._id;
-    const exists = list.some((item) => (item.id || item._id) === id);
-    let next;
-    if (exists) {
-      next = list.filter((item) => (item.id || item._id) !== id);
-    } else {
-      next = [...list, {
-        id,
-        _id: id,
-        title: product.title || product.name,
-        price: product.price,
-        image: product.image,
-        category: product.category,
-        slug: product.slug,
-      }];
-    }
-    localStorage.setItem(WISHLIST_KEY, JSON.stringify(next));
-    window.dispatchEvent(new CustomEvent("wishlist_updated", { detail: next }));
-    return !exists;
-  } catch {
-    return false;
-  }
-};
-
 const ShopProduct = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -99,10 +63,22 @@ const ShopProduct = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wishlistVersion, setWishlistVersion] = useState(0);
   const [showSizeChart, setShowSizeChart] = useState(false);
   const [showMoreSpecs, setShowMoreSpecs] = useState(false);
   const [addedAnim, setAddedAnim] = useState(false);
+
+  useEffect(() => {
+    const handleWishSync = () => setWishlistVersion((v) => v + 1);
+    window.addEventListener("wishlist_updated", handleWishSync);
+    window.addEventListener("storage", handleWishSync);
+    return () => {
+      window.removeEventListener("wishlist_updated", handleWishSync);
+      window.removeEventListener("storage", handleWishSync);
+    };
+  }, []);
+
+  const isWishlisted = Boolean(product && isInWishlist(product.id || product._id));
 
   // Reviews state
   const [reviewsData, setReviewsData] = useState({ reviews: [], averageRating: 0, totalRatingsCount: 0 });
@@ -114,6 +90,23 @@ const ShopProduct = () => {
     headline: "",
     comment: "",
   });
+
+  // Deduplicated reviews memo to ensure no review ever appears twice
+  const displayedReviews = useMemo(() => {
+    const raw = reviewsData.reviews || [];
+    const seen = new Set();
+    const unique = [];
+    for (const r of raw) {
+      const key = r._id
+        ? String(r._id)
+        : `${String(r.userName || "").trim().toLowerCase()}::${String(r.comment || "").trim().toLowerCase()}::${r.rating}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(r);
+      }
+    }
+    return unique;
+  }, [reviewsData.reviews]);
 
   // Pincode Delivery Estimator state
   const [pincodeInput, setPincodeInput] = useState(() => {
@@ -176,11 +169,6 @@ const ShopProduct = () => {
         setProduct(p);
 
         if (p) {
-          // Initialize wishlist status
-          const wishlist = getLocalWishlist();
-          const inWish = wishlist.some((w) => (w.id || w._id) === (p.id || p._id));
-          setIsWishlisted(inWish);
-
           // Initialize reviews
           const revs = await fetchProductReviews(p.slug || slug);
           if (!cancelled) {
@@ -350,7 +338,7 @@ const ShopProduct = () => {
 
   // Star breakdown calculation from real reviews
   const ratingStats = useMemo(() => {
-    const list = reviewsData.reviews || [];
+    const list = displayedReviews;
     const counts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
     list.forEach((r) => {
       const star = Math.min(5, Math.max(1, Math.round(Number(r.rating) || 5)));
@@ -433,8 +421,8 @@ const ShopProduct = () => {
 
   const handleToggleWishlist = () => {
     if (!product) return;
-    const added = toggleLocalWishlist(product);
-    setIsWishlisted(added);
+    const added = toggleWishlist(product);
+    setWishlistVersion((v) => v + 1);
     if (added) {
       toast.success("Added to Wishlist!");
     } else {
@@ -531,12 +519,12 @@ const ShopProduct = () => {
         <nav className="flex items-center gap-2 text-xs text-gray-500 mb-6 uppercase tracking-wider font-medium">
           <Link to="/" className="hover:text-black transition">Home</Link>
           <ChevronRight size={12} className="text-gray-400" />
-          <Link to="/shop" className="hover:text-black transition">Shop</Link>
+          <Link to="/products" className="hover:text-black transition">Shop</Link>
           {product.category && (
             <>
               <ChevronRight size={12} className="text-gray-400" />
               <Link 
-                to={`/shop/category/${product.category}`} 
+                to={`/category/${product.categorySlug || product.category}`} 
                 className="hover:text-black transition"
               >
                 {product.categoryName || product.category}
@@ -787,81 +775,7 @@ const ShopProduct = () => {
               </div>
             )}
 
-            {/* DELIVERY OPTIONS & PINCODE ESTIMATOR (Myntra Standard) */}
-            <div className="my-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-              <div className="flex items-center justify-between mb-2.5">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
-                  <Truck size={15} className="text-[#DD1215]" />
-                  Delivery Options
-                </h4>
-                {pincodeResult && (
-                  <button
-                    type="button"
-                    onClick={() => { setPincodeResult(null); setPincodeInput(""); }}
-                    className="text-[11px] text-[#DD1215] font-bold hover:underline cursor-pointer"
-                  >
-                    Change
-                  </button>
-                )}
-              </div>
 
-              {!pincodeResult ? (
-                <form onSubmit={handleCheckPincode} className="space-y-2">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      maxLength={6}
-                      value={pincodeInput}
-                      onChange={(e) => setPincodeInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                      placeholder="Enter 6-digit Pincode (e.g. 110001)"
-                      className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-[#DD1215]"
-                    />
-                    <button
-                      type="submit"
-                      disabled={isCheckingPincode}
-                      className="px-4 py-2 bg-black hover:bg-gray-800 text-white font-bold text-xs uppercase tracking-wider rounded transition cursor-pointer"
-                    >
-                      {isCheckingPincode ? "Checking..." : "Check"}
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-gray-500">
-                    Enter PIN code to check delivery time & Cash on Delivery availability
-                  </p>
-                </form>
-              ) : (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-gray-900 flex items-center gap-1.5">
-                      <CheckCircle2 size={14} className="text-emerald-600" />
-                      Get it by <span className="text-[#DD1215]">{deliveryEstimateDate}</span>
-                    </span>
-                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-extrabold rounded">
-                      FREE EXPRESS
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-gray-600">
-                    Dispatched from Infinito Central Hub to PIN <strong>{pincodeResult.code}</strong>.
-                  </p>
-                </div>
-              )}
-
-              <div className="mt-3 pt-3 border-t border-gray-200/80 space-y-1.5 text-[11px] text-gray-600">
-                <div className="flex items-center gap-2">
-                  <Check size={12} className="text-emerald-600" />
-                  <span>100% Original Products directly from Infinito Comics</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check size={12} className="text-emerald-600" />
-                  <span>Pay on Delivery may be available</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <RotateCcw size={12} className="text-emerald-600" />
-                  <span>Easy 7-day returns & exchanges</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="h-px bg-gray-200 my-6" />
 
             {/* 8. PRODUCT DETAILS & SPECIFICATIONS (as in ss4) */}
             <div>
@@ -987,9 +901,9 @@ const ShopProduct = () => {
 
             {/* Right: Reviews List */}
             <div className="md:col-span-7">
-              {reviewsData.reviews.length > 0 ? (
+              {displayedReviews.length > 0 ? (
                 <div className="space-y-4">
-                  {reviewsData.reviews.map((rev, idx) => (
+                  {displayedReviews.map((rev, idx) => (
                     <div
                       key={idx}
                       className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm space-y-2"
@@ -1091,8 +1005,46 @@ const ShopProduct = () => {
                         src={itemImg}
                         alt={item.title || item.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        fallback={fallbackImg}
+                        fallback={fallbackCategoryImages["tshirts"]}
                       />
+
+                      {/* Floating Action Buttons: Cart & Wishlist */}
+                      <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-10">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddToCart(item);
+                          }}
+                          className="w-7 h-7 rounded-full bg-white/85 hover:bg-white text-gray-700 hover:text-[#DD1215] flex items-center justify-center transition shadow-md cursor-pointer"
+                          title="Add to Cart"
+                          aria-label="Add to Cart"
+                        >
+                          <ShoppingCart className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const added = toggleWishlist(item);
+                            setWishlistVersion((v) => v + 1);
+                            if (added) {
+                              toast.success("Added to Wishlist!");
+                            } else {
+                              toast.info("Removed from Wishlist");
+                            }
+                          }}
+                          className={`w-7 h-7 rounded-full flex items-center justify-center transition shadow-md cursor-pointer ${
+                            isInWishlist(item._id || item.id)
+                              ? "bg-[#DD1215] text-white scale-110"
+                              : "bg-white/85 hover:bg-white text-gray-700 hover:text-[#DD1215]"
+                          }`}
+                          title={isInWishlist(item._id || item.id) ? "Remove from Wishlist" : "Save to Wishlist"}
+                          aria-label={isInWishlist(item._id || item.id) ? "Remove from Wishlist" : "Save to Wishlist"}
+                        >
+                          <Heart className={`w-3.5 h-3.5 ${isInWishlist(item._id || item.id) ? "fill-white text-white" : ""}`} />
+                        </button>
+                      </div>
 
                       {/* Myntra-style Rating pill floating on image */}
                       <div className="absolute bottom-2.5 left-2.5 px-2 py-0.5 bg-white/90 backdrop-blur-sm rounded text-[11px] font-bold text-gray-900 flex items-center gap-1 shadow-sm">
@@ -1140,7 +1092,7 @@ const ShopProduct = () => {
               {product.category && (
                 <button
                   type="button"
-                  onClick={() => navigate(`/shop/category/${product.category}`)}
+                  onClick={() => navigate(`/category/${product.categorySlug || product.category}`)}
                   className="w-full sm:w-auto px-6 py-3 border-2 border-black text-black hover:bg-black hover:text-white font-bold text-xs uppercase tracking-wider transition rounded cursor-pointer"
                 >
                   View All From This Category
@@ -1149,7 +1101,7 @@ const ShopProduct = () => {
 
               <button
                 type="button"
-                onClick={() => navigate("/shop")}
+                onClick={() => navigate("/products")}
                 className="w-full sm:w-auto px-8 py-3 bg-[#DD1215] hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider transition rounded shadow cursor-pointer"
               >
                 View All Products

@@ -16,6 +16,8 @@ const loadCart = () => {
 const saveCart = (items) => {
   try {
     localStorage.setItem(CART_KEY, JSON.stringify(items));
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new CustomEvent("cart_updated", { detail: items }));
   } catch {}
 };
 
@@ -76,6 +78,21 @@ const cartSlice = createSlice({
         saveCart(state.items);
       }
     },
+    updateColor: (state, action) => {
+      const { productId, size, newColor } = action.payload;
+      const item = state.items.find(
+        (i) => i.productId === productId && i.size === size
+      );
+      if (item) {
+        if (!item.variant) item.variant = {};
+        item.variant.color = newColor;
+        item.color = newColor;
+        if (item.product) {
+          item.product.color = newColor;
+        }
+        saveCart(state.items);
+      }
+    },
   },
 });
 
@@ -86,5 +103,6 @@ export const {
   clearCart,
   setCart,
   updateSize,
+  updateColor,
 } = cartSlice.actions;
 export default cartSlice.reducer;
