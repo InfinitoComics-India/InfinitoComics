@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Check, ArrowRight, Heart } from "lucide-react";
+import { useDispatch } from "react-redux";
+import { ChevronLeft, ChevronRight, Check, ArrowRight, Heart, ShoppingCart } from "lucide-react";
 import { toast } from "react-toastify";
 import {
   fetchCategories,
@@ -9,6 +10,7 @@ import {
   fallbackCategoryImages,
 } from "../../services/productService";
 import { isInWishlist, toggleWishlist } from "../../services/wishlistService";
+import { addToCart } from "../../redux/cartSlice";
 import HeroSlider from "./HeroSlider";
 import ultimateKitBanner from "../../assets/ultimateKit.svg";
 import promoBanner from "../../assets/hero/slide4.svg";
@@ -115,8 +117,40 @@ const ShopMain = () => {
     };
   });
 
+  const [characters, setCharacters] = useState([
+    { id: '1', name: 'Dead Shot' },
+    { id: '2', name: 'Mystery Man' },
+    { id: '3', name: 'The Wild Shot' },
+    { id: '4', name: 'White women' },
+  ]);
+  const [selectedCharacter, setSelectedCharacter] = useState('Dead Shot');
+
   useEffect(() => {
     let cancelled = false;
+    (async () => {
+      try {
+        const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+        const bases = isLocal
+          ? ['http://localhost:5000', 'https://infinitocomics-68cr.onrender.com']
+          : ['https://infinitocomics-68cr.onrender.com', 'http://localhost:5000'];
+
+        for (const base of bases) {
+          try {
+            const charRes = await fetch(`${base}/character/list`).then(r => r.ok ? r.json() : null);
+            if (!cancelled && charRes?.success && Array.isArray(charRes.data) && charRes.data.length > 0) {
+              const list = charRes.data.map(c => ({
+                id: c.characterId || c._id || c.id,
+                name: c.characterName || c.knownAs || c.originalName || 'Hero',
+              }));
+              setCharacters(list);
+              if (list[0]?.name) setSelectedCharacter(list[0].name);
+              break;
+            }
+          } catch {}
+        }
+      } catch {}
+    })();
+
     (async () => {
       try {
         const [cats, prods] = await Promise.all([
@@ -485,12 +519,12 @@ const ShopMain = () => {
               {ultimateKit.sectionTitle || "ULTIMATE KIT"}
             </h2>
 
-            <div className="bg-white rounded-3xl border-2 border-gray-300 shadow-md p-4 sm:p-6 transition hover:shadow-xl">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-                {/* Left Image / No-Photo Area */}
-                <div className="lg:col-span-7 bg-linear-to-b from-gray-50 via-white to-gray-100 rounded-2xl border border-gray-200 overflow-hidden flex items-center justify-center p-3 sm:p-4 min-h-[260px] md:min-h-[340px]">
+            <div className="bg-white rounded-3xl border-2 border-gray-300 shadow-md overflow-hidden transition hover:shadow-xl">
+              <div className="grid grid-cols-1 md:grid-cols-2 items-stretch">
+                {/* Left Image / No-Photo Area - Exact 50% Half */}
+                <div className="w-full h-full min-h-[380px] md:min-h-[460px] bg-gradient-to-br from-gray-50 via-white to-gray-100 border-b md:border-b-0 md:border-r border-gray-200 overflow-hidden flex items-center justify-center relative">
                   {ultimateKit.noPhoto || ultimateKit.image === "no_photo" ? (
-                    <div className="w-full h-full min-h-[260px] rounded-xl bg-gradient-to-tr from-gray-900 via-gray-800 to-red-950 p-6 sm:p-8 flex flex-col items-center justify-center text-center text-white space-y-4">
+                    <div className="w-full h-full min-h-[380px] md:min-h-[460px] bg-gradient-to-tr from-gray-900 via-gray-800 to-red-950 p-6 sm:p-8 flex flex-col items-center justify-center text-center text-white space-y-4">
                       <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 text-[#DD1215] shadow-lg">
                         <Gift className="w-8 h-8 text-red-400" />
                       </div>
@@ -531,13 +565,13 @@ const ShopMain = () => {
                     <img
                       src={kitImg}
                       alt={kitTitle}
-                      className="w-full h-full max-h-[380px] object-contain transition-transform duration-300 hover:scale-[1.02]"
+                      className="w-full h-full object-cover transition-transform duration-300 hover:scale-[1.02]"
                     />
                   )}
                 </div>
 
                 {/* Right Info & Checkout Area */}
-                <div className="lg:col-span-5 flex flex-col justify-between py-1">
+                <div className="flex flex-col justify-between p-6 sm:p-8">
                   <div>
                     {/* Header: Badge + Card Title, Prices */}
                     <div className="flex items-start justify-between gap-4 pb-4 border-b border-gray-200">
@@ -562,8 +596,35 @@ const ShopMain = () => {
                       </div>
                     </div>
 
+                    {/* Character Selection Dropdown above Comic of Choice */}
+                    <div className="mt-4 mb-3 p-3.5 bg-red-50/70 border-2 border-red-100 rounded-2xl">
+                      <label className="block text-xs font-black text-gray-900 uppercase tracking-wide mb-1.5 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5 text-[#DD1215]">
+                          <Sparkles className="w-4 h-4 text-[#DD1215]" />
+                          Choose Comic Character:
+                        </span>
+                        <span className="text-[10px] font-bold text-gray-500 bg-white px-2 py-0.5 rounded-full border border-red-200 uppercase tracking-wider">
+                          Comic of your choice
+                        </span>
+                      </label>
+                      <select
+                        value={selectedCharacter}
+                        onChange={(e) => setSelectedCharacter(e.target.value)}
+                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm font-bold bg-white text-gray-900 border-2 border-red-200 rounded-xl focus:outline-none focus:border-[#DD1215] focus:ring-1 focus:ring-[#DD1215] cursor-pointer shadow-xs transition"
+                      >
+                        {characters.map((char) => (
+                          <option key={char.id || char.name} value={char.name}>
+                            {char.name} (Comic Edition)
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-[11px] text-gray-500 mt-1.5 font-medium">
+                        ✨ Your Ultimate Kit includes the physical comic book featuring your chosen character.
+                      </p>
+                    </div>
+
                     {/* Checklist features */}
-                    <ul className="py-5 space-y-3">
+                    <ul className="py-2 space-y-2.5">
                       {(ultimateKit.features && ultimateKit.features.length > 0
                         ? ultimateKit.features
                         : [
@@ -573,22 +634,27 @@ const ShopMain = () => {
                             "Superhero Stickers",
                             "Infinito T-shirt",
                           ]
-                      ).map((feature, idx) => (
-                        <li
-                          key={idx}
-                          className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-gray-900"
-                        >
-                          <span className="w-4 h-4 rounded-full border-2 border-[#DD1215] text-[#DD1215] flex items-center justify-center shrink-0">
-                            <Check className="w-2.5 h-2.5 stroke-[3.5]" />
-                          </span>
-                          <span>{feature}</span>
-                        </li>
-                      ))}
+                      ).map((feature, idx) => {
+                        const isComicChoice = feature.toLowerCase().includes("comic of");
+                        return (
+                          <li
+                            key={idx}
+                            className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-gray-900"
+                          >
+                            <span className="w-4 h-4 rounded-full border-2 border-[#DD1215] text-[#DD1215] flex items-center justify-center shrink-0">
+                              <Check className="w-2.5 h-2.5 stroke-[3.5]" />
+                            </span>
+                            <span>
+                              {feature} {isComicChoice && <strong className="text-[#DD1215]">({selectedCharacter})</strong>}
+                            </span>
+                          </li>
+                        );
+                      })}
                     </ul>
 
                     {/* Included Bundled Products pills */}
                     {Array.isArray(ultimateKit.includedProducts) && ultimateKit.includedProducts.length > 0 && (
-                      <div className="pt-2 pb-4 border-t border-gray-100">
+                      <div className="pt-3 pb-3 border-t border-gray-100">
                         <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-2 flex items-center gap-1.5">
                           <Package className="w-3.5 h-3.5 text-[#DD1215]" />
                           <span>Includes {ultimateKit.includedProducts.length} Store Items:</span>
@@ -614,24 +680,27 @@ const ShopMain = () => {
                           size: "Standard",
                           quantity: 1,
                           unitPrice: Number(kitSalePrice) || 1999,
+                          selectedCharacter: selectedCharacter,
                           product: {
                             _id: "ultimate-kit",
-                            title: kitTitle,
+                            title: `${kitTitle} (${selectedCharacter})`,
                             price: Number(kitSalePrice) || 1999,
                             images: [kitImg],
-                            description: (ultimateKit.features || []).join(", "),
+                            selectedCharacter: selectedCharacter,
+                            description: `Selected Comic Character: ${selectedCharacter}. ${(ultimateKit.features || []).join(", ")}`,
                             includedProducts: ultimateKit.includedProducts || [],
                           },
                         };
                         try {
                           localStorage.setItem("checkout_items", JSON.stringify([kitItem]));
                           localStorage.setItem("checkout_mode", "single");
+                          localStorage.setItem("ultimate_kit_character", selectedCharacter);
                         } catch (e) {
                           console.error(e);
                         }
-                        navigate("/checkout?mode=single&productId=ultimate-kit");
+                        navigate(`/checkout?mode=single&productId=ultimate-kit&character=${encodeURIComponent(selectedCharacter)}`);
                       }}
-                      className="w-full py-3.5 px-6 rounded-lg bg-[#DD1215] hover:bg-red-700 active:scale-[0.99] text-white font-black text-sm md:text-base tracking-wider transition-all duration-150 shadow-md hover:shadow-lg cursor-pointer flex items-center justify-center gap-2"
+                      className="w-full py-3.5 px-6 rounded-lg bg-[#DD1215] hover:bg-red-700 active:scale-[0.99] text-white font-black text-sm md:text-base tracking-wider transition-all duration-150 shadow-md hover:shadow-lg cursor-pointer flex items-center justify-center gap-2 uppercase"
                     >
                       <span>{ultimateKit.buttonText || "Get Now"}</span>
                     </button>
@@ -815,6 +884,7 @@ const CategoryItem = ({ cat, onClick }) => {
 
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const pid = product.slug || product._id || product.id;
   const fallback =
     fallbackCategoryImages[product.category?.toLowerCase()] ||
@@ -845,6 +915,40 @@ const ProductCard = ({ product }) => {
     }
   };
 
+  const handleAddToCart = (e) => {
+    e.stopPropagation();
+    const cleanPrice = Number(product.price || product.salePrice || product.basePrice || 1299);
+    const cleanMrp = Number(product.mrp || Math.round(cleanPrice * 1.6));
+    const effectiveSize = (Array.isArray(product.sizes) && product.sizes[0]) || "Standard";
+    const itemSku = String(product.sku || "").trim();
+    const itemImage = product.image || "";
+
+    dispatch(
+      addToCart({
+        productId: product._id || product.id,
+        size: effectiveSize,
+        sku: itemSku,
+        quantity: 1,
+        variant: {
+          size: effectiveSize,
+          price: cleanPrice,
+        },
+        product: {
+          id: product._id || product.id,
+          name: product.name || "INFINITO",
+          title: product.title || product.name || "INFINITO",
+          price: cleanPrice,
+          mrp: cleanMrp,
+          sku: itemSku,
+          image: itemImage,
+          description: product.description || "Special Edition INFINITO merchandise.",
+          rating: product.rating || 4.5,
+        },
+      })
+    );
+    toast.success(`Added ${product.title || product.name || "item"} to cart!`);
+  };
+
   return (
     <div
       onClick={() => navigate(`/product/${pid}`)}
@@ -861,20 +965,31 @@ const ProductCard = ({ product }) => {
             }
           }}
         />
-        {/* Floating Wishlist Button */}
-        <button
-          type="button"
-          onClick={handleWishlistToggle}
-          className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition shadow-md cursor-pointer ${
-            inWish
-              ? "bg-[#DD1215] text-white scale-110"
-              : "bg-white/85 hover:bg-white text-gray-700 hover:text-[#DD1215]"
-          }`}
-          title={inWish ? "Remove from Wishlist" : "Save to Wishlist"}
-          aria-label={inWish ? "Remove from Wishlist" : "Save to Wishlist"}
-        >
-          <Heart className={`w-4 h-4 ${inWish ? "fill-white text-white" : ""}`} />
-        </button>
+        {/* Floating Action Buttons: Cart & Wishlist */}
+        <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className="w-8 h-8 rounded-full bg-white/85 hover:bg-white text-gray-700 hover:text-[#DD1215] flex items-center justify-center transition shadow-md cursor-pointer"
+            title="Add to Cart"
+            aria-label="Add to Cart"
+          >
+            <ShoppingCart className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={handleWishlistToggle}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition shadow-md cursor-pointer ${
+              inWish
+                ? "bg-[#DD1215] text-white scale-110"
+                : "bg-white/85 hover:bg-white text-gray-700 hover:text-[#DD1215]"
+            }`}
+            title={inWish ? "Remove from Wishlist" : "Save to Wishlist"}
+            aria-label={inWish ? "Remove from Wishlist" : "Save to Wishlist"}
+          >
+            <Heart className={`w-4 h-4 ${inWish ? "fill-white text-white" : ""}`} />
+          </button>
+        </div>
       </div>
       <div className="p-4">
         <p className="text-xs uppercase tracking-widest text-[#DD1215] font-bold">

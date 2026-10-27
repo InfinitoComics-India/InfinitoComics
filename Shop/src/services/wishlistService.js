@@ -35,6 +35,10 @@ export const normalizeWishlistItem = (product) => {
     mrp,
     slug,
     sizes,
+    colors: Array.isArray(product.colors) && product.colors.length > 0
+      ? product.colors
+      : ["Black", "Crimson Red", "White", "Navy"],
+    color: product.color || product.variant?.color || "Black",
     category,
     inStock: product.inStock !== false,
   };
@@ -75,7 +79,7 @@ export const addToWishlist = (product) => {
     try {
       localStorage.setItem(WISHLIST_KEY, JSON.stringify(updated));
       window.dispatchEvent(new CustomEvent("wishlist_updated", { detail: updated }));
-    } catch {}
+    } catch { }
     return updated;
   }
   return list;
@@ -89,7 +93,7 @@ export const removeFromWishlist = (productId) => {
   try {
     localStorage.setItem(WISHLIST_KEY, JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent("wishlist_updated", { detail: updated }));
-  } catch {}
+  } catch { }
   return updated;
 };
 
@@ -110,6 +114,6 @@ export const clearWishlist = () => {
   try {
     localStorage.removeItem(WISHLIST_KEY);
     window.dispatchEvent(new CustomEvent("wishlist_updated", { detail: [] }));
-  } catch {}
+  } catch { }
   return [];
 };

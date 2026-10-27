@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { Heart, ShoppingBag, Trash2, ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
+import { Heart, ShoppingBag, Trash2, ArrowLeft, ArrowRight, Sparkles, Plus, Minus } from "lucide-react";
 import { addToCart } from "../../redux/cartSlice.js";
 import { getWishlist, removeFromWishlist, clearWishlist } from "../../services/wishlistService.js";
 import { toast } from "react-toastify";
@@ -10,8 +10,14 @@ const WishlistCard = ({ prod, onRemove, onMoveToBag, navigate }) => {
   const pid = prod.id || prod._id;
   const availableSizes = Array.isArray(prod.sizes) && prod.sizes.length > 0
     ? prod.sizes
-    : ["S", "M", "L", "XL"];
+    : ["XS", "S", "M", "L", "XL", "XXL"];
   const [selectedSize, setSelectedSize] = useState(prod.size || availableSizes[0] || "M");
+
+  const availableColors = Array.isArray(prod.colors) && prod.colors.length > 0
+    ? prod.colors
+    : ["Black", "Crimson Red", "White", "Navy"];
+  const [selectedColor, setSelectedColor] = useState(prod.color || availableColors[0] || "Black");
+  const [quantity, setQuantity] = useState(1);
 
   const img =
     prod.image ||
@@ -93,11 +99,10 @@ const WishlistCard = ({ prod, onRemove, onMoveToBag, navigate }) => {
                   key={sz}
                   type="button"
                   onClick={() => setSelectedSize(sz)}
-                  className={`px-2 py-0.5 text-[11px] font-bold rounded transition cursor-pointer ${
-                    selectedSize === sz
-                      ? "bg-black text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
+                  className={`px-2 py-0.5 text-[11px] font-bold rounded transition cursor-pointer ${selectedSize === sz
+                    ? "bg-black text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
                 >
                   {sz}
                 </button>
@@ -106,13 +111,82 @@ const WishlistCard = ({ prod, onRemove, onMoveToBag, navigate }) => {
           </div>
         )}
 
-        <div className="mt-auto pt-4 flex gap-2">
+        {/* Color Selector */}
+        {availableColors.length > 0 && (
+          <div className="mt-2.5">
+            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider block mb-1">
+              Select Color:
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {availableColors.map((clr) => {
+                const isSelected = String(selectedColor).toLowerCase() === clr.toLowerCase();
+                return (
+                  <button
+                    key={clr}
+                    type="button"
+                    onClick={() => setSelectedColor(clr)}
+                    className={`px-2 py-0.5 text-[11px] font-bold rounded transition cursor-pointer flex items-center gap-1 ${isSelected
+                      ? "bg-black text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full border border-gray-300 ${clr.toLowerCase().includes("black")
+                        ? "bg-black"
+                        : clr.toLowerCase().includes("red")
+                          ? "bg-[#DD1215]"
+                          : clr.toLowerCase().includes("white")
+                            ? "bg-white"
+                            : clr.toLowerCase().includes("navy")
+                              ? "bg-blue-900"
+                              : "bg-gray-400"
+                        }`}
+                    />
+                    {clr}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Quantity Selector */}
+        <div className="mt-2.5 flex items-center justify-between">
+          <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+            Quantity:
+          </span>
+          <div className="flex items-center border border-gray-200 rounded overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+              disabled={quantity <= 1}
+              className="w-6 h-6 flex items-center justify-center bg-gray-50 hover:bg-gray-100 disabled:opacity-40 transition font-bold text-gray-700 cursor-pointer"
+              title="Decrease quantity"
+            >
+              <Minus size={11} />
+            </button>
+            <span className="w-7 text-center font-bold text-xs text-black">
+              {quantity}
+            </span>
+            <button
+              type="button"
+              onClick={() => setQuantity((q) => q + 1)}
+              className="w-6 h-6 flex items-center justify-center bg-gray-50 hover:bg-gray-100 transition font-bold text-gray-700 cursor-pointer"
+              title="Increase quantity"
+            >
+              <Plus size={11} />
+            </button>
+          </div>
+        </div>
+
+        {/* Move to Bag Button */}
+        <div className="mt-auto pt-3 flex gap-2">
           <button
             type="button"
-            onClick={() => onMoveToBag({ ...prod, size: selectedSize })}
+            onClick={() => onMoveToBag({ ...prod, size: selectedSize, color: selectedColor, quantity })}
             className="flex-1 bg-black hover:bg-[#DD1215] text-white font-bold text-xs uppercase tracking-wider py-2.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer shadow-sm"
           >
-            <ShoppingBag size={14} /> Move to Bag ({selectedSize})
+            <ShoppingBag size={14} /> Move to Bag ({selectedSize} • {selectedColor})
           </button>
         </div>
       </div>
@@ -152,16 +226,32 @@ const Wishlist = () => {
   const handleMoveToBag = (product) => {
     const pid = product.id || product._id;
     const size = product.size || (product.sizes && product.sizes[0]) || "M";
+    const color = product.color || "Black";
+    const quantity = Number(product.quantity) || 1;
+    const cleanPrice = Number(product.salePrice || product.price || 1299);
+    const cleanMrp = Number(product.originalPrice || product.mrp || Math.round(cleanPrice * 1.6));
+
     dispatch(
       addToCart({
         productId: pid,
         size,
-        quantity: 1,
-        product,
+        quantity,
+        variant: {
+          size,
+          color,
+          price: cleanPrice,
+        },
+        product: {
+          ...product,
+          id: pid,
+          color,
+          price: cleanPrice,
+          mrp: cleanMrp,
+        },
       })
     );
     removeFromWishlist(pid);
-    toast.success(`Added ${product.name || product.title || "Product"} (${size}) to bag!`);
+    toast.success(`Moved ${product.name || product.title || "Product"} (${size}, ${color}) to bag!`);
   };
 
   return (

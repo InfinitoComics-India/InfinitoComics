@@ -755,6 +755,11 @@ const OrderDetail = () => {
                           />
                           <div>
                             <p className="font-bold text-gray-900 text-sm leading-snug">{item.name}</p>
+                            {(item.selectedCharacter || item.product?.selectedCharacter || item.character) && (
+                              <p className="text-xs font-bold text-[#DD1215] mt-0.5">
+                                ★ Comic Choice: {item.selectedCharacter || item.product?.selectedCharacter || item.character}
+                              </p>
+                            )}
                             <p className="text-xs text-gray-400 font-mono mt-0.5">SKU: {item.sku || 'INF-SKU'}</p>
                           </div>
                         </div>

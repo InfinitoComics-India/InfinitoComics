@@ -158,34 +158,40 @@ const InfinitoUltimateKit = ({ kit: propKit, onBuyNow }) => {
 
       {/* Features */}
       <div className="p-6 space-y-3 flex-grow">
-        {/* Character Selection Dropdown */}
-        <div className="mb-4">
-          <div className="flex items-start gap-3 mb-2">
-            <div className="flex-shrink-0 mt-0.5">
-              <div className="w-5 h-5 rounded-full border-2 border-[#DD1215] flex items-center justify-center">
-                <CircleCheck size={14} color="#DD1215" strokeWidth={3} />
-              </div>
-            </div>
-            <span className="text-sm text-black font-medium">Character of your choice</span>
+        {/* Comic Character Selection Dropdown above Comic of Choice */}
+        <div className="mb-4 p-3.5 bg-red-50/70 border-2 border-red-100 rounded-xl">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs font-black text-gray-900 uppercase tracking-wide flex items-center gap-1.5">
+              <span className="w-4 h-4 rounded-full border-2 border-[#DD1215] flex items-center justify-center">
+                <CircleCheck size={11} color="#DD1215" strokeWidth={3} />
+              </span>
+              Choose Comic Character:
+            </span>
+            <span className="text-[10px] font-bold text-[#DD1215] bg-red-100 px-2 py-0.5 rounded-full uppercase tracking-wider">
+              Comic of your choice
+            </span>
           </div>
           
           {isLoadingCharacters ? (
-            <div className="ml-8 text-xs text-gray-500">Loading characters...</div>
+            <div className="text-xs text-gray-500 py-1">Loading characters...</div>
           ) : characters.length > 0 ? (
             <select
               value={selectedCharacter || ""}
               onChange={(e) => setSelectedCharacter(e.target.value)}
-              className="ml-8 w-[calc(100%-2rem)] text-sm border border-gray-300 px-3 py-2 rounded focus:outline-none focus:border-[#DD1215]"
+              className="w-full text-xs sm:text-sm font-bold bg-white text-gray-900 border-2 border-red-200 px-3 py-2 rounded-lg focus:outline-none focus:border-[#DD1215] cursor-pointer shadow-xs transition"
             >
               {characters.map((character) => (
                 <option key={character._id} value={character._id}>
-                  {character.knownAs || character.originalName}
+                  {(character.knownAs || character.originalName)} (Comic Edition)
                 </option>
               ))}
             </select>
           ) : (
-            <div className="ml-8 text-xs text-gray-500">No characters available</div>
+            <div className="text-xs text-gray-500 py-1">Standard Comic Edition Included</div>
           )}
+          <p className="text-[10px] text-gray-500 mt-1 font-medium">
+            ✨ Physical comic book featuring your chosen superhero included in this kit.
+          </p>
         </div>
 
         {/* Dynamic Checklist Features */}

@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronDown, ChevronUp, Heart } from "lucide-react";
+import { useDispatch } from "react-redux";
+import { ChevronDown, ChevronUp, Heart, ShoppingCart } from "lucide-react";
 import { toast } from "react-toastify";
 import {
   fetchCategories,
   fetchProductsByCategory,
 } from "../../services/productService";
 import { isInWishlist, toggleWishlist } from "../../services/wishlistService";
+import { addToCart } from "../../redux/cartSlice";
 
 // Sidebar filter definitions. Sort options and generic filter categories are
 // kept static because they don't depend on backend data — the actual product
@@ -44,6 +46,7 @@ const ProductImage = ({ src, alt, className }) => {
 };
 
 const CategoryProductCard = ({ product, navigate }) => {
+  const dispatch = useDispatch();
   const pid = product.slug || product._id || product.id;
   const [inWish, setInWish] = useState(() => isInWishlist(product._id || product.id));
 
@@ -68,6 +71,40 @@ const CategoryProductCard = ({ product, navigate }) => {
     }
   };
 
+  const handleAddToCart = (e) => {
+    e.stopPropagation();
+    const cleanPrice = Number(product.price || product.salePrice || product.basePrice || 1299);
+    const cleanMrp = Number(product.mrp || Math.round(cleanPrice * 1.6));
+    const effectiveSize = (Array.isArray(product.sizes) && product.sizes[0]) || "Standard";
+    const itemSku = String(product.sku || "").trim();
+    const itemImage = product.image || "";
+
+    dispatch(
+      addToCart({
+        productId: product._id || product.id,
+        size: effectiveSize,
+        sku: itemSku,
+        quantity: 1,
+        variant: {
+          size: effectiveSize,
+          price: cleanPrice,
+        },
+        product: {
+          id: product._id || product.id,
+          name: product.name || "INFINITO",
+          title: product.title || product.name || "INFINITO",
+          price: cleanPrice,
+          mrp: cleanMrp,
+          sku: itemSku,
+          image: itemImage,
+          description: product.description || "Special Edition INFINITO merchandise.",
+          rating: product.rating || 4.5,
+        },
+      })
+    );
+    toast.success(`Added ${product.title || product.name || "item"} to cart!`);
+  };
+
   return (
     <div
       onClick={() => navigate(`/product/${pid}`)}
@@ -79,20 +116,30 @@ const CategoryProductCard = ({ product, navigate }) => {
           alt={product.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
-        {/* Floating Wishlist Button */}
-        <button
-          type="button"
-          onClick={handleWishlistToggle}
-          className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition shadow-md cursor-pointer ${
-            inWish
-              ? "bg-[#DD1215] text-white scale-110"
-              : "bg-white/85 hover:bg-white text-gray-700 hover:text-[#DD1215]"
-          }`}
-          title={inWish ? "Remove from Wishlist" : "Save to Wishlist"}
-          aria-label={inWish ? "Remove from Wishlist" : "Save to Wishlist"}
-        >
-          <Heart className={`w-4 h-4 ${inWish ? "fill-white text-white" : ""}`} />
-        </button>
+        {/* Floating Action Buttons: Cart & Wishlist */}
+        <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className="w-8 h-8 rounded-full bg-white/85 hover:bg-white text-gray-700 hover:text-[#DD1215] flex items-center justify-center transition shadow-md cursor-pointer"
+            title="Add to Cart"
+            aria-label="Add to Cart"
+          >
+            <ShoppingCart className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={handleWishlistToggle}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition shadow-md cursor-pointer ${inWish
+                ? "bg-[#DD1215] text-white scale-110"
+                : "bg-white/85 hover:bg-white text-gray-700 hover:text-[#DD1215]"
+              }`}
+            title={inWish ? "Remove from Wishlist" : "Save to Wishlist"}
+            aria-label={inWish ? "Remove from Wishlist" : "Save to Wishlist"}
+          >
+            <Heart className={`w-4 h-4 ${inWish ? "fill-white text-white" : ""}`} />
+          </button>
+        </div>
       </div>
       <div className="p-4">
         <p className="text-xs uppercase tracking-widest text-[#DD1215] font-bold">
@@ -149,17 +196,17 @@ const ShopCategory = () => {
 
         const match = Array.isArray(cats)
           ? cats.find((c) => {
-              const cSlug = String(c.slug || "").toLowerCase().trim();
-              const cName = String(c.name || "").toLowerCase().trim();
-              const cId = String(c._id || c.id || "").toLowerCase().trim();
-              return (
-                cSlug === cleanName ||
-                cName === cleanName ||
-                cId === cleanName ||
-                normalize(cSlug) === normalizedTarget ||
-                normalize(cName) === normalizedTarget
-              );
-            })
+            const cSlug = String(c.slug || "").toLowerCase().trim();
+            const cName = String(c.name || "").toLowerCase().trim();
+            const cId = String(c._id || c.id || "").toLowerCase().trim();
+            return (
+              cSlug === cleanName ||
+              cName === cleanName ||
+              cId === cleanName ||
+              normalize(cSlug) === normalizedTarget ||
+              normalize(cName) === normalizedTarget
+            );
+          })
           : null;
 
         setCategoryLabel(isAll ? "All Products" : (match?.name || categoryName));
@@ -242,9 +289,8 @@ const ShopCategory = () => {
     const selectedShopFor = selected.shopFor || [];
     if (selectedShopFor.length > 0) {
       list = list.filter((p) => {
-        const text = `${p.title || ""} ${p.name || ""} ${p.description || ""} ${
-          p.categoryName || ""
-        }`.toLowerCase();
+        const text = `${p.title || ""} ${p.name || ""} ${p.description || ""} ${p.categoryName || ""
+          }`.toLowerCase();
         return selectedShopFor.some((sf) => {
           const target = sf.toLowerCase();
           if (target === "unisex") return text.includes("unisex");
@@ -441,11 +487,10 @@ const ShopCategory = () => {
                     <button
                       key={n}
                       onClick={() => setPage(n)}
-                      className={`w-10 h-10 flex items-center justify-center rounded-md text-sm font-medium transition ${
-                        page === n
+                      className={`w-10 h-10 flex items-center justify-center rounded-md text-sm font-medium transition ${page === n
                           ? "bg-black text-white"
                           : "border border-gray-300 hover:border-gray-400"
-                      }`}
+                        }`}
                     >
                       {n}
                     </button>

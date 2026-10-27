@@ -89,10 +89,17 @@ function App() {
         <Routes>
           <Route path="/" element={<Body />}>
             <Route index element={<ShopMain />} />
+            <Route path="shop" element={<ShopMain />} />
             <Route path="products" element={<ShopCategory />} />
             <Route path="catalog" element={<ShopCategory />} />
             <Route path="category/:categoryName" element={<ShopCategory />} />
+            <Route path="category" element={<ShopCategory />} />
+            <Route path="shop/category/:categoryName" element={<ShopCategory />} />
+            <Route path="shop/category" element={<ShopCategory />} />
+            <Route path="shop/products" element={<ShopCategory />} />
+            <Route path="shop/catalog" element={<ShopCategory />} />
             <Route path="product/:productId" element={<ShopProduct />} />
+            <Route path="shop/product/:productId" element={<ShopProduct />} />
             <Route path="cart" element={<Cart />} />
             <Route path="checkout" element={<Checkout />} />
             <Route path="order-success/:orderId" element={<OrderSuccess />} />
