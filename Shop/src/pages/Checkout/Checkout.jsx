@@ -209,36 +209,50 @@ const Checkout = () => {
     setShowPaymentModal(true);
   };
 
-  const handleCompletePayment = () => {
+  const handleSelectPaymentAndProceed = (mode) => {
+    const chosenMode = mode || selectedPayment || "COD";
+    setSelectedPayment(chosenMode);
     setIsProcessingPayment(true);
 
     setTimeout(() => {
-      // 1. Create order record
-      const order = createOrder({
-        items: checkoutItems,
-        address,
-        paymentMethod: selectedPayment.toUpperCase(),
-        coupon: appliedCoupon,
-        discount: totalDiscountAmount,
-        isUltimateMember,
-        ultimateDiscount: ultimateDiscountAmount,
-      });
-
-      // 2. Remove purchased items from cart
-      if (checkoutMode === "cart") {
-        dispatch(clearCart());
-      } else {
-        checkoutItems.forEach((it) => {
-          dispatch(removeFromCart({ productId: it.productId, size: it.size }));
+      try {
+        // 1. Create order record
+        const order = createOrder({
+          items: checkoutItems,
+          address,
+          paymentMethod: chosenMode.toUpperCase(),
+          coupon: appliedCoupon,
+          discount: totalDiscountAmount,
+          isUltimateMember,
+          ultimateDiscount: ultimateDiscountAmount,
         });
+
+        // 2. Remove purchased items from cart
+        if (checkoutMode === "cart") {
+          dispatch(clearCart());
+        } else {
+          checkoutItems.forEach((it) => {
+            dispatch(removeFromCart({ productId: it.productId, size: it.size }));
+          });
+        }
+
+        setIsProcessingPayment(false);
+        setShowPaymentModal(false);
+
+        // 3. Automatically redirect to order complete page
+        const orderIdToUse = order?.id || order?.orderId || "success";
+        navigate(`/order-success/${encodeURIComponent(orderIdToUse)}`);
+      } catch (err) {
+        console.error("Error creating order:", err);
+        setIsProcessingPayment(false);
+        setShowPaymentModal(false);
+        navigate("/order-success");
       }
+    }, 600);
+  };
 
-      setIsProcessingPayment(false);
-      setShowPaymentModal(false);
-
-      // 3. Redirect to SS3 Congratulations page
-      navigate(`/order-success/${order.id}`);
-    }, 800);
+  const handleCompletePayment = () => {
+    handleSelectPaymentAndProceed(selectedPayment || "COD");
   };
 
   return (
@@ -764,10 +778,10 @@ const Checkout = () => {
             <div className="space-y-3 mb-6">
               {/* Option 1: UPI */}
               <label
-                onClick={() => setSelectedPayment("upi")}
+                onClick={() => !isProcessingPayment && handleSelectPaymentAndProceed("upi")}
                 className={`flex items-center justify-between p-3.5 border cursor-pointer transition ${
                   selectedPayment === "upi" ? "border-[#DD1215] bg-red-50/50" : "border-gray-200 hover:bg-gray-50"
-                }`}
+                } ${isProcessingPayment ? "opacity-75 pointer-events-none" : ""}`}
               >
                 <div className="flex items-center gap-3">
                   <QrCode className="w-5 h-5 text-[#DD1215]" />
@@ -780,17 +794,17 @@ const Checkout = () => {
                   type="radio"
                   name="pay_mode"
                   checked={selectedPayment === "upi"}
-                  onChange={() => setSelectedPayment("upi")}
+                  onChange={() => !isProcessingPayment && handleSelectPaymentAndProceed("upi")}
                   className="accent-[#DD1215]"
                 />
               </label>
 
               {/* Option 2: Card */}
               <label
-                onClick={() => setSelectedPayment("card")}
+                onClick={() => !isProcessingPayment && handleSelectPaymentAndProceed("card")}
                 className={`flex items-center justify-between p-3.5 border cursor-pointer transition ${
                   selectedPayment === "card" ? "border-[#DD1215] bg-red-50/50" : "border-gray-200 hover:bg-gray-50"
-                }`}
+                } ${isProcessingPayment ? "opacity-75 pointer-events-none" : ""}`}
               >
                 <div className="flex items-center gap-3">
                   <CreditCard className="w-5 h-5 text-[#DD1215]" />
@@ -803,17 +817,17 @@ const Checkout = () => {
                   type="radio"
                   name="pay_mode"
                   checked={selectedPayment === "card"}
-                  onChange={() => setSelectedPayment("card")}
+                  onChange={() => !isProcessingPayment && handleSelectPaymentAndProceed("card")}
                   className="accent-[#DD1215]"
                 />
               </label>
 
               {/* Option 3: NetBanking */}
               <label
-                onClick={() => setSelectedPayment("netbanking")}
+                onClick={() => !isProcessingPayment && handleSelectPaymentAndProceed("netbanking")}
                 className={`flex items-center justify-between p-3.5 border cursor-pointer transition ${
                   selectedPayment === "netbanking" ? "border-[#DD1215] bg-red-50/50" : "border-gray-200 hover:bg-gray-50"
-                }`}
+                } ${isProcessingPayment ? "opacity-75 pointer-events-none" : ""}`}
               >
                 <div className="flex items-center gap-3">
                   <Smartphone className="w-5 h-5 text-[#DD1215]" />
@@ -826,17 +840,17 @@ const Checkout = () => {
                   type="radio"
                   name="pay_mode"
                   checked={selectedPayment === "netbanking"}
-                  onChange={() => setSelectedPayment("netbanking")}
+                  onChange={() => !isProcessingPayment && handleSelectPaymentAndProceed("netbanking")}
                   className="accent-[#DD1215]"
                 />
               </label>
 
               {/* Option 4: COD */}
               <label
-                onClick={() => setSelectedPayment("cod")}
+                onClick={() => !isProcessingPayment && handleSelectPaymentAndProceed("cod")}
                 className={`flex items-center justify-between p-3.5 border cursor-pointer transition ${
                   selectedPayment === "cod" ? "border-[#DD1215] bg-red-50/50" : "border-gray-200 hover:bg-gray-50"
-                }`}
+                } ${isProcessingPayment ? "opacity-75 pointer-events-none" : ""}`}
               >
                 <div className="flex items-center gap-3">
                   <Banknote className="w-5 h-5 text-[#DD1215]" />
@@ -849,7 +863,7 @@ const Checkout = () => {
                   type="radio"
                   name="pay_mode"
                   checked={selectedPayment === "cod"}
-                  onChange={() => setSelectedPayment("cod")}
+                  onChange={() => !isProcessingPayment && handleSelectPaymentAndProceed("cod")}
                   className="accent-[#DD1215]"
                 />
               </label>
