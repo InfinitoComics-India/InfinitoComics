@@ -3,13 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { 
   Plus, Search, Filter, Grid3x3, List, Edit, Trash2, Eye,
   Download, FileSpreadsheet, FileText, FileCode, ChevronDown,
-  Sliders, Star, Upload, Image as ImageIcon, X, FileType
+  Sliders, Star, Upload, Image as ImageIcon, X, FileType, Sparkles
 } from 'lucide-react';
 import { message, Popconfirm, Spin, Tag, Dropdown, Modal } from 'antd';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { getAllProducts, deleteProduct, updateProduct, uploadProductImages } from '../../services/shopServices/productService';
+import { getAllProducts, deleteProduct, updateProduct, uploadProductImages, pushQikinkProductToStore } from '../../services/shopServices/productService';
 import { getAllCategories } from '../../services/shopServices/categoryService';
 import { BACKEND_URL } from '../../Utils/constant';
 
@@ -57,6 +57,102 @@ const AllProducts = () => {
   const [newImageUrl, setNewImageUrl] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [savingProduct, setSavingProduct] = useState(false);
+
+  // Qikink Quick Import Modal state
+  const [qikinkModalOpen, setQikinkModalOpen] = useState(false);
+  const [importingQikink, setImportingQikink] = useState(false);
+  const [qikinkForm, setQikinkForm] = useState({
+    productId: '',
+    name: '',
+    category: '',
+    price: '',
+    mrp: '',
+    imageUrl: '',
+    variantPreset: 'standard', // 'standard' (Bags/Caps/Free size), 'apparel' (S, M, L, XL, XXL)
+    description: '',
+  });
+
+  const handleImportFromQikink = async (e) => {
+    e?.preventDefault();
+    if (!qikinkForm.productId.trim()) {
+      message.error("Please enter the Qikink Product ID (e.g. 64980464)");
+      return;
+    }
+    if (!qikinkForm.name.trim()) {
+      message.error("Please enter the Product Name / Title (e.g. Tote Bag Non Zipper)");
+      return;
+    }
+
+    setImportingQikink(true);
+    try {
+      const priceVal = Number(qikinkForm.price) || 599;
+      const mrpVal = Number(qikinkForm.mrp) || (priceVal > 0 ? priceVal + 200 : 799);
+      
+      // Build variants based on preset
+      let variants = [];
+      if (qikinkForm.variantPreset === 'apparel') {
+        variants = [
+          {
+            name: 'Size',
+            options: [
+              { value: 'S', price: 0, stock: 50, sku: `${qikinkForm.productId.trim()}-S` },
+              { value: 'M', price: 0, stock: 50, sku: `${qikinkForm.productId.trim()}-M` },
+              { value: 'L', price: 0, stock: 50, sku: `${qikinkForm.productId.trim()}-L` },
+              { value: 'XL', price: 0, stock: 50, sku: `${qikinkForm.productId.trim()}-XL` },
+              { value: 'XXL', price: 0, stock: 50, sku: `${qikinkForm.productId.trim()}-XXL` },
+            ]
+          }
+        ];
+      } else {
+        variants = [
+          {
+            name: 'Size',
+            options: [
+              { value: 'Standard', price: 0, stock: 50, sku: `${qikinkForm.productId.trim()}-STD` }
+            ]
+          }
+        ];
+      }
+
+      // Format payload
+      const payload = {
+        name: qikinkForm.name.trim(),
+        title: qikinkForm.name.trim(),
+        sku: qikinkForm.productId.trim(),
+        price: mrpVal,
+        basePrice: mrpVal,
+        salePrice: priceVal,
+        retail_price: priceVal,
+        category: qikinkForm.category || (categories[0]?._id || 'apparel'),
+        description: qikinkForm.description.trim() || `Premium quality merchandise fulfilled by Qikink Print-on-Demand. Designed with durable materials and vibrant high-definition print quality.`,
+        images: qikinkForm.imageUrl.trim() ? [qikinkForm.imageUrl.trim()] : undefined,
+        variants,
+        stock: 100,
+        status: 'active',
+        featured: true,
+      };
+
+      await pushQikinkProductToStore(payload);
+      message.success(`Successfully imported "${qikinkForm.name}" from Qikink!`);
+      setQikinkModalOpen(false);
+      setQikinkForm({
+        productId: '',
+        name: '',
+        category: categories[0]?._id || '',
+        price: '',
+        mrp: '',
+        imageUrl: '',
+        variantPreset: 'standard',
+        description: '',
+      });
+      fetchAll();
+    } catch (err) {
+      console.error("Failed to import product from Qikink:", err);
+      message.error(err.response?.data?.message || err.message || "Failed to import from Qikink");
+    } finally {
+      setImportingQikink(false);
+    }
+  };
 
   useEffect(() => {
     fetchAll();
@@ -472,6 +568,22 @@ const AllProducts = () => {
             </button>
           </Dropdown>
 
+          <button
+            type="button"
+            onClick={() => {
+              setQikinkForm(prev => ({
+                ...prev,
+                category: prev.category || (categories[0]?._id || '')
+              }));
+              setQikinkModalOpen(true);
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white rounded-lg transition font-semibold text-sm shadow-sm cursor-pointer"
+            title="Import products created in your Qikink dashboard"
+          >
+            <Sparkles size={16} />
+            Import from Qikink
+          </button>
+
           <Link
             to="/shop/products/new"
             className="inline-flex items-center gap-2 px-4 py-2 bg-[#DD1215] text-white rounded-lg hover:bg-red-700 transition font-medium text-sm shadow-sm"
@@ -849,6 +961,210 @@ const AllProducts = () => {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* ─── QIKINK QUICK IMPORT MODAL ─── */}
+      <Modal
+        open={qikinkModalOpen}
+        onCancel={() => !importingQikink && setQikinkModalOpen(false)}
+        title={
+          <div className="flex items-center gap-3 text-gray-900 font-bold text-lg pb-2 border-b">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-orange-500 to-amber-500 flex items-center justify-center text-white shadow-sm shrink-0">
+              <Sparkles size={18} />
+            </div>
+            <div>
+              <p className="leading-tight">Import Product from Qikink</p>
+              <p className="text-xs font-normal text-gray-500">
+                Directly sync your Qikink designs into All Products without manual form entry
+              </p>
+            </div>
+          </div>
+        }
+        footer={null}
+        width={680}
+        destroyOnClose
+      >
+        <form onSubmit={handleImportFromQikink} className="space-y-4 pt-3">
+          {/* Tip Banner */}
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2.5 text-xs text-amber-900">
+            <span className="text-base leading-none">💡</span>
+            <div>
+              <span className="font-bold">From your Qikink Dashboard (Products &gt; My Products):</span>
+              <p className="text-amber-800 mt-0.5">
+                Copy the <strong>Product ID</strong> (e.g. <code className="bg-amber-100 px-1 py-0.5 rounded font-mono">64980464</code>) and name from your screen. The SKU and variants will be generated automatically.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Qikink Product ID / SKU */}
+            <div>
+              <label className="block text-xs font-bold text-gray-800 mb-1">
+                Qikink Product ID / SKU <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={qikinkForm.productId}
+                onChange={(e) => setQikinkForm({ ...qikinkForm, productId: e.target.value })}
+                placeholder="e.g. 64980464"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+              <span className="text-[11px] text-gray-400 mt-0.5 block">Matches Product ID from Qikink dashboard</span>
+            </div>
+
+            {/* Product Title / Name */}
+            <div>
+              <label className="block text-xs font-bold text-gray-800 mb-1">
+                Product Title / Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={qikinkForm.name}
+                onChange={(e) => setQikinkForm({ ...qikinkForm, name: e.target.value })}
+                placeholder="e.g. Tote Bag Non Zipper"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+              <span className="text-[11px] text-gray-400 mt-0.5 block">Customer-facing title on the website</span>
+            </div>
+
+            {/* Target Category */}
+            <div>
+              <label className="block text-xs font-bold text-gray-800 mb-1">
+                Target Category <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={qikinkForm.category}
+                onChange={(e) => setQikinkForm({ ...qikinkForm, category: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                {categories.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.name} {c.slug ? `(${c.slug})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Variant Type Preset */}
+            <div>
+              <label className="block text-xs font-bold text-gray-800 mb-1">
+                Size / Variant Type
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setQikinkForm({ ...qikinkForm, variantPreset: 'standard' })}
+                  className={`px-2.5 py-2 border text-xs font-semibold rounded-lg transition text-center cursor-pointer ${
+                    qikinkForm.variantPreset === 'standard'
+                      ? 'border-orange-500 bg-orange-50 text-orange-900 ring-2 ring-orange-200'
+                      : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  Standard / Free Size
+                  <span className="block text-[10px] text-gray-400 font-normal">Bags, Caps, Mugs</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQikinkForm({ ...qikinkForm, variantPreset: 'apparel' })}
+                  className={`px-2.5 py-2 border text-xs font-semibold rounded-lg transition text-center cursor-pointer ${
+                    qikinkForm.variantPreset === 'apparel'
+                      ? 'border-orange-500 bg-orange-50 text-orange-900 ring-2 ring-orange-200'
+                      : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  Apparel Sizes
+                  <span className="block text-[10px] text-gray-400 font-normal">S, M, L, XL, XXL</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Selling Price */}
+            <div>
+              <label className="block text-xs font-bold text-gray-800 mb-1">
+                Selling Price (₹) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                required
+                min="1"
+                value={qikinkForm.price}
+                onChange={(e) => setQikinkForm({ ...qikinkForm, price: e.target.value })}
+                placeholder="e.g. 599"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+              <span className="text-[11px] text-gray-400 mt-0.5 block">Price the customer pays</span>
+            </div>
+
+            {/* MRP / Original Price */}
+            <div>
+              <label className="block text-xs font-bold text-gray-800 mb-1">
+                MRP / Strike Price (₹)
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={qikinkForm.mrp}
+                onChange={(e) => setQikinkForm({ ...qikinkForm, mrp: e.target.value })}
+                placeholder="e.g. 899"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+              <span className="text-[11px] text-gray-400 mt-0.5 block">Original strikethrough price</span>
+            </div>
+          </div>
+
+          {/* Mockup / Image URL */}
+          <div>
+            <label className="block text-xs font-bold text-gray-800 mb-1">
+              Mockup / Image URL (Optional)
+            </label>
+            <input
+              type="url"
+              value={qikinkForm.imageUrl}
+              onChange={(e) => setQikinkForm({ ...qikinkForm, imageUrl: e.target.value })}
+              placeholder="Paste mockup image URL from Qikink or CDN (https://...)"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+            <span className="text-[11px] text-gray-400 mt-0.5 block">
+              You can also upload or star photos later using the settings (quick edit) icon on the product row.
+            </span>
+          </div>
+
+          {/* Short Description */}
+          <div>
+            <label className="block text-xs font-bold text-gray-800 mb-1">
+              Short Description (Optional)
+            </label>
+            <textarea
+              rows={2}
+              value={qikinkForm.description}
+              onChange={(e) => setQikinkForm({ ...qikinkForm, description: e.target.value })}
+              placeholder="e.g. Premium 100% Cotton durable Tote Bag featuring high-definition durable prints."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-3 pt-3 border-t">
+            <button
+              type="button"
+              disabled={importingQikink}
+              onClick={() => setQikinkModalOpen(false)}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={importingQikink}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white rounded-lg text-sm font-bold shadow-md transition cursor-pointer disabled:opacity-60"
+            >
+              {importingQikink && <Spin size="small" />}
+              <span>{importingQikink ? "Importing to Store..." : "Import & Publish Product"}</span>
+            </button>
+          </div>
+        </form>
       </Modal>
     </div>
   );
