@@ -16,7 +16,7 @@ export const normalizeWishlistItem = (product) => {
   const price = Number(product.price || product.salePrice || product.unitPrice || 0);
   const mrp = Number(product.mrp || product.originalPrice || Math.round(price * 1.35)) || price;
   const slug = product.slug || id;
-  const sizes = Array.isArray(product.sizes) && product.sizes.length > 0
+  const sizes =  Array.isArray(product.sizes) && product.sizes.length > 0
     ? product.sizes
     : (product.size ? [product.size] : ["S", "M", "L", "XL"]);
   const category =
