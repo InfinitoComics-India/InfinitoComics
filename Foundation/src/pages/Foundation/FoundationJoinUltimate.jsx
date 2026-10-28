@@ -1,11 +1,9 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import bgImage from "../../../../frontend/assets/Images/bgImage.png";
 import character from "../../../../frontend/assets/Images/character.png";
+import { FRONTEND_BASE_URL } from "../../utils/constants.js";
 
 const FoundationJoinUltimate = () => {
-  const navigate = useNavigate();
-
   return (
     <div className="w-full bg-white relative overflow-hidden">
       <div
@@ -28,12 +26,12 @@ const FoundationJoinUltimate = () => {
             Be the first to witness Infinito Universe - Get Infinito Ultimate Kit now!
           </p>
           <div className="pt-2 flex justify-center md:justify-start">
-            <button
-              onClick={() => navigate("/ultimate")}
-              className="bg-[#E50914] hover:bg-red-700 text-white text-xs md:text-sm font-bold uppercase tracking-wider px-6 py-3 transition-all duration-300 flex items-center gap-1 cursor-pointer shadow-md"
+            <a
+              href={`${FRONTEND_BASE_URL}/ultimate`}
+              className="bg-[#E50914] hover:bg-red-700 text-white text-xs md:text-sm font-bold uppercase tracking-wider px-6 py-3 transition-all duration-300 flex items-center gap-1 cursor-pointer shadow-md inline-block"
             >
              Buy Now &rsaquo;
-            </button>
+            </a>
           </div>
         </div>
       </div>
