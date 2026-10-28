@@ -1,7 +1,7 @@
 import React from 'react'
 import Home from '../pages/Home'
 import Navbar from './Navbar'
-import JoinUltimate from '../../../frontend/src/pages/Home/JoinUltimate.jsx'
+import FoundationJoinUltimate from '../pages/Foundation/FoundationJoinUltimate'
 import FoundationNewsletter from '../pages/Foundation/FoundationNewsletter'
 import Footer from './Footer'
 
@@ -10,7 +10,7 @@ const Body = () => {
     <>
       <Navbar />
       <Home />
-      <JoinUltimate />
+      <FoundationJoinUltimate />
       <FoundationNewsletter />
       <Footer />
     </>
